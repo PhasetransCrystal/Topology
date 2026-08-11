@@ -14,7 +14,17 @@ allprojects {
 }
 
 def buildDate = new Date()
-def dynamicVersion = "${String.format('%ty', buildDate)}.${buildDate.month + 1}.${buildDate.date}"
+def year = String.format('%ty', buildDate)
+// 本地开发使用周快照版: 26.16-SNAPSHOT; release使用日期版: 26.8.11
+def isRelease = System.getenv('RELEASE_BUILD') == 'true'
+def dynamicVersion
+if (isRelease) {
+    dynamicVersion = "${year}.${buildDate.month + 1}.${buildDate.date}"
+} else {
+    def calendar = Calendar.getInstance()
+    def weekOfYear = calendar.get(Calendar.WEEK_OF_YEAR)
+    dynamicVersion = "${year}.${weekOfYear}-SNAPSHOT"
+}
 ext.mod_version = dynamicVersion
 version = dynamicVersion
 group = mod_group_id
@@ -73,12 +83,23 @@ publishing {
         }
     }
     repositories {
-        maven {
-            name = "PtcrysReleases"
-            url = uri("https://maven.ptcrys.net/releases")
-            credentials {
-                username = project.findProperty('ptcrysUsername')
-                password = project.findProperty('ptcrysPassword')
+        if (isRelease) {
+            maven {
+                name = "PtcrysReleases"
+                url = uri("https://maven.ptcrys.net/releases")
+                credentials {
+                    username = project.findProperty('ptcrysUsername')
+                    password = project.findProperty('ptcrysPassword')
+                }
+            }
+        } else {
+            maven {
+                name = "PtcrysSnapshots"
+                url = uri("https://maven.ptcrys.net/snapshots")
+                credentials {
+                    username = project.findProperty('ptcrysUsername')
+                    password = project.findProperty('ptcrysPassword')
+                }
             }
         }
     }
