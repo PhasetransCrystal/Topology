@@ -1,9 +1,9 @@
 package net.ptcrys.topo.client.debug;
 
-import net.ptcrys.topo.datav2.machine.BuiltinOIMachineFeedbackLang;
-import net.ptcrys.topo.datav2.machine.common.component.resource.MachineDestroyedReport;
-import net.ptcrys.topo.datav2.machine.common.component.resource.ScalarResource;
-import net.ptcrys.topo.datav2.recipe.BuiltinOIResourceIntegrations;
+import net.ptcrys.topo.data.machine.BuiltinTopoMachineFeedbackLang;
+import net.ptcrys.topo.data.machine.common.component.resource.MachineDestroyedReport;
+import net.ptcrys.topo.data.machine.common.component.resource.ScalarResource;
+import net.ptcrys.topo.data.recipe.BuiltinTopoResourceIntegrations;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -35,7 +35,7 @@ import java.util.List;
 
 /**
  * 破坏反馈聊天样式的全自动游戏内视觉确认探针(同 {@link PortHighlightProbe} 的流水线骨架,独立 flag):
- * 仅当工作目录存在 {@code oi-destroyed-feedback-probe.flag} 时激活。自动建创造平坦世界,经真实
+ * 仅当工作目录存在 {@code topo-destroyed-feedback-probe.flag} 时激活。自动建创造平坦世界,经真实
  * {@link MachineDestroyedReport#message} 构建并向玩家发送五条覆盖全档位/全资源色的样式化破坏提示
  * (耗散=灰、电弧=黄、爆燃=红、热闪=金;资源名取各自资源色:能量金黄/高级能量紫/热量橙红),打开
  * 聊天框截图肉眼验收,写报告后自动退出。
@@ -46,12 +46,12 @@ import java.util.List;
  */
 public final class MachineDestroyedFeedbackProbe {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("OI-DestroyedFeedbackProbe");
-    private static final Path FLAG_FILE = Path.of("oi-destroyed-feedback-probe.flag");
-    private static final Path REPORT_FILE = Path.of("oi-destroyed-feedback-probe-report.txt");
-    private static final String SHOT = "oi-destroyed-feedback-probe";
+    private static final Logger LOGGER = LoggerFactory.getLogger("Topo-DestroyedFeedbackProbe");
+    private static final Path FLAG_FILE = Path.of("topo-destroyed-feedback-probe.flag");
+    private static final Path REPORT_FILE = Path.of("topo-destroyed-feedback-probe-report.txt");
+    private static final String SHOT = "topo-destroyed-feedback-probe";
     /** 每轮唯一世界名:复用同名存档会撞上一轮残留场景(并行会话共用 run/ 时尤甚)。 */
-    private static final String LEVEL_ID = "oi-destroyed-feedback-probe-" + (System.currentTimeMillis() % 100_000_000L);
+    private static final String LEVEL_ID = "topo-destroyed-feedback-probe-" + (System.currentTimeMillis() % 100_000_000L);
     private static final int WAIT_TIMEOUT_TICKS = 2400;
 
     private enum State {
@@ -149,7 +149,7 @@ public final class MachineDestroyedFeedbackProbe {
         server.execute(() -> {
             ServerPlayer player = server.getPlayerList().getPlayers().getFirst();
             player.sendSystemMessage(
-                    Component.literal("== OI machine destruction feedback — styling preview ==")
+                    Component.literal("== Topo machine destruction feedback — styling preview ==")
                             .withStyle(ChatFormatting.AQUA));
             for (Component line : lines) {
                 player.sendSystemMessage(line);
@@ -164,30 +164,30 @@ public final class MachineDestroyedFeedbackProbe {
 
     /** 五条覆盖全档位与全资源色的样式提示,与真实链路同一构建代码(报告工厂 + message 注入名)。 */
     private static List<Component> styledLines() {
-        ScalarResource energy = BuiltinOIResourceIntegrations.ENERGY.recipeCapability().resource();
-        ScalarResource advanced = BuiltinOIResourceIntegrations.ADVANCED_ENERGY.recipeCapability().resource();
-        ScalarResource heat = BuiltinOIResourceIntegrations.HEAT.recipeCapability().resource();
+        ScalarResource energy = BuiltinTopoResourceIntegrations.ENERGY.recipeCapability().resource();
+        ScalarResource advanced = BuiltinTopoResourceIntegrations.ADVANCED_ENERGY.recipeCapability().resource();
+        ScalarResource heat = BuiltinTopoResourceIntegrations.HEAT.recipeCapability().resource();
         List<Component> lines = new ArrayList<>();
         add(lines, MachineDestroyedReport.benign(
-                BuiltinOIMachineFeedbackLang.MESSAGE_MACHINE_DESTROYED_ENERGY_DISSIPATE,
+                BuiltinTopoMachineFeedbackLang.MESSAGE_MACHINE_DESTROYED_ENERGY_DISSIPATE,
                 ChatFormatting.GRAY,
                 "8,500"), "Energy Generator", energy);
         add(lines, MachineDestroyedReport.harmful(
-                BuiltinOIMachineFeedbackLang.MESSAGE_MACHINE_DESTROYED_ENERGY_ARC,
+                BuiltinTopoMachineFeedbackLang.MESSAGE_MACHINE_DESTROYED_ENERGY_ARC,
                 ChatFormatting.YELLOW,
                 "120,480",
                 "5"), "Energy Generator", energy);
         add(lines, MachineDestroyedReport.harmful(
-                BuiltinOIMachineFeedbackLang.MESSAGE_MACHINE_DESTROYED_ENERGY_BLAST,
+                BuiltinTopoMachineFeedbackLang.MESSAGE_MACHINE_DESTROYED_ENERGY_BLAST,
                 ChatFormatting.RED,
                 "2,400,000"), "Energy Storage Block", energy);
         add(lines, MachineDestroyedReport.harmful(
-                BuiltinOIMachineFeedbackLang.MESSAGE_MACHINE_DESTROYED_ENERGY_ARC,
+                BuiltinTopoMachineFeedbackLang.MESSAGE_MACHINE_DESTROYED_ENERGY_ARC,
                 ChatFormatting.YELLOW,
                 "48,000",
                 "7"), "Advanced Energy Hatch", advanced);
         add(lines, MachineDestroyedReport.harmful(
-                BuiltinOIMachineFeedbackLang.MESSAGE_MACHINE_DESTROYED_HEAT_FLASH,
+                BuiltinTopoMachineFeedbackLang.MESSAGE_MACHINE_DESTROYED_HEAT_FLASH,
                 ChatFormatting.GOLD,
                 "150,000",
                 "8"), "Boiler", heat);

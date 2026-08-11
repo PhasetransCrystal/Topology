@@ -1,6 +1,6 @@
 package net.ptcrys.topo.integration.jade;
 
-import net.ptcrys.topo.apiv2.machine.MachineBlock;
+import net.ptcrys.topo.api.machine.MachineBlock;
 import net.ptcrys.topo.helper.IdHelper;
 
 import net.minecraft.core.BlockPos;
@@ -17,7 +17,7 @@ import snownee.jade.addon.harvest.ToolHandler;
 import java.util.List;
 
 /**
- * Jade harvest-tool handler that draws a wrench icon for OI's wrench-mineable blocks (anything
+ * Jade harvest-tool handler that draws a wrench icon for Topo's wrench-mineable blocks (anything
  * carrying {@link MachineBlock#MINEABLE_WITH_WRENCH}). Machines are wrench-only, so this is the
  * sole icon Jade shows for them; pipes also stay {@code mineable/pickaxe}, so Jade shows the
  * built-in pickaxe alongside this wrench. Registered through {@code HarvestToolProvider}, which

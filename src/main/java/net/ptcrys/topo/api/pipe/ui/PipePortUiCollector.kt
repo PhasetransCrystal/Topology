@@ -1,7 +1,7 @@
 package net.ptcrys.topo.api.pipe.ui
 
-import net.ptcrys.topo.apiv2.machine.ui.MachineUiComponentStyle
-import net.ptcrys.topo.apiv2.machine.ui.MachineUiLayout
+import net.ptcrys.topo.api.machine.ui.MachineUiComponentStyle
+import net.ptcrys.topo.api.machine.ui.MachineUiLayout
 
 import net.minecraft.network.chat.Component
 

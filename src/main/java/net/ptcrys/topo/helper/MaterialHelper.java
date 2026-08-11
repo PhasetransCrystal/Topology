@@ -1,10 +1,10 @@
 package net.ptcrys.topo.helper;
 
-import net.ptcrys.topo.api.registration.ExternalBlockTarget;
-import net.ptcrys.topo.api.registration.ExternalItemTarget;
-import net.ptcrys.topo.apiv2.material.Material;
-import net.ptcrys.topo.apiv2.material.MaterialFormOptions;
-import net.ptcrys.topo.apiv2.material.form.MaterialForm;
+import net.ptcrys.topo.api.api.registration.ExternalBlockTarget;
+import net.ptcrys.topo.api.api.registration.ExternalItemTarget;
+import net.ptcrys.topo.api.material.Material;
+import net.ptcrys.topo.api.material.MaterialFormOptions;
+import net.ptcrys.topo.api.material.form.MaterialForm;
 
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;

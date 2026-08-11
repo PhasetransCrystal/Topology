@@ -5,7 +5,7 @@ import net.ptcrys.topo.api.pipe.PipeSideIntent;
 import net.ptcrys.topo.api.pipe.network.PipeLevelRuntime;
 import net.ptcrys.topo.api.pipe.network.PipeNetwork;
 import net.ptcrys.topo.api.pipe.network.PipeNetworkEngine;
-import net.ptcrys.topo.data.pipe.BuiltinOIPipes;
+import net.ptcrys.topo.data.pipe.BuiltinTopoPipes;
 import net.ptcrys.topo.helper.IdHelper;
 
 import net.minecraft.core.BlockPos;
@@ -60,7 +60,7 @@ public final class PipeNetworkScaleGameTests {
     private PipeNetworkScaleGameTests() {}
 
     public static void register(RegisterGameTestsEvent event) {
-        if (!OIScalarGameTestFixtures.enabled()) {
+        if (!TopoScalarGameTestFixtures.enabled()) {
             return;
         }
         Holder<TestEnvironmentDefinition<?>> environment = event.registerEnvironment(IdHelper.oi("pipe_network_scale"), new TestEnvironmentDefinition.AllOf());
@@ -197,7 +197,7 @@ public final class PipeNetworkScaleGameTests {
             for (int z = 0; z < grid; z++) {
                 boolean corner = (x == 0 && z == 0) || (x == grid - 1 && z == grid - 1);
                 placePipeAbs(level, base.offset(x, 0, z),
-                        corner ? BuiltinOIPipes.ITEM_PIPE_ELITE : BuiltinOIPipes.ITEM_PIPE_BASIC);
+                        corner ? BuiltinTopoPipes.ITEM_PIPE_ELITE : BuiltinTopoPipes.ITEM_PIPE_BASIC);
             }
         }
     }
@@ -229,9 +229,9 @@ public final class PipeNetworkScaleGameTests {
             sources[i] = chestAbs(level, row.offset(-1, 0, 0));
             targets[i] = chestAbs(level, row.offset(3, 0, 0));
             fillChest(sources[i], Items.COAL, SOURCE_FILL);
-            placePipeAbs(level, row, BuiltinOIPipes.ITEM_PIPE_ELITE);
-            placePipeAbs(level, row.offset(1, 0, 0), BuiltinOIPipes.ITEM_PIPE_BASIC);
-            placePipeAbs(level, row.offset(2, 0, 0), BuiltinOIPipes.ITEM_PIPE_BASIC);
+            placePipeAbs(level, row, BuiltinTopoPipes.ITEM_PIPE_ELITE);
+            placePipeAbs(level, row.offset(1, 0, 0), BuiltinTopoPipes.ITEM_PIPE_BASIC);
+            placePipeAbs(level, row.offset(2, 0, 0), BuiltinTopoPipes.ITEM_PIPE_BASIC);
         }
         int lastInterval = 0;
         for (int i = 0; i < lines; i++) {
@@ -316,7 +316,7 @@ public final class PipeNetworkScaleGameTests {
         forceChunks(level, base.offset(-17, 0, -17), base.offset(grid + 16, 0, grid + 16), true);
         for (int x = 0; x < grid; x++) {
             for (int z = 0; z < grid; z++) {
-                placePipeAbs(level, base.offset(x, 0, z), BuiltinOIPipes.ITEM_PIPE_BASIC);
+                placePipeAbs(level, base.offset(x, 0, z), BuiltinTopoPipes.ITEM_PIPE_BASIC);
             }
         }
         PipeNetwork<?>[] netRef = new PipeNetwork<?>[1];

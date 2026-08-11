@@ -1,8 +1,12 @@
 package net.ptcrys.topo.api.tick;
 
-import net.ptcrys.topo.apiv2.machine.MachineBlockEntity;
-import net.ptcrys.topo.apiv2.machine.component.ComponentContext;
-import net.ptcrys.topo.apiv2.machine.component.MachineComponent;
+import net.ptcrys.topo.api.api.tick.TickHandle;
+import net.ptcrys.topo.api.api.tick.TickHook;
+import net.ptcrys.topo.api.api.tick.TickHub;
+import net.ptcrys.topo.api.api.tick.TickKind;
+import net.ptcrys.topo.api.machine.MachineBlockEntity;
+import net.ptcrys.topo.api.machine.component.ComponentContext;
+import net.ptcrys.topo.api.machine.component.MachineComponent;
 
 import net.minecraft.world.level.Level;
 

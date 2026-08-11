@@ -1,15 +1,15 @@
 package net.ptcrys.topo.gametest;
 
-import net.ptcrys.topo.apiv2.machine.MachineBlockEntity;
-import net.ptcrys.topo.apiv2.machine.component.RecipeLogic;
-import net.ptcrys.topo.apiv2.machine.data.MachineDataScope;
-import net.ptcrys.topo.apiv2.machine.resource.AutomationIo;
-import net.ptcrys.topo.apiv2.machine.resource.LongResourceHandler;
-import net.ptcrys.topo.apiv2.machine.resource.RecipeRole;
-import net.ptcrys.topo.datav2.machine.BuiltinOIMachines;
-import net.ptcrys.topo.datav2.machine.common.component.resource.ItemResourcePort;
-import net.ptcrys.topo.datav2.machine.common.component.resource.ScalarResourcePort;
-import net.ptcrys.topo.datav2.recipe.BuiltinOIResourceIntegrations;
+import net.ptcrys.topo.api.machine.MachineBlockEntity;
+import net.ptcrys.topo.api.machine.component.RecipeLogic;
+import net.ptcrys.topo.api.machine.data.MachineDataScope;
+import net.ptcrys.topo.api.machine.resource.AutomationIo;
+import net.ptcrys.topo.api.machine.resource.LongResourceHandler;
+import net.ptcrys.topo.api.machine.resource.RecipeRole;
+import net.ptcrys.topo.data.machine.BuiltinTopoMachines;
+import net.ptcrys.topo.data.machine.common.component.resource.ItemResourcePort;
+import net.ptcrys.topo.data.machine.common.component.resource.ScalarResourcePort;
+import net.ptcrys.topo.data.recipe.BuiltinTopoResourceIntegrations;
 import net.ptcrys.topo.helper.IdHelper;
 import net.ptcrys.topo.helper.MaterialHelper;
 
@@ -39,11 +39,11 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.function.Consumer;
 
-import static net.ptcrys.topo.datav2.material.BuiltinOIMaterialForms.CRUDE_DUST;
-import static net.ptcrys.topo.datav2.material.BuiltinOIMaterialForms.DUST;
-import static net.ptcrys.topo.datav2.material.BuiltinOIMaterialForms.ORE;
-import static net.ptcrys.topo.datav2.material.BuiltinOIMaterials.COPPER;
-import static net.ptcrys.topo.datav2.material.BuiltinOIMaterials.IRON;
+import static net.ptcrys.topo.data.material.BuiltinTopoMaterialForms.CRUDE_DUST;
+import static net.ptcrys.topo.data.material.BuiltinTopoMaterialForms.DUST;
+import static net.ptcrys.topo.data.material.BuiltinTopoMaterialForms.ORE;
+import static net.ptcrys.topo.data.material.BuiltinTopoMaterials.COPPER;
+import static net.ptcrys.topo.data.material.BuiltinTopoMaterials.IRON;
 
 public final class MaceratorMachineGameTests {
 
@@ -83,7 +83,7 @@ public final class MaceratorMachineGameTests {
                 environment,
                 index++,
                 "macerator_processes_iron_ore_top_to_bottom",
-                "Tests RecipeLogic, OIRecipeType, OIRecipe, ItemRecipeCapability, and ItemResourcePort: " + "iron ore inserted from UP is processed into two crude iron dust extractable from DOWN.",
+                "Tests RecipeLogic, TopoRecipeType, TopoRecipe, ItemRecipeCapability, and ItemResourcePort: " + "iron ore inserted from UP is processed into two crude iron dust extractable from DOWN.",
                 MaceratorMachineGameTests::maceratorProcessesIronOreTopToBottom);
         register(
                 event,
@@ -139,14 +139,14 @@ public final class MaceratorMachineGameTests {
                 environment,
                 index++,
                 "macerator_does_not_start_without_recipe",
-                "Tests RecipeLogic, OIRecipeType#findRecipe, and ItemRecipeCapability input matching: " + "items without a macerator recipe remain in input and keep the machine IDLE.",
+                "Tests RecipeLogic, TopoRecipeType#findRecipe, and ItemRecipeCapability input matching: " + "items without a macerator recipe remain in input and keep the machine IDLE.",
                 MaceratorMachineGameTests::maceratorDoesNotStartWithoutRecipe);
         register(
                 event,
                 environment,
                 index++,
                 "macerator_failed_search_cache_invalidates_after_input_changes",
-                "Tests RecipeLogic failed-search caching, ResourcePort content versions, " + "and OIRecipeType indexed search: after an empty failed search, inserting iron ore from UP " + "invalidates the cache and starts the recipe.",
+                "Tests RecipeLogic failed-search caching, ResourcePort content versions, " + "and TopoRecipeType indexed search: after an empty failed search, inserting iron ore from UP " + "invalidates the cache and starts the recipe.",
                 MaceratorMachineGameTests::maceratorFailedSearchCacheInvalidatesAfterInputChanges);
         register(
                 event,
@@ -174,7 +174,7 @@ public final class MaceratorMachineGameTests {
                 environment,
                 index++,
                 "macerator_indexed_search_processes_copper_ore",
-                "Tests OIRecipeType indexed recipe search through the real macerator: " + "copper ore selects the copper crushing recipe and produces crude copper dust.",
+                "Tests TopoRecipeType indexed recipe search through the real macerator: " + "copper ore selects the copper crushing recipe and produces crude copper dust.",
                 MaceratorMachineGameTests::maceratorIndexedSearchProcessesCopperOre);
         register(
                 event,
@@ -613,7 +613,7 @@ public final class MaceratorMachineGameTests {
     }
 
     private static MachineBlockEntity placeMacerator(GameTestHelper helper) {
-        helper.setBlock(MACHINE_POS, BuiltinOIMachines.MACERATOR_T1.registeredBlock().getDefaultState());
+        helper.setBlock(MACHINE_POS, BuiltinTopoMachines.MACERATOR_T1.registeredBlock().getDefaultState());
         return machine(helper);
     }
 
@@ -692,7 +692,7 @@ public final class MaceratorMachineGameTests {
         ResourceHandler<ItemResource> handler = machine.machineComponents()
                 .resources()
                 .recipeSide()
-                .handler(BuiltinOIResourceIntegrations.ITEM.resourceType(), RecipeRole.OUTPUT);
+                .handler(BuiltinTopoResourceIntegrations.ITEM.resourceType(), RecipeRole.OUTPUT);
         if (handler == null) {
             helper.fail("Macerator should expose an internal recipe output item handler", MACHINE_POS);
         }
@@ -713,7 +713,7 @@ public final class MaceratorMachineGameTests {
         ResourceHandler<ItemResource> input = machine.machineComponents()
                 .resources()
                 .recipeSide()
-                .handler(BuiltinOIResourceIntegrations.ITEM.resourceType(), RecipeRole.INPUT);
+                .handler(BuiltinTopoResourceIntegrations.ITEM.resourceType(), RecipeRole.INPUT);
         if (input == null) {
             helper.fail("Macerator should expose an internal recipe input item handler", MACHINE_POS);
         }

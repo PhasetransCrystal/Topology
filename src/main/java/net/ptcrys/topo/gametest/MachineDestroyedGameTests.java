@@ -1,15 +1,15 @@
 package net.ptcrys.topo.gametest;
 
-import net.ptcrys.topo.apiv2.machine.MachineBlockEntity;
-import net.ptcrys.topo.apiv2.machine.MachineDefinition;
-import net.ptcrys.topo.apiv2.machine.component.ComponentKey;
-import net.ptcrys.topo.datav2.machine.common.component.resource.FluidResourcePort;
-import net.ptcrys.topo.datav2.machine.common.component.resource.ItemResourcePort;
-import net.ptcrys.topo.datav2.machine.common.component.resource.ScalarResource;
-import net.ptcrys.topo.datav2.machine.common.component.resource.ScalarResourcePort;
-import net.ptcrys.topo.datav2.recipe.BuiltinOIResourceIntegrations;
-import net.ptcrys.topo.datav2.recipe.BuiltinOIResourceIntegrations.BuiltinResourceIntegration;
-import net.ptcrys.topo.datav2.recipe.common.ScalarRecipeCapability;
+import net.ptcrys.topo.api.machine.MachineBlockEntity;
+import net.ptcrys.topo.api.machine.MachineDefinition;
+import net.ptcrys.topo.api.machine.component.ComponentKey;
+import net.ptcrys.topo.data.machine.common.component.resource.FluidResourcePort;
+import net.ptcrys.topo.data.machine.common.component.resource.ItemResourcePort;
+import net.ptcrys.topo.data.machine.common.component.resource.ScalarResource;
+import net.ptcrys.topo.data.machine.common.component.resource.ScalarResourcePort;
+import net.ptcrys.topo.data.recipe.BuiltinTopoResourceIntegrations;
+import net.ptcrys.topo.data.recipe.BuiltinTopoResourceIntegrations.BuiltinResourceIntegration;
+import net.ptcrys.topo.data.recipe.common.ScalarRecipeCapability;
 import net.ptcrys.topo.helper.IdHelper;
 
 import net.minecraft.core.BlockPos;
@@ -38,7 +38,7 @@ import java.util.function.Consumer;
 /**
  * 机器被破坏时资源 Trait 行为的游戏内测试:物品掉落、电容放电三档(耗散/电弧/爆燃)、
  * 高级能量 10× 密度折算、热泄放点燃、流体静默。全部使用
- * {@link OIMachineDestroyedGameTestFixtures} 的纯储存机器,经 {@code helper.destroyBlock}
+ * {@link TopoMachineDestroyedGameTestFixtures} 的纯储存机器,经 {@code helper.destroyBlock}
  * 触发原版 {@code preRemoveSideEffects} 真实破坏链路。
  *
  * <p>
@@ -59,7 +59,7 @@ public final class MachineDestroyedGameTests {
     private MachineDestroyedGameTests() {}
 
     public static void register(RegisterGameTestsEvent event) {
-        if (!OIScalarGameTestFixtures.enabled()) {
+        if (!TopoScalarGameTestFixtures.enabled()) {
             return;
         }
         Holder<TestEnvironmentDefinition<?>> environment = event.registerEnvironment(IdHelper.oi("machine_destroyed"), new TestEnvironmentDefinition.AllOf());
@@ -125,7 +125,7 @@ public final class MachineDestroyedGameTests {
     /** 测试 113:物品储存破坏后内容物全部以掉落物形式落地。 */
     private static void destroyedItemStorageDropsContents(GameTestHelper helper) {
         placeFloor(helper);
-        MachineBlockEntity machine = place(helper, OIMachineDestroyedGameTestFixtures.itemChest());
+        MachineBlockEntity machine = place(helper, TopoMachineDestroyedGameTestFixtures.itemChest());
         insertItems(helper, machine, new ItemStack(Items.COAL, 5), new ItemStack(Items.IRON_INGOT, 3));
 
         helper.destroyBlock(MACHINE_POS);
@@ -141,8 +141,8 @@ public final class MachineDestroyedGameTests {
     /** 测试 114:能量低于电弧门槛,破坏后牛无伤、不着火、玻璃完好。 */
     private static void destroyedEnergyBelowThresholdIsSilent(GameTestHelper helper) {
         placeFloor(helper);
-        MachineBlockEntity machine = place(helper, OIMachineDestroyedGameTestFixtures.energyBuffer());
-        fillScalar(helper, machine, ScalarResourcePort.ENERGY_STORAGE, BuiltinOIResourceIntegrations.ENERGY, 5_000);
+        MachineBlockEntity machine = place(helper, TopoMachineDestroyedGameTestFixtures.energyBuffer());
+        fillScalar(helper, machine, ScalarResourcePort.ENERGY_STORAGE, BuiltinTopoResourceIntegrations.ENERGY, 5_000);
         helper.setBlock(GLASS_POS, Blocks.GLASS);
         Mob cow = helper.spawnWithNoFreeWill(EntityType.COW, COW_POS);
 
@@ -159,8 +159,8 @@ public final class MachineDestroyedGameTests {
     /** 测试 115:10 万能量落在电弧档,牛受电击伤害但无任何方块损坏。 */
     private static void destroyedEnergyArcShocksNearbyEntities(GameTestHelper helper) {
         placeFloor(helper);
-        MachineBlockEntity machine = place(helper, OIMachineDestroyedGameTestFixtures.energyBuffer());
-        fillScalar(helper, machine, ScalarResourcePort.ENERGY_STORAGE, BuiltinOIResourceIntegrations.ENERGY, 100_000);
+        MachineBlockEntity machine = place(helper, TopoMachineDestroyedGameTestFixtures.energyBuffer());
+        fillScalar(helper, machine, ScalarResourcePort.ENERGY_STORAGE, BuiltinTopoResourceIntegrations.ENERGY, 100_000);
         helper.setBlock(GLASS_POS, Blocks.GLASS);
         Mob cow = helper.spawnWithNoFreeWill(EntityType.COW, COW_POS);
 
@@ -177,8 +177,8 @@ public final class MachineDestroyedGameTests {
     /** 测试 116:100 万能量爆燃,炸毁围挡内玻璃探针,黑曜石围挡无恙。 */
     private static void destroyedEnergyBlastBreaksBlocksInsideContainment(GameTestHelper helper) {
         placeContainment(helper);
-        MachineBlockEntity machine = place(helper, OIMachineDestroyedGameTestFixtures.energyBuffer());
-        fillScalar(helper, machine, ScalarResourcePort.ENERGY_STORAGE, BuiltinOIResourceIntegrations.ENERGY, 1_000_000);
+        MachineBlockEntity machine = place(helper, TopoMachineDestroyedGameTestFixtures.energyBuffer());
+        fillScalar(helper, machine, ScalarResourcePort.ENERGY_STORAGE, BuiltinTopoResourceIntegrations.ENERGY, 1_000_000);
         helper.setBlock(GLASS_POS, Blocks.GLASS);
 
         helper.destroyBlock(MACHINE_POS);
@@ -197,12 +197,12 @@ public final class MachineDestroyedGameTests {
     /** 测试 117:5 千高级能量按 10× 密度折算成 5 万有效能量,达到电弧档电击周围生物。 */
     private static void destroyedAdvancedEnergyAppliesDensityRatio(GameTestHelper helper) {
         placeFloor(helper);
-        MachineBlockEntity machine = place(helper, OIMachineDestroyedGameTestFixtures.advancedEnergyBuffer());
+        MachineBlockEntity machine = place(helper, TopoMachineDestroyedGameTestFixtures.advancedEnergyBuffer());
         fillScalar(
                 helper,
                 machine,
                 ScalarResourcePort.ADVANCED_ENERGY_STORAGE,
-                BuiltinOIResourceIntegrations.ADVANCED_ENERGY,
+                BuiltinTopoResourceIntegrations.ADVANCED_ENERGY,
                 5_000);
         Mob cow = helper.spawnWithNoFreeWill(EntityType.COW, COW_POS);
 
@@ -217,8 +217,8 @@ public final class MachineDestroyedGameTests {
     /** 测试 118:热量低于灼烤门槛,破坏后牛无伤不着火、场地无火焰。 */
     private static void destroyedHeatBelowThresholdIsSilent(GameTestHelper helper) {
         placeFloor(helper);
-        MachineBlockEntity machine = place(helper, OIMachineDestroyedGameTestFixtures.heatBuffer());
-        fillScalar(helper, machine, ScalarResourcePort.HEAT_STORAGE, BuiltinOIResourceIntegrations.HEAT, 5_000);
+        MachineBlockEntity machine = place(helper, TopoMachineDestroyedGameTestFixtures.heatBuffer());
+        fillScalar(helper, machine, ScalarResourcePort.HEAT_STORAGE, BuiltinTopoResourceIntegrations.HEAT, 5_000);
         Mob cow = helper.spawnWithNoFreeWill(EntityType.COW, COW_POS);
 
         helper.destroyBlock(MACHINE_POS);
@@ -237,8 +237,8 @@ public final class MachineDestroyedGameTests {
     /** 测试 119:满档热闪点燃并烫伤牛、在场地点燃至少一处火焰,且不破坏方块。 */
     private static void destroyedHeatFlashIgnitesEntitiesAndGround(GameTestHelper helper) {
         placeFloor(helper);
-        MachineBlockEntity machine = place(helper, OIMachineDestroyedGameTestFixtures.heatBuffer());
-        fillScalar(helper, machine, ScalarResourcePort.HEAT_STORAGE, BuiltinOIResourceIntegrations.HEAT, 100_000);
+        MachineBlockEntity machine = place(helper, TopoMachineDestroyedGameTestFixtures.heatBuffer());
+        fillScalar(helper, machine, ScalarResourcePort.HEAT_STORAGE, BuiltinTopoResourceIntegrations.HEAT, 100_000);
         helper.setBlock(GLASS_POS, Blocks.GLASS);
         Mob cow = helper.spawnWithNoFreeWill(EntityType.COW, COW_POS);
 
@@ -259,8 +259,8 @@ public final class MachineDestroyedGameTests {
     /** 测试 120:满罐流体破坏后无事发生——不放置流体、牛无伤、玻璃完好。 */
     private static void destroyedFluidStorageSpillsNothing(GameTestHelper helper) {
         placeFloor(helper);
-        MachineBlockEntity machine = place(helper, OIMachineDestroyedGameTestFixtures.fluidTank());
-        fillWater(helper, machine, OIMachineDestroyedGameTestFixtures.FLUID_CAPACITY_MB);
+        MachineBlockEntity machine = place(helper, TopoMachineDestroyedGameTestFixtures.fluidTank());
+        fillWater(helper, machine, TopoMachineDestroyedGameTestFixtures.FLUID_CAPACITY_MB);
         helper.setBlock(GLASS_POS, Blocks.GLASS);
         Mob cow = helper.spawnWithNoFreeWill(EntityType.COW, COW_POS);
 

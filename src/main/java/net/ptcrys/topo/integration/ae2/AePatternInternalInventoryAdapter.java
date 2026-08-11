@@ -8,7 +8,7 @@ import appeng.api.inventories.InternalInventory;
 import org.jspecify.annotations.NonNull;
 
 /**
- * Bridges the OI-native {@link AePatternInventory} (a {@code ResourceHandler<ItemResource>})
+ * Bridges the Topo-native {@link AePatternInventory} (a {@code ResourceHandler<ItemResource>})
  * into AE2's {@link InternalInventory} so it can be returned from
  * {@link appeng.helpers.patternprovider.PatternContainer#getTerminalPatternInventory()}.
  *

@@ -1,23 +1,23 @@
 package net.ptcrys.topo.gametest;
 
-import net.ptcrys.topo.apiv2.machine.FormedMachineBlock;
-import net.ptcrys.topo.apiv2.machine.MachineBlockEntity;
-import net.ptcrys.topo.apiv2.machine.OrientedMachineBlock;
-import net.ptcrys.topo.apiv2.machine.component.RecipeLogic;
-import net.ptcrys.topo.apiv2.machine.multiblock.MultiblockClientDiagnosis;
-import net.ptcrys.topo.apiv2.machine.multiblock.MultiblockControllerMetadata;
-import net.ptcrys.topo.apiv2.machine.multiblock.MultiblockLevelBinder;
-import net.ptcrys.topo.apiv2.machine.multiblock.pattern.Orientation;
-import net.ptcrys.topo.apiv2.machine.multiblock.pattern.Orientations;
-import net.ptcrys.topo.apiv2.machine.resource.RecipeRole;
-import net.ptcrys.topo.apiv2.recipe.RecipePreviewPlan;
-import net.ptcrys.topo.datav2.machine.BuiltinOIControllerMachines;
-import net.ptcrys.topo.datav2.machine.common.component.resource.ScalarResourcePort;
-import net.ptcrys.topo.datav2.machine.multiblock.BuiltinOICasingBlocks;
-import net.ptcrys.topo.datav2.material.BuiltinOIMaterialForms;
-import net.ptcrys.topo.datav2.material.BuiltinOIMaterials;
-import net.ptcrys.topo.datav2.recipe.BuiltinOIRecipeTypes;
-import net.ptcrys.topo.datav2.recipe.BuiltinOIResourceIntegrations;
+import net.ptcrys.topo.api.machine.FormedMachineBlock;
+import net.ptcrys.topo.api.machine.MachineBlockEntity;
+import net.ptcrys.topo.api.machine.OrientedMachineBlock;
+import net.ptcrys.topo.api.machine.component.RecipeLogic;
+import net.ptcrys.topo.api.machine.multiblock.MultiblockClientDiagnosis;
+import net.ptcrys.topo.api.machine.multiblock.MultiblockControllerMetadata;
+import net.ptcrys.topo.api.machine.multiblock.MultiblockLevelBinder;
+import net.ptcrys.topo.api.machine.multiblock.pattern.Orientation;
+import net.ptcrys.topo.api.machine.multiblock.pattern.Orientations;
+import net.ptcrys.topo.api.machine.resource.RecipeRole;
+import net.ptcrys.topo.api.recipe.RecipePreviewPlan;
+import net.ptcrys.topo.data.machine.BuiltinTopoControllerMachines;
+import net.ptcrys.topo.data.machine.common.component.resource.ScalarResourcePort;
+import net.ptcrys.topo.data.machine.multiblock.BuiltinTopoCasingBlocks;
+import net.ptcrys.topo.data.material.BuiltinTopoMaterialForms;
+import net.ptcrys.topo.data.material.BuiltinTopoMaterials;
+import net.ptcrys.topo.data.recipe.BuiltinTopoRecipeTypes;
+import net.ptcrys.topo.data.recipe.BuiltinTopoResourceIntegrations;
 import net.ptcrys.topo.helper.IdHelper;
 import net.ptcrys.topo.helper.MaterialHelper;
 
@@ -53,7 +53,7 @@ public final class MultiblockMachineGameTests {
 
     /**
      * The 3×3×3 large-grinder layers exactly as declared in
-     * {@code BuiltinOIControllerMachines}: one string array per horizontal layer (bottom to top),
+     * {@code BuiltinTopoControllerMachines}: one string array per horizontal layer (bottom to top),
      * strings are depth rows (north first), characters run along the width. Controller sits
      * front-centre of the middle layer ({@code '@'}); the absolute centre is a non-structure cell
      * ({@code ' '}) for the grinding chamber; every other body cell is dense structure casing.
@@ -338,7 +338,7 @@ public final class MultiblockMachineGameTests {
     }
 
     private static ItemResource ironIngotResource() {
-        return ItemResource.of(MaterialHelper.requireItem(BuiltinOIMaterials.IRON, BuiltinOIMaterialForms.INGOT));
+        return ItemResource.of(MaterialHelper.requireItem(BuiltinTopoMaterials.IRON, BuiltinTopoMaterialForms.INGOT));
     }
 
     /**
@@ -346,10 +346,10 @@ public final class MultiblockMachineGameTests {
      * canonical slot-plan source for the macerator recipe type (4 in / 4 out).
      */
     private static void jeiSlotPlanUsesPortedMachine(GameTestHelper helper) {
-        RecipePreviewPlan.SlotPlan plan = BuiltinOIRecipeTypes.MACERATOR
+        RecipePreviewPlan.SlotPlan plan = BuiltinTopoRecipeTypes.MACERATOR
                 .previewPlan()
                 .slotted()
-                .get(BuiltinOIResourceIntegrations.ITEM.recipeCapability());
+                .get(BuiltinTopoResourceIntegrations.ITEM.recipeCapability());
         if (plan == null) {
             helper.fail("Canonical macerator slot plan should include the item capability, got none");
             return;
@@ -400,7 +400,7 @@ public final class MultiblockMachineGameTests {
      */
     private static void largeGrinderFormsRotated(GameTestHelper helper) {
         Orientation north = Orientations.forFacing(Direction.NORTH);
-        helper.setBlock(NORTH_CONTROLLER_POS, BuiltinOIControllerMachines.LARGE_GRINDER
+        helper.setBlock(NORTH_CONTROLLER_POS, BuiltinTopoControllerMachines.LARGE_GRINDER
                 .registeredBlock()
                 .getDefaultState()
                 .setValue(OrientedMachineBlock.FACING, Direction.NORTH));
@@ -455,7 +455,7 @@ public final class MultiblockMachineGameTests {
     }
 
     private static void placeController(GameTestHelper helper) {
-        helper.setBlock(CONTROLLER_POS, BuiltinOIControllerMachines.LARGE_GRINDER
+        helper.setBlock(CONTROLLER_POS, BuiltinTopoControllerMachines.LARGE_GRINDER
                 .registeredBlock()
                 .getDefaultState()
                 .setValue(OrientedMachineBlock.FACING, Direction.SOUTH));
@@ -490,7 +490,7 @@ public final class MultiblockMachineGameTests {
     }
 
     private static BlockState casingState() {
-        return BuiltinOICasingBlocks.DENSE_STRUCTURE_CASING.getDefaultState();
+        return BuiltinTopoCasingBlocks.DENSE_STRUCTURE_CASING.getDefaultState();
     }
 
     private static ResourceHandler<ItemResource> requireControllerInput(GameTestHelper helper) {
@@ -498,7 +498,7 @@ public final class MultiblockMachineGameTests {
                 .machineComponents()
                 .resources()
                 .recipeSide()
-                .handler(BuiltinOIResourceIntegrations.ITEM.resourceType(), RecipeRole.INPUT);
+                .handler(BuiltinTopoResourceIntegrations.ITEM.resourceType(), RecipeRole.INPUT);
         if (input == null) {
             helper.fail("Formed controller should expose a local item input handler", CONTROLLER_POS);
         }
@@ -510,7 +510,7 @@ public final class MultiblockMachineGameTests {
                 .machineComponents()
                 .resources()
                 .recipeSide()
-                .handler(BuiltinOIResourceIntegrations.ITEM.resourceType(), RecipeRole.OUTPUT);
+                .handler(BuiltinTopoResourceIntegrations.ITEM.resourceType(), RecipeRole.OUTPUT);
         if (output == null) {
             helper.fail("Formed controller should expose a local item output handler", CONTROLLER_POS);
         }

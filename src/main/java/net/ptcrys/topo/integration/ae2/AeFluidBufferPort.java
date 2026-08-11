@@ -1,10 +1,10 @@
 package net.ptcrys.topo.integration.ae2;
 
-import net.ptcrys.topo.apiv2.machine.component.ComponentContext;
-import net.ptcrys.topo.apiv2.machine.component.ComponentKey;
-import net.ptcrys.topo.apiv2.machine.multiblock.ability.PartRoleMount;
-import net.ptcrys.topo.datav2.machine.common.component.resource.FluidResourcePortMetadata;
-import net.ptcrys.topo.datav2.recipe.BuiltinOIResourceIntegrations;
+import net.ptcrys.topo.api.machine.component.ComponentContext;
+import net.ptcrys.topo.api.machine.component.ComponentKey;
+import net.ptcrys.topo.api.machine.multiblock.ability.PartRoleMount;
+import net.ptcrys.topo.data.machine.common.component.resource.FluidResourcePortMetadata;
+import net.ptcrys.topo.data.recipe.BuiltinTopoResourceIntegrations;
 
 import net.neoforged.neoforge.transfer.fluid.FluidResource;
 
@@ -23,7 +23,7 @@ public final class AeFluidBufferPort extends AeBufferPort<FluidResource> {
                 FluidResource.class,
                 FluidResource.EMPTY,
                 maxKinds,
-                BuiltinOIResourceIntegrations.FLUID.resourceType());
+                BuiltinTopoResourceIntegrations.FLUID.resourceType());
     }
 
     public static PartRoleMount<AeFluidBufferPort> mount(int maxKinds) {

@@ -1,11 +1,11 @@
 package net.ptcrys.topo.api.pipe.network;
 
+import net.ptcrys.topo.api.machine.resource.DirectResourceAccess;
+import net.ptcrys.topo.api.machine.resource.MachineResourceType;
+import net.ptcrys.topo.api.machine.resource.ResourceHandlerLongOps;
 import net.ptcrys.topo.api.pipe.PipeDefinition;
 import net.ptcrys.topo.api.pipe.PipePortStrategyConfig;
 import net.ptcrys.topo.api.pipe.PipeSideRole;
-import net.ptcrys.topo.apiv2.machine.resource.DirectResourceAccess;
-import net.ptcrys.topo.apiv2.machine.resource.MachineResourceType;
-import net.ptcrys.topo.apiv2.machine.resource.ResourceHandlerLongOps;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;

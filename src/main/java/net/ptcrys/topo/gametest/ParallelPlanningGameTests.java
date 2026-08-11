@@ -1,21 +1,21 @@
 package net.ptcrys.topo.gametest;
 
-import net.ptcrys.topo.apiv2.machine.MachineBlockEntity;
-import net.ptcrys.topo.apiv2.machine.resource.ResourceHandlerLongOps;
-import net.ptcrys.topo.apiv2.recipe.OIRecipe;
-import net.ptcrys.topo.apiv2.recipe.content.OIFluidIngredient;
-import net.ptcrys.topo.apiv2.recipe.content.OIItemInput;
-import net.ptcrys.topo.apiv2.recipe.content.OIItemOutput;
-import net.ptcrys.topo.apiv2.recipe.search.OIRecipeSearchIndex;
-import net.ptcrys.topo.datav2.machine.BuiltinOIMachines;
-import net.ptcrys.topo.datav2.machine.common.component.resource.FluidResourcePort;
-import net.ptcrys.topo.datav2.machine.common.component.resource.ItemResourcePort;
-import net.ptcrys.topo.datav2.machine.common.component.resource.ScalarResourcePort;
-import net.ptcrys.topo.datav2.recipe.BuiltinOIRecipeTypes;
-import net.ptcrys.topo.datav2.recipe.BuiltinOIResourceIntegrations;
-import net.ptcrys.topo.datav2.recipe.common.FluidRecipeCapability;
-import net.ptcrys.topo.datav2.recipe.common.ItemRecipeCapability;
-import net.ptcrys.topo.datav2.recipe.common.ScalarRecipeCapability;
+import net.ptcrys.topo.api.machine.MachineBlockEntity;
+import net.ptcrys.topo.api.machine.resource.ResourceHandlerLongOps;
+import net.ptcrys.topo.api.recipe.TopoRecipe;
+import net.ptcrys.topo.api.recipe.content.TopoFluidIngredient;
+import net.ptcrys.topo.api.recipe.content.TopoItemInput;
+import net.ptcrys.topo.api.recipe.content.TopoItemOutput;
+import net.ptcrys.topo.api.recipe.search.TopoRecipeSearchIndex;
+import net.ptcrys.topo.data.machine.BuiltinTopoMachines;
+import net.ptcrys.topo.data.machine.common.component.resource.FluidResourcePort;
+import net.ptcrys.topo.data.machine.common.component.resource.ItemResourcePort;
+import net.ptcrys.topo.data.machine.common.component.resource.ScalarResourcePort;
+import net.ptcrys.topo.data.recipe.BuiltinTopoRecipeTypes;
+import net.ptcrys.topo.data.recipe.BuiltinTopoResourceIntegrations;
+import net.ptcrys.topo.data.recipe.common.FluidRecipeCapability;
+import net.ptcrys.topo.data.recipe.common.ItemRecipeCapability;
+import net.ptcrys.topo.data.recipe.common.ScalarRecipeCapability;
 import net.ptcrys.topo.helper.IdHelper;
 
 import net.minecraft.core.BlockPos;
@@ -107,10 +107,10 @@ public final class ParallelPlanningGameTests {
             Items.SOUL_SAND
     };
 
-    private static final ItemRecipeCapability ITEMS = BuiltinOIResourceIntegrations.ITEM.recipeCapability();
-    private static final FluidRecipeCapability FLUIDS = BuiltinOIResourceIntegrations.FLUID.recipeCapability();
-    private static final ScalarRecipeCapability ENERGY = BuiltinOIResourceIntegrations.ENERGY.recipeCapability();
-    private static final ScalarRecipeCapability HEAT = BuiltinOIResourceIntegrations.HEAT.recipeCapability();
+    private static final ItemRecipeCapability ITEMS = BuiltinTopoResourceIntegrations.ITEM.recipeCapability();
+    private static final FluidRecipeCapability FLUIDS = BuiltinTopoResourceIntegrations.FLUID.recipeCapability();
+    private static final ScalarRecipeCapability ENERGY = BuiltinTopoResourceIntegrations.ENERGY.recipeCapability();
+    private static final ScalarRecipeCapability HEAT = BuiltinTopoResourceIntegrations.HEAT.recipeCapability();
 
     private ParallelPlanningGameTests() {}
 
@@ -242,10 +242,10 @@ public final class ParallelPlanningGameTests {
         MachineBlockEntity machine = placeChemicalReactor(helper);
         setItem(machine, 0, Items.IRON_INGOT, 4);
         setItem(machine, 1, Items.GOLD_INGOT, 4);
-        OIRecipe recipe = recipe(new OIRecipe.InputEntry<?>[] {
-                new OIRecipe.InputEntry<>(ITEMS, List.of(
+        TopoRecipe recipe = recipe(new TopoRecipe.InputEntry<?>[] {
+                new TopoRecipe.InputEntry<>(ITEMS, List.of(
                         anyOf(1, Items.IRON_INGOT, Items.GOLD_INGOT),
-                        OIItemInput.of(Items.IRON_INGOT, 1)))
+                        TopoItemInput.of(Items.IRON_INGOT, 1)))
         });
 
         assertParallelInsideCallerTransaction(helper, recipe, machine, 4, 4);
@@ -256,9 +256,9 @@ public final class ParallelPlanningGameTests {
         MachineBlockEntity machine = placeChemicalReactor(helper);
         setItem(machine, 0, Items.IRON_INGOT, 30);
         setItem(machine, 1, Items.IRON_INGOT, 30);
-        OIRecipe recipe = recipe(new OIRecipe.InputEntry<?>[] {
-                new OIRecipe.InputEntry<>(ITEMS, List.of(OIItemInput.of(Items.IRON_INGOT, 2))),
-                new OIRecipe.InputEntry<>(ITEMS, List.of(OIItemInput.of(Items.IRON_INGOT, 3)))
+        TopoRecipe recipe = recipe(new TopoRecipe.InputEntry<?>[] {
+                new TopoRecipe.InputEntry<>(ITEMS, List.of(TopoItemInput.of(Items.IRON_INGOT, 2))),
+                new TopoRecipe.InputEntry<>(ITEMS, List.of(TopoItemInput.of(Items.IRON_INGOT, 3)))
         });
 
         assertParallel(helper, recipe, machine, 32, 12);
@@ -269,8 +269,8 @@ public final class ParallelPlanningGameTests {
         MachineBlockEntity machine = placeChemicalReactor(helper);
         setItem(machine, 0, Items.IRON_INGOT, 4);
         setItem(machine, 1, Items.GOLD_INGOT, 4);
-        OIRecipe recipe = recipe(new OIRecipe.InputEntry<?>[] {
-                new OIRecipe.InputEntry<>(ITEMS, List.of(
+        TopoRecipe recipe = recipe(new TopoRecipe.InputEntry<?>[] {
+                new TopoRecipe.InputEntry<>(ITEMS, List.of(
                         anyOf(3, Items.IRON_INGOT, Items.GOLD_INGOT),
                         anyOf(3, Items.IRON_INGOT, Items.GOLD_INGOT)))
         });
@@ -283,16 +283,16 @@ public final class ParallelPlanningGameTests {
         MachineBlockEntity machine = placeChemicalReactor(helper);
         setItem(machine, 0, Items.COAL, 16);
         setItem(machine, 1, Items.CRAFTING_TABLE, 1);
-        OIRecipe recipe = recipe(new OIRecipe.InputEntry<?>[] {
-                new OIRecipe.InputEntry<>(ITEMS, List.of(
-                        OIItemInput.of(Items.COAL, 2),
-                        OIItemInput.unconsumed(Items.CRAFTING_TABLE)))
+        TopoRecipe recipe = recipe(new TopoRecipe.InputEntry<?>[] {
+                new TopoRecipe.InputEntry<>(ITEMS, List.of(
+                        TopoItemInput.of(Items.COAL, 2),
+                        TopoItemInput.unconsumed(Items.CRAFTING_TABLE)))
         });
 
         assertParallel(helper, recipe, machine, 16, 8);
-        OIRecipe parallel = recipe.withParallel(8);
+        TopoRecipe parallel = recipe.withParallel(8);
         Object catalyst = parallel.inputs()[0].contents().get(1);
-        if (!(catalyst instanceof OIItemInput input) || input.count() != 1 || input.consumesOnMatch()) {
+        if (!(catalyst instanceof TopoItemInput input) || input.count() != 1 || input.consumesOnMatch()) {
             helper.fail("Parallel scaling must keep the catalyst as one unconsumed item, got " + catalyst);
         }
         if (!parallel.consumeInputs(machine)) {
@@ -312,11 +312,11 @@ public final class ParallelPlanningGameTests {
         ScalarResourcePort energy = machine.machineComponents().require(ScalarResourcePort.ENERGY_INPUT_1);
         energy.handler().set(0, energy.resource(), 60_000);
 
-        OIRecipe recipe = recipe(new OIRecipe.InputEntry<?>[] {
-                new OIRecipe.InputEntry<>(FLUIDS, List.of(fluid(Fluids.WATER, 1_000))),
-                new OIRecipe.InputEntry<>(FLUIDS, List.of(fluid(Fluids.WATER, 500))),
-                new OIRecipe.InputEntry<>(ENERGY, List.of(2_000L)),
-                new OIRecipe.InputEntry<>(ENERGY, List.of(1_000L))
+        TopoRecipe recipe = recipe(new TopoRecipe.InputEntry<?>[] {
+                new TopoRecipe.InputEntry<>(FLUIDS, List.of(fluid(Fluids.WATER, 1_000))),
+                new TopoRecipe.InputEntry<>(FLUIDS, List.of(fluid(Fluids.WATER, 500))),
+                new TopoRecipe.InputEntry<>(ENERGY, List.of(2_000L)),
+                new TopoRecipe.InputEntry<>(ENERGY, List.of(1_000L))
         });
 
         assertParallel(helper, recipe, machine, 64, 10);
@@ -324,24 +324,24 @@ public final class ParallelPlanningGameTests {
     }
 
     private static void parallelScalingMultipliesIoButNotDuration(GameTestHelper helper) {
-        OIRecipe base = new OIRecipe(
-                BuiltinOIRecipeTypes.CHEMICAL_REACTOR,
-                new OIRecipe.InputEntry<?>[] {
-                        new OIRecipe.InputEntry<>(ITEMS, List.of(
-                                OIItemInput.of(Items.COAL, 2),
-                                OIItemInput.unconsumed(Items.CRAFTING_TABLE)))
+        TopoRecipe base = new TopoRecipe(
+                BuiltinTopoRecipeTypes.CHEMICAL_REACTOR,
+                new TopoRecipe.InputEntry<?>[] {
+                        new TopoRecipe.InputEntry<>(ITEMS, List.of(
+                                TopoItemInput.of(Items.COAL, 2),
+                                TopoItemInput.unconsumed(Items.CRAFTING_TABLE)))
                 },
-                new OIRecipe.OutputEntry<?>[] {
-                        new OIRecipe.OutputEntry<>(ITEMS, List.of(OIItemOutput.of(Items.GOLD_INGOT, 3)))
+                new TopoRecipe.OutputEntry<?>[] {
+                        new TopoRecipe.OutputEntry<>(ITEMS, List.of(TopoItemOutput.of(Items.GOLD_INGOT, 3)))
                 },
-                new OIRecipe.InputEntry<?>[] {
-                        new OIRecipe.InputEntry<>(ENERGY, List.of(5L))
+                new TopoRecipe.InputEntry<?>[] {
+                        new TopoRecipe.InputEntry<>(ENERGY, List.of(5L))
                 },
-                new OIRecipe.OutputEntry<?>[] {
-                        new OIRecipe.OutputEntry<>(HEAT, List.of(7L))
+                new TopoRecipe.OutputEntry<?>[] {
+                        new TopoRecipe.OutputEntry<>(HEAT, List.of(7L))
                 },
                 40);
-        OIRecipe scaled = base.withParallel(3);
+        TopoRecipe scaled = base.withParallel(3);
 
         assertAmount(helper, scaled.inputs()[0].contents().get(0), 6, "start input");
         assertAmount(helper, scaled.inputs()[0].contents().get(1), 1, "unconsumed input");
@@ -360,32 +360,32 @@ public final class ParallelPlanningGameTests {
         LongSupplyItemHandler handler = new LongSupplyItemHandler(ItemResource.of(Items.IRON_INGOT), supply);
         long planned = ItemRecipeCapability.maxParallelByInputs(
                 handler,
-                List.of(OIItemInput.of(Items.IRON_INGOT, demand)),
+                List.of(TopoItemInput.of(Items.IRON_INGOT, demand)),
                 Long.MAX_VALUE);
         if (planned != 3L) {
             helper.fail("Long item demand should plan exactly 3 parallels, got " + planned);
         }
 
         long factor = 3_000_000_000L;
-        OIRecipe scaled = new OIRecipe(
-                BuiltinOIRecipeTypes.CHEMICAL_REACTOR,
-                new OIRecipe.InputEntry<?>[] {
-                        new OIRecipe.InputEntry<>(ITEMS, List.of(OIItemInput.of(Items.COAL, 2L)))
+        TopoRecipe scaled = new TopoRecipe(
+                BuiltinTopoRecipeTypes.CHEMICAL_REACTOR,
+                new TopoRecipe.InputEntry<?>[] {
+                        new TopoRecipe.InputEntry<>(ITEMS, List.of(TopoItemInput.of(Items.COAL, 2L)))
                 },
-                new OIRecipe.OutputEntry<?>[] {
-                        new OIRecipe.OutputEntry<>(ITEMS, List.of(OIItemOutput.of(Items.GOLD_INGOT, 3L)))
+                new TopoRecipe.OutputEntry<?>[] {
+                        new TopoRecipe.OutputEntry<>(ITEMS, List.of(TopoItemOutput.of(Items.GOLD_INGOT, 3L)))
                 },
-                new OIRecipe.InputEntry<?>[] {
-                        new OIRecipe.InputEntry<>(FLUIDS, List.of(fluid(Fluids.WATER, 1_000)))
+                new TopoRecipe.InputEntry<?>[] {
+                        new TopoRecipe.InputEntry<>(FLUIDS, List.of(fluid(Fluids.WATER, 1_000)))
                 },
-                new OIRecipe.OutputEntry<?>[] {
-                        new OIRecipe.OutputEntry<>(ENERGY, List.of(5L))
+                new TopoRecipe.OutputEntry<?>[] {
+                        new TopoRecipe.OutputEntry<>(ENERGY, List.of(5L))
                 },
                 40)
                 .withParallel(factor);
         assertAmount(helper, scaled.inputs()[0].contents().getFirst(), 6_000_000_000L, "long start input");
         assertAmount(helper, scaled.outputs()[0].contents().getFirst(), 9_000_000_000L, "long start output");
-        assertLong(helper, ((OIFluidIngredient) scaled.tickInputs()[0].contents().getFirst()).amount(),
+        assertLong(helper, ((TopoFluidIngredient) scaled.tickInputs()[0].contents().getFirst()).amount(),
                 3_000_000_000_000L, "long tick fluid input");
         assertLong(helper, scaled.tickOutputs()[0].contents().getFirst(), 15_000_000_000L,
                 "long tick scalar output");
@@ -393,11 +393,11 @@ public final class ParallelPlanningGameTests {
             helper.fail("Long parallel scaling must preserve duration 40, got " + scaled.duration());
         }
 
-        OIRecipe overflow = new OIRecipe(
-                BuiltinOIRecipeTypes.CHEMICAL_REACTOR,
-                OIRecipe.EMPTY_INPUTS,
-                new OIRecipe.OutputEntry<?>[] {
-                        new OIRecipe.OutputEntry<>(ENERGY, List.of(Long.MAX_VALUE / 2L + 1L))
+        TopoRecipe overflow = new TopoRecipe(
+                BuiltinTopoRecipeTypes.CHEMICAL_REACTOR,
+                TopoRecipe.EMPTY_INPUTS,
+                new TopoRecipe.OutputEntry<?>[] {
+                        new TopoRecipe.OutputEntry<>(ENERGY, List.of(Long.MAX_VALUE / 2L + 1L))
                 },
                 20);
         if (overflow.maxParallelByInputs(null, Long.MAX_VALUE) != 1L) {
@@ -442,7 +442,7 @@ public final class ParallelPlanningGameTests {
                 .map(ItemResource::of)
                 .toArray(ItemResource[]::new);
         long demand = Long.MAX_VALUE / 2L;
-        OIItemInput shared = new OIItemInput.AnyOf(
+        TopoItemInput shared = new TopoItemInput.AnyOf(
                 java.util.Arrays.stream(candidates)
                         .map(item -> new ItemStackTemplate(item, 1))
                         .toList(),
@@ -455,7 +455,7 @@ public final class ParallelPlanningGameTests {
             helper.fail("Aggregate-long shared allocation should plan exactly 2 parallels, got " + planned);
         }
 
-        OIItemInput exact = OIItemInput.of(Items.IRON_INGOT, demand);
+        TopoItemInput exact = TopoItemInput.of(Items.IRON_INGOT, demand);
         long splitPlanned = ItemRecipeCapability.maxParallelByInputs(
                 new LongSupplyItemHandler(
                         new ItemResource[] {
@@ -488,20 +488,20 @@ public final class ParallelPlanningGameTests {
     private static void tickPrecheckIsTransactionFree(GameTestHelper helper) {
         MachineBlockEntity machine = placeChemicalReactor(helper);
         setItem(machine, 0, Items.COAL, 1);
-        OIRecipe recipe = new OIRecipe(
-                BuiltinOIRecipeTypes.CHEMICAL_REACTOR,
-                OIRecipe.EMPTY_INPUTS,
-                OIRecipe.EMPTY_OUTPUTS,
-                new OIRecipe.InputEntry<?>[] {
-                        new OIRecipe.InputEntry<>(ITEMS, List.of(OIItemInput.of(Items.COAL, 1)))
+        TopoRecipe recipe = new TopoRecipe(
+                BuiltinTopoRecipeTypes.CHEMICAL_REACTOR,
+                TopoRecipe.EMPTY_INPUTS,
+                TopoRecipe.EMPTY_OUTPUTS,
+                new TopoRecipe.InputEntry<?>[] {
+                        new TopoRecipe.InputEntry<>(ITEMS, List.of(TopoItemInput.of(Items.COAL, 1)))
                 },
-                OIRecipe.EMPTY_OUTPUTS,
+                TopoRecipe.EMPTY_OUTPUTS,
                 40);
         if (recipe.hasDirectTickIo()) {
             helper.fail("Item tick IO must exercise the non-direct pure precheck path");
         }
         try (Transaction ignored = Transaction.openRoot()) {
-            if (recipe.checkTickIo(machine) != OIRecipe.TickIoResult.SUCCESS) {
+            if (recipe.checkTickIo(machine) != TopoRecipe.TickIoResult.SUCCESS) {
                 helper.fail("One stored coal should satisfy the item tick precheck");
             }
             if (Transaction.getLifecycle() != Transaction.Lifecycle.OPEN) {
@@ -514,26 +514,26 @@ public final class ParallelPlanningGameTests {
     private static void duplicateDirectTickLanesAreGrouped(GameTestHelper helper) {
         MachineBlockEntity machine = placeChemicalReactor(helper);
         setScalar(machine, ScalarResourcePort.ENERGY_INPUT_1, 100);
-        OIRecipe recipe = new OIRecipe(
-                BuiltinOIRecipeTypes.CHEMICAL_REACTOR,
-                OIRecipe.EMPTY_INPUTS,
-                OIRecipe.EMPTY_OUTPUTS,
-                new OIRecipe.InputEntry<?>[] {
-                        new OIRecipe.InputEntry<>(ENERGY, List.of(60L)),
-                        new OIRecipe.InputEntry<>(ENERGY, List.of(60L))
+        TopoRecipe recipe = new TopoRecipe(
+                BuiltinTopoRecipeTypes.CHEMICAL_REACTOR,
+                TopoRecipe.EMPTY_INPUTS,
+                TopoRecipe.EMPTY_OUTPUTS,
+                new TopoRecipe.InputEntry<?>[] {
+                        new TopoRecipe.InputEntry<>(ENERGY, List.of(60L)),
+                        new TopoRecipe.InputEntry<>(ENERGY, List.of(60L))
                 },
-                OIRecipe.EMPTY_OUTPUTS,
+                TopoRecipe.EMPTY_OUTPUTS,
                 40);
         if (!recipe.hasDirectTickIo()) {
             helper.fail("Grouped scalar tick IO should use the direct lane");
         }
-        if (recipe.checkTickIo(machine) != OIRecipe.TickIoResult.INPUT_BLOCKED) {
+        if (recipe.checkTickIo(machine) != TopoRecipe.TickIoResult.INPUT_BLOCKED) {
             helper.fail("Aggregate scalar tick demand 120 must reject inventory 100");
         }
         assertScalarAmount(helper, machine, ScalarResourcePort.ENERGY_INPUT_1, 100L);
 
         setScalar(machine, ScalarResourcePort.ENERGY_INPUT_1, 120);
-        if (recipe.handleTickIo(machine) != OIRecipe.TickIoResult.SUCCESS) {
+        if (recipe.handleTickIo(machine) != TopoRecipe.TickIoResult.SUCCESS) {
             helper.fail("Aggregate scalar tick demand 120 should consume inventory 120");
         }
         assertScalarAmount(helper, machine, ScalarResourcePort.ENERGY_INPUT_1, 0L);
@@ -567,21 +567,21 @@ public final class ParallelPlanningGameTests {
     private static void recipeIndexDuplicateCatalystsUseMaxReservation(GameTestHelper helper) {
         MachineBlockEntity machine = placeChemicalReactor(helper);
         setItem(machine, 0, Items.CRAFTING_TABLE, 1);
-        List<RecipeHolder<OIRecipe>> holders = new ArrayList<>(65);
+        List<RecipeHolder<TopoRecipe>> holders = new ArrayList<>(65);
         for (int index = 1; index <= 64; index++) {
-            OIRecipe decoy = recipe(new OIRecipe.InputEntry<?>[] {
-                    new OIRecipe.InputEntry<>(ITEMS, List.of(OIItemInput.of(Items.COAL, index)))
+            TopoRecipe decoy = recipe(new TopoRecipe.InputEntry<?>[] {
+                    new TopoRecipe.InputEntry<>(ITEMS, List.of(TopoItemInput.of(Items.COAL, index)))
             });
             holders.add(new RecipeHolder<>(
                     ResourceKey.create(Registries.RECIPE, IdHelper.oi("parallel_index_decoy_" + index)),
                     decoy));
         }
-        OIRecipe targetRecipe = recipe(new OIRecipe.InputEntry<?>[] {
-                new OIRecipe.InputEntry<>(ITEMS, List.of(
-                        OIItemInput.unconsumed(Items.CRAFTING_TABLE),
-                        OIItemInput.unconsumed(Items.CRAFTING_TABLE)))
+        TopoRecipe targetRecipe = recipe(new TopoRecipe.InputEntry<?>[] {
+                new TopoRecipe.InputEntry<>(ITEMS, List.of(
+                        TopoItemInput.unconsumed(Items.CRAFTING_TABLE),
+                        TopoItemInput.unconsumed(Items.CRAFTING_TABLE)))
         });
-        RecipeHolder<OIRecipe> target = new RecipeHolder<>(
+        RecipeHolder<TopoRecipe> target = new RecipeHolder<>(
                 ResourceKey.create(Registries.RECIPE, IdHelper.oi("parallel_index_duplicate_catalysts")),
                 targetRecipe);
         holders.add(target);
@@ -589,7 +589,7 @@ public final class ParallelPlanningGameTests {
         if (!targetRecipe.matchInputs(machine)) {
             helper.fail("The exact planner must let one catalyst satisfy duplicate presence reservations");
         }
-        RecipeHolder<OIRecipe> found = OIRecipeSearchIndex.build(holders).findRecipe(machine);
+        RecipeHolder<TopoRecipe> found = TopoRecipeSearchIndex.build(holders).findRecipe(machine);
         if (found != target) {
             helper.fail("The indexed 65-recipe path pruned the duplicate-catalyst target");
         }
@@ -599,9 +599,9 @@ public final class ParallelPlanningGameTests {
     private static void fluidPlannerSnapshotsComplexPoolOnce(GameTestHelper helper) {
         int distinctResources = 32;
         FluidResource[] resources = new FluidResource[distinctResources];
-        List<OIFluidIngredient> inputs = new ArrayList<>(distinctResources * 2);
+        List<TopoFluidIngredient> inputs = new ArrayList<>(distinctResources * 2);
         for (int index = 0; index < distinctResources; index++) {
-            OIFluidIngredient ingredient = distinctWaterIngredient(index);
+            TopoFluidIngredient ingredient = distinctWaterIngredient(index);
             resources[index] = ingredient.resource();
             inputs.add(ingredient);
             inputs.add(ingredient);
@@ -630,13 +630,13 @@ public final class ParallelPlanningGameTests {
         long itemInputs = ItemRecipeCapability.maxParallelByInputs(
                 new UnreadableResourceHandler<>(1),
                 java.util.Collections.nCopies(
-                        oversizedInputCount, OIItemInput.of(Items.IRON_INGOT, 1L)),
+                        oversizedInputCount, TopoItemInput.of(Items.IRON_INGOT, 1L)),
                 Long.MAX_VALUE);
         if (itemInputs != 0L) {
             helper.fail("Oversized item input lists must fail closed, got " + itemInputs);
         }
 
-        OIFluidIngredient water = fluid(Fluids.WATER, 1);
+        TopoFluidIngredient water = fluid(Fluids.WATER, 1);
         long fluidInputs = FluidRecipeCapability.maxParallelByInputs(
                 new UnreadableResourceHandler<>(1),
                 java.util.Collections.nCopies(oversizedInputCount, water),
@@ -647,7 +647,7 @@ public final class ParallelPlanningGameTests {
 
         long itemSlots = ItemRecipeCapability.maxParallelByInputs(
                 new UnreadableResourceHandler<>(oversizedHandlerSlots),
-                List.of(OIItemInput.of(Items.IRON_INGOT, 1L)),
+                List.of(TopoItemInput.of(Items.IRON_INGOT, 1L)),
                 1L);
         long fluidSlots = FluidRecipeCapability.maxParallelByInputs(
                 new UnreadableResourceHandler<>(oversizedHandlerSlots),
@@ -660,7 +660,7 @@ public final class ParallelPlanningGameTests {
     }
 
     private static void fluidPlannerRejectsAggregateLongOverflow(GameTestHelper helper) {
-        OIFluidIngredient water = fluid(Fluids.WATER, 1);
+        TopoFluidIngredient water = fluid(Fluids.WATER, 1);
         CountingLongFluidHandler handler = new CountingLongFluidHandler(
                 new FluidResource[] { water.resource() }, Long.MAX_VALUE);
         long planned = FluidRecipeCapability.maxParallelByInputs(
@@ -677,8 +677,8 @@ public final class ParallelPlanningGameTests {
     }
 
     private static void outputPlannersPreserveDeclaredOrder(GameTestHelper helper) {
-        OIItemOutput iron = OIItemOutput.of(Items.IRON_INGOT, 1L);
-        OIItemOutput gold = OIItemOutput.of(Items.GOLD_INGOT, 1L);
+        TopoItemOutput iron = TopoItemOutput.of(Items.IRON_INGOT, 1L);
+        TopoItemOutput gold = TopoItemOutput.of(Items.GOLD_INGOT, 1L);
         OrderSensitiveOutputHandler<ItemResource> items = new OrderSensitiveOutputHandler<>(
                 ItemResource.EMPTY, iron.resource());
         if (!ItemRecipeCapability.canInsertOutputs(items, List.of(gold, iron))) {
@@ -688,8 +688,8 @@ public final class ParallelPlanningGameTests {
             helper.fail("Reversing item output declaration must expose the constrained-slot conflict");
         }
 
-        OIFluidIngredient water = fluid(Fluids.WATER, 1);
-        OIFluidIngredient lava = fluid(Fluids.LAVA, 1);
+        TopoFluidIngredient water = fluid(Fluids.WATER, 1);
+        TopoFluidIngredient lava = fluid(Fluids.LAVA, 1);
         OrderSensitiveOutputHandler<FluidResource> fluids = new OrderSensitiveOutputHandler<>(
                 FluidResource.EMPTY, water.resource());
         if (!FluidRecipeCapability.canInsertOutputs(fluids, List.of(lava, water))) {
@@ -702,16 +702,16 @@ public final class ParallelPlanningGameTests {
         LongSupplyItemHandler fullItems = new LongSupplyItemHandler(iron.resource(), 10L);
         if (!ItemRecipeCapability.matchOutputAfterInputs(
                 fullItems,
-                List.of(OIItemInput.of(Items.IRON_INGOT, 10L)),
+                List.of(TopoItemInput.of(Items.IRON_INGOT, 10L)),
                 fullItems,
-                List.of(OIItemOutput.of(Items.IRON_INGOT, 10L)))) {
+                List.of(TopoItemOutput.of(Items.IRON_INGOT, 10L)))) {
             helper.fail("A full shared item slot must reuse capacity released by tick input");
         }
         if (ItemRecipeCapability.matchOutputAfterInputs(
                 fullItems,
-                List.of(OIItemInput.of(Items.IRON_INGOT, 10L)),
+                List.of(TopoItemInput.of(Items.IRON_INGOT, 10L)),
                 fullItems,
-                List.of(OIItemOutput.of(Items.IRON_INGOT, 11L)))) {
+                List.of(TopoItemOutput.of(Items.IRON_INGOT, 11L)))) {
             helper.fail("A net-positive item exchange must remain blocked at full capacity");
         }
 
@@ -763,30 +763,30 @@ public final class ParallelPlanningGameTests {
         setScalar(machine, ScalarResourcePort.ENERGY_INPUT_1, 100_000);
         setScalar(machine, ScalarResourcePort.HEAT_INPUT_1, 100_000);
 
-        List<OIItemInput> firstItemGroup = List.of(
-                OIItemInput.of(Items.IRON_INGOT, 2),
-                OIItemInput.of(Items.GOLD_INGOT, 2),
+        List<TopoItemInput> firstItemGroup = List.of(
+                TopoItemInput.of(Items.IRON_INGOT, 2),
+                TopoItemInput.of(Items.GOLD_INGOT, 2),
                 anyOf(2, Items.IRON_INGOT, Items.GOLD_INGOT),
                 anyOf(2, Items.IRON_INGOT, Items.COPPER_INGOT));
-        List<OIItemInput> secondItemGroup = List.of(
+        List<TopoItemInput> secondItemGroup = List.of(
                 anyOf(2, Items.GOLD_INGOT, Items.REDSTONE),
                 anyOf(2, Items.COPPER_INGOT, Items.REDSTONE),
                 anyOf(2, Items.IRON_INGOT, Items.GOLD_INGOT, Items.COPPER_INGOT, Items.REDSTONE),
-                OIItemInput.unconsumed(Items.IRON_INGOT));
-        OIRecipe.InputEntry<?>[] itemInputs = {
-                new OIRecipe.InputEntry<>(ITEMS, firstItemGroup),
-                new OIRecipe.InputEntry<>(ITEMS, secondItemGroup)
+                TopoItemInput.unconsumed(Items.IRON_INGOT));
+        TopoRecipe.InputEntry<?>[] itemInputs = {
+                new TopoRecipe.InputEntry<>(ITEMS, firstItemGroup),
+                new TopoRecipe.InputEntry<>(ITEMS, secondItemGroup)
         };
-        OIRecipe.InputEntry<?>[] fluidInputs = {
-                new OIRecipe.InputEntry<>(FLUIDS, List.of(fluid(Fluids.WATER, 500))),
-                new OIRecipe.InputEntry<>(FLUIDS, List.of(fluid(Fluids.WATER, 700), fluid(Fluids.LAVA, 800)))
+        TopoRecipe.InputEntry<?>[] fluidInputs = {
+                new TopoRecipe.InputEntry<>(FLUIDS, List.of(fluid(Fluids.WATER, 500))),
+                new TopoRecipe.InputEntry<>(FLUIDS, List.of(fluid(Fluids.WATER, 700), fluid(Fluids.LAVA, 800)))
         };
-        OIRecipe.InputEntry<?>[] scalarInputs = {
-                new OIRecipe.InputEntry<>(ENERGY, List.of(1_000L)),
-                new OIRecipe.InputEntry<>(ENERGY, List.of(500L)),
-                new OIRecipe.InputEntry<>(HEAT, List.of(2_000L))
+        TopoRecipe.InputEntry<?>[] scalarInputs = {
+                new TopoRecipe.InputEntry<>(ENERGY, List.of(1_000L)),
+                new TopoRecipe.InputEntry<>(ENERGY, List.of(500L)),
+                new TopoRecipe.InputEntry<>(HEAT, List.of(2_000L))
         };
-        OIRecipe.InputEntry<?>[] allInputs = new OIRecipe.InputEntry<?>[itemInputs.length + fluidInputs.length + scalarInputs.length];
+        TopoRecipe.InputEntry<?>[] allInputs = new TopoRecipe.InputEntry<?>[itemInputs.length + fluidInputs.length + scalarInputs.length];
         System.arraycopy(itemInputs, 0, allInputs, 0, itemInputs.length);
         System.arraycopy(fluidInputs, 0, allInputs, itemInputs.length, fluidInputs.length);
         System.arraycopy(
@@ -799,11 +799,11 @@ public final class ParallelPlanningGameTests {
         long complexDemand = (long) Integer.MAX_VALUE + 4_096L + scenarioIndex;
         long complexSupply = Math.multiplyExact(complexDemand, COMPLEX_POOL_PARALLEL);
         ItemResource[] complexResources = new ItemResource[COMPLEX_POOL_RESOURCE_COUNT];
-        List<OIItemInput> complexItemInputs = new ArrayList<>(COMPLEX_POOL_RESOURCE_COUNT);
+        List<TopoItemInput> complexItemInputs = new ArrayList<>(COMPLEX_POOL_RESOURCE_COUNT);
         for (int index = 0; index < COMPLEX_POOL_RESOURCE_COUNT; index++) {
             complexResources[index] = ItemResource.of(COMPLEX_POOL_ITEMS[index]);
             if (index < 32) {
-                complexItemInputs.add(OIItemInput.of(COMPLEX_POOL_ITEMS[index], complexDemand));
+                complexItemInputs.add(TopoItemInput.of(COMPLEX_POOL_ITEMS[index], complexDemand));
                 continue;
             }
             int next = 32 + (index - 31) % 16;
@@ -812,20 +812,20 @@ public final class ParallelPlanningGameTests {
                     COMPLEX_POOL_ITEMS[index],
                     COMPLEX_POOL_ITEMS[next]));
         }
-        List<OIItemInput> immutableComplexInputs = List.copyOf(complexItemInputs);
-        OIRecipe complexRecipe = new OIRecipe(
-                BuiltinOIRecipeTypes.CHEMICAL_REACTOR,
-                new OIRecipe.InputEntry<?>[] {
-                        new OIRecipe.InputEntry<>(ITEMS, immutableComplexInputs)
+        List<TopoItemInput> immutableComplexInputs = List.copyOf(complexItemInputs);
+        TopoRecipe complexRecipe = new TopoRecipe(
+                BuiltinTopoRecipeTypes.CHEMICAL_REACTOR,
+                new TopoRecipe.InputEntry<?>[] {
+                        new TopoRecipe.InputEntry<>(ITEMS, immutableComplexInputs)
                 },
-                new OIRecipe.OutputEntry<?>[] {
-                        new OIRecipe.OutputEntry<>(ITEMS, List.of(OIItemOutput.of(Items.IRON_NUGGET, 3L)))
+                new TopoRecipe.OutputEntry<?>[] {
+                        new TopoRecipe.OutputEntry<>(ITEMS, List.of(TopoItemOutput.of(Items.IRON_NUGGET, 3L)))
                 },
-                new OIRecipe.InputEntry<?>[] {
-                        new OIRecipe.InputEntry<>(ENERGY, List.of(1_000L)),
-                        new OIRecipe.InputEntry<>(HEAT, List.of(500L))
+                new TopoRecipe.InputEntry<?>[] {
+                        new TopoRecipe.InputEntry<>(ENERGY, List.of(1_000L)),
+                        new TopoRecipe.InputEntry<>(HEAT, List.of(500L))
                 },
-                OIRecipe.EMPTY_OUTPUTS,
+                TopoRecipe.EMPTY_OUTPUTS,
                 40);
         return new PerformanceScenario(
                 machine,
@@ -844,8 +844,8 @@ public final class ParallelPlanningGameTests {
                 complexDemand);
     }
 
-    private static OIRecipe recipe(OIRecipe.InputEntry<?>[] inputs) {
-        return new OIRecipe(BuiltinOIRecipeTypes.CHEMICAL_REACTOR, inputs, OIRecipe.EMPTY_OUTPUTS, 40);
+    private static TopoRecipe recipe(TopoRecipe.InputEntry<?>[] inputs) {
+        return new TopoRecipe(BuiltinTopoRecipeTypes.CHEMICAL_REACTOR, inputs, TopoRecipe.EMPTY_OUTPUTS, 40);
     }
 
     private static MachineBlockEntity placeChemicalReactor(GameTestHelper helper) {
@@ -853,30 +853,30 @@ public final class ParallelPlanningGameTests {
     }
 
     private static MachineBlockEntity placeChemicalReactor(GameTestHelper helper, BlockPos position) {
-        helper.setBlock(position, BuiltinOIMachines.CHEMICAL_REACTOR_T2.registeredBlock().getDefaultState());
+        helper.setBlock(position, BuiltinTopoMachines.CHEMICAL_REACTOR_T2.registeredBlock().getDefaultState());
         return helper.getBlockEntity(position, MachineBlockEntity.class);
     }
 
-    private static OIItemInput anyOf(int count, Item... items) {
-        return new OIItemInput.AnyOf(java.util.Arrays.stream(items)
+    private static TopoItemInput anyOf(int count, Item... items) {
+        return new TopoItemInput.AnyOf(java.util.Arrays.stream(items)
                 .map(item -> new ItemStackTemplate(item, count))
                 .toList());
     }
 
-    private static OIItemInput anyOfLong(long count, Item... items) {
-        return new OIItemInput.AnyOf(java.util.Arrays.stream(items)
+    private static TopoItemInput anyOfLong(long count, Item... items) {
+        return new TopoItemInput.AnyOf(java.util.Arrays.stream(items)
                 .map(item -> new ItemStackTemplate(item, 1))
                 .toList(), count);
     }
 
-    private static OIFluidIngredient fluid(net.minecraft.world.level.material.Fluid fluid, int amount) {
-        return new OIFluidIngredient(new FluidStack(fluid, amount));
+    private static TopoFluidIngredient fluid(net.minecraft.world.level.material.Fluid fluid, int amount) {
+        return new TopoFluidIngredient(new FluidStack(fluid, amount));
     }
 
-    private static OIFluidIngredient distinctWaterIngredient(int identity) {
+    private static TopoFluidIngredient distinctWaterIngredient(int identity) {
         FluidStack stack = new FluidStack(Fluids.WATER, 1);
         stack.set(DataComponents.CUSTOM_NAME, Component.literal("parallel-planner-" + identity));
-        return new OIFluidIngredient(stack);
+        return new TopoFluidIngredient(stack);
     }
 
     private static void setItem(MachineBlockEntity machine, int slot, Item item, int amount) {
@@ -888,7 +888,7 @@ public final class ParallelPlanningGameTests {
 
     private static void setScalar(
                                   MachineBlockEntity machine,
-                                  net.ptcrys.topo.apiv2.machine.component.ComponentKey<ScalarResourcePort> key,
+                                  net.ptcrys.topo.api.machine.component.ComponentKey<ScalarResourcePort> key,
                                   int amount) {
         ScalarResourcePort port = machine.machineComponents().require(key);
         port.handler().set(0, port.resource(), amount);
@@ -897,7 +897,7 @@ public final class ParallelPlanningGameTests {
     private static void assertScalarAmount(
                                            GameTestHelper helper,
                                            MachineBlockEntity machine,
-                                           net.ptcrys.topo.apiv2.machine.component.ComponentKey<ScalarResourcePort> key,
+                                           net.ptcrys.topo.api.machine.component.ComponentKey<ScalarResourcePort> key,
                                            long expected) {
         ScalarResourcePort port = machine.machineComponents().require(key);
         long actual = port.handler().getAmountAsLong(0);
@@ -908,7 +908,7 @@ public final class ParallelPlanningGameTests {
 
     private static void assertParallelInsideCallerTransaction(
                                                               GameTestHelper helper,
-                                                              OIRecipe recipe,
+                                                              TopoRecipe recipe,
                                                               MachineBlockEntity machine,
                                                               long cap,
                                                               long expected) {
@@ -925,7 +925,7 @@ public final class ParallelPlanningGameTests {
 
     private static void assertParallel(
                                        GameTestHelper helper,
-                                       OIRecipe recipe,
+                                       TopoRecipe recipe,
                                        MachineBlockEntity machine,
                                        long cap,
                                        long expected) {
@@ -953,8 +953,8 @@ public final class ParallelPlanningGameTests {
 
     private static void assertAmount(GameTestHelper helper, Object content, long expected, String label) {
         long actual = switch (content) {
-            case OIItemInput input -> input.count();
-            case OIItemOutput output -> output.count();
+            case TopoItemInput input -> input.count();
+            case TopoItemOutput output -> output.count();
             default -> -1;
         };
         if (actual != expected) {
@@ -989,17 +989,17 @@ public final class ParallelPlanningGameTests {
 
     record PerformanceScenario(
                                MachineBlockEntity machine,
-                               OIRecipe recipe,
-                               OIRecipe itemRecipe,
-                               OIRecipe fluidRecipe,
-                               OIRecipe scalarRecipe,
+                               TopoRecipe recipe,
+                               TopoRecipe itemRecipe,
+                               TopoRecipe fluidRecipe,
+                               TopoRecipe scalarRecipe,
                                long expectedParallel,
                                long expectedItemParallel,
                                long expectedFluidParallel,
                                long expectedScalarParallel,
                                ResourceHandler<ItemResource> complexItemHandler,
-                               List<OIItemInput> complexItemInputs,
-                               OIRecipe complexRecipe,
+                               List<TopoItemInput> complexItemInputs,
+                               TopoRecipe complexRecipe,
                                long expectedComplexParallel,
                                long complexDemand) {
 

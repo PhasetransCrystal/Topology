@@ -1,20 +1,19 @@
 package net.ptcrys.topo;
 
 import net.ptcrys.registrylib.RegistryCore;
-import net.ptcrys.topo.api.async.OIAsyncExecutors;
+import net.ptcrys.topo.api.OfficialTopoAPIPlugin;
+import net.ptcrys.topo.api.api.async.TopoAsyncExecutors;
+import net.ptcrys.topo.api.api.plugin.TopoPluginEngine;
+import net.ptcrys.topo.api.api.plugin.TopoPlugins;
+import net.ptcrys.topo.api.api.tick.TickHeartbeat;
+import net.ptcrys.topo.api.api.visual.CtmClientInit;
+import net.ptcrys.topo.api.machine.Machines;
+import net.ptcrys.topo.api.machine.data.MachineDataSyncBatcher;
+import net.ptcrys.topo.api.machine.data.network.MachineDataNetworking;
+import net.ptcrys.topo.api.machine.multiblock.MultiblockChangeWatcher;
 import net.ptcrys.topo.api.pipe.network.PipeNetworkEngine;
 import net.ptcrys.topo.api.pipe.ui.PipeSpecTooltips;
-import net.ptcrys.topo.api.player.PlayerLoginNotice;
-import net.ptcrys.topo.api.tick.TickHeartbeat;
-import net.ptcrys.topo.api.visual.CtmClientInit;
-import net.ptcrys.topo.apiv2.OfficialOIAPIPlugin;
-import net.ptcrys.topo.apiv2.machine.Machines;
-import net.ptcrys.topo.apiv2.machine.data.MachineDataSyncBatcher;
-import net.ptcrys.topo.apiv2.machine.data.network.MachineDataNetworking;
-import net.ptcrys.topo.apiv2.machine.multiblock.MultiblockChangeWatcher;
-import net.ptcrys.topo.apiv2.plugin.OIPluginEngine;
-import net.ptcrys.topo.apiv2.plugin.OIPlugins;
-import net.ptcrys.topo.apiv2.recipe.search.OIRecipeSearchEvents;
+import net.ptcrys.topo.api.recipe.search.TopoRecipeSearchEvents;
 import net.ptcrys.topo.client.debug.JeiLookupProbe;
 import net.ptcrys.topo.client.debug.MachineNetworkProfilerProbe;
 import net.ptcrys.topo.client.debug.MachinePerfProbe;
@@ -23,9 +22,9 @@ import net.ptcrys.topo.client.debug.PipeProbe;
 import net.ptcrys.topo.client.debug.PortHighlightProbe;
 import net.ptcrys.topo.client.debug.TooltipProbe;
 import net.ptcrys.topo.client.debug.UiPerfProbe;
+import net.ptcrys.topo.data.OfficialTopoPlugin;
 import net.ptcrys.topo.data.bootstrap.ContentRegistrationBootstrap;
-import net.ptcrys.topo.datav2.OfficialOIPlugin;
-import net.ptcrys.topo.dev.OIDevCommands;
+import net.ptcrys.topo.dev.TopoDevCommands;
 import net.ptcrys.topo.gametest.GrindingMachineSeparationGameTests;
 import net.ptcrys.topo.gametest.HatchUiGameTests;
 import net.ptcrys.topo.gametest.MaceratorMachineGameTests;
@@ -54,7 +53,7 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.registries.RegisterEvent;
 
 /**
- * Host mod entry. Plugins are registered explicitly ({@link OIPlugins#register}); content bootstrap
+ * Host mod entry. Plugins are registered explicitly ({@link TopoPlugins#register}); content bootstrap
  * runs on the first {@link RegisterEvent} at {@link EventPriority#HIGHEST} so every mod constructor
  * can register first, and RegistryLib ({@code LOW}) still sees queued entries. Official and
  * third-party share that path (no SPI).
@@ -69,28 +68,27 @@ public class Topology {
 
     public Topology(IEventBus modEventBus) {
         // Same path as third-party: explicit register in @Mod constructor.
-        // Recipe foundation/types run inside OIPluginEngine.prepare() (no early *Bootstrap).
-        OIPlugins.register(OfficialOIAPIPlugin.INSTANCE);
-        OIPlugins.register(OfficialOIPlugin.INSTANCE);
+        // Recipe foundation/types run inside TopoPluginEngine.prepare() (no early *Bootstrap).
+        TopoPlugins.register(OfficialTopoAPIPlugin.INSTANCE);
+        TopoPlugins.register(OfficialTopoPlugin.INSTANCE);
 
         // Defer engine until all @Mod constructors have had a chance to register.
         modEventBus.addListener(EventPriority.HIGHEST, Topology::bootstrapContentPipeline);
 
         Machines.registerResourceCapabilities(modEventBus);
         // 必须先于 PipeSpecTooltips:它的 setup 任务会 freeze ItemTooltipUis,enqueueWork 按提交序执行。
-        net.ptcrys.topo.datav2.equipment.EquipmentRuntimeBindings.register(modEventBus);
-        net.ptcrys.topo.datav2.material.MaterialRuntimeBindings.register(modEventBus);
-        net.ptcrys.topo.datav2.machine.MachineRuntimeBindings.register(modEventBus);
+        net.ptcrys.topo.data.equipment.EquipmentRuntimeBindings.register(modEventBus);
+        net.ptcrys.topo.data.material.MaterialRuntimeBindings.register(modEventBus);
+        net.ptcrys.topo.data.machine.MachineRuntimeBindings.register(modEventBus);
         PipeSpecTooltips.register(modEventBus);
         CtmClientInit.register(modEventBus);
         AeIntegration.register(modEventBus);
         MachineDataNetworking.register(modEventBus);
         MachineDataSyncBatcher.register(modEventBus);
-        OIAsyncExecutors.register();
-        OIRecipeSearchEvents.register(modEventBus);
+        TopoAsyncExecutors.register();
+        TopoRecipeSearchEvents.register(modEventBus);
         MultiblockChangeWatcher.register();
         PipeNetworkEngine.register();
-        PlayerLoginNotice.register();
         net.ptcrys.topo.api.pipe.survey.PipeSurveyNetworking.register(modEventBus);
         net.ptcrys.topo.client.survey.PipeSurveyClientRenderer.register();
         TickHeartbeat.register(modEventBus);
@@ -106,7 +104,7 @@ public class Topology {
         net.ptcrys.topo.client.debug.MachineDestroyedFeedbackProbe.register();
         net.ptcrys.topo.client.debug.PopupShellProbe.register();
         net.ptcrys.topo.client.debug.AeUiSyncProbe.register();
-        OIDevCommands.register();
+        TopoDevCommands.register();
         if (!RecipeLogicProfilerGameTests.isProfilerOnlyMode()) {
             modEventBus.addListener(net.ptcrys.topo.gametest.EquipmentGameTests::register);
             modEventBus.addListener(MaceratorMachineGameTests::register);
@@ -146,10 +144,10 @@ public class Topology {
         }
         contentBootstrapped = true;
 
-        OIPluginEngine.prepare(); // recipe foundation/types → material → equipment
+        TopoPluginEngine.prepare(); // recipe foundation/types → material → equipment
         ContentRegistrationBootstrap.bootstrap();
-        OIPluginEngine.bootstrapMachine();
-        OIPluginEngine.bootstrapOre();
-        OIPluginEngine.bootstrapLang();
+        TopoPluginEngine.bootstrapMachine();
+        TopoPluginEngine.bootstrapOre();
+        TopoPluginEngine.bootstrapLang();
     }
 }

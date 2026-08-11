@@ -22,7 +22,7 @@ import java.util.function.Supplier;
 
 /**
  * Virtual input storage backed by AE2. Extractions are modulated immediately and refunded on
- * transaction abort, so OI recipe transactions remain rollback-safe even though AE2 storage is
+ * transaction abort, so Topo recipe transactions remain rollback-safe even though AE2 storage is
  * not NeoForge-transactional. Insertion is always rejected; configured slots define the visible
  * window: {@code getAmountAsLong = min(network available, configured target − in-flight)}.
  */

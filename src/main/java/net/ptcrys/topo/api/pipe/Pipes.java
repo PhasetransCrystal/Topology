@@ -1,7 +1,7 @@
 package net.ptcrys.topo.api.pipe;
 
 import net.ptcrys.registrylib.RegistryCore;
-import net.ptcrys.topo.api.infrastructure.FreezableStrategyRegistry;
+import net.ptcrys.topo.api.api.infrastructure.FreezableStrategyRegistry;
 import net.ptcrys.topo.helper.IdHelper;
 
 import net.minecraft.resources.Identifier;
@@ -30,7 +30,7 @@ public final class Pipes {
 
     private Pipes() {}
 
-    /** Begin declaring a pipe. The path is the identity definition point in the OI namespace. */
+    /** Begin declaring a pipe. The path is the identity definition point in the Topo namespace. */
     public static Builder register(String path) {
         return new Builder(IdHelper.oi(Objects.requireNonNull(path, "pipe path")));
     }

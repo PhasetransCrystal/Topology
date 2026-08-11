@@ -1,13 +1,13 @@
 package net.ptcrys.topo.integration.ae2;
 
-import net.ptcrys.topo.apiv2.machine.component.ComponentContext;
-import net.ptcrys.topo.apiv2.machine.component.ComponentKey;
-import net.ptcrys.topo.apiv2.machine.multiblock.ability.PartRoleMount;
-import net.ptcrys.topo.apiv2.machine.resource.AutomationIo;
-import net.ptcrys.topo.apiv2.machine.resource.PlayerAccess;
-import net.ptcrys.topo.apiv2.machine.resource.PortAccess;
-import net.ptcrys.topo.datav2.machine.common.component.resource.ItemResourcePortMetadata;
-import net.ptcrys.topo.datav2.recipe.BuiltinOIResourceIntegrations;
+import net.ptcrys.topo.api.machine.component.ComponentContext;
+import net.ptcrys.topo.api.machine.component.ComponentKey;
+import net.ptcrys.topo.api.machine.multiblock.ability.PartRoleMount;
+import net.ptcrys.topo.api.machine.resource.AutomationIo;
+import net.ptcrys.topo.api.machine.resource.PlayerAccess;
+import net.ptcrys.topo.api.machine.resource.PortAccess;
+import net.ptcrys.topo.data.machine.common.component.resource.ItemResourcePortMetadata;
+import net.ptcrys.topo.data.recipe.BuiltinTopoResourceIntegrations;
 
 import net.neoforged.neoforge.transfer.item.ItemResource;
 
@@ -21,7 +21,7 @@ public final class AeItemBufferPort extends AeBufferPort<ItemResource> {
                 ItemResource.class,
                 ItemResource.EMPTY,
                 maxKinds,
-                BuiltinOIResourceIntegrations.ITEM.resourceType());
+                BuiltinTopoResourceIntegrations.ITEM.resourceType());
     }
 
     public static PartRoleMount<AeItemBufferPort> mount(int maxKinds) {

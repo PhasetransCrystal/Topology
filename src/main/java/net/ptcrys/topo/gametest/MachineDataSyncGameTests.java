@@ -1,15 +1,17 @@
 package net.ptcrys.topo.gametest;
 
-import net.ptcrys.topo.apiv2.machine.MachineBlockEntity;
-import net.ptcrys.topo.apiv2.machine.Machines;
-import net.ptcrys.topo.apiv2.machine.component.RecipeLogic;
-import net.ptcrys.topo.apiv2.machine.data.DataInt;
-import net.ptcrys.topo.apiv2.machine.data.MachineDataSyncBatcher;
-import net.ptcrys.topo.apiv2.machine.data.network.MachineDataBatchS2CPayload;
-import net.ptcrys.topo.apiv2.machine.ui.ComponentCollector;
-import net.ptcrys.topo.apiv2.machine.ui.PageCollector;
-import net.ptcrys.topo.datav2.machine.BuiltinOIMachines;
-import net.ptcrys.topo.datav2.machine.common.component.resource.ScalarResourcePort;
+import net.ptcrys.topo.api.machine.MachineBlockEntity;
+import net.ptcrys.topo.api.machine.Machines;
+import net.ptcrys.topo.api.machine.component.RecipeLogic;
+import net.ptcrys.topo.api.machine.data.DataInt;
+import net.ptcrys.topo.api.machine.data.MachineDataSyncBatcher;
+import net.ptcrys.topo.api.machine.data.network.MachineDataBatchS2CPayload;
+import net.ptcrys.topo.api.machine.ui.ComponentCollector;
+import net.ptcrys.topo.api.machine.ui.PageCollector;
+import net.ptcrys.topo.data.machine.BuiltinTopoMachines;
+import net.ptcrys.topo.data.machine.common.component.resource.ScalarResourcePort;
+import net.ptcrys.topo.data.material.BuiltinTopoMaterialForms;
+import net.ptcrys.topo.data.material.BuiltinTopoMaterials;
 import net.ptcrys.topo.helper.IdHelper;
 import net.ptcrys.topo.helper.MaterialHelper;
 
@@ -149,7 +151,7 @@ public final class MachineDataSyncGameTests {
     private static void machineDataUnreadyFieldAccessCrashes(GameTestHelper helper) {
         MachineBlockEntity machine = Machines.createBlockEntity(
                 FIRST_POS,
-                BuiltinOIMachines.MACERATOR_T1.registeredBlock().getDefaultState());
+                BuiltinTopoMachines.MACERATOR_T1.registeredBlock().getDefaultState());
         DataInt contractField = machine.data().scope("contract_test").intField("value", 0)
                 .saveNone()
                 .syncNone()
@@ -177,7 +179,7 @@ public final class MachineDataSyncGameTests {
     private static void machineDataUnreadyUiCollectionDeclaresBindingsWithoutFieldReads(GameTestHelper helper) {
         MachineBlockEntity machine = Machines.createBlockEntity(
                 FIRST_POS,
-                BuiltinOIMachines.MACERATOR_T1.registeredBlock().getDefaultState());
+                BuiltinTopoMachines.MACERATOR_T1.registeredBlock().getDefaultState());
         RecipeLogic logic = machine.machineComponents().require(RecipeLogic.RECIPE_LOGIC_1);
 
         PageCollector pages = new PageCollector();
@@ -230,7 +232,7 @@ public final class MachineDataSyncGameTests {
     }
 
     private static MachineBlockEntity placeMacerator(GameTestHelper helper, BlockPos pos) {
-        helper.setBlock(pos, BuiltinOIMachines.MACERATOR_T1.registeredBlock().getDefaultState());
+        helper.setBlock(pos, BuiltinTopoMachines.MACERATOR_T1.registeredBlock().getDefaultState());
         MachineBlockEntity machine = helper.getBlockEntity(pos, MachineBlockEntity.class);
         // 研磨配方按 tick 抽电;测试机起手满能,聚焦各自的本职断言。
         ScalarResourcePort energy = machine.machineComponents().require(ScalarResourcePort.ENERGY_INPUT_1);
@@ -241,7 +243,7 @@ public final class MachineDataSyncGameTests {
     private static SyncFieldMachine newExplicitSyncMachine(GameTestHelper helper, BlockPos pos) {
         MachineBlockEntity machine = Machines.createBlockEntity(
                 pos,
-                BuiltinOIMachines.MACERATOR_T1.registeredBlock().getDefaultState());
+                BuiltinTopoMachines.MACERATOR_T1.registeredBlock().getDefaultState());
         DataInt field = machine.data().scope("contract_sync").intField("value", 0)
                 .saveNone()
                 .syncToClientAtEndOfDirtyTick()
@@ -253,7 +255,7 @@ public final class MachineDataSyncGameTests {
     private static SyncFieldMachine newExplicitNoneMachine(GameTestHelper helper, BlockPos pos) {
         MachineBlockEntity machine = Machines.createBlockEntity(
                 pos,
-                BuiltinOIMachines.MACERATOR_T1.registeredBlock().getDefaultState());
+                BuiltinTopoMachines.MACERATOR_T1.registeredBlock().getDefaultState());
         DataInt field = machine.data().scope("contract_none").intField("value", 0)
                 .saveNone()
                 .syncNone()
@@ -294,8 +296,8 @@ public final class MachineDataSyncGameTests {
 
     private static ItemResource ironOreResource() {
         return ItemResource.of(MaterialHelper.requireItem(
-                net.ptcrys.topo.datav2.material.BuiltinOIMaterials.IRON,
-                net.ptcrys.topo.datav2.material.BuiltinOIMaterialForms.ORE));
+                BuiltinTopoMaterials.IRON,
+                BuiltinTopoMaterialForms.ORE));
     }
 
     private static RecipeLogic requireWorking(GameTestHelper helper, MachineBlockEntity machine) {

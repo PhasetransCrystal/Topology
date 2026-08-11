@@ -1,20 +1,20 @@
 package net.ptcrys.topo.integration.jei.ae2;
 
-import net.ptcrys.topo.integration.jei.OIJeiCategoryRegistry;
-import net.ptcrys.topo.integration.jei.OIMultiblockJeiCategory;
-import net.ptcrys.topo.integration.jei.OIMultiblockJeiUiFactory;
+import net.ptcrys.topo.integration.jei.TopoJeiCategoryRegistry;
+import net.ptcrys.topo.integration.jei.TopoMultiblockJeiCategory;
+import net.ptcrys.topo.integration.jei.TopoMultiblockJeiUiFactory;
 
 import mezz.jei.api.registration.IRecipeTransferRegistration;
 
 /**
  * Registration entry for the JEI shift-encode-to-AE2 feature: one
- * {@link Ae2OIPatternTransferHandler} per recipe category (so JEI's per-{@code (containerClass,
+ * {@link Ae2TopoPatternTransferHandler} per recipe category (so JEI's per-{@code (containerClass,
  * recipeType)} lookup short-circuits AE2's own universal handler before it can misread the recipe
  * slot view), plus the {@link MultiblockPatternTransferHandler} that opens the pattern builder
  * popup from the multiblock structure category.
  *
  * <p>
- * The category specs are read from {@link OIJeiCategoryRegistry#recipeCategories()} — the same
+ * The category specs are read from {@link TopoJeiCategoryRegistry#recipeCategories()} — the same
  * cached list the category registration consumes — so the handlers see the exact
  * {@code IRecipeType} instances JEI registered.
  *
@@ -36,18 +36,18 @@ public final class Ae2PatternTransferRegistrar {
      */
     static void register(IRecipeTransferRegistration registration, Ae2PatternEncoder encoder) {
         var helper = registration.getTransferHelper();
-        for (OIJeiCategoryRegistry.RecipeCategorySpec spec : OIJeiCategoryRegistry.recipeCategories()) {
+        for (TopoJeiCategoryRegistry.RecipeCategorySpec spec : TopoJeiCategoryRegistry.recipeCategories()) {
             registration.addRecipeTransferHandler(
-                    new Ae2OIPatternTransferHandler(helper, spec.jeiRecipeType(), encoder),
+                    new Ae2TopoPatternTransferHandler(helper, spec.jeiRecipeType(), encoder),
                     spec.jeiRecipeType());
         }
 
         // Multiblock structure page → pattern builder popup. The category itself is only
         // registered when controllers exist; mirror that condition here.
-        if (!OIMultiblockJeiUiFactory.controllerDefinitions().isEmpty()) {
+        if (!TopoMultiblockJeiUiFactory.controllerDefinitions().isEmpty()) {
             registration.addRecipeTransferHandler(
-                    new MultiblockPatternTransferHandler(helper, OIMultiblockJeiCategory.TYPE),
-                    OIMultiblockJeiCategory.TYPE);
+                    new MultiblockPatternTransferHandler(helper, TopoMultiblockJeiCategory.TYPE),
+                    TopoMultiblockJeiCategory.TYPE);
         }
     }
 }

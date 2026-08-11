@@ -1,15 +1,15 @@
 package net.ptcrys.topo.client.debug;
 
+import net.ptcrys.topo.api.machine.MachineBlockEntity;
+import net.ptcrys.topo.api.machine.component.RecipeLogic;
 import net.ptcrys.topo.api.pipe.PipeSideIntent;
 import net.ptcrys.topo.api.pipe.network.PipeLevelRuntime;
 import net.ptcrys.topo.api.pipe.network.PipeNetwork;
 import net.ptcrys.topo.api.pipe.network.PipeNetworkEngine;
-import net.ptcrys.topo.apiv2.machine.MachineBlockEntity;
-import net.ptcrys.topo.apiv2.machine.component.RecipeLogic;
-import net.ptcrys.topo.data.pipe.BuiltinOIPipes;
-import net.ptcrys.topo.datav2.machine.BuiltinOIMachines;
-import net.ptcrys.topo.datav2.machine.common.component.resource.ItemResourcePort;
-import net.ptcrys.topo.datav2.machine.common.component.resource.ScalarResourcePort;
+import net.ptcrys.topo.data.machine.BuiltinTopoMachines;
+import net.ptcrys.topo.data.machine.common.component.resource.ItemResourcePort;
+import net.ptcrys.topo.data.machine.common.component.resource.ScalarResourcePort;
+import net.ptcrys.topo.data.pipe.BuiltinTopoPipes;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Screenshot;
@@ -58,12 +58,12 @@ import java.util.Map;
 /** Programmatic integrated-server profile of 100 working machines on 100 real pipe networks. */
 public final class MachineNetworkProfilerProbe {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("OI-MachineNetworkProfilerProbe");
-    private static final Path FLAG_FILE = Path.of("oi-machine-network-profiler.flag");
-    private static final Path REPORT_FILE = Path.of("oi-machine-network-profiler-report.txt");
-    private static final Path CSV_FILE = Path.of("oi-machine-network-profiler-samples.csv");
-    private static final Path SCREENSHOT_FILE = Path.of("screenshots", "oi-machine-network-profiler-world.png");
-    private static final String LEVEL_ID = "oi-machine-network-profiler";
+    private static final Logger LOGGER = LoggerFactory.getLogger("Topo-MachineNetworkProfilerProbe");
+    private static final Path FLAG_FILE = Path.of("topo-machine-network-profiler.flag");
+    private static final Path REPORT_FILE = Path.of("topo-machine-network-profiler-report.txt");
+    private static final Path CSV_FILE = Path.of("topo-machine-network-profiler-samples.csv");
+    private static final Path SCREENSHOT_FILE = Path.of("screenshots", "topo-machine-network-profiler-world.png");
+    private static final String LEVEL_ID = "topo-machine-network-profiler";
     private static final int MACHINE_COUNT = 100;
     private static final int GRID_SIZE = 10;
     private static final int MODULE_SPACING = 6;
@@ -205,19 +205,19 @@ public final class MachineNetworkProfilerProbe {
                     BlockPos sink = generator.south(3);
                     level.setBlock(
                             generator,
-                            BuiltinOIMachines.COMBUSTION_GENERATOR_T1.registeredBlock().getDefaultState(),
+                            BuiltinTopoMachines.COMBUSTION_GENERATOR_T1.registeredBlock().getDefaultState(),
                             3);
                     level.setBlock(
                             firstPipe,
-                            BuiltinOIPipes.ENERGY_PIPE_ELITE.registeredBlock().get().defaultBlockState(),
+                            BuiltinTopoPipes.ENERGY_PIPE_ELITE.registeredBlock().get().defaultBlockState(),
                             3);
                     level.setBlock(
                             secondPipe,
-                            BuiltinOIPipes.ENERGY_PIPE_ELITE.registeredBlock().get().defaultBlockState(),
+                            BuiltinTopoPipes.ENERGY_PIPE_ELITE.registeredBlock().get().defaultBlockState(),
                             3);
                     level.setBlock(
                             sink,
-                            BuiltinOIMachines.RESISTIVE_HEATER_T3.registeredBlock().getDefaultState(),
+                            BuiltinTopoMachines.RESISTIVE_HEATER_T3.registeredBlock().getDefaultState(),
                             3);
                     MachineBlockEntity machine = requireMachine(level, generator);
                     insertCoal(machine, 64);
@@ -312,10 +312,10 @@ public final class MachineNetworkProfilerProbe {
                 Path projectRoot = Path.of(System.getProperty("oi.profiler.projectRoot", ".")).toAbsolutePath();
                 Path reports = projectRoot.resolve("build").resolve("reports");
                 Files.createDirectories(reports);
-                jfrFile = reports.resolve("oi-100-machine-real-pipe.jfr");
+                jfrFile = reports.resolve("topo-100-machine-real-pipe.jfr");
                 Files.deleteIfExists(jfrFile);
                 recording = new Recording(Configuration.getConfiguration("profile"));
-                recording.setName("oi-100-machine-real-pipe");
+                recording.setName("topo-100-machine-real-pipe");
                 recording.setToDisk(true);
                 recording.setDestination(jfrFile);
                 recording.enable("jdk.ExecutionSample").withPeriod(Duration.ofMillis(1));
@@ -361,8 +361,8 @@ public final class MachineNetworkProfilerProbe {
             throw new IOException("JFR output is missing");
         }
         Path reportDir = jfrFile.getParent();
-        Path hotMethods = reportDir.resolve("oi-100-machine-real-pipe-hot-methods.csv");
-        Path collapsed = reportDir.resolve("oi-100-machine-real-pipe-collapsed.txt");
+        Path hotMethods = reportDir.resolve("topo-100-machine-real-pipe-hot-methods.csv");
+        Path collapsed = reportDir.resolve("topo-100-machine-real-pipe-collapsed.txt");
         Map<MethodKey, Long> self = new HashMap<>();
         Map<MethodKey, Long> inclusive = new HashMap<>();
         Map<String, Long> stacks = new HashMap<>();
@@ -436,7 +436,7 @@ public final class MachineNetworkProfilerProbe {
         long gcCollections = gcCollections() - gcCollectionsAtStart;
         long gcMillis = gcMillis() - gcMillisAtStart;
         StringBuilder report = new StringBuilder();
-        report.append("OI 100-machine real-pipe profiler\n")
+        report.append("Topo 100-machine real-pipe profiler\n")
                 .append("machines: ").append(MACHINE_COUNT).append('\n')
                 .append("real networks: ").append(MACHINE_COUNT).append('\n')
                 .append("profile ticks requested: ").append(PROFILE_TICKS).append('\n')

@@ -6,7 +6,7 @@ import appeng.api.stacks.AEKey;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Resolves OI resources to AE keys. Production traits use AE2 item/fluid keys, while
+ * Resolves Topo resources to AE keys. Production traits use AE2 item/fluid keys, while
  * deterministic unit tests can inject small fake keys without booting Minecraft registries.
  */
 @FunctionalInterface

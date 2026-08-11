@@ -1,11 +1,11 @@
 package net.ptcrys.topo.gametest;
 
-import net.ptcrys.topo.apiv2.machine.MachineBlockEntity;
-import net.ptcrys.topo.apiv2.machine.MachineDefinition;
-import net.ptcrys.topo.datav2.machine.common.component.CreativeEnergyGenerator;
-import net.ptcrys.topo.datav2.machine.common.component.resource.CreativeScalarResourcePort;
-import net.ptcrys.topo.datav2.machine.common.component.resource.ScalarResource;
-import net.ptcrys.topo.datav2.machine.common.component.resource.ScalarResourcePort;
+import net.ptcrys.topo.api.machine.MachineBlockEntity;
+import net.ptcrys.topo.api.machine.MachineDefinition;
+import net.ptcrys.topo.data.machine.common.component.CreativeEnergyGenerator;
+import net.ptcrys.topo.data.machine.common.component.resource.CreativeScalarResourcePort;
+import net.ptcrys.topo.data.machine.common.component.resource.ScalarResource;
+import net.ptcrys.topo.data.machine.common.component.resource.ScalarResourcePort;
 import net.ptcrys.topo.helper.IdHelper;
 
 import net.minecraft.core.BlockPos;
@@ -37,7 +37,7 @@ public final class CreativeMachineGameTests {
     private CreativeMachineGameTests() {}
 
     public static void register(RegisterGameTestsEvent event) {
-        if (!OIScalarGameTestFixtures.enabled()) {
+        if (!TopoScalarGameTestFixtures.enabled()) {
             return;
         }
         Holder<TestEnvironmentDefinition<?>> environment = event.registerEnvironment(IdHelper.oi("creative_machine"), new TestEnvironmentDefinition.AllOf());
@@ -55,7 +55,7 @@ public final class CreativeMachineGameTests {
     /** 测试 299:创造发电机——每 tick 补满到 rate、抽空后再生、rate=0 不再生、可设任意 rate。 */
     private static void creativeGeneratorTopsOutputToSettableRate(GameTestHelper helper) {
         BlockPos pos = new BlockPos(1, 1, 1);
-        MachineBlockEntity machine = placeMachine(helper, pos, OICreativeMachineGameTestFixtures.creativeGenerator());
+        MachineBlockEntity machine = placeMachine(helper, pos, TopoCreativeMachineGameTestFixtures.creativeGenerator());
         CreativeEnergyGenerator generator = machine.machineComponents().require(CreativeEnergyGenerator.CREATIVE_GENERATOR);
         ScalarResourcePort output = machine.machineComponents().require(ScalarResourcePort.ENERGY_OUTPUT_1);
         generator.setRate(5000);
@@ -91,7 +91,7 @@ public final class CreativeMachineGameTests {
     /** 测试 300:创造储能单元——容量 Long.MAX、默认空、累积过 int 上限、抽取减少、事务中止回滚。 */
     private static void creativeCellStartsEmptyWithLongCapacity(GameTestHelper helper) {
         BlockPos pos = new BlockPos(1, 1, 1);
-        MachineBlockEntity machine = placeMachine(helper, pos, OICreativeMachineGameTestFixtures.creativeCell());
+        MachineBlockEntity machine = placeMachine(helper, pos, TopoCreativeMachineGameTestFixtures.creativeCell());
         CreativeScalarResourcePort cell = machine.machineComponents().require(CreativeScalarResourcePort.CREATIVE_ENERGY_STORAGE);
 
         helper.startSequence()

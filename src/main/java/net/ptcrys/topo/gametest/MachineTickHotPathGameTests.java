@@ -1,19 +1,19 @@
 package net.ptcrys.topo.gametest;
 
-import net.ptcrys.topo.apiv2.machine.MachineBlockEntity;
-import net.ptcrys.topo.apiv2.machine.MachineDefinition;
-import net.ptcrys.topo.apiv2.machine.MachinePerformanceSnapshot;
-import net.ptcrys.topo.apiv2.machine.component.ComponentKey;
-import net.ptcrys.topo.apiv2.machine.component.MachineWorkControl;
-import net.ptcrys.topo.apiv2.machine.component.RecipeLogic;
-import net.ptcrys.topo.apiv2.machine.data.MachineDataSyncBatcher;
-import net.ptcrys.topo.apiv2.machine.resource.MachineSearchPoolConfig;
-import net.ptcrys.topo.apiv2.recipe.OIRecipe;
-import net.ptcrys.topo.datav2.machine.common.component.resource.ItemResourcePort;
-import net.ptcrys.topo.datav2.machine.common.component.resource.ScalarResource;
-import net.ptcrys.topo.datav2.machine.common.component.resource.ScalarResourcePort;
-import net.ptcrys.topo.datav2.recipe.BuiltinOIResourceIntegrations;
-import net.ptcrys.topo.datav2.recipe.common.ScalarRecipeCapability;
+import net.ptcrys.topo.api.machine.MachineBlockEntity;
+import net.ptcrys.topo.api.machine.MachineDefinition;
+import net.ptcrys.topo.api.machine.MachinePerformanceSnapshot;
+import net.ptcrys.topo.api.machine.component.ComponentKey;
+import net.ptcrys.topo.api.machine.component.MachineWorkControl;
+import net.ptcrys.topo.api.machine.component.RecipeLogic;
+import net.ptcrys.topo.api.machine.data.MachineDataSyncBatcher;
+import net.ptcrys.topo.api.machine.resource.MachineSearchPoolConfig;
+import net.ptcrys.topo.api.recipe.TopoRecipe;
+import net.ptcrys.topo.data.machine.common.component.resource.ItemResourcePort;
+import net.ptcrys.topo.data.machine.common.component.resource.ScalarResource;
+import net.ptcrys.topo.data.machine.common.component.resource.ScalarResourcePort;
+import net.ptcrys.topo.data.recipe.BuiltinTopoResourceIntegrations;
+import net.ptcrys.topo.data.recipe.common.ScalarRecipeCapability;
 import net.ptcrys.topo.helper.IdHelper;
 import net.ptcrys.topo.integration.jade.MachineDataProvider;
 
@@ -66,7 +66,7 @@ public final class MachineTickHotPathGameTests {
     private MachineTickHotPathGameTests() {}
 
     public static void register(RegisterGameTestsEvent event) {
-        if (!OIScalarGameTestFixtures.enabled()) {
+        if (!TopoScalarGameTestFixtures.enabled()) {
             return;
         }
         Holder<TestEnvironmentDefinition<?>> environment = event.registerEnvironment(IdHelper.oi("machine_tick_hot_path"), new TestEnvironmentDefinition.AllOf());
@@ -104,14 +104,14 @@ public final class MachineTickHotPathGameTests {
                 environment,
                 index++,
                 "scalar_tick_recipes_classify_as_direct_lane_eligible",
-                "Tests OIRecipe.hasDirectTickIo eligibility: all-scalar tick entries, including a shared capability, " + "are direct-lane eligible; item tick entries are not.",
+                "Tests TopoRecipe.hasDirectTickIo eligibility: all-scalar tick entries, including a shared capability, " + "are direct-lane eligible; item tick entries are not.",
                 MachineTickHotPathGameTests::scalarTickRecipesClassifyAsDirectLaneEligible);
         register(
                 event,
                 environment,
                 index++,
                 "direct_tick_io_blocks_atomically_when_output_full",
-                "Tests OIRecipe.handleTickIo all-or-nothing semantics on the advanced generator: a full advanced " + "energy output blocks the tick without consuming any energy input.",
+                "Tests TopoRecipe.handleTickIo all-or-nothing semantics on the advanced generator: a full advanced " + "energy output blocks the tick without consuming any energy input.",
                 MachineTickHotPathGameTests::directTickIoBlocksAtomicallyWhenOutputFull);
         register(
                 event,
@@ -125,7 +125,7 @@ public final class MachineTickHotPathGameTests {
                 environment,
                 index++,
                 "item_tick_entries_fall_back_to_transactional_path",
-                "Tests OIRecipe.handleTickIo fallback for non-scalar tick entries: an item tick input recipe " + "still consumes exactly one item and emits its scalar tick output per call.",
+                "Tests TopoRecipe.handleTickIo fallback for non-scalar tick entries: an item tick input recipe " + "still consumes exactly one item and emits its scalar tick output per call.",
                 MachineTickHotPathGameTests::itemTickEntriesFallBackToTransactionalPath);
         register(
                 event,
@@ -193,7 +193,7 @@ public final class MachineTickHotPathGameTests {
     }
 
     private static void scalarPersistEpochCoalescesUntilRealChunkSave(GameTestHelper helper) {
-        MachineBlockEntity machine = place(helper, OIScalarGameTestFixtures.energyGenerator());
+        MachineBlockEntity machine = place(helper, TopoScalarGameTestFixtures.energyGenerator());
 
         helper.startSequence()
                 .thenExecuteAfter(92, () -> {
@@ -218,7 +218,7 @@ public final class MachineTickHotPathGameTests {
     }
 
     private static void scalarPersistEpochRearmsAfterRealChunkSave(GameTestHelper helper) {
-        MachineBlockEntity machine = place(helper, OIScalarGameTestFixtures.energyGenerator());
+        MachineBlockEntity machine = place(helper, TopoScalarGameTestFixtures.energyGenerator());
 
         helper.startSequence()
                 .thenExecuteAfter(92, () -> {
@@ -240,7 +240,7 @@ public final class MachineTickHotPathGameTests {
     }
 
     private static void itemContentsChangeMarksChunkUnsavedSameTick(GameTestHelper helper) {
-        MachineBlockEntity machine = place(helper, OIScalarGameTestFixtures.energyGenerator());
+        MachineBlockEntity machine = place(helper, TopoScalarGameTestFixtures.energyGenerator());
 
         helper.startSequence()
                 .thenExecuteAfter(2, () -> {
@@ -257,13 +257,13 @@ public final class MachineTickHotPathGameTests {
     }
 
     private static void frameworkAfterTickRecomputesComputedFieldsOncePerTick(GameTestHelper helper) {
-        place(helper, OITickHotPathGameTestFixtures.dualTickerMachine());
+        place(helper, TopoTickHotPathGameTestFixtures.dualTickerMachine());
         int[] baseline = { 0 };
 
         helper.startSequence()
-                .thenExecuteAfter(3, () -> baseline[0] = OITickHotPathGameTestFixtures.recomputeCount())
+                .thenExecuteAfter(3, () -> baseline[0] = TopoTickHotPathGameTestFixtures.recomputeCount())
                 .thenExecuteAfter(1, () -> {
-                    int delta = OITickHotPathGameTestFixtures.recomputeCount() - baseline[0];
+                    int delta = TopoTickHotPathGameTestFixtures.recomputeCount() - baseline[0];
                     if (delta != 1) {
                         helper.fail("Computed fields must recompute exactly once per server tick for a machine " + "with two tickers, got " + delta + " recomputes in one tick");
                     }
@@ -272,10 +272,10 @@ public final class MachineTickHotPathGameTests {
     }
 
     private static void scalarTickRecipesClassifyAsDirectLaneEligible(GameTestHelper helper) {
-        ScalarRecipeCapability energy = BuiltinOIResourceIntegrations.ENERGY.recipeCapability();
-        ScalarRecipeCapability advanced = BuiltinOIResourceIntegrations.ADVANCED_ENERGY.recipeCapability();
+        ScalarRecipeCapability energy = BuiltinTopoResourceIntegrations.ENERGY.recipeCapability();
+        ScalarRecipeCapability advanced = BuiltinTopoResourceIntegrations.ADVANCED_ENERGY.recipeCapability();
 
-        OIRecipe disjointScalar = OIScalarGameTestFixtures.energyGeneratorType()
+        TopoRecipe disjointScalar = TopoScalarGameTestFixtures.energyGeneratorType()
                 .recipe("gametest_direct_eligibility_disjoint")
                 .tickInput(energy.in(10))
                 .tickOutput(advanced.out(1))
@@ -285,7 +285,7 @@ public final class MachineTickHotPathGameTests {
             helper.fail("Disjoint all-scalar tick entries must classify as direct-lane eligible");
         }
 
-        OIRecipe sameLane = OIScalarGameTestFixtures.energyGeneratorType()
+        TopoRecipe sameLane = TopoScalarGameTestFixtures.energyGeneratorType()
                 .recipe("gametest_direct_eligibility_same_lane")
                 .tickInput(energy.in(10))
                 .tickOutput(energy.out(5))
@@ -295,9 +295,9 @@ public final class MachineTickHotPathGameTests {
             helper.fail("A scalar lane with exact post-input planning must remain direct-lane eligible");
         }
 
-        OIRecipe itemTick = OIScalarGameTestFixtures.energyGeneratorType()
+        TopoRecipe itemTick = TopoScalarGameTestFixtures.energyGeneratorType()
                 .recipe("gametest_direct_eligibility_item_tick")
-                .tickInput(BuiltinOIResourceIntegrations.ITEM.recipeCapability().in(Items.COAL, 1))
+                .tickInput(BuiltinTopoResourceIntegrations.ITEM.recipeCapability().in(Items.COAL, 1))
                 .tickOutput(energy.out(5))
                 .duration(5)
                 .buildRecipe();
@@ -308,7 +308,7 @@ public final class MachineTickHotPathGameTests {
     }
 
     private static void directTickIoBlocksAtomicallyWhenOutputFull(GameTestHelper helper) {
-        MachineBlockEntity machine = place(helper, OIScalarGameTestFixtures.advancedGenerator());
+        MachineBlockEntity machine = place(helper, TopoScalarGameTestFixtures.advancedGenerator());
         setScalarAmount(machine, ScalarResourcePort.ENERGY_INPUT_1, 1_000);
         RecipeLogic logic = logic(machine);
 
@@ -327,29 +327,29 @@ public final class MachineTickHotPathGameTests {
                         helper.fail("Full advanced output should park the machine in WAITING_OUTPUT, got " + logic.state());
                     }
                     long consumed = 1_000 - energyAfterBlock;
-                    if (consumed % OIScalarGameTestFixtures.ADVANCED_ENERGY_IN_PER_TICK != 0) {
-                        helper.fail("A blocked tick must not partially consume energy input; consumed " + consumed + " is not a multiple of " + OIScalarGameTestFixtures.ADVANCED_ENERGY_IN_PER_TICK);
+                    if (consumed % TopoScalarGameTestFixtures.ADVANCED_ENERGY_IN_PER_TICK != 0) {
+                        helper.fail("A blocked tick must not partially consume energy input; consumed " + consumed + " is not a multiple of " + TopoScalarGameTestFixtures.ADVANCED_ENERGY_IN_PER_TICK);
                     }
                 })
                 .thenSucceed();
     }
 
     private static void directTickOutputSpansMultiplePortsInMountOrder(GameTestHelper helper) {
-        MachineBlockEntity machine = place(helper, OITickHotPathGameTestFixtures.dualPortGenerator());
+        MachineBlockEntity machine = place(helper, TopoTickHotPathGameTestFixtures.dualPortGenerator());
         insertCoal(helper, machine, 1);
 
         helper.startSequence()
                 .thenWaitUntil(() -> {
                     long total = scalarAmount(machine, ScalarResourcePort.ENERGY_OUTPUT_1) + scalarAmount(machine, ScalarResourcePort.ENERGY_STORAGE);
-                    if (total < OITickHotPathGameTestFixtures.DUAL_PORT_FIRST_CAPACITY + OIScalarGameTestFixtures.GENERATOR_ENERGY_PER_TICK) {
+                    if (total < TopoTickHotPathGameTestFixtures.DUAL_PORT_FIRST_CAPACITY + TopoScalarGameTestFixtures.GENERATOR_ENERGY_PER_TICK) {
                         helper.fail("Waiting for the tick output to overflow the first port, total=" + total);
                     }
                 })
                 .thenExecute(() -> {
                     long first = scalarAmount(machine, ScalarResourcePort.ENERGY_OUTPUT_1);
                     long second = scalarAmount(machine, ScalarResourcePort.ENERGY_STORAGE);
-                    if (first != OITickHotPathGameTestFixtures.DUAL_PORT_FIRST_CAPACITY) {
-                        helper.fail("First energy port must fill to capacity before the second receives anything, got " + first + "/" + OITickHotPathGameTestFixtures.DUAL_PORT_FIRST_CAPACITY);
+                    if (first != TopoTickHotPathGameTestFixtures.DUAL_PORT_FIRST_CAPACITY) {
+                        helper.fail("First energy port must fill to capacity before the second receives anything, got " + first + "/" + TopoTickHotPathGameTestFixtures.DUAL_PORT_FIRST_CAPACITY);
                     }
                     if (second <= 0) {
                         helper.fail("Overflow must land in the second energy port in mount order, got " + second);
@@ -359,11 +359,11 @@ public final class MachineTickHotPathGameTests {
     }
 
     private static void itemTickEntriesFallBackToTransactionalPath(GameTestHelper helper) {
-        MachineBlockEntity machine = place(helper, OIScalarGameTestFixtures.energyGenerator());
-        ScalarRecipeCapability energy = BuiltinOIResourceIntegrations.ENERGY.recipeCapability();
-        OIRecipe itemTickRecipe = OIScalarGameTestFixtures.energyGeneratorType()
+        MachineBlockEntity machine = place(helper, TopoScalarGameTestFixtures.energyGenerator());
+        ScalarRecipeCapability energy = BuiltinTopoResourceIntegrations.ENERGY.recipeCapability();
+        TopoRecipe itemTickRecipe = TopoScalarGameTestFixtures.energyGeneratorType()
                 .recipe("gametest_item_tick_fallback")
-                .tickInput(BuiltinOIResourceIntegrations.ITEM.recipeCapability().in(Items.COAL, 1))
+                .tickInput(BuiltinTopoResourceIntegrations.ITEM.recipeCapability().in(Items.COAL, 1))
                 .tickOutput(energy.out(5))
                 .duration(5)
                 .buildRecipe();
@@ -377,8 +377,8 @@ public final class MachineTickHotPathGameTests {
                     if (itemTickRecipe.hasDirectTickIo()) {
                         helper.fail("Item tick entries must report no direct lane support");
                     }
-                    OIRecipe.TickIoResult result = itemTickRecipe.handleTickIo(machine);
-                    if (result != OIRecipe.TickIoResult.SUCCESS) {
+                    TopoRecipe.TickIoResult result = itemTickRecipe.handleTickIo(machine);
+                    if (result != TopoRecipe.TickIoResult.SUCCESS) {
                         helper.fail("Item tick fallback should succeed with stocked input, got " + result);
                     }
                     int coalLeft = machine.machineComponents().require(ItemResourcePort.ITEM_INPUT_1).computeItemTotal();
@@ -394,7 +394,7 @@ public final class MachineTickHotPathGameTests {
     }
 
     private static void scalarResidualDirtyMarksChunkUnsavedOnLevelSave(GameTestHelper helper) {
-        MachineBlockEntity machine = place(helper, OIScalarGameTestFixtures.energyGenerator());
+        MachineBlockEntity machine = place(helper, TopoScalarGameTestFixtures.energyGenerator());
 
         helper.startSequence()
                 // First dirty transition opens an outstanding persist epoch.
@@ -413,7 +413,7 @@ public final class MachineTickHotPathGameTests {
     }
 
     private static void monitoredTickReportsFrameworkSelfNanos(GameTestHelper helper) {
-        MachineBlockEntity machine = place(helper, OIScalarGameTestFixtures.energyGenerator());
+        MachineBlockEntity machine = place(helper, TopoScalarGameTestFixtures.energyGenerator());
         insertCoal(helper, machine, 1);
         machine.activatePerformanceMonitoring(40);
         RecipeLogic logic = logic(machine);
@@ -437,7 +437,7 @@ public final class MachineTickHotPathGameTests {
     }
 
     private static void perfTreeReportsRollingAverageAndPeak(GameTestHelper helper) {
-        MachineBlockEntity machine = place(helper, OIScalarGameTestFixtures.energyGenerator());
+        MachineBlockEntity machine = place(helper, TopoScalarGameTestFixtures.energyGenerator());
         insertCoal(helper, machine, 1);
         machine.activatePerformanceMonitoring(60);
         RecipeLogic logic = logic(machine);
@@ -468,7 +468,7 @@ public final class MachineTickHotPathGameTests {
     }
 
     private static void idleBlockedMachineBacksOffTickInterval(GameTestHelper helper) {
-        MachineBlockEntity machine = place(helper, OIScalarGameTestFixtures.advancedGenerator());
+        MachineBlockEntity machine = place(helper, TopoScalarGameTestFixtures.advancedGenerator());
         RecipeLogic logic = logic(machine);
 
         helper.startSequence()
@@ -489,7 +489,7 @@ public final class MachineTickHotPathGameTests {
     }
 
     private static void parkedMachineWakesOnResourceChange(GameTestHelper helper) {
-        MachineBlockEntity machine = place(helper, OIScalarGameTestFixtures.advancedGenerator());
+        MachineBlockEntity machine = place(helper, TopoScalarGameTestFixtures.advancedGenerator());
         RecipeLogic logic = logic(machine);
 
         helper.startSequence()
@@ -513,7 +513,7 @@ public final class MachineTickHotPathGameTests {
     }
 
     private static void workingMachineKeepsEveryTickInterval(GameTestHelper helper) {
-        MachineBlockEntity machine = place(helper, OIScalarGameTestFixtures.advancedGenerator());
+        MachineBlockEntity machine = place(helper, TopoScalarGameTestFixtures.advancedGenerator());
         setScalarAmount(machine, ScalarResourcePort.ENERGY_INPUT_1, 900);
         RecipeLogic logic = logic(machine);
         int[] workingTicks = { 0 };
@@ -547,7 +547,7 @@ public final class MachineTickHotPathGameTests {
     }
 
     private static void workModeToggleWakesParkedMachine(GameTestHelper helper) {
-        MachineBlockEntity machine = place(helper, OIScalarGameTestFixtures.advancedGenerator());
+        MachineBlockEntity machine = place(helper, TopoScalarGameTestFixtures.advancedGenerator());
         RecipeLogic logic = logic(machine);
 
         helper.startSequence()
@@ -573,7 +573,7 @@ public final class MachineTickHotPathGameTests {
     }
 
     private static void boundDirectTickIoRebindsAfterRoutingInvalidation(GameTestHelper helper) {
-        MachineBlockEntity machine = place(helper, OIScalarGameTestFixtures.energyGenerator());
+        MachineBlockEntity machine = place(helper, TopoScalarGameTestFixtures.energyGenerator());
         insertCoal(helper, machine, 1);
         RecipeLogic logic = logic(machine);
         long[] outputBefore = { 0L };
@@ -598,7 +598,7 @@ public final class MachineTickHotPathGameTests {
                     if (advanced <= 0) {
                         helper.fail("The rebound active recipe must continue advancing, progress=" + logic.progress());
                     }
-                    long expected = (long) advanced * OIScalarGameTestFixtures.GENERATOR_ENERGY_PER_TICK;
+                    long expected = (long) advanced * TopoScalarGameTestFixtures.GENERATOR_ENERGY_PER_TICK;
                     if (produced != expected) {
                         helper.fail("Routing-plan rebind must conserve exact tick output: advanced=" + advanced + ", expected=" + expected + ", produced=" + produced);
                     }
@@ -607,7 +607,7 @@ public final class MachineTickHotPathGameTests {
     }
 
     private static void boundDirectTickIoBlocksWhenActivePoolDisappears(GameTestHelper helper) {
-        MachineBlockEntity machine = place(helper, OIScalarGameTestFixtures.energyGenerator());
+        MachineBlockEntity machine = place(helper, TopoScalarGameTestFixtures.energyGenerator());
         insertCoal(helper, machine, 1);
         RecipeLogic logic = logic(machine);
         MachineSearchPoolConfig poolConfig = machine.machineComponents().require(MachineSearchPoolConfig.RECIPE_SEARCH_POOL);
@@ -643,7 +643,7 @@ public final class MachineTickHotPathGameTests {
                     }
                     int advanced = logic.progress() - 2;
                     long produced = scalarAmount(machine, ScalarResourcePort.ENERGY_OUTPUT_1) - blockedOutput[0];
-                    long expected = (long) advanced * OIScalarGameTestFixtures.GENERATOR_ENERGY_PER_TICK;
+                    long expected = (long) advanced * TopoScalarGameTestFixtures.GENERATOR_ENERGY_PER_TICK;
                     if (advanced <= 0 || produced != expected) {
                         helper.fail("Restored active pool must resume with exact conservation: advanced=" + advanced + ", expected=" + expected + ", produced=" + produced);
                     }

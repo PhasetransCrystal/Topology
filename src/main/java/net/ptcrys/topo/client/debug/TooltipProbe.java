@@ -1,8 +1,8 @@
 package net.ptcrys.topo.client.debug;
 
+import net.ptcrys.topo.api.machine.ui.tooltip.ItemTooltipUis;
 import net.ptcrys.topo.api.pipe.PipeDefinition;
 import net.ptcrys.topo.api.pipe.Pipes;
-import net.ptcrys.topo.apiv2.machine.ui.tooltip.ItemTooltipUis;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.MouseHandler;
@@ -34,19 +34,19 @@ import java.nio.file.Path;
 
 /**
  * 物品 tooltip 面板全自动游戏内验证探针(同 {@link PipeProbe} 的流水线骨架,独立 flag):
- * 仅当工作目录存在 {@code oi-tooltip-probe.flag} 时激活;自动建生存平坦世界(创造模式下
+ * 仅当工作目录存在 {@code topo-tooltip-probe.flag} 时激活;自动建生存平坦世界(创造模式下
  * InventoryScreen 会被原版换成创造背包,生存布局的悬停几何失效),向热栏发本轮验收目标
- * (装备:斧/调控器/扳手;Form 件:OI 铁齿轮 + vanilla 覆写铁粒/铁锭),打开背包用虚拟鼠标
+ * (装备:斧/调控器/扳手;Form 件:Topo 铁齿轮 + vanilla 覆写铁粒/铁锭),打开背包用虚拟鼠标
  * 逐个悬停截图;CHECK 阶段程序化断言**每一个**已注册管道/装备/材料 Form 物品都有面板且
- * 上报尺寸正常,报告写 {@code oi-tooltip-probe-report.txt} 后自动退出。
+ * 上报尺寸正常,报告写 {@code topo-tooltip-probe-report.txt} 后自动退出。
  */
 public final class TooltipProbe {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("OI-TooltipProbe");
-    private static final Path FLAG_FILE = Path.of("oi-tooltip-probe.flag");
-    private static final Path REPORT_FILE = Path.of("oi-tooltip-probe-report.txt");
+    private static final Logger LOGGER = LoggerFactory.getLogger("Topo-TooltipProbe");
+    private static final Path FLAG_FILE = Path.of("topo-tooltip-probe.flag");
+    private static final Path REPORT_FILE = Path.of("topo-tooltip-probe-report.txt");
     /** 每轮唯一世界名:复用同名存档会撞上一轮的残留场景(并行会话共用 run/ 时尤甚)。 */
-    private static final String LEVEL_ID = "oi-tooltip-probe-" + (System.currentTimeMillis() % 100_000_000L);
+    private static final String LEVEL_ID = "topo-tooltip-probe-" + (System.currentTimeMillis() % 100_000_000L);
     private static final int WAIT_TIMEOUT_TICKS = 2400;
 
     /** 原版生存背包几何(176×166 居中,热栏行 y=142):虚拟鼠标定位用。 */
@@ -154,7 +154,7 @@ public final class TooltipProbe {
             case HOVER -> {
                 hoverHotbarSlot(minecraft, hoverIndex);
                 if (countdown == 5) {
-                    grabScreenshot(minecraft, "oi-tooltip-probe-" + TARGETS.get(hoverIndex).shot());
+                    grabScreenshot(minecraft, "topo-tooltip-probe-" + TARGETS.get(hoverIndex).shot());
                 }
                 if (--countdown <= 0) {
                     if (++hoverIndex < TARGETS.size()) {
@@ -239,7 +239,7 @@ public final class TooltipProbe {
 
         total = 0;
         healthy = 0;
-        for (var record : net.ptcrys.topo.apiv2.equipment.EquipmentRegistry.itemRecords()) {
+        for (var record : net.ptcrys.topo.api.equipment.EquipmentRegistry.itemRecords()) {
             total++;
             if (hasHealthyPanel(record.entry().get())) {
                 healthy++;
@@ -254,7 +254,7 @@ public final class TooltipProbe {
 
         total = 0;
         healthy = 0;
-        for (var material : net.ptcrys.topo.apiv2.material.MaterialRegistry.registered()) {
+        for (var material : net.ptcrys.topo.api.material.MaterialRegistry.registered()) {
             for (var form : material.strategy().forms()) {
                 var item = net.ptcrys.topo.helper.MaterialHelper.item(material, form).orElse(null);
                 if (item == null) {

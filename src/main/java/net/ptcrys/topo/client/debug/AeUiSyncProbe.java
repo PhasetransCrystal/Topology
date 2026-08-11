@@ -1,9 +1,9 @@
 package net.ptcrys.topo.client.debug;
 
-import net.ptcrys.topo.apiv2.machine.MachineBlockEntity;
-import net.ptcrys.topo.apiv2.machine.MachineDefinition;
-import net.ptcrys.topo.apiv2.machine.ui.MachineUiComponentTemplate;
-import net.ptcrys.topo.datav2.machine.BuiltinOIMeMachines;
+import net.ptcrys.topo.api.machine.MachineBlockEntity;
+import net.ptcrys.topo.api.machine.MachineDefinition;
+import net.ptcrys.topo.api.machine.ui.MachineUiComponentTemplate;
+import net.ptcrys.topo.data.machine.BuiltinTopoMeMachines;
 import net.ptcrys.topo.integration.ae2.AePatternProvider;
 import net.ptcrys.topo.integration.ae2.ui.AeBufferPageUi;
 import net.ptcrys.topo.integration.ae2.ui.AeConfigPageUi;
@@ -52,28 +52,28 @@ import java.util.Locale;
  */
 public final class AeUiSyncProbe {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("OI-AeUiSyncProbe");
-    private static final Path FLAG_FILE = Path.of("oi-ae-ui-sync-probe.flag");
-    private static final Path REPORT_FILE = Path.of("oi-ae-ui-sync-probe-report.txt");
-    private static final String LEVEL_ID = "oi-ae-ui-sync-probe-" + (System.currentTimeMillis() % 100_000_000L);
+    private static final Logger LOGGER = LoggerFactory.getLogger("Topo-AeUiSyncProbe");
+    private static final Path FLAG_FILE = Path.of("topo-ae-ui-sync-probe.flag");
+    private static final Path REPORT_FILE = Path.of("topo-ae-ui-sync-probe-report.txt");
+    private static final String LEVEL_ID = "topo-ae-ui-sync-probe-" + (System.currentTimeMillis() % 100_000_000L);
     private static final int WAIT_TIMEOUT_TICKS = 2400;
 
     private static final String CONFIG_PAGE_ID = AeConfigPageUi.PAGE_KEY;
-    private static final String CONFIG_TARGET_SYNC_ID = "oi_ae_config_target_sync";
-    private static final String CONFIG_STOCK_SYNC_ID = "oi_ae_stock_amount_sync";
+    private static final String CONFIG_TARGET_SYNC_ID = "topo_ae_config_target_sync";
+    private static final String CONFIG_STOCK_SYNC_ID = "topo_ae_stock_amount_sync";
     private static final String BUFFER_PAGE_ID = AeBufferPageUi.PAGE_KEY;
-    private static final String BUFFER_AMOUNT_SYNC_ID = "oi_ae_buffer_amount_sync";
+    private static final String BUFFER_AMOUNT_SYNC_ID = "topo_ae_buffer_amount_sync";
     private static final String PATTERN_PAGE_ID = AePatternProviderUi.PAGE_KEY;
-    private static final String PATTERN_SEPARATED_SYNC_ID = "oi_ae_pattern_separated_chrome";
-    private static final String PATTERN_POOL_IDS_SYNC_ID = "oi_ae_pattern_slot_pool_ids_chrome";
-    private static final String PATTERN_SEPARATED_BUTTON_ID = "oi_ae_pattern_provider_separated";
-    private static final String SEARCH_POOL_PANEL_ID = "oi_search_pool";
-    private static final String SEARCH_POOL_VISIBILITY_SYNC_ID = "oi_side_card_live_oi_search_pool";
+    private static final String PATTERN_SEPARATED_SYNC_ID = "topo_ae_pattern_separated_chrome";
+    private static final String PATTERN_POOL_IDS_SYNC_ID = "topo_ae_pattern_slot_pool_ids_chrome";
+    private static final String PATTERN_SEPARATED_BUTTON_ID = "topo_ae_pattern_provider_separated";
+    private static final String SEARCH_POOL_PANEL_ID = "topo_search_pool";
+    private static final String SEARCH_POOL_VISIBILITY_SYNC_ID = "topo_side_card_live_topo_search_pool";
 
     private static final MachineDefinition[] DEFINITIONS = {
-            BuiltinOIMeMachines.ME_DIRECT_ITEM_INPUT_BUS,
-            BuiltinOIMeMachines.ME_EXPORT_HATCH,
-            BuiltinOIMeMachines.ME_PATTERN_PROVIDER
+            BuiltinTopoMeMachines.ME_DIRECT_ITEM_INPUT_BUS,
+            BuiltinTopoMeMachines.ME_EXPORT_HATCH,
+            BuiltinTopoMeMachines.ME_PATTERN_PROVIDER
     };
 
     private enum State {
@@ -245,19 +245,19 @@ public final class AeUiSyncProbe {
         switch (machineIndex) {
             case 0 -> {
                 validateConfigPage(root);
-                grabScreenshot(minecraft, "oi-ae-ui-sync-config");
+                grabScreenshot(minecraft, "topo-ae-ui-sync-config");
                 countdown = 10;
                 state = State.CLOSE_SCREEN;
             }
             case 1 -> {
                 validateBufferPage(root);
-                grabScreenshot(minecraft, "oi-ae-ui-sync-buffer");
+                grabScreenshot(minecraft, "topo-ae-ui-sync-buffer");
                 countdown = 10;
                 state = State.CLOSE_SCREEN;
             }
             case 2 -> {
                 validatePatternPageBeforeClick(root);
-                grabScreenshot(minecraft, "oi-ae-ui-sync-pattern-shared");
+                grabScreenshot(minecraft, "topo-ae-ui-sync-pattern-shared");
                 UIElement button = findById(root, PATTERN_SEPARATED_BUTTON_ID);
                 if (button == null || !isEffectivelyDisplayed(button)) {
                     failure("separated button is unavailable for real click");
@@ -310,7 +310,7 @@ public final class AeUiSyncProbe {
         assertion("pattern ModularUI tree remains available after RPC", root != null);
         if (root != null) {
             validatePatternPageAfterClick(root);
-            grabScreenshot(minecraft, "oi-ae-ui-sync-pattern-separated");
+            grabScreenshot(minecraft, "topo-ae-ui-sync-pattern-separated");
         }
         countdown = 10;
         state = State.FLUSH;
@@ -352,15 +352,15 @@ public final class AeUiSyncProbe {
 
     private void validateConfigPage(UIElement root) {
         assertion("AE config page exists and is displayed", isDisplayedById(root, CONFIG_PAGE_ID));
-        assertion("AE config stock item slots are displayed", allEffectivelyDisplayed(findAllById(root, "oi_ae_stock_item_slot"), 9));
+        assertion("AE config stock item slots are displayed", allEffectivelyDisplayed(findAllById(root, "topo_ae_stock_item_slot"), 9));
         assertHiddenBindableValues(root, CONFIG_TARGET_SYNC_ID, 9);
         assertHiddenBindableValues(root, CONFIG_STOCK_SYNC_ID, 9);
     }
 
     private void validateBufferPage(UIElement root) {
         assertion("AE buffer page exists and is displayed", isDisplayedById(root, BUFFER_PAGE_ID));
-        assertion("AE buffer item slots are displayed", allEffectivelyDisplayed(findAllById(root, "oi_ae_buffer_item_slot"), 36));
-        assertion("AE buffer fluid slots are displayed", allEffectivelyDisplayed(findAllById(root, "oi_ae_buffer_fluid_slot"), 9));
+        assertion("AE buffer item slots are displayed", allEffectivelyDisplayed(findAllById(root, "topo_ae_buffer_item_slot"), 36));
+        assertion("AE buffer fluid slots are displayed", allEffectivelyDisplayed(findAllById(root, "topo_ae_buffer_fluid_slot"), 9));
         assertHiddenBindableValues(root, BUFFER_AMOUNT_SYNC_ID, 45);
     }
 

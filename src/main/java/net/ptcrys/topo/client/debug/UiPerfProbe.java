@@ -1,15 +1,15 @@
 package net.ptcrys.topo.client.debug;
 
-import net.ptcrys.topo.apiv2.machine.MachineBlockEntity;
-import net.ptcrys.topo.apiv2.machine.MachinePerformanceSnapshot;
-import net.ptcrys.topo.apiv2.machine.component.RecipeLogic;
-import net.ptcrys.topo.apiv2.machine.ui.LcdData;
-import net.ptcrys.topo.apiv2.machine.ui.MachineUiComponentTemplate;
-import net.ptcrys.topo.apiv2.machine.ui.MachineUiContainerTemplate;
-import net.ptcrys.topo.datav2.machine.BuiltinOIMachines;
-import net.ptcrys.topo.datav2.machine.common.component.resource.ItemResourcePort;
-import net.ptcrys.topo.datav2.machine.common.component.resource.ScalarResourcePort;
-import net.ptcrys.topo.datav2.recipe.BuiltinOIResourceIntegrations;
+import net.ptcrys.topo.api.machine.MachineBlockEntity;
+import net.ptcrys.topo.api.machine.MachinePerformanceSnapshot;
+import net.ptcrys.topo.api.machine.component.RecipeLogic;
+import net.ptcrys.topo.api.machine.ui.LcdData;
+import net.ptcrys.topo.api.machine.ui.MachineUiComponentTemplate;
+import net.ptcrys.topo.api.machine.ui.MachineUiContainerTemplate;
+import net.ptcrys.topo.data.machine.BuiltinTopoMachines;
+import net.ptcrys.topo.data.machine.common.component.resource.ItemResourcePort;
+import net.ptcrys.topo.data.machine.common.component.resource.ScalarResourcePort;
+import net.ptcrys.topo.data.recipe.BuiltinTopoResourceIntegrations;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.TitleScreen;
@@ -59,11 +59,11 @@ import java.util.Map;
 
 /**
  * UI 性能诊断探针:LDLib2 布局脏循环("UI layout is dirty for more than 10 times per frame")
- * 与重排风暴的全自动取证工具。仅当游戏工作目录存在 {@code oi-ui-probe.flag} 文件时激活,
- * 平时零开销;激活后从标题画面起全自动跑完并退出,报告写入 {@code oi-ui-probe-report.txt}。
+ * 与重排风暴的全自动取证工具。仅当游戏工作目录存在 {@code topo-ui-probe.flag} 文件时激活,
+ * 平时零开销;激活后从标题画面起全自动跑完并退出,报告写入 {@code topo-ui-probe-report.txt}。
  *
  * <p>
- * 流程:合成计时面板终验(定宽 LCD + 每 tick 实况文本)→ 存在 {@code saves/oi-probe-user-copy}
+ * 流程:合成计时面板终验(定宽 LCD + 每 tick 实况文本)→ 存在 {@code saves/topo-probe-user-copy}
  * 则打开用户存档副本、扫描出生点周边机器按类型去重逐台开 GUI,否则自建平坦世界放电锅炉 →
  * 每台机器 GUI 期间虚拟鼠标扫掠悬浮、持续灌能量/抽热量保持运转 → 最后注视机器采集 Jade 阶段。
  *
@@ -76,12 +76,12 @@ import java.util.Map;
  */
 public final class UiPerfProbe {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("OI-UiPerfProbe");
-    private static final Path FLAG_FILE = Path.of("oi-ui-probe.flag");
-    private static final Path MACHINE_JADE_PERF_FLAG_FILE = Path.of("oi-machine-jade-perf-probe.flag");
-    private static final Path REPORT_FILE = Path.of("oi-ui-probe-report.txt");
-    private static final String LEVEL_ID = "oi-ui-probe-world";
-    private static final String COPY_LEVEL_ID = "oi-probe-user-copy";
+    private static final Logger LOGGER = LoggerFactory.getLogger("Topo-UiPerfProbe");
+    private static final Path FLAG_FILE = Path.of("topo-ui-probe.flag");
+    private static final Path MACHINE_JADE_PERF_FLAG_FILE = Path.of("topo-machine-jade-perf-probe.flag");
+    private static final Path REPORT_FILE = Path.of("topo-ui-probe-report.txt");
+    private static final String LEVEL_ID = "topo-ui-probe-world";
+    private static final String COPY_LEVEL_ID = "topo-probe-user-copy";
     private static final int SETTLE_DELAY_TICKS = 60;
     private static final int COLLECT_TICKS = 300;
     private static final int JADE_TICKS = 80;
@@ -216,7 +216,7 @@ public final class UiPerfProbe {
     private void attachDirtyWarningTap() {
         var ldlibLogger = (org.apache.logging.log4j.core.Logger) LogManager.getLogger("LowDragLib2");
         AbstractAppender tap = new AbstractAppender(
-                "OiUiPerfProbeTap", null, null, true, Property.EMPTY_ARRAY) {
+                "TopoUiPerfProbeTap", null, null, true, Property.EMPTY_ARRAY) {
 
             @Override
             public void append(LogEvent event) {
@@ -320,7 +320,7 @@ public final class UiPerfProbe {
             case SYNTH_COLLECT -> {
                 synthTick++;
                 if (countdown == collectTotal / 2) {
-                    grabScreenshot(minecraft, "oi-probe-synth-" + currentSynthName);
+                    grabScreenshot(minecraft, "topo-probe-synth-" + currentSynthName);
                 }
                 if (--countdown <= 0) {
                     finishSyntheticPhase(minecraft);
@@ -359,7 +359,7 @@ public final class UiPerfProbe {
                     aimAt(minecraft, machinePos);
                 }
                 if (countdown == 5) {
-                    grabScreenshot(minecraft, "oi-probe-jade");
+                    grabScreenshot(minecraft, "topo-probe-jade");
                 }
                 if (--countdown <= 0) {
                     requestGuiOpen(minecraft);
@@ -405,7 +405,7 @@ public final class UiPerfProbe {
                 churnMachine(minecraft);
                 sweepVirtualMouse(minecraft, collectTotal - countdown);
                 if (countdown == collectTotal / 2) {
-                    grabScreenshot(minecraft, "oi-probe-gui-" + currentMachineName.replaceAll("[^A-Za-z0-9_-]", "_"));
+                    grabScreenshot(minecraft, "topo-probe-gui-" + currentMachineName.replaceAll("[^A-Za-z0-9_-]", "_"));
                 }
                 if (--countdown <= 0) {
                     finishGuiPhase(minecraft);
@@ -417,7 +417,7 @@ public final class UiPerfProbe {
                     aimAt(minecraft, machinePos);
                 }
                 if (targetedMachinePerformance && countdown == JADE_TICKS / 2) {
-                    grabScreenshot(minecraft, "oi-probe-jade");
+                    grabScreenshot(minecraft, "topo-probe-jade");
                 }
                 if (--countdown <= 0) {
                     finishProbe(minecraft);
@@ -551,22 +551,22 @@ public final class UiPerfProbe {
                         .createResourceBar(
                                 net.minecraft.network.chat.Component.literal("Bar " + i),
                                 0xFFFFD64F,
-                                net.ptcrys.topo.apiv2.machine.ui.ResourceBar.Orientation.HORIZONTAL)
+                                net.ptcrys.topo.api.machine.ui.ResourceBar.Orientation.HORIZONTAL)
                         .bindLocal(() -> 37_000L + synthTick % 1000, () -> 100_000L));
             }
             return column;
         }));
         synthScenes.add(Map.entry("sideio-cards-x4", () -> {
-            var machine = net.ptcrys.topo.apiv2.machine.Machines.createBlockEntity(
-                    BlockPos.ZERO, BuiltinOIMachines.RESISTIVE_HEATER_T1.registeredBlock().getDefaultState());
+            var machine = net.ptcrys.topo.api.machine.Machines.createBlockEntity(
+                    BlockPos.ZERO, BuiltinTopoMachines.RESISTIVE_HEATER_T1.registeredBlock().getDefaultState());
             var input = machine.machineComponents().require(ScalarResourcePort.ENERGY_INPUT_1);
             var output = machine.machineComponents().require(ScalarResourcePort.HEAT_OUTPUT_1);
             UIElement column = column();
             for (int i = 0; i < 4; i++) {
                 var port = i % 2 == 0 ? input : output;
                 column.addChild(MachineUiContainerTemplate.INSTANCE.createCard(
-                        net.ptcrys.topo.apiv2.machine.ui.SideIoConfigGrid.createTitleBar(port),
-                        net.ptcrys.topo.apiv2.machine.ui.SideIoConfigGrid.create(port)));
+                        net.ptcrys.topo.api.machine.ui.SideIoConfigGrid.createTitleBar(port),
+                        net.ptcrys.topo.api.machine.ui.SideIoConfigGrid.create(port)));
             }
             return column;
         }));
@@ -626,7 +626,7 @@ public final class UiPerfProbe {
 
     private static UIElement column() {
         UIElement column = new UIElement();
-        column.setId("oi_probe_synth_column");
+        column.setId("topo_probe_synth_column");
         column.layout(layout -> {
             layout.flexDirection(dev.vfyjxf.taffy.style.FlexDirection.COLUMN);
             layout.gapRow(8f);
@@ -638,7 +638,7 @@ public final class UiPerfProbe {
                                 Minecraft minecraft, Map.Entry<String, java.util.function.Supplier<UIElement>> scene) {
         currentSynthName = scene.getKey();
         UIElement root = scene.getValue().get();
-        root.setId("oi_probe_synth_root_" + currentSynthName);
+        root.setId("topo_probe_synth_root_" + currentSynthName);
 
         stats.clear();
         elementCount = 0;
@@ -774,7 +774,7 @@ public final class UiPerfProbe {
                 ServerPlayer player = server.getPlayerList().getPlayers().getFirst();
                 ServerLevel level = (ServerLevel) player.level();
                 BlockPos base = player.blockPosition().relative(player.getDirection(), 2).above();
-                level.setBlock(base, BuiltinOIMachines.RESISTIVE_HEATER_T1.registeredBlock().getDefaultState(), 3);
+                level.setBlock(base, BuiltinTopoMachines.RESISTIVE_HEATER_T1.registeredBlock().getDefaultState(), 3);
                 machinePos = base;
                 if (level.getBlockEntity(base) instanceof MachineBlockEntity machine) {
                     fillEnergy(machine, 60_000);
@@ -803,7 +803,7 @@ public final class UiPerfProbe {
                 level.removeBlock(base, false);
                 level.setBlock(
                         base,
-                        BuiltinOIMachines.COMBUSTION_GENERATOR_T1.registeredBlock().getDefaultState(),
+                        BuiltinTopoMachines.COMBUSTION_GENERATOR_T1.registeredBlock().getDefaultState(),
                         3);
                 machinePos = base;
                 if (!(level.getBlockEntity(base) instanceof MachineBlockEntity machine)) {
@@ -955,7 +955,7 @@ public final class UiPerfProbe {
         ScalarResourcePort storage = machine.machineComponents().require(ScalarResourcePort.ENERGY_INPUT_1);
         try (Transaction transaction = Transaction.openRoot()) {
             storage.handler().insert(
-                    BuiltinOIResourceIntegrations.ENERGY.recipeCapability().resource(), amount, transaction);
+                    BuiltinTopoResourceIntegrations.ENERGY.recipeCapability().resource(), amount, transaction);
             transaction.commit();
         }
     }
@@ -964,7 +964,7 @@ public final class UiPerfProbe {
         ScalarResourcePort storage = machine.machineComponents().require(ScalarResourcePort.HEAT_OUTPUT_1);
         try (Transaction transaction = Transaction.openRoot()) {
             storage.handler().extract(
-                    BuiltinOIResourceIntegrations.HEAT.recipeCapability().resource(), amount, transaction);
+                    BuiltinTopoResourceIntegrations.HEAT.recipeCapability().resource(), amount, transaction);
             transaction.commit();
         }
     }

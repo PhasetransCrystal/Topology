@@ -1,13 +1,13 @@
 package net.ptcrys.topo.integration.jade;
 
-import net.ptcrys.topo.api.lang.LangRegistry;
+import net.ptcrys.topo.api.api.lang.LangRegistry;
+import net.ptcrys.topo.api.machine.ui.LcdData;
+import net.ptcrys.topo.api.machine.ui.MachineUiComponentStyle;
+import net.ptcrys.topo.api.machine.ui.MachineUiContainerTemplate;
+import net.ptcrys.topo.api.machine.ui.MachineUiLayout;
 import net.ptcrys.topo.api.pipe.PipeDefinition;
 import net.ptcrys.topo.api.pipe.PipeSideRole;
-import net.ptcrys.topo.apiv2.machine.ui.LcdData;
-import net.ptcrys.topo.apiv2.machine.ui.MachineUiComponentStyle;
-import net.ptcrys.topo.apiv2.machine.ui.MachineUiContainerTemplate;
-import net.ptcrys.topo.apiv2.machine.ui.MachineUiLayout;
-import net.ptcrys.topo.data.pipe.BuiltinOIPipeLang;
+import net.ptcrys.topo.data.pipe.BuiltinTopoPipeLang;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.Direction;
@@ -88,7 +88,7 @@ final class PipeJadePanel {
                 .pinColumns(measureKeyColumn(values), valueColumnWidth);
 
         panel.addLocalBoundEntry(
-                BuiltinOIPipeLang.PIPE_JADE_LCD_NODE.getComponent(),
+                BuiltinTopoPipeLang.PIPE_JADE_LCD_NODE.getComponent(),
                 () -> Component.literal(nodeText(definition, values)),
                 () -> values.used > 0 ? LcdData.LED_RUNNING : LcdData.LED_WAITING);
 
@@ -97,7 +97,7 @@ final class PipeJadePanel {
                 continue;
             }
             panel.addLocalBoundEntry(
-                    BuiltinOIPipeLang.side(direction).getComponent(),
+                    BuiltinTopoPipeLang.side(direction).getComponent(),
                     () -> directionValue(definition, values, direction),
                     () -> switch (PipeSideRole.unpack(values.roles, direction)) {
                         case EXTRACT -> LcdData.LED_OUTPUT;
@@ -107,27 +107,27 @@ final class PipeJadePanel {
         }
 
         panel.addLocalBoundEntry(
-                BuiltinOIPipeLang.PIPE_JADE_LCD_NETWORK.getComponent(),
+                BuiltinTopoPipeLang.PIPE_JADE_LCD_NETWORK.getComponent(),
                 () -> Component.literal(networkText(values)),
                 () -> LcdData.LED_TEXT);
         panel.addLocalBoundEntry(
-                indented(BuiltinOIPipeLang.PIPE_JADE_LCD_EXTRACTORS.getComponent()),
+                indented(BuiltinTopoPipeLang.PIPE_JADE_LCD_EXTRACTORS.getComponent()),
                 () -> Component.literal(Integer.toString(values.netExtractors)),
                 () -> values.netExtractors > 0 ? LcdData.LED_OUTPUT : LcdData.LED_TEXT);
         panel.addLocalBoundEntry(
-                indented(BuiltinOIPipeLang.PIPE_JADE_LCD_TARGETS.getComponent()),
+                indented(BuiltinTopoPipeLang.PIPE_JADE_LCD_TARGETS.getComponent()),
                 () -> Component.literal(Integer.toString(values.netDestinations)),
                 () -> values.netDestinations > 0 ? LcdData.LED_RUNNING : LcdData.LED_TEXT);
         panel.addLocalBoundEntry(
-                BuiltinOIPipeLang.PIPE_JADE_LCD_MOVED.getComponent(),
+                BuiltinTopoPipeLang.PIPE_JADE_LCD_MOVED.getComponent(),
                 () -> Component.literal(movedText(definition, values)),
                 () -> values.moved > 0 ? LcdData.LED_RUNNING : LcdData.LED_TEXT);
         panel.addLocalBoundEntry(
-                BuiltinOIPipeLang.PIPE_JADE_LCD_PEAK.getComponent(),
+                BuiltinTopoPipeLang.PIPE_JADE_LCD_PEAK.getComponent(),
                 () -> Component.literal(peakText(values)),
                 () -> values.peak >= 100 ? LcdData.LED_OUTPUT : LcdData.LED_TEXT);
         panel.addLocalBoundEntry(
-                BuiltinOIPipeLang.PIPE_JADE_LCD_TICK.getComponent(),
+                BuiltinTopoPipeLang.PIPE_JADE_LCD_TICK.getComponent(),
                 () -> Component.literal(tickText(values)),
                 () -> LcdData.LED_TEXT);
 
@@ -137,7 +137,7 @@ final class PipeJadePanel {
                 Float.NaN,
                 AlignItems.FLEX_START,
                 null,
-                "oi_jade_pipe_panel_root",
+                "topo_jade_pipe_panel_root",
                 scope -> {
                     scope.add(panel);
                     return Unit.INSTANCE;
@@ -169,7 +169,7 @@ final class PipeJadePanel {
         int ordinal = direction.ordinal();
         PipeSideRole role = PipeSideRole.unpack(values.roles, direction);
         StringBuilder text = new StringBuilder();
-        text.append(BuiltinOIPipeLang.role(role).getString());
+        text.append(BuiltinTopoPipeLang.role(role).getString());
         text.append(" · avg ").append(format(definition, values.flows[ordinal]))
                 .append('/').append(values.windowSeconds());
         if (role == PipeSideRole.EXTRACT && values.strategyKey[ordinal] != null) {
@@ -196,18 +196,18 @@ final class PipeJadePanel {
     }
 
     private static float measureKeyColumn(Values values) {
-        float width = lcdTextWidth(BuiltinOIPipeLang.PIPE_JADE_LCD_NETWORK.getString());
+        float width = lcdTextWidth(BuiltinTopoPipeLang.PIPE_JADE_LCD_NETWORK.getString());
         for (Direction direction : DIRECTIONS) {
             if (PipeSideRole.unpack(values.roles, direction) != PipeSideRole.NONE) {
-                width = Math.max(width, lcdTextWidth(BuiltinOIPipeLang.side(direction).getString()));
+                width = Math.max(width, lcdTextWidth(BuiltinTopoPipeLang.side(direction).getString()));
             }
         }
-        width = Math.max(width, lcdTextWidth(BuiltinOIPipeLang.PIPE_JADE_LCD_NODE.getString()));
-        width = Math.max(width, lcdTextWidth("  " + BuiltinOIPipeLang.PIPE_JADE_LCD_EXTRACTORS.getString()));
-        width = Math.max(width, lcdTextWidth("  " + BuiltinOIPipeLang.PIPE_JADE_LCD_TARGETS.getString()));
-        width = Math.max(width, lcdTextWidth(BuiltinOIPipeLang.PIPE_JADE_LCD_MOVED.getString()));
-        width = Math.max(width, lcdTextWidth(BuiltinOIPipeLang.PIPE_JADE_LCD_PEAK.getString()));
-        width = Math.max(width, lcdTextWidth(BuiltinOIPipeLang.PIPE_JADE_LCD_TICK.getString()));
+        width = Math.max(width, lcdTextWidth(BuiltinTopoPipeLang.PIPE_JADE_LCD_NODE.getString()));
+        width = Math.max(width, lcdTextWidth("  " + BuiltinTopoPipeLang.PIPE_JADE_LCD_EXTRACTORS.getString()));
+        width = Math.max(width, lcdTextWidth("  " + BuiltinTopoPipeLang.PIPE_JADE_LCD_TARGETS.getString()));
+        width = Math.max(width, lcdTextWidth(BuiltinTopoPipeLang.PIPE_JADE_LCD_MOVED.getString()));
+        width = Math.max(width, lcdTextWidth(BuiltinTopoPipeLang.PIPE_JADE_LCD_PEAK.getString()));
+        width = Math.max(width, lcdTextWidth(BuiltinTopoPipeLang.PIPE_JADE_LCD_TICK.getString()));
         return Math.min(width + COLUMN_SLACK, MAX_KEY_COLUMN_WIDTH);
     }
 

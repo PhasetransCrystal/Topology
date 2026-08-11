@@ -1,17 +1,20 @@
 package net.ptcrys.topo.gametest;
 
-import net.ptcrys.topo.api.tick.NoopTickHandle;
-import net.ptcrys.topo.apiv2.machine.MachineBlockEntity;
-import net.ptcrys.topo.apiv2.machine.Machines;
-import net.ptcrys.topo.apiv2.machine.component.RecipeLogic;
-import net.ptcrys.topo.apiv2.machine.data.DataInt;
-import net.ptcrys.topo.apiv2.machine.data.DataResourceKey;
-import net.ptcrys.topo.apiv2.machine.data.MachineDataScope;
-import net.ptcrys.topo.apiv2.machine.data.MachineDataSyncBatcher;
-import net.ptcrys.topo.apiv2.machine.data.SyncableFieldBuilder;
-import net.ptcrys.topo.datav2.machine.BuiltinOIMachines;
-import net.ptcrys.topo.datav2.machine.common.component.resource.ItemResourcePort;
-import net.ptcrys.topo.datav2.machine.common.component.resource.ScalarResourcePort;
+import net.ptcrys.topo.api.api.tick.NoopTickHandle;
+import net.ptcrys.topo.api.machine.MachineBlockEntity;
+import net.ptcrys.topo.api.machine.Machines;
+import net.ptcrys.topo.api.machine.component.RecipeLogic;
+import net.ptcrys.topo.api.machine.data.DataInt;
+import net.ptcrys.topo.api.machine.data.DataResourceKey;
+import net.ptcrys.topo.api.machine.data.MachineDataScope;
+import net.ptcrys.topo.api.machine.data.MachineDataSyncBatcher;
+import net.ptcrys.topo.api.machine.data.SyncableFieldBuilder;
+import net.ptcrys.topo.data.machine.BuiltinTopoMachines;
+import net.ptcrys.topo.data.machine.common.component.resource.ItemResourcePort;
+import net.ptcrys.topo.data.machine.common.component.resource.ScalarResourcePort;
+import net.ptcrys.topo.data.material.BuiltinTopoMaterialForms;
+import net.ptcrys.topo.data.material.BuiltinTopoMaterials;
+import net.ptcrys.topo.data.recipe.BuiltinTopoResourceIntegrations;
 import net.ptcrys.topo.helper.IdHelper;
 import net.ptcrys.topo.helper.MaterialHelper;
 
@@ -162,7 +165,7 @@ public final class MachineDataSafetyGameTests {
     }
 
     private static void machineDataPassiveStorageMarksChunkUnsaved(GameTestHelper helper) {
-        helper.setBlock(MACHINE_POS, BuiltinOIMachines.MACERATOR_T1.registeredBlock().getDefaultState());
+        helper.setBlock(MACHINE_POS, BuiltinTopoMachines.MACERATOR_T1.registeredBlock().getDefaultState());
         MachineBlockEntity machine = helper.getBlockEntity(MACHINE_POS, MachineBlockEntity.class);
         LevelChunk chunk = (LevelChunk) helper.getLevel().getChunk(helper.absolutePos(MACHINE_POS));
         chunk.tryMarkSaved();
@@ -322,7 +325,7 @@ public final class MachineDataSafetyGameTests {
         ResourceKey<Recipe<?>> defaultRecipe = ResourceKey.create(Registries.RECIPE, IdHelper.oi("contract/default_recipe"));
         MachineBlockEntity savedMachine = Machines.createBlockEntity(
                 MACHINE_POS,
-                BuiltinOIMachines.MACERATOR_T1.registeredBlock().getDefaultState());
+                BuiltinTopoMachines.MACERATOR_T1.registeredBlock().getDefaultState());
         savedMachine.data()
                 .scope("contract")
                 .resourceKey("recipe", Registries.RECIPE, defaultRecipe)
@@ -338,7 +341,7 @@ public final class MachineDataSafetyGameTests {
 
         MachineBlockEntity loaded = Machines.createBlockEntity(
                 MACHINE_POS,
-                BuiltinOIMachines.MACERATOR_T1.registeredBlock().getDefaultState());
+                BuiltinTopoMachines.MACERATOR_T1.registeredBlock().getDefaultState());
         DataResourceKey<Recipe<?>> loadedField = loaded.data()
                 .scope("contract")
                 .resourceKey("recipe", Registries.RECIPE, defaultRecipe)
@@ -359,7 +362,7 @@ public final class MachineDataSafetyGameTests {
     private static void machineDataRejectsTrailingSyncBytes(GameTestHelper helper) {
         MachineBlockEntity machine = Machines.createBlockEntity(
                 MACHINE_POS,
-                BuiltinOIMachines.MACERATOR_T1.registeredBlock().getDefaultState());
+                BuiltinTopoMachines.MACERATOR_T1.registeredBlock().getDefaultState());
         DataInt value = machine.data().scope("contract_sync").intField("value", 0)
                 .saveNone()
                 .syncToClientAtEndOfDirtyTick()
@@ -401,7 +404,7 @@ public final class MachineDataSafetyGameTests {
 
         MachineBlockEntity constructed = Machines.createBlockEntity(
                 new BlockPos(2, 1, 1),
-                BuiltinOIMachines.MACERATOR_T1.registeredBlock().getDefaultState());
+                BuiltinTopoMachines.MACERATOR_T1.registeredBlock().getDefaultState());
         SyncableFieldBuilder<DataInt, Integer> lateField = constructed.data().scope("contract_test").intField("late_sync", 0)
                 .saveNone()
                 .syncNone();
@@ -417,7 +420,7 @@ public final class MachineDataSafetyGameTests {
     private static void machineDataRejectsToServerFieldsUntilAuthorized(GameTestHelper helper) {
         MachineBlockEntity machine = Machines.createBlockEntity(
                 MACHINE_POS,
-                BuiltinOIMachines.MACERATOR_T1.registeredBlock().getDefaultState());
+                BuiltinTopoMachines.MACERATOR_T1.registeredBlock().getDefaultState());
         SyncableFieldBuilder<DataInt, Integer> clientWritable = machine.data().scope("contract_test").intField("clientWritable", 0)
                 .saveNone();
         assertUnsupported(
@@ -431,7 +434,7 @@ public final class MachineDataSafetyGameTests {
     private static void machineDataRejectsRuntimeWithUnconfiguredPersistPolicy(GameTestHelper helper) {
         MachineBlockEntity machine = Machines.createBlockEntity(
                 MACHINE_POS,
-                BuiltinOIMachines.MACERATOR_T1.registeredBlock().getDefaultState());
+                BuiltinTopoMachines.MACERATOR_T1.registeredBlock().getDefaultState());
         assertIllegalState(
                 helper,
                 () -> machine.data().scope("contract_test").intField("value", 0)
@@ -445,7 +448,7 @@ public final class MachineDataSafetyGameTests {
     private static void machineDataRejectsRuntimeWithUnconfiguredSyncPolicy(GameTestHelper helper) {
         MachineBlockEntity machine = Machines.createBlockEntity(
                 MACHINE_POS,
-                BuiltinOIMachines.MACERATOR_T1.registeredBlock().getDefaultState());
+                BuiltinTopoMachines.MACERATOR_T1.registeredBlock().getDefaultState());
         assertIllegalState(
                 helper,
                 () -> machine.data().scope("contract_test").intField("value", 0)
@@ -459,7 +462,7 @@ public final class MachineDataSafetyGameTests {
     private static void machineDataClientSlotMirrorWriteDoesNotMarkPersistDirty(GameTestHelper helper) {
         MachineBlockEntity clientMachine = Machines.createBlockEntity(
                 MACHINE_POS,
-                BuiltinOIMachines.MACERATOR_T1.registeredBlock().getDefaultState());
+                BuiltinTopoMachines.MACERATOR_T1.registeredBlock().getDefaultState());
         forcePhase(clientMachine, "CLIENT_WAITING");
 
         ItemResourcePort input = clientMachine.machineComponents().require(ItemResourcePort.ITEM_INPUT_1);
@@ -523,7 +526,7 @@ public final class MachineDataSafetyGameTests {
     }
 
     private static MachineBlockEntity placeMacerator(GameTestHelper helper) {
-        helper.setBlock(MACHINE_POS, BuiltinOIMachines.MACERATOR_T1.registeredBlock().getDefaultState());
+        helper.setBlock(MACHINE_POS, BuiltinTopoMachines.MACERATOR_T1.registeredBlock().getDefaultState());
         MachineBlockEntity machine = helper.getBlockEntity(MACHINE_POS, MachineBlockEntity.class);
         // 研磨配方按 tick 抽电;测试机起手满能,聚焦各自的本职断言。
         ScalarResourcePort energy = machine.machineComponents().require(ScalarResourcePort.ENERGY_INPUT_1);
@@ -583,8 +586,8 @@ public final class MachineDataSafetyGameTests {
         ResourceHandler<ItemResource> handler = machine.machineComponents()
                 .resources()
                 .recipeSide()
-                .handler(net.ptcrys.topo.datav2.recipe.BuiltinOIResourceIntegrations.ITEM.resourceType(),
-                        net.ptcrys.topo.apiv2.machine.resource.RecipeRole.INPUT);
+                .handler(BuiltinTopoResourceIntegrations.ITEM.resourceType(),
+                        net.ptcrys.topo.api.machine.resource.RecipeRole.INPUT);
         if (handler == null) {
             helper.fail("Expected loaded macerator to expose internal item input handler");
         }
@@ -598,8 +601,8 @@ public final class MachineDataSafetyGameTests {
 
     private static ItemResource ironOreResource() {
         return ItemResource.of(MaterialHelper.requireItem(
-                net.ptcrys.topo.datav2.material.BuiltinOIMaterials.IRON,
-                net.ptcrys.topo.datav2.material.BuiltinOIMaterialForms.ORE));
+                BuiltinTopoMaterials.IRON,
+                BuiltinTopoMaterialForms.ORE));
     }
 
     private static CompoundTag machineDataRoot(CompoundTag saved) {

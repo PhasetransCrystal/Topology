@@ -1,23 +1,23 @@
 package net.ptcrys.topo.integration.ae2;
 
+import net.ptcrys.topo.api.api.tick.TickHandle;
+import net.ptcrys.topo.api.machine.component.ComponentContext;
+import net.ptcrys.topo.api.machine.component.ComponentKey;
+import net.ptcrys.topo.api.machine.component.ComponentMount;
+import net.ptcrys.topo.api.machine.component.MachineComponents;
+import net.ptcrys.topo.api.machine.data.DataBoolean;
+import net.ptcrys.topo.api.machine.data.DataItemResourceHandler;
+import net.ptcrys.topo.api.machine.data.DataString;
+import net.ptcrys.topo.api.machine.data.DataValueIoField;
+import net.ptcrys.topo.api.machine.resource.MachineResourceType;
+import net.ptcrys.topo.api.machine.resource.RecipeInputPortControl;
+import net.ptcrys.topo.api.machine.resource.RecipeRole;
+import net.ptcrys.topo.api.machine.resource.RecipeSearchPoolId;
+import net.ptcrys.topo.api.machine.resource.SearchPoolUiControl;
 import net.ptcrys.topo.api.tick.MachineTicker;
-import net.ptcrys.topo.api.tick.TickHandle;
-import net.ptcrys.topo.apiv2.machine.component.ComponentContext;
-import net.ptcrys.topo.apiv2.machine.component.ComponentKey;
-import net.ptcrys.topo.apiv2.machine.component.ComponentMount;
-import net.ptcrys.topo.apiv2.machine.component.MachineComponents;
-import net.ptcrys.topo.apiv2.machine.data.DataBoolean;
-import net.ptcrys.topo.apiv2.machine.data.DataItemResourceHandler;
-import net.ptcrys.topo.apiv2.machine.data.DataString;
-import net.ptcrys.topo.apiv2.machine.data.DataValueIoField;
-import net.ptcrys.topo.apiv2.machine.resource.MachineResourceType;
-import net.ptcrys.topo.apiv2.machine.resource.RecipeInputPortControl;
-import net.ptcrys.topo.apiv2.machine.resource.RecipeRole;
-import net.ptcrys.topo.apiv2.machine.resource.RecipeSearchPoolId;
-import net.ptcrys.topo.apiv2.machine.resource.SearchPoolUiControl;
-import net.ptcrys.topo.datav2.machine.common.component.resource.FluidResourcePort;
-import net.ptcrys.topo.datav2.machine.common.component.resource.ItemResourcePort;
-import net.ptcrys.topo.datav2.recipe.BuiltinOIResourceIntegrations;
+import net.ptcrys.topo.data.machine.common.component.resource.FluidResourcePort;
+import net.ptcrys.topo.data.machine.common.component.resource.ItemResourcePort;
+import net.ptcrys.topo.data.recipe.BuiltinTopoResourceIntegrations;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
@@ -51,7 +51,7 @@ import java.util.function.Consumer;
 
 /**
  * Internal AE2 crafting provider for multiblock parts: pushes processing-pattern inputs into local
- * OI buffers (shared ports or per-pattern slot buffers). Does not push to adjacent world inventories
+ * Topo buffers (shared ports or per-pattern slot buffers). Does not push to adjacent world inventories
  * like AE2's {@code PatternProviderLogic}.
  *
  * <p>
@@ -246,8 +246,8 @@ public final class AePatternProvider extends MachineTicker
         if (!separated.value() || recipeIo == RecipeRole.OUTPUT || recipeIo == RecipeRole.NONE) {
             return;
         }
-        MachineResourceType<ItemResource> itemType = BuiltinOIResourceIntegrations.ITEM.resourceType();
-        MachineResourceType<FluidResource> fluidType = BuiltinOIResourceIntegrations.FLUID.resourceType();
+        MachineResourceType<ItemResource> itemType = BuiltinTopoResourceIntegrations.ITEM.resourceType();
+        MachineResourceType<FluidResource> fluidType = BuiltinTopoResourceIntegrations.FLUID.resourceType();
         for (AePatternSlotBuffer buffer : slotBuffers) {
             if (resourceType == itemType && recipeIo.allows(RecipeRole.INPUT)) {
                 @SuppressWarnings("unchecked")

@@ -1,19 +1,19 @@
 package net.ptcrys.topo.gametest;
 
-import net.ptcrys.topo.apiv2.machine.MachineBlockEntity;
-import net.ptcrys.topo.apiv2.machine.MachineDefinition;
-import net.ptcrys.topo.apiv2.machine.component.ComponentKey;
-import net.ptcrys.topo.apiv2.machine.component.MachineComponents;
-import net.ptcrys.topo.apiv2.machine.component.RecipeLogic;
-import net.ptcrys.topo.apiv2.machine.resource.RecipeSearchPoolId;
-import net.ptcrys.topo.apiv2.machine.resource.RecipeSearchPoolRouter;
-import net.ptcrys.topo.datav2.machine.common.component.resource.FluidResourcePort;
-import net.ptcrys.topo.datav2.machine.common.component.resource.ItemResourcePort;
-import net.ptcrys.topo.datav2.machine.common.component.resource.ScalarResource;
-import net.ptcrys.topo.datav2.machine.common.component.resource.ScalarResourcePort;
-import net.ptcrys.topo.datav2.recipe.BuiltinOIResourceIntegrations;
-import net.ptcrys.topo.datav2.recipe.BuiltinOIResourceIntegrations.BuiltinResourceIntegration;
-import net.ptcrys.topo.datav2.recipe.common.ScalarRecipeCapability;
+import net.ptcrys.topo.api.machine.MachineBlockEntity;
+import net.ptcrys.topo.api.machine.MachineDefinition;
+import net.ptcrys.topo.api.machine.component.ComponentKey;
+import net.ptcrys.topo.api.machine.component.MachineComponents;
+import net.ptcrys.topo.api.machine.component.RecipeLogic;
+import net.ptcrys.topo.api.machine.resource.RecipeSearchPoolId;
+import net.ptcrys.topo.api.machine.resource.RecipeSearchPoolRouter;
+import net.ptcrys.topo.data.machine.common.component.resource.FluidResourcePort;
+import net.ptcrys.topo.data.machine.common.component.resource.ItemResourcePort;
+import net.ptcrys.topo.data.machine.common.component.resource.ScalarResource;
+import net.ptcrys.topo.data.machine.common.component.resource.ScalarResourcePort;
+import net.ptcrys.topo.data.recipe.BuiltinTopoResourceIntegrations;
+import net.ptcrys.topo.data.recipe.BuiltinTopoResourceIntegrations.BuiltinResourceIntegration;
+import net.ptcrys.topo.data.recipe.common.ScalarRecipeCapability;
 import net.ptcrys.topo.helper.IdHelper;
 
 import net.minecraft.core.BlockPos;
@@ -42,7 +42,7 @@ import java.util.function.Consumer;
 
 /**
  * 标量资源机器(GameTest 夹具副本)的游戏内测试:烧煤发电、容量回压、10:1 转换、锅炉双输入、
- * 电锅炉断能停机与方块能力侧面策略。全部使用 {@link OIScalarGameTestFixtures} 的固定数值,
+ * 电锅炉断能停机与方块能力侧面策略。全部使用 {@link TopoScalarGameTestFixtures} 的固定数值,
  * 与正式机器/配方解耦。
  */
 public final class ScalarMachineGameTests {
@@ -55,7 +55,7 @@ public final class ScalarMachineGameTests {
     private ScalarMachineGameTests() {}
 
     public static void register(RegisterGameTestsEvent event) {
-        if (!OIScalarGameTestFixtures.enabled()) {
+        if (!TopoScalarGameTestFixtures.enabled()) {
             return;
         }
         Holder<TestEnvironmentDefinition<?>> environment = event.registerEnvironment(IdHelper.oi("scalar_machine"), new TestEnvironmentDefinition.AllOf());
@@ -128,10 +128,10 @@ public final class ScalarMachineGameTests {
     }
 
     private static void energyGeneratorBurnsCoalIntoStoredEnergy(GameTestHelper helper) {
-        MachineBlockEntity machine = place(helper, OIScalarGameTestFixtures.energyGenerator());
+        MachineBlockEntity machine = place(helper, TopoScalarGameTestFixtures.energyGenerator());
         insertItem(helper, machine, 1);
 
-        int total = OIScalarGameTestFixtures.GENERATOR_ENERGY_PER_TICK * OIScalarGameTestFixtures.GENERATOR_DURATION;
+        int total = TopoScalarGameTestFixtures.GENERATOR_ENERGY_PER_TICK * TopoScalarGameTestFixtures.GENERATOR_DURATION;
         helper.startSequence()
                 .thenExecuteAfter(2, () -> {
                     if (logic(helper).state() != RecipeLogic.State.WORKING) {
@@ -139,7 +139,7 @@ public final class ScalarMachineGameTests {
                     }
                     assertItemCount(helper, machine, 0, "Coal must be consumed when the burn starts");
                 })
-                .thenExecuteAfter(OIScalarGameTestFixtures.GENERATOR_DURATION + 10, () -> {
+                .thenExecuteAfter(TopoScalarGameTestFixtures.GENERATOR_DURATION + 10, () -> {
                     assertScalarAmount(helper, machine, ScalarResourcePort.ENERGY_OUTPUT_1, total,
                             "One coal burn must accumulate exactly " + total + " energy");
                     if (logic(helper).state() != RecipeLogic.State.IDLE) {
@@ -150,9 +150,9 @@ public final class ScalarMachineGameTests {
     }
 
     private static void energyGeneratorWaitsWhenBufferFullAndResumes(GameTestHelper helper) {
-        MachineBlockEntity machine = place(helper, OIScalarGameTestFixtures.energyGenerator());
+        MachineBlockEntity machine = place(helper, TopoScalarGameTestFixtures.energyGenerator());
         fillScalar(helper, machine, ScalarResourcePort.ENERGY_OUTPUT_1,
-                BuiltinOIResourceIntegrations.ENERGY, OIScalarGameTestFixtures.GENERATOR_ENERGY_CAPACITY);
+                BuiltinTopoResourceIntegrations.ENERGY, TopoScalarGameTestFixtures.GENERATOR_ENERGY_CAPACITY);
         insertItem(helper, machine, 1);
 
         helper.startSequence()
@@ -162,8 +162,8 @@ public final class ScalarMachineGameTests {
                     }
                     assertItemCount(helper, machine, 1, "Waiting to start must not consume the coal");
                     ResourceHandler<ScalarResource> down = requireScalarCapability(
-                            helper, BuiltinOIResourceIntegrations.ENERGY, Direction.DOWN);
-                    extractScalar(helper, down, BuiltinOIResourceIntegrations.ENERGY, 50,
+                            helper, BuiltinTopoResourceIntegrations.ENERGY, Direction.DOWN);
+                    extractScalar(helper, down, BuiltinTopoResourceIntegrations.ENERGY, 50,
                             "DOWN energy capability should drain half of the full buffer");
                 })
                 .thenExecuteAfter(2, () -> {
@@ -176,11 +176,11 @@ public final class ScalarMachineGameTests {
     }
 
     private static void advancedGeneratorConvertsEnergyTenToOne(GameTestHelper helper) {
-        MachineBlockEntity machine = place(helper, OIScalarGameTestFixtures.advancedGenerator());
-        int totalEnergy = OIScalarGameTestFixtures.ADVANCED_ENERGY_IN_PER_TICK * OIScalarGameTestFixtures.ADVANCED_DURATION;
-        int totalAdvanced = OIScalarGameTestFixtures.ADVANCED_OUT_PER_TICK * OIScalarGameTestFixtures.ADVANCED_DURATION;
+        MachineBlockEntity machine = place(helper, TopoScalarGameTestFixtures.advancedGenerator());
+        int totalEnergy = TopoScalarGameTestFixtures.ADVANCED_ENERGY_IN_PER_TICK * TopoScalarGameTestFixtures.ADVANCED_DURATION;
+        int totalAdvanced = TopoScalarGameTestFixtures.ADVANCED_OUT_PER_TICK * TopoScalarGameTestFixtures.ADVANCED_DURATION;
         fillScalar(helper, machine, ScalarResourcePort.ENERGY_INPUT_1,
-                BuiltinOIResourceIntegrations.ENERGY, totalEnergy);
+                BuiltinTopoResourceIntegrations.ENERGY, totalEnergy);
 
         helper.startSequence()
                 .thenExecuteAfter(2, () -> {
@@ -188,7 +188,7 @@ public final class ScalarMachineGameTests {
                         helper.fail("Advanced generator should be WORKING after the energy preload, got " + logic(helper).state());
                     }
                 })
-                .thenExecuteAfter(OIScalarGameTestFixtures.ADVANCED_DURATION + 10, () -> {
+                .thenExecuteAfter(TopoScalarGameTestFixtures.ADVANCED_DURATION + 10, () -> {
                     assertScalarAmount(helper, machine, ScalarResourcePort.ENERGY_INPUT_1, 0,
                             "The preloaded energy must be fully consumed at the 10:1 ratio");
                     assertScalarAmount(helper, machine, ScalarResourcePort.ADVANCED_ENERGY_OUTPUT_1, totalAdvanced,
@@ -201,7 +201,7 @@ public final class ScalarMachineGameTests {
     }
 
     private static void advancedGeneratorRequiresEnergyToStart(GameTestHelper helper) {
-        MachineBlockEntity machine = place(helper, OIScalarGameTestFixtures.advancedGenerator());
+        MachineBlockEntity machine = place(helper, TopoScalarGameTestFixtures.advancedGenerator());
 
         helper.startSequence()
                 .thenExecuteAfter(2, () -> {
@@ -211,8 +211,8 @@ public final class ScalarMachineGameTests {
                     assertScalarAmount(helper, machine, ScalarResourcePort.ADVANCED_ENERGY_OUTPUT_1, 0,
                             "No advanced energy may be produced without energy input");
                     fillScalar(helper, machine, ScalarResourcePort.ENERGY_INPUT_1,
-                            BuiltinOIResourceIntegrations.ENERGY,
-                            OIScalarGameTestFixtures.ADVANCED_ENERGY_IN_PER_TICK);
+                            BuiltinTopoResourceIntegrations.ENERGY,
+                            TopoScalarGameTestFixtures.ADVANCED_ENERGY_IN_PER_TICK);
                 })
                 .thenExecuteAfter(6, () -> {
                     if (logic(helper).state() != RecipeLogic.State.WAITING_TICK_INPUT_TO_PROCESS) {
@@ -221,14 +221,14 @@ public final class ScalarMachineGameTests {
                     assertScalarAmount(helper, machine, ScalarResourcePort.ENERGY_INPUT_1, 0,
                             "The one-tick energy budget must be consumed");
                     assertScalarAmount(helper, machine, ScalarResourcePort.ADVANCED_ENERGY_OUTPUT_1,
-                            OIScalarGameTestFixtures.ADVANCED_OUT_PER_TICK,
+                            TopoScalarGameTestFixtures.ADVANCED_OUT_PER_TICK,
                             "Exactly one tick of advanced energy must be produced before the stall");
                 })
                 .thenSucceed();
     }
 
     private static void boilerRequiresBothCoalAndWater(GameTestHelper helper) {
-        MachineBlockEntity machine = place(helper, OIScalarGameTestFixtures.boiler());
+        MachineBlockEntity machine = place(helper, TopoScalarGameTestFixtures.boiler());
         insertItem(helper, machine, 1);
 
         helper.startSequence()
@@ -244,23 +244,23 @@ public final class ScalarMachineGameTests {
                         helper.fail("Boiler should start once both coal and water are present, got " + logic(helper).state());
                     }
                     assertItemCount(helper, machine, 0, "Starting the boiler must consume the coal");
-                    assertWaterAmount(helper, machine, 500 - OIScalarGameTestFixtures.BOILER_WATER_MB,
+                    assertWaterAmount(helper, machine, 500 - TopoScalarGameTestFixtures.BOILER_WATER_MB,
                             "Starting the boiler must consume exactly the recipe water");
                 })
                 .thenSucceed();
     }
 
     private static void boilerProducesHeatOverDuration(GameTestHelper helper) {
-        MachineBlockEntity machine = place(helper, OIScalarGameTestFixtures.boiler());
+        MachineBlockEntity machine = place(helper, TopoScalarGameTestFixtures.boiler());
         insertItem(helper, machine, 1);
         fillWater(helper, machine, 500);
 
-        int totalHeat = OIScalarGameTestFixtures.BOILER_HEAT_PER_TICK * OIScalarGameTestFixtures.BOILER_DURATION;
+        int totalHeat = TopoScalarGameTestFixtures.BOILER_HEAT_PER_TICK * TopoScalarGameTestFixtures.BOILER_DURATION;
         helper.startSequence()
-                .thenExecuteAfter(OIScalarGameTestFixtures.BOILER_DURATION + 10, () -> {
+                .thenExecuteAfter(TopoScalarGameTestFixtures.BOILER_DURATION + 10, () -> {
                     assertScalarAmount(helper, machine, ScalarResourcePort.HEAT_OUTPUT_1, totalHeat,
                             "One boiler run must produce exactly " + totalHeat + " heat");
-                    assertWaterAmount(helper, machine, 500 - OIScalarGameTestFixtures.BOILER_WATER_MB,
+                    assertWaterAmount(helper, machine, 500 - TopoScalarGameTestFixtures.BOILER_WATER_MB,
                             "One boiler run must consume exactly one recipe charge of water");
                     assertItemCount(helper, machine, 0, "One boiler run must consume the coal");
                 })
@@ -268,13 +268,13 @@ public final class ScalarMachineGameTests {
     }
 
     private static void electricBoilerConvertsAndStallsWhenDrained(GameTestHelper helper) {
-        MachineBlockEntity machine = place(helper, OIScalarGameTestFixtures.electricBoiler());
-        int perTickIn = OIScalarGameTestFixtures.ELECTRIC_ENERGY_IN_PER_TICK;
-        int perTickOut = OIScalarGameTestFixtures.ELECTRIC_HEAT_PER_TICK;
-        int duration = OIScalarGameTestFixtures.ELECTRIC_DURATION;
+        MachineBlockEntity machine = place(helper, TopoScalarGameTestFixtures.electricBoiler());
+        int perTickIn = TopoScalarGameTestFixtures.ELECTRIC_ENERGY_IN_PER_TICK;
+        int perTickOut = TopoScalarGameTestFixtures.ELECTRIC_HEAT_PER_TICK;
+        int duration = TopoScalarGameTestFixtures.ELECTRIC_DURATION;
         int partialTicks = 2;
         fillScalar(helper, machine, ScalarResourcePort.ENERGY_INPUT_1,
-                BuiltinOIResourceIntegrations.ENERGY, perTickIn * partialTicks);
+                BuiltinTopoResourceIntegrations.ENERGY, perTickIn * partialTicks);
 
         helper.startSequence()
                 .thenExecuteAfter(partialTicks + 4, () -> {
@@ -286,7 +286,7 @@ public final class ScalarMachineGameTests {
                     assertScalarAmount(helper, machine, ScalarResourcePort.ENERGY_INPUT_1, 0,
                             "The partial energy budget must be fully consumed at the stall");
                     fillScalar(helper, machine, ScalarResourcePort.ENERGY_INPUT_1,
-                            BuiltinOIResourceIntegrations.ENERGY, perTickIn * (duration - partialTicks));
+                            BuiltinTopoResourceIntegrations.ENERGY, perTickIn * (duration - partialTicks));
                 })
                 .thenExecuteAfter(duration + 10, () -> {
                     assertScalarAmount(helper, machine, ScalarResourcePort.HEAT_OUTPUT_1, perTickOut * duration,
@@ -301,17 +301,17 @@ public final class ScalarMachineGameTests {
     }
 
     private static void scalarBlockCapabilityRespectsPortSides(GameTestHelper helper) {
-        MachineBlockEntity machine = place(helper, OIScalarGameTestFixtures.energyGenerator());
+        MachineBlockEntity machine = place(helper, TopoScalarGameTestFixtures.energyGenerator());
         fillScalar(helper, machine, ScalarResourcePort.ENERGY_OUTPUT_1,
-                BuiltinOIResourceIntegrations.ENERGY, 50);
+                BuiltinTopoResourceIntegrations.ENERGY, 50);
 
         ResourceHandler<ScalarResource> down = requireScalarCapability(
-                helper, BuiltinOIResourceIntegrations.ENERGY, Direction.DOWN);
-        extractScalar(helper, down, BuiltinOIResourceIntegrations.ENERGY, 20,
+                helper, BuiltinTopoResourceIntegrations.ENERGY, Direction.DOWN);
+        extractScalar(helper, down, BuiltinTopoResourceIntegrations.ENERGY, 20,
                 "DOWN energy capability should extract stored energy");
         try (Transaction transaction = Transaction.openRoot()) {
             int inserted = down.insert(
-                    BuiltinOIResourceIntegrations.ENERGY.recipeCapability().resource(), 5, transaction);
+                    BuiltinTopoResourceIntegrations.ENERGY.recipeCapability().resource(), 5, transaction);
             if (inserted != 0) {
                 helper.fail("Output-only DOWN energy capability must reject insertion, inserted " + inserted);
             }
@@ -319,11 +319,11 @@ public final class ScalarMachineGameTests {
         }
         for (Direction side : new Direction[] { Direction.UP, Direction.NORTH, Direction.SOUTH, Direction.EAST,
                 Direction.WEST }) {
-            if (scalarCapability(helper, BuiltinOIResourceIntegrations.ENERGY, side) != null) {
+            if (scalarCapability(helper, BuiltinTopoResourceIntegrations.ENERGY, side) != null) {
                 helper.fail("Energy capability must be absent on side " + side);
             }
         }
-        if (scalarCapability(helper, BuiltinOIResourceIntegrations.ENERGY, null) != null) {
+        if (scalarCapability(helper, BuiltinTopoResourceIntegrations.ENERGY, null) != null) {
             helper.fail("Energy capability must be absent for the null side");
         }
         assertScalarAmount(helper, machine, ScalarResourcePort.ENERGY_OUTPUT_1, 30,
@@ -332,7 +332,7 @@ public final class ScalarMachineGameTests {
     }
 
     private static void rememberedRecipeGateFailureRetriesTraditionalOrder(GameTestHelper helper) {
-        MachineBlockEntity machine = place(helper, OIScalarGameTestFixtures.historyGateFallback());
+        MachineBlockEntity machine = place(helper, TopoScalarGameTestFixtures.historyGateFallback());
         insertItem(helper, machine, Items.COAL, 1);
 
         helper.startSequence()
@@ -344,13 +344,13 @@ public final class ScalarMachineGameTests {
                             helper,
                             machine,
                             ScalarResourcePort.ENERGY_OUTPUT_1,
-                            OIScalarGameTestFixtures.HISTORY_GATE_ENERGY,
+                            TopoScalarGameTestFixtures.HISTORY_GATE_ENERGY,
                             "The history seed recipe must fill the output gate");
                     insertItem(helper, machine, Items.COAL, 1);
                     insertItem(helper, machine, Items.REDSTONE, 1);
 
                     MachineComponents components = machine.machineComponents();
-                    var recipeType = OIScalarGameTestFixtures.historyGateFallbackType();
+                    var recipeType = TopoScalarGameTestFixtures.historyGateFallbackType();
                     RecipeSearchPoolRouter.SearchHit remembered = components.recipeSearchPoolRouter()
                             .search(
                                     machine,
@@ -382,7 +382,7 @@ public final class ScalarMachineGameTests {
                             helper,
                             machine,
                             ScalarResourcePort.ENERGY_OUTPUT_1,
-                            OIScalarGameTestFixtures.HISTORY_GATE_ENERGY,
+                            TopoScalarGameTestFixtures.HISTORY_GATE_ENERGY,
                             "The rejected history candidate must not emit additional energy");
                 })
                 .thenSucceed();

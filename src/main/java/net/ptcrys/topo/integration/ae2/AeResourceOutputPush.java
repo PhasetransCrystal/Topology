@@ -1,10 +1,10 @@
 package net.ptcrys.topo.integration.ae2;
 
+import net.ptcrys.topo.api.api.tick.TickHandle;
+import net.ptcrys.topo.api.machine.component.ComponentContext;
+import net.ptcrys.topo.api.machine.component.ComponentKey;
+import net.ptcrys.topo.api.machine.component.MachineComponents;
 import net.ptcrys.topo.api.tick.MachineTicker;
-import net.ptcrys.topo.api.tick.TickHandle;
-import net.ptcrys.topo.apiv2.machine.component.ComponentContext;
-import net.ptcrys.topo.apiv2.machine.component.ComponentKey;
-import net.ptcrys.topo.apiv2.machine.component.MachineComponents;
 
 import net.neoforged.neoforge.transfer.resource.Resource;
 import net.neoforged.neoforge.transfer.transaction.Transaction;

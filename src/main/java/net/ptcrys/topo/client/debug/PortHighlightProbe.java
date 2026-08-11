@@ -1,9 +1,9 @@
 package net.ptcrys.topo.client.debug;
 
-import net.ptcrys.topo.apiv2.machine.MachineDefinition;
-import net.ptcrys.topo.apiv2.machine.ui.MachineUiComponentStyle;
-import net.ptcrys.topo.apiv2.machine.ui.PortUiHighlight;
-import net.ptcrys.topo.datav2.machine.BuiltinOIMachines;
+import net.ptcrys.topo.api.machine.MachineDefinition;
+import net.ptcrys.topo.api.machine.ui.MachineUiComponentStyle;
+import net.ptcrys.topo.api.machine.ui.PortUiHighlight;
+import net.ptcrys.topo.data.machine.BuiltinTopoMachines;
 import net.ptcrys.topo.helper.IdHelper;
 
 import net.minecraft.client.Minecraft;
@@ -45,40 +45,40 @@ import java.util.Locale;
 
 /**
  * side-IO 卡标题"端口命名 + 悬浮高亮"全自动游戏内验证探针(同 {@link JeiLookupProbe} 的
- * 流水线骨架,独立 flag):仅当工作目录存在 {@code oi-port-highlight-probe.flag} 时激活;
+ * 流水线骨架,独立 flag):仅当工作目录存在 {@code topo-port-highlight-probe.flag} 时激活;
  * 自动建平坦世界,放一台锻压机,经 {@link BlockUIMenuType#openUI} 打开真实机器 UI,逐张
  * 定位目标卡(模具槽/能量)的图标标题栏,虚拟鼠标悬停:断言标题悬浮首行是端口名(模具槽
  * 显示专名 "Die Slot",未命名端口显示"资源 角色"拼接)、该端口全部登记元素已套高亮覆盖层,
  * 截图肉眼验收;再把鼠标移开,断言覆盖层全部还原。报告写
- * {@code oi-port-highlight-probe-report.txt} 后自动退出。
+ * {@code topo-port-highlight-probe-report.txt} 后自动退出。
  */
 public final class PortHighlightProbe {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("OI-PortHighlightProbe");
-    private static final Path FLAG_FILE = Path.of("oi-port-highlight-probe.flag");
-    private static final Path REPORT_FILE = Path.of("oi-port-highlight-probe-report.txt");
-    private static final Path LAYOUT_FLAG_FILE = Path.of("oi-machine-ui-layout-probe.flag");
-    private static final Path LAYOUT_REPORT_FILE = Path.of("oi-machine-ui-layout-probe-report.txt");
-    private static final Path SEARCH_POOL_FLAG_FILE = Path.of("oi-single-machine-search-pool-probe.flag");
-    private static final Path SEARCH_POOL_REPORT_FILE = Path.of("oi-single-machine-search-pool-probe-report.txt");
+    private static final Logger LOGGER = LoggerFactory.getLogger("Topo-PortHighlightProbe");
+    private static final Path FLAG_FILE = Path.of("topo-port-highlight-probe.flag");
+    private static final Path REPORT_FILE = Path.of("topo-port-highlight-probe-report.txt");
+    private static final Path LAYOUT_FLAG_FILE = Path.of("topo-machine-ui-layout-probe.flag");
+    private static final Path LAYOUT_REPORT_FILE = Path.of("topo-machine-ui-layout-probe-report.txt");
+    private static final Path SEARCH_POOL_FLAG_FILE = Path.of("topo-single-machine-search-pool-probe.flag");
+    private static final Path SEARCH_POOL_REPORT_FILE = Path.of("topo-single-machine-search-pool-probe-report.txt");
     /** 每轮唯一世界名:复用同名存档会撞上一轮的残留场景(并行会话共用 run/ 时尤甚)。 */
-    private static final String LEVEL_ID = "oi-port-highlight-probe-" + (System.currentTimeMillis() % 100_000_000L);
+    private static final String LEVEL_ID = "topo-port-highlight-probe-" + (System.currentTimeMillis() % 100_000_000L);
     private static final int WAIT_TIMEOUT_TICKS = 2400;
     private static final String CARD_ID = "machine_ui_component";
-    private static final String CARD_TITLE_ID = "oi_side_io_card_title";
+    private static final String CARD_TITLE_ID = "topo_side_io_card_title";
     private static final String MAIN_ID = "machine_ui_main";
     private static final String LEFT_COLUMN_ID = "machine_ui_left";
-    private static final String SEARCH_POOL_ID = "oi_search_pool";
-    private static final String SIDE_IO_PACKED_ID = "oi_side_io_packed";
-    private static final String SIDE_IO_FACE_ID = "oi_side_io_face_up";
+    private static final String SEARCH_POOL_ID = "topo_search_pool";
+    private static final String SIDE_IO_PACKED_ID = "topo_side_io_packed";
+    private static final String SIDE_IO_FACE_ID = "topo_side_io_face_up";
     private static final float GEOMETRY_EPSILON = 0.01f;
 
     private static final List<String> EVAPORATOR_SIDE_IO_IDS = List.of(
-            "oi_side_io_item_input_1",
-            "oi_side_io_item_output_1",
-            "oi_side_io_fluid_input_1",
-            "oi_side_io_fluid_output_1",
-            "oi_side_io_heat_input_1");
+            "topo_side_io_item_input_1",
+            "topo_side_io_item_output_1",
+            "topo_side_io_fluid_input_1",
+            "topo_side_io_fluid_output_1",
+            "topo_side_io_heat_input_1");
 
     /** 一个验收目标:side-IO 卡的内容元素 id(= sink key)、端口 id、期望的标题悬浮首行。 */
     private record Target(String shot, String gridId, Identifier portId, Component expectedName) {}
@@ -87,12 +87,12 @@ public final class PortHighlightProbe {
     private static final List<Target> TARGETS = List.of(
             new Target(
                     "die-card",
-                    "oi_side_io_item_die_1",
+                    "topo_side_io_item_die_1",
                     IdHelper.oi("item_die_1"),
                     traitName("item_die_1", "Die Slot")),
             new Target(
                     "energy-card",
-                    "oi_side_io_energy_input_1",
+                    "topo_side_io_energy_input_1",
                     IdHelper.oi("energy_input_1"),
                     traitName(
                             "energy_input_1",
@@ -222,7 +222,7 @@ public final class PortHighlightProbe {
                         return;
                     }
                     checkSingleMachineSearchPoolHidden(minecraft);
-                    grabScreenshot(minecraft, "oi-single-machine-search-pool");
+                    grabScreenshot(minecraft, "topo-single-machine-search-pool");
                     countdown = 10;
                     state = State.FLUSH;
                     return;
@@ -238,7 +238,7 @@ public final class PortHighlightProbe {
                         layoutAssertion("layout check completed without exception", false);
                         report.append("layout check exception: ").append(exception).append('\n');
                     }
-                    grabScreenshot(minecraft, "oi-machine-ui-layout-evaporator-t3");
+                    grabScreenshot(minecraft, "topo-machine-ui-layout-evaporator-t3");
                     countdown = 10;
                     state = State.FLUSH;
                     return;
@@ -281,7 +281,7 @@ public final class PortHighlightProbe {
                     checkHovering(minecraft, target);
                 }
                 if (countdown == 5) {
-                    grabScreenshot(minecraft, "oi-port-highlight-probe-" + target.shot());
+                    grabScreenshot(minecraft, "topo-port-highlight-probe-" + target.shot());
                 }
                 if (--countdown <= 0) {
                     if (++targetIndex < TARGETS.size()) {
@@ -302,7 +302,7 @@ public final class PortHighlightProbe {
                 hoverAt(minecraft, 1.0, 1.0);
                 if (countdown == 5) {
                     checkRestored(minecraft);
-                    grabScreenshot(minecraft, "oi-port-highlight-probe-restored");
+                    grabScreenshot(minecraft, "topo-port-highlight-probe-restored");
                 }
                 if (--countdown <= 0) {
                     countdown = 5;
@@ -616,14 +616,14 @@ public final class PortHighlightProbe {
         }
         MachineDefinition definition;
         if (mode == ProbeMode.MACHINE_UI_LAYOUT) {
-            definition = BuiltinOIMachines.EVAPORATOR_T3;
+            definition = BuiltinTopoMachines.EVAPORATOR_T3;
         } else if (mode == ProbeMode.SINGLE_MACHINE_SEARCH_POOL) {
-            definition = BuiltinOIMachines.COMPONENT_PROCESSOR_T3;
+            definition = BuiltinTopoMachines.COMPONENT_PROCESSOR_T3;
         } else {
             // Built-in machine ids are tier-qualified (component_processor_tN). Keep the probe
             // pinned to one deterministic definition instead of searching for the obsolete
             // unsuffixed registry path.
-            definition = BuiltinOIMachines.COMPONENT_PROCESSOR_T3;
+            definition = BuiltinTopoMachines.COMPONENT_PROCESSOR_T3;
         }
         server.execute(() -> {
             try {

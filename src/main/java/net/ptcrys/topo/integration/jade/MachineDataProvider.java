@@ -1,13 +1,13 @@
 package net.ptcrys.topo.integration.jade;
 
-import net.ptcrys.topo.apiv2.machine.MachineBlockEntity;
-import net.ptcrys.topo.apiv2.machine.MachinePerformanceSnapshot;
-import net.ptcrys.topo.apiv2.machine.resource.ResourcePort;
-import net.ptcrys.topo.datav2.machine.common.component.resource.ScalarResource;
-import net.ptcrys.topo.datav2.machine.common.component.resource.ScalarResourcePort;
-import net.ptcrys.topo.datav2.recipe.BuiltinOIResourceIntegrations;
-import net.ptcrys.topo.datav2.recipe.BuiltinOIResourceIntegrations.BuiltinResourceIntegration;
-import net.ptcrys.topo.datav2.recipe.common.ScalarRecipeCapability;
+import net.ptcrys.topo.api.machine.MachineBlockEntity;
+import net.ptcrys.topo.api.machine.MachinePerformanceSnapshot;
+import net.ptcrys.topo.api.machine.resource.ResourcePort;
+import net.ptcrys.topo.data.machine.common.component.resource.ScalarResource;
+import net.ptcrys.topo.data.machine.common.component.resource.ScalarResourcePort;
+import net.ptcrys.topo.data.recipe.BuiltinTopoResourceIntegrations;
+import net.ptcrys.topo.data.recipe.BuiltinTopoResourceIntegrations.BuiltinResourceIntegration;
+import net.ptcrys.topo.data.recipe.common.ScalarRecipeCapability;
 import net.ptcrys.topo.helper.IdHelper;
 
 import net.minecraft.nbt.CompoundTag;
@@ -45,9 +45,9 @@ public final class MachineDataProvider implements IServerDataProvider<BlockAcces
 
     /** 固定打包顺序:能量、高级能量、热量;同类多端口按机器端口顺序。 */
     private static final List<BuiltinResourceIntegration<ScalarResource, ScalarRecipeCapability>> SCALAR_INTEGRATIONS = List.of(
-            BuiltinOIResourceIntegrations.ENERGY,
-            BuiltinOIResourceIntegrations.ADVANCED_ENERGY,
-            BuiltinOIResourceIntegrations.HEAT);
+            BuiltinTopoResourceIntegrations.ENERGY,
+            BuiltinTopoResourceIntegrations.ADVANCED_ENERGY,
+            BuiltinTopoResourceIntegrations.HEAT);
 
     private static final Identifier UID = IdHelper.oi("machine");
     private static final int MONITOR_TICKS = 40;

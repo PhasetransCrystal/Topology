@@ -1,6 +1,6 @@
 package net.ptcrys.topo.integration.ae2;
 
-import net.ptcrys.topo.apiv2.machine.resource.LongResourceHandler;
+import net.ptcrys.topo.api.machine.resource.LongResourceHandler;
 
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;

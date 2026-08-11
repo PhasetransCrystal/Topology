@@ -1,16 +1,16 @@
 package net.ptcrys.topo.gametest;
 
-import net.ptcrys.topo.apiv2.machine.MachineBlockEntity;
-import net.ptcrys.topo.apiv2.machine.component.MachineComponent;
-import net.ptcrys.topo.apiv2.machine.resource.MachineResourceType;
-import net.ptcrys.topo.apiv2.machine.resource.RecipeRole;
-import net.ptcrys.topo.apiv2.machine.resource.RecipeSearchPool;
-import net.ptcrys.topo.apiv2.machine.resource.RecipeSearchPoolId;
-import net.ptcrys.topo.apiv2.machine.resource.RecipeSearchPoolRouter;
-import net.ptcrys.topo.apiv2.recipe.OIRecipe;
-import net.ptcrys.topo.apiv2.recipe.OIRecipeType;
-import net.ptcrys.topo.datav2.machine.BuiltinOIMachines;
-import net.ptcrys.topo.datav2.recipe.BuiltinOIResourceIntegrations;
+import net.ptcrys.topo.api.machine.MachineBlockEntity;
+import net.ptcrys.topo.api.machine.component.MachineComponent;
+import net.ptcrys.topo.api.machine.resource.MachineResourceType;
+import net.ptcrys.topo.api.machine.resource.RecipeRole;
+import net.ptcrys.topo.api.machine.resource.RecipeSearchPool;
+import net.ptcrys.topo.api.machine.resource.RecipeSearchPoolId;
+import net.ptcrys.topo.api.machine.resource.RecipeSearchPoolRouter;
+import net.ptcrys.topo.api.recipe.TopoRecipe;
+import net.ptcrys.topo.api.recipe.TopoRecipeType;
+import net.ptcrys.topo.data.machine.BuiltinTopoMachines;
+import net.ptcrys.topo.data.recipe.BuiltinTopoResourceIntegrations;
 import net.ptcrys.topo.helper.IdHelper;
 
 import net.minecraft.core.BlockPos;
@@ -48,7 +48,7 @@ public final class RecipeSearchPoolGameTests {
     private static final BlockPos MACHINE_POS = new BlockPos(1, 1, 1);
     private static final int TEST_COUNT = 3;
     private static final long LONG_AMOUNT = (long) Integer.MAX_VALUE + 123L;
-    private static final MachineResourceType<ItemResource> ITEM_TYPE = BuiltinOIResourceIntegrations.ITEM.resourceType();
+    private static final MachineResourceType<ItemResource> ITEM_TYPE = BuiltinTopoResourceIntegrations.ITEM.resourceType();
 
     private RecipeSearchPoolGameTests() {}
 
@@ -152,7 +152,7 @@ public final class RecipeSearchPoolGameTests {
     }
 
     private static MachineBlockEntity placeMachine(GameTestHelper helper) {
-        helper.setBlock(MACHINE_POS, BuiltinOIMachines.CHEMICAL_REACTOR_T2.registeredBlock().getDefaultState());
+        helper.setBlock(MACHINE_POS, BuiltinTopoMachines.CHEMICAL_REACTOR_T2.registeredBlock().getDefaultState());
         return helper.getBlockEntity(MACHINE_POS, MachineBlockEntity.class);
     }
 
@@ -168,7 +168,7 @@ public final class RecipeSearchPoolGameTests {
                                     GameTestHelper helper,
                                     RecipeSearchPoolRouter router,
                                     MachineBlockEntity machine,
-                                    OIRecipeType<?> recipeType,
+                                    TopoRecipeType<?> recipeType,
                                     AtomicReference<RecipeSearchPoolId> active,
                                     long gameTime) {
         RecipeSearchPoolRouter.SearchHit hit = router.search(machine, List.of(recipeType), gameTime, poolActivator(active));
@@ -258,28 +258,28 @@ public final class RecipeSearchPoolGameTests {
                         GameTestReport.wrap(SUITE, index, TEST_COUNT, name, description, test)));
     }
 
-    private static final class StubRecipeType extends OIRecipeType<OIRecipe> {
+    private static final class StubRecipeType extends TopoRecipeType<TopoRecipe> {
 
         private final AtomicReference<RecipeSearchPoolId> active;
         private final AtomicInteger attempts;
         private final Predicate<RecipeSearchPoolId> shouldHit;
-        private final RecipeHolder<OIRecipe> hit;
+        private final RecipeHolder<TopoRecipe> hit;
 
         private StubRecipeType(
                                AtomicReference<RecipeSearchPoolId> active,
                                AtomicInteger attempts,
                                Predicate<RecipeSearchPoolId> shouldHit) {
-            super(IdHelper.oi("gametest_pool_recipe_type"), OIRecipe::new);
+            super(IdHelper.oi("gametest_pool_recipe_type"), TopoRecipe::new);
             this.active = active;
             this.attempts = attempts;
             this.shouldHit = shouldHit;
-            OIRecipe recipe = new OIRecipe(this, OIRecipe.EMPTY_INPUTS, OIRecipe.EMPTY_OUTPUTS, 1);
+            TopoRecipe recipe = new TopoRecipe(this, TopoRecipe.EMPTY_INPUTS, TopoRecipe.EMPTY_OUTPUTS, 1);
             this.hit = new RecipeHolder<>(
                     ResourceKey.create(Registries.RECIPE, IdHelper.oi("gametest_pool_recipe")), recipe);
         }
 
         @Override
-        public @Nullable RecipeHolder<OIRecipe> findRecipe(MachineBlockEntity machine) {
+        public @Nullable RecipeHolder<TopoRecipe> findRecipe(MachineBlockEntity machine) {
             attempts.incrementAndGet();
             RecipeSearchPoolId poolId = active.get();
             return poolId != null && shouldHit.test(poolId) ? hit : null;

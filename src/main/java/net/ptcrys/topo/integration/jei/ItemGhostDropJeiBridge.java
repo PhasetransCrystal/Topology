@@ -1,6 +1,6 @@
 package net.ptcrys.topo.integration.jei;
 
-import net.ptcrys.topo.apiv2.machine.ui.ItemGhostDropBridge;
+import net.ptcrys.topo.api.machine.ui.ItemGhostDropBridge;
 
 import net.minecraft.world.item.ItemStack;
 
@@ -18,7 +18,7 @@ import java.util.function.Predicate;
  * 这里注册的监听据 {@code mayPlace} 报告投放区、{@code onPlace} 接收落下的物品。
  *
  * <p>
- * 由 {@link OIJeiPlugin} 在 JEI runtime 可用/不可用时 install/uninstall(与 XeiRecipeLookup
+ * 由 {@link TopoJeiPlugin} 在 JEI runtime 可用/不可用时 install/uninstall(与 XeiRecipeLookup
  * 同款生命周期)。边界:JEI 类型只在 integration 包出现,api 侧只见纯 {@link ItemStack} 谓词/回调。
  */
 final class ItemGhostDropJeiBridge implements ItemGhostDropBridge {

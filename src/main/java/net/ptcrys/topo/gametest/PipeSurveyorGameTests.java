@@ -1,14 +1,14 @@
 package net.ptcrys.topo.gametest;
 
+import net.ptcrys.topo.api.equipment.EquipmentRegistry;
 import net.ptcrys.topo.api.pipe.PipeDefinition;
 import net.ptcrys.topo.api.pipe.PipeSideIntent;
 import net.ptcrys.topo.api.pipe.network.PipeNetworkEngine;
 import net.ptcrys.topo.api.pipe.survey.PipeSurveyManager;
 import net.ptcrys.topo.api.pipe.survey.PipeSurveySnapshot;
-import net.ptcrys.topo.apiv2.equipment.EquipmentRegistry;
-import net.ptcrys.topo.data.pipe.BuiltinOIPipes;
-import net.ptcrys.topo.datav2.equipment.BuiltinOIEquipment;
-import net.ptcrys.topo.datav2.equipment.common.SurveyorRanges;
+import net.ptcrys.topo.data.equipment.BuiltinTopoEquipment;
+import net.ptcrys.topo.data.equipment.common.SurveyorRanges;
+import net.ptcrys.topo.data.pipe.BuiltinTopoPipes;
 import net.ptcrys.topo.helper.IdHelper;
 
 import net.minecraft.core.BlockPos;
@@ -52,7 +52,7 @@ public final class PipeSurveyorGameTests {
     private PipeSurveyorGameTests() {}
 
     public static void register(RegisterGameTestsEvent event) {
-        if (!OIScalarGameTestFixtures.enabled()) {
+        if (!TopoScalarGameTestFixtures.enabled()) {
             return;
         }
         Holder<TestEnvironmentDefinition<?>> environment = event.registerEnvironment(IdHelper.oi("pipe_surveyor"), new TestEnvironmentDefinition.AllOf());
@@ -77,9 +77,9 @@ public final class PipeSurveyorGameTests {
         ChestBlockEntity source = chest(helper, new BlockPos(0, 1, 2));
         chest(helper, new BlockPos(4, 1, 2));
         source.setItem(0, new ItemStack(Items.COAL, 64));
-        placePipe(helper, new BlockPos(1, 1, 2), BuiltinOIPipes.ITEM_PIPE_BASIC);
-        placePipe(helper, new BlockPos(2, 1, 2), BuiltinOIPipes.ITEM_PIPE_BASIC);
-        placePipe(helper, new BlockPos(3, 1, 2), BuiltinOIPipes.ITEM_PIPE_BASIC);
+        placePipe(helper, new BlockPos(1, 1, 2), BuiltinTopoPipes.ITEM_PIPE_BASIC);
+        placePipe(helper, new BlockPos(2, 1, 2), BuiltinTopoPipes.ITEM_PIPE_BASIC);
+        placePipe(helper, new BlockPos(3, 1, 2), BuiltinTopoPipes.ITEM_PIPE_BASIC);
         PipeNetworkEngine.runtime(helper.getLevel())
                 .setSideIntent(helper.absolutePos(new BlockPos(1, 1, 2)), Direction.WEST, PipeSideIntent.EXTRACT);
         Player player = helper.makeMockPlayer(GameType.SURVIVAL);
@@ -152,14 +152,14 @@ public final class PipeSurveyorGameTests {
         ChestBlockEntity source = chest(helper, new BlockPos(0, 1, 2));
         chest(helper, new BlockPos(4, 1, 2));
         fillChest(source, Items.COAL, 27 * 64);
-        placePipe(helper, new BlockPos(1, 1, 2), BuiltinOIPipes.ITEM_PIPE_ELITE);
-        placePipe(helper, new BlockPos(3, 1, 2), BuiltinOIPipes.ITEM_PIPE_ELITE);
+        placePipe(helper, new BlockPos(1, 1, 2), BuiltinTopoPipes.ITEM_PIPE_ELITE);
+        placePipe(helper, new BlockPos(3, 1, 2), BuiltinTopoPipes.ITEM_PIPE_ELITE);
         for (int x = 1; x <= 3; x++) {
             for (int z = 1; z <= 3; z++) {
                 if (z == 2 && (x == 1 || x == 3)) {
                     continue;
                 }
-                placePipe(helper, new BlockPos(x, 1, z), BuiltinOIPipes.ITEM_PIPE_BASIC);
+                placePipe(helper, new BlockPos(x, 1, z), BuiltinTopoPipes.ITEM_PIPE_BASIC);
             }
         }
         BlockPos extractor = helper.absolutePos(new BlockPos(1, 1, 2));
@@ -223,7 +223,7 @@ public final class PipeSurveyorGameTests {
     /** 测试 295:长直线上铁(16)/青铜(32)档裁剪——快照节点数 17/33;查表值一致。 */
     private static void surveyorMaterialTiersBoundRange(GameTestHelper helper) {
         for (int x = 0; x < 40; x++) {
-            placePipe(helper, new BlockPos(x, 1, 0), BuiltinOIPipes.ITEM_PIPE_BASIC);
+            placePipe(helper, new BlockPos(x, 1, 0), BuiltinTopoPipes.ITEM_PIPE_BASIC);
         }
         Player player = helper.makeMockPlayer(GameType.SURVIVAL);
         ItemStack iron = surveyorStack("iron");
@@ -277,7 +277,7 @@ public final class PipeSurveyorGameTests {
 
     private static ItemStack surveyorStack(String material) {
         for (EquipmentRegistry.EquipmentItemRecord record : EquipmentRegistry.itemRecords()) {
-            if (record.equipment() == BuiltinOIEquipment.PIPE_SURVEYOR && record.material().id().getPath().equals(material)) {
+            if (record.equipment() == BuiltinTopoEquipment.PIPE_SURVEYOR && record.material().id().getPath().equals(material)) {
                 Item item = record.entry().get();
                 return new ItemStack(item);
             }

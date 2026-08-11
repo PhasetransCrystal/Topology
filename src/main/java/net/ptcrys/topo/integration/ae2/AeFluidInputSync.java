@@ -1,9 +1,9 @@
 package net.ptcrys.topo.integration.ae2;
 
-import net.ptcrys.topo.apiv2.machine.component.ComponentContext;
-import net.ptcrys.topo.apiv2.machine.component.ComponentKey;
-import net.ptcrys.topo.apiv2.machine.component.ComponentMount;
-import net.ptcrys.topo.datav2.machine.common.component.resource.FluidResourcePort;
+import net.ptcrys.topo.api.machine.component.ComponentContext;
+import net.ptcrys.topo.api.machine.component.ComponentKey;
+import net.ptcrys.topo.api.machine.component.ComponentMount;
+import net.ptcrys.topo.data.machine.common.component.resource.FluidResourcePort;
 
 import net.neoforged.neoforge.transfer.fluid.FluidResource;
 

@@ -1,16 +1,16 @@
 package net.ptcrys.topo.integration.ae2.ui
 
-import net.ptcrys.topo.apiv2.machine.component.ComponentContext
-import net.ptcrys.topo.apiv2.machine.component.ComponentKey
-import net.ptcrys.topo.apiv2.machine.component.ComponentMount
-import net.ptcrys.topo.apiv2.machine.component.MachineComponent
-import net.ptcrys.topo.apiv2.machine.component.MachineComponents
-import net.ptcrys.topo.apiv2.machine.ui.MachineUiComponentStyle
-import net.ptcrys.topo.apiv2.machine.ui.MachineUiComponentTemplate
-import net.ptcrys.topo.apiv2.machine.ui.MachineUiContainerTemplate
-import net.ptcrys.topo.apiv2.machine.ui.MachineUiContribution
-import net.ptcrys.topo.apiv2.machine.ui.recipe.RecipeUiLayout
-import net.ptcrys.topo.helper.OiCompactNumber
+import net.ptcrys.topo.api.machine.component.ComponentContext
+import net.ptcrys.topo.api.machine.component.ComponentKey
+import net.ptcrys.topo.api.machine.component.ComponentMount
+import net.ptcrys.topo.api.machine.component.MachineComponent
+import net.ptcrys.topo.api.machine.component.MachineComponents
+import net.ptcrys.topo.api.machine.ui.MachineUiComponentStyle
+import net.ptcrys.topo.api.machine.ui.MachineUiComponentTemplate
+import net.ptcrys.topo.api.machine.ui.MachineUiContainerTemplate
+import net.ptcrys.topo.api.machine.ui.MachineUiContribution
+import net.ptcrys.topo.api.machine.ui.recipe.RecipeUiLayout
+import net.ptcrys.topo.helper.TopoCompactNumber
 import net.ptcrys.topo.integration.ae2.AeFluidBufferPort
 import net.ptcrys.topo.integration.ae2.AeItemBufferPort
 import net.ptcrys.topo.integration.ae2.AeKeyResourceBuffer
@@ -60,7 +60,7 @@ class AeBufferPageUi private constructor(context: ComponentContext<AeBufferPageU
 
     private fun createPage(items: AeKeyResourceBuffer<ItemResource>, fluids: AeKeyResourceBuffer<FluidResource>): UIElement {
         val root = MachineUiContainerTemplate.createPageColumn(RecipeUiLayout.PLAYER_INVENTORY_WIDTH.toFloat())
-        root.setId("oi_ae_buffer_page")
+        root.setId("topo_ae_buffer_page")
         root.addChild(
             MachineUiContainerTemplate.createSlotGrid(items.maxKinds()) { viewIndex ->
                 itemSparseCell(items, viewIndex)
@@ -81,7 +81,7 @@ class AeBufferPageUi private constructor(context: ComponentContext<AeBufferPageU
         var lastAmount: Long = Long.MIN_VALUE
         var lastStack: ItemStack = ItemStack.EMPTY
         val slot = MachineUiComponentTemplate.createItemSlot().apply {
-            setId("oi_ae_buffer_item_slot")
+            setId("topo_ae_buffer_item_slot")
             bind(
                 DataBindingBuilder.itemStackS2C {
                     val slotIndex = buffer.nthNonEmptySlot(viewIndex)
@@ -104,7 +104,7 @@ class AeBufferPageUi private constructor(context: ComponentContext<AeBufferPageU
                 }.build(),
             )
         }
-        val amountSync = hiddenLongSyncValue("oi_ae_buffer_amount_sync") {
+        val amountSync = hiddenLongSyncValue("topo_ae_buffer_amount_sync") {
             val slotIndex = buffer.nthNonEmptySlot(viewIndex)
             if (slotIndex < 0) 0L else buffer.getAmountAsLong(slotIndex)
         }
@@ -117,7 +117,7 @@ class AeBufferPageUi private constructor(context: ComponentContext<AeBufferPageU
         var lastStack: FluidStack = FluidStack.EMPTY
         // 图标式流体槽:数量统一由 cellWithCountOverlay 的桶计价覆盖层渲染,内置数量文字已屏蔽。
         val slot = MachineUiComponentTemplate.createFluidIconSlot().apply {
-            setId("oi_ae_buffer_fluid_slot")
+            setId("topo_ae_buffer_fluid_slot")
             bind(
                 DataBindingBuilder.fluidStackS2C {
                     val slotIndex = buffer.nthNonEmptySlot(viewIndex)
@@ -138,17 +138,17 @@ class AeBufferPageUi private constructor(context: ComponentContext<AeBufferPageU
                 }.build(),
             )
         }
-        val amountSync = hiddenLongSyncValue("oi_ae_buffer_amount_sync") {
+        val amountSync = hiddenLongSyncValue("topo_ae_buffer_amount_sync") {
             val slotIndex = buffer.nthNonEmptySlot(viewIndex)
             if (slotIndex < 0) 0L else buffer.getAmountAsLong(slotIndex)
         }
         attachFluidExactTooltip(slot) { amountSync.value }
-        return cellWithCountOverlay(slot, amountSync, format = { OiCompactNumber.formatCompactBuckets(it) })
+        return cellWithCountOverlay(slot, amountSync, format = { TopoCompactNumber.formatCompactBuckets(it) })
     }
 
     /** [format] renders the corner text: items keep raw counts, fluids are bucket-denominated. */
-    private fun cellWithCountOverlay(slot: UIElement, amountSync: BindableValue<Long>, format: (Long) -> String = { OiCompactNumber.formatCompact(it) }): UIElement = UIElement().apply {
-        setId("oi_ae_buffer_slot_cell")
+    private fun cellWithCountOverlay(slot: UIElement, amountSync: BindableValue<Long>, format: (Long) -> String = { TopoCompactNumber.formatCompact(it) }): UIElement = UIElement().apply {
+        setId("topo_ae_buffer_slot_cell")
         layout {
             it.width(MachineUiComponentStyle.slotSize.toFloat())
             it.height(MachineUiComponentStyle.slotSize.toFloat())
@@ -177,14 +177,14 @@ class AeBufferPageUi private constructor(context: ComponentContext<AeBufferPageU
             if (fluid.isEmpty) return@addEventListener
             event.hoverTooltips = HoverTooltips.create(
                 FluidHelper.getDisplayName(fluid),
-                Component.literal(OiCompactNumber.exactBucketsAndMb(amountGetter())),
+                Component.literal(TopoCompactNumber.exactBucketsAndMb(amountGetter())),
             )
             event.stopLaterPropagation()
         }
     }
 
     private fun countOverlay(format: (Long) -> String, amountSync: BindableValue<Long>): Label = Label().apply {
-        setId("oi_ae_buffer_count_overlay")
+        setId("topo_ae_buffer_count_overlay")
         val updateText: (Long) -> Unit = { amount ->
             setText(if (amount <= 0L) Component.literal("") else Component.literal(format(amount)))
         }

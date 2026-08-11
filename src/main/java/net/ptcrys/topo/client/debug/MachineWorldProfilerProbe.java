@@ -1,21 +1,21 @@
 package net.ptcrys.topo.client.debug;
 
+import net.ptcrys.topo.api.api.tick.TickHandle;
+import net.ptcrys.topo.api.api.tick.TickHub;
+import net.ptcrys.topo.api.api.tick.TickKind;
+import net.ptcrys.topo.api.machine.MachineBlockEntity;
+import net.ptcrys.topo.api.machine.MachinePerformanceSnapshot;
+import net.ptcrys.topo.api.machine.component.RecipeLogic;
 import net.ptcrys.topo.api.pipe.AggregationWindow;
 import net.ptcrys.topo.api.pipe.PipePortStrategyConfig;
 import net.ptcrys.topo.api.pipe.PipeSideIntent;
 import net.ptcrys.topo.api.pipe.network.PipeLevelRuntime;
 import net.ptcrys.topo.api.pipe.network.PipeNetwork;
 import net.ptcrys.topo.api.pipe.network.PipeNetworkEngine;
-import net.ptcrys.topo.api.tick.TickHandle;
-import net.ptcrys.topo.api.tick.TickHub;
-import net.ptcrys.topo.api.tick.TickKind;
-import net.ptcrys.topo.apiv2.machine.MachineBlockEntity;
-import net.ptcrys.topo.apiv2.machine.MachinePerformanceSnapshot;
-import net.ptcrys.topo.apiv2.machine.component.RecipeLogic;
-import net.ptcrys.topo.data.pipe.BuiltinOIPipes;
-import net.ptcrys.topo.datav2.machine.BuiltinOIMachines;
-import net.ptcrys.topo.datav2.machine.common.component.resource.ItemResourcePort;
-import net.ptcrys.topo.datav2.machine.common.component.resource.ScalarResourcePort;
+import net.ptcrys.topo.data.machine.BuiltinTopoMachines;
+import net.ptcrys.topo.data.machine.common.component.resource.ItemResourcePort;
+import net.ptcrys.topo.data.machine.common.component.resource.ScalarResourcePort;
+import net.ptcrys.topo.data.pipe.BuiltinTopoPipes;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Screenshot;
@@ -72,17 +72,17 @@ import java.util.stream.Stream;
 
 /**
  * Real integrated-client profiler for a 10x10 machine-and-pipe world. Activated only by
- * {@code oi-machine-world-profiler.flag}; it owns an isolated world, records JFR and Spark during
+ * {@code topo-machine-world-profiler.flag}; it owns an isolated world, records JFR and Spark during
  * an isolated Spark window, records the same counters without profilers, then records an isolated
  * JFR window. It exports the evidence, captures the world, and exits.
  */
 public final class MachineWorldProfilerProbe {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("OI-MachineWorldProfiler");
-    private static final Path FLAG_FILE = Path.of("oi-machine-world-profiler.flag");
-    private static final Path REPORT_FILE = Path.of("oi-machine-world-profiler-report.txt");
-    private static final String LEVEL_ID = "oi-machine-world-profiler-" + (System.currentTimeMillis() % 100_000_000L);
-    private static final String SCREENSHOT_NAME = "oi-machine-world-profiler.png";
+    private static final Logger LOGGER = LoggerFactory.getLogger("Topo-MachineWorldProfiler");
+    private static final Path FLAG_FILE = Path.of("topo-machine-world-profiler.flag");
+    private static final Path REPORT_FILE = Path.of("topo-machine-world-profiler-report.txt");
+    private static final String LEVEL_ID = "topo-machine-world-profiler-" + (System.currentTimeMillis() % 100_000_000L);
+    private static final String SCREENSHOT_NAME = "topo-machine-world-profiler.png";
     private static final int GRID_SIZE = 10;
     private static final int MODULE_COUNT = GRID_SIZE * GRID_SIZE;
     private static final int MODULE_SPACING = 5;
@@ -108,12 +108,12 @@ public final class MachineWorldProfilerProbe {
     private static final String RECIPE_LOGIC_ID = RecipeLogic.RECIPE_LOGIC_1.id().toString();
     private static final Path PROJECT_ROOT = resolveProjectRoot();
     private static final Path REPORTS_DIR = PROJECT_ROOT.resolve("build/reports");
-    private static final Path JFR_FILE = REPORTS_DIR.resolve("oi-machine-world-profiler.jfr");
-    private static final Path RAW_FILE = REPORTS_DIR.resolve("oi-machine-world-profiler-samples.csv");
-    private static final Path SUMMARY_FILE = REPORTS_DIR.resolve("oi-machine-world-profiler-summary.csv");
-    private static final Path HOT_METHODS_FILE = REPORTS_DIR.resolve("oi-machine-world-profiler-hot-methods.csv");
-    private static final Path STACKS_FILE = REPORTS_DIR.resolve("oi-machine-world-profiler-stacks.csv");
-    private static final Path MARKDOWN_FILE = REPORTS_DIR.resolve("oi-machine-world-profiler.md");
+    private static final Path JFR_FILE = REPORTS_DIR.resolve("topo-machine-world-profiler.jfr");
+    private static final Path RAW_FILE = REPORTS_DIR.resolve("topo-machine-world-profiler-samples.csv");
+    private static final Path SUMMARY_FILE = REPORTS_DIR.resolve("topo-machine-world-profiler-summary.csv");
+    private static final Path HOT_METHODS_FILE = REPORTS_DIR.resolve("topo-machine-world-profiler-hot-methods.csv");
+    private static final Path STACKS_FILE = REPORTS_DIR.resolve("topo-machine-world-profiler-stacks.csv");
+    private static final Path MARKDOWN_FILE = REPORTS_DIR.resolve("topo-machine-world-profiler.md");
 
     private enum ClientState {
         WAIT_TITLE,
@@ -371,13 +371,13 @@ public final class MachineWorldProfilerProbe {
                     BlockPos pipe2 = generatorPos.south(2);
                     BlockPos sinkPos = generatorPos.south(3);
                     level.setBlock(generatorPos,
-                            BuiltinOIMachines.COMBUSTION_GENERATOR_T1.registeredBlock().getDefaultState(), 3);
+                            BuiltinTopoMachines.COMBUSTION_GENERATOR_T1.registeredBlock().getDefaultState(), 3);
                     level.setBlock(pipe1,
-                            BuiltinOIPipes.ENERGY_PIPE_ELITE.registeredBlock().get().defaultBlockState(), 3);
+                            BuiltinTopoPipes.ENERGY_PIPE_ELITE.registeredBlock().get().defaultBlockState(), 3);
                     level.setBlock(pipe2,
-                            BuiltinOIPipes.ENERGY_PIPE_ELITE.registeredBlock().get().defaultBlockState(), 3);
+                            BuiltinTopoPipes.ENERGY_PIPE_ELITE.registeredBlock().get().defaultBlockState(), 3);
                     level.setBlock(sinkPos,
-                            BuiltinOIMachines.RESISTIVE_HEATER_T3.registeredBlock().getDefaultState(), 3);
+                            BuiltinTopoMachines.RESISTIVE_HEATER_T3.registeredBlock().getDefaultState(), 3);
                     MachineBlockEntity generator = requireMachine(level, generatorPos);
                     MachineBlockEntity sink = requireMachine(level, sinkPos);
                     insertCoal(generator, 64);
@@ -791,7 +791,7 @@ public final class MachineWorldProfilerProbe {
     private void startJfr() throws Exception {
         Configuration configuration = Configuration.getConfiguration("profile");
         Recording nextRecording = new Recording(configuration);
-        nextRecording.setName("oi-machine-world-100");
+        nextRecording.setName("topo-machine-world-100");
         nextRecording.setToDisk(true);
         nextRecording.setDestination(JFR_FILE);
         nextRecording.enable("jdk.ExecutionSample").withPeriod(Duration.ofMillis(1));

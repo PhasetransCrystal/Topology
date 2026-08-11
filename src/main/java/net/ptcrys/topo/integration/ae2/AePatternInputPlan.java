@@ -1,7 +1,7 @@
 package net.ptcrys.topo.integration.ae2;
 
-import net.ptcrys.topo.apiv2.machine.resource.DirectSlotResourceAccess;
-import net.ptcrys.topo.apiv2.machine.resource.ResourceHandlerLongOps;
+import net.ptcrys.topo.api.machine.resource.DirectSlotResourceAccess;
+import net.ptcrys.topo.api.machine.resource.ResourceHandlerLongOps;
 
 import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.fluid.FluidResource;
@@ -29,7 +29,7 @@ import java.util.Objects;
  *
  * <p>
  * Inputs are aggregated before slots are assigned, so repeated keys share existing stacks and
- * all distinct resources compete for empty slots in one calculation. OI's stack-backed buffers
+ * all distinct resources compete for empty slots in one calculation. Topo's stack-backed buffers
  * commit by exact slot replacement. Opaque third-party handlers use a transaction only to commit
  * an already-complete plan; transactions are never used for capacity probing.
  */

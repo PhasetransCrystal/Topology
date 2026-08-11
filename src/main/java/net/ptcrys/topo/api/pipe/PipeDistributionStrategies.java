@@ -1,6 +1,6 @@
 package net.ptcrys.topo.api.pipe;
 
-import net.ptcrys.topo.api.infrastructure.FreezableStrategyRegistry;
+import net.ptcrys.topo.api.api.infrastructure.FreezableStrategyRegistry;
 
 import net.minecraft.resources.Identifier;
 
@@ -12,7 +12,7 @@ import java.util.Objects;
 /**
  * Owner facade for the pipe distribution strategy table (K = {@link Identifier},
  * H == S = {@link PipeDistributionStrategy}). Builtins contribute through
- * {@code BuiltinOIPipeDistributionStrategies}; addons use the same {@link #register} before
+ * {@code BuiltinTopoPipeDistributionStrategies}; addons use the same {@link #register} before
  * freeze.
  */
 public final class PipeDistributionStrategies {

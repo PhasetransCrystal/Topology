@@ -1,10 +1,10 @@
 package net.ptcrys.topo.integration.ae2;
 
-import net.ptcrys.topo.apiv2.machine.component.ComponentContext;
-import net.ptcrys.topo.apiv2.machine.component.ComponentKey;
-import net.ptcrys.topo.apiv2.machine.component.ComponentMount;
-import net.ptcrys.topo.apiv2.machine.component.MachineComponent;
-import net.ptcrys.topo.apiv2.machine.data.DataValueIoField;
+import net.ptcrys.topo.api.machine.component.ComponentContext;
+import net.ptcrys.topo.api.machine.component.ComponentKey;
+import net.ptcrys.topo.api.machine.component.ComponentMount;
+import net.ptcrys.topo.api.machine.component.MachineComponent;
+import net.ptcrys.topo.api.machine.data.DataValueIoField;
 
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
@@ -46,9 +46,9 @@ import java.util.List;
  * This trait registers itself as an {@link IGridTickable} on the managed node. AE2's tick
  * manager invokes {@link #tickingRequest(IGridNode, int)} on its own grid-tick cadence; that
  * callback drains pending work from every registered {@link PendingWorkProcessor} (the drawing
- * input sync traits). Because AE2's grid tick is not counted by OI's
+ * input sync traits). Because AE2's grid tick is not counted by Topo's
  * {@code MachineTicker#runProfiledTick} accounting, the network MODULATE work is attributed to
- * AE2 rather than the sync trait's profile slot — the OI-profiled sync tick only carries the
+ * AE2 rather than the sync trait's profile slot — the Topo-profiled sync tick only carries the
  * plan-build cost.
  */
 public final class AeGridNode extends MachineComponent
@@ -88,7 +88,7 @@ public final class AeGridNode extends MachineComponent
     /**
      * Optional delegate for AE2's {@link PatternContainer} discovery. AE2's
      * {@code grid.getMachineClasses()} indexes nodes by their owner's runtime class — and the
-     * owner of every OI ME node is this trait. To make a sibling pattern provider visible to the
+     * owner of every Topo ME node is this trait. To make a sibling pattern provider visible to the
      * Pattern Access Terminal without one host class per ME variant, this trait permanently
      * implements {@link PatternContainer} and forwards the terminal methods to a delegate the
      * sibling trait registers during dependency resolution. With no delegate,

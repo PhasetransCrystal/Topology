@@ -1,11 +1,11 @@
 package net.ptcrys.topo.gametest;
 
-import net.ptcrys.topo.apiv2.machine.MachineBlockEntity;
-import net.ptcrys.topo.apiv2.machine.Machines;
-import net.ptcrys.topo.apiv2.machine.component.ServiceMatch;
-import net.ptcrys.topo.apiv2.machine.component.render.MachineRenderComponent;
-import net.ptcrys.topo.datav2.machine.BuiltinOIMachines;
-import net.ptcrys.topo.datav2.machine.common.component.ItemCountCounterRender;
+import net.ptcrys.topo.api.machine.MachineBlockEntity;
+import net.ptcrys.topo.api.machine.Machines;
+import net.ptcrys.topo.api.machine.component.ServiceMatch;
+import net.ptcrys.topo.api.machine.component.render.MachineRenderComponent;
+import net.ptcrys.topo.data.machine.BuiltinTopoMachines;
+import net.ptcrys.topo.data.machine.common.component.ItemCountCounterRender;
 import net.ptcrys.topo.helper.IdHelper;
 
 import net.minecraft.core.BlockPos;
@@ -122,7 +122,7 @@ public final class MachineRenderComponentGameTests {
     }
 
     private static MachineBlockEntity placeItemStorageMachine(GameTestHelper helper) {
-        helper.setBlock(MACHINE_POS, BuiltinOIMachines.MACERATOR_T1.registeredBlock().getDefaultState());
+        helper.setBlock(MACHINE_POS, BuiltinTopoMachines.MACERATOR_T1.registeredBlock().getDefaultState());
         return helper.getBlockEntity(MACHINE_POS, MachineBlockEntity.class);
     }
 

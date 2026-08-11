@@ -5,11 +5,11 @@ import net.ptcrys.registrylib.builders.BlockBuilder;
 import net.ptcrys.registrylib.builders.ItemBuilder;
 import net.ptcrys.registrylib.datagen.ProviderType;
 import net.ptcrys.registrylib.datagen.provider.RegistryLibGeneralResourceProvider;
+import net.ptcrys.topo.api.machine.MachineBlock;
 import net.ptcrys.topo.api.pipe.PipeBlock;
 import net.ptcrys.topo.api.pipe.PipeBlockTemplate;
 import net.ptcrys.topo.api.pipe.PipeDefinition;
 import net.ptcrys.topo.api.pipe.PipeSideVisual;
-import net.ptcrys.topo.apiv2.machine.MachineBlock;
 
 import net.minecraft.client.data.models.BlockModelGenerators;
 import net.minecraft.client.data.models.MultiVariant;
@@ -37,7 +37,7 @@ import java.util.Objects;
 import java.util.function.BiFunction;
 
 /**
- * Standard OI pipe block template: stone-based metal-sounding block dropping itself, pickaxe
+ * Standard Topo pipe block template: stone-based metal-sounding block dropping itself, pickaxe
  * mineable, with the raw-JSON asset set emitted through RegistryLib's general resource provider
  * so every generated file derives from the registered {@link PipeDefinition} (single source of
  * truth). Per pipe: a topology-aware multipart blockstate with one shaft-width core on every block
@@ -45,7 +45,7 @@ import java.util.function.BiFunction;
  * item display model and the client item definition. Four shared parent models carry the geometry.
  *
  * <p>
- * The OI texture set has a deliberately small contract: {@code center} carries the resource icon,
+ * The Topo texture set has a deliberately small contract: {@code center} carries the resource icon,
  * {@code arm} carries the tier rail, and {@code terminal} skins extraction faces and item ends. All
  * are original hard-edged 16x16 sheets. The default RegistryLib trivial-cube blockstate is
  * suppressed with a no-op blockstate hook; vanilla {@code multipart} JSON needs no datagen API
@@ -58,7 +58,7 @@ public final class PipeBlockTemplates {
 
     private PipeBlockTemplates() {}
 
-    /** The standard pipe template for one original OI texture set. */
+    /** The standard pipe template for one original Topo texture set. */
     public static PipeBlockTemplate standard(Identifier center, Identifier arm, Identifier terminal) {
         return new StandardTemplate(
                 Objects.requireNonNull(center, "center texture"),
@@ -197,7 +197,7 @@ public final class PipeBlockTemplates {
         return textures;
     }
 
-    /** Native-resolution OI sheets: a restrained junction cross and one axial color stripe. */
+    /** Native-resolution Topo sheets: a restrained junction cross and one axial color stripe. */
     private static final int[] CENTER_FACE = { 0, 0, 16, 16 };
     private static final int[] ARM_FACE = { 0, 0, 16, 16 };
 

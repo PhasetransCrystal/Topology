@@ -1,11 +1,11 @@
 package net.ptcrys.topo.dev;
 
-import net.ptcrys.topo.apiv2.recipe.OIRecipe;
-import net.ptcrys.topo.apiv2.recipe.OIRecipeType;
-import net.ptcrys.topo.apiv2.recipe.OIRecipeTypes;
-import net.ptcrys.topo.apiv2.recipe.content.OIFluidIngredient;
-import net.ptcrys.topo.apiv2.recipe.content.OIItemInput;
-import net.ptcrys.topo.datav2.recipe.common.ScalarRecipeCapability;
+import net.ptcrys.topo.api.recipe.TopoRecipe;
+import net.ptcrys.topo.api.recipe.TopoRecipeType;
+import net.ptcrys.topo.api.recipe.TopoRecipeTypes;
+import net.ptcrys.topo.api.recipe.content.TopoFluidIngredient;
+import net.ptcrys.topo.api.recipe.content.TopoItemInput;
+import net.ptcrys.topo.data.recipe.common.ScalarRecipeCapability;
 
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
@@ -30,7 +30,7 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * On-demand recipe ambiguity scan behind {@code /oi-dev scanrecipe}; results go to the run log.
+ * On-demand recipe ambiguity scan behind {@code /topo-dev scanrecipe}; results go to the run log.
  *
  * <p>
  * Two recipes of one type conflict when a machine buffer satisfying one necessarily satisfies
@@ -65,10 +65,10 @@ public final class RecipeConflictScanner {
     public static Report scan(MinecraftServer server) {
         List<TypeReport> typeReports = new ArrayList<>();
         int recipeCount = 0;
-        for (OIRecipeType<?> type : OIRecipeTypes.registered()) {
+        for (TopoRecipeType<?> type : TopoRecipeTypes.registered()) {
             var holders = server.getRecipeManager().recipeMap().byType(type.vanillaType());
             List<ScannedRecipe> bucket = new ArrayList<>(holders.size());
-            for (RecipeHolder<? extends OIRecipe> holder : holders) {
+            for (RecipeHolder<? extends TopoRecipe> holder : holders) {
                 bucket.add(new ScannedRecipe(
                         holder.id().identifier(),
                         describeInputs(holder.value(), server)));
@@ -81,7 +81,7 @@ public final class RecipeConflictScanner {
     }
 
     public static void log(Report report) {
-        LOGGER.info("==== OI recipe conflict scan ====");
+        LOGGER.info("==== Topo recipe conflict scan ====");
         for (TypeReport type : report.types()) {
             if (type.conflicts().isEmpty()) {
                 LOGGER.info("type {}: {} recipes, ok", type.typeId(), type.recipeCount());
@@ -194,9 +194,9 @@ public final class RecipeConflictScanner {
 
     // ---- machine-world extraction --------------------------------------------------------------
 
-    private static List<InputAccept> describeInputs(OIRecipe recipe, MinecraftServer server) {
+    private static List<InputAccept> describeInputs(TopoRecipe recipe, MinecraftServer server) {
         List<InputAccept> accepts = new ArrayList<>();
-        for (OIRecipe.InputEntry<?> entry : recipe.inputs()) {
+        for (TopoRecipe.InputEntry<?> entry : recipe.inputs()) {
             if (entry.capability() instanceof ScalarRecipeCapability) {
                 continue; // 标量是阈值不是判别物种,跳过。
             }
@@ -209,14 +209,14 @@ public final class RecipeConflictScanner {
 
     private static InputAccept describeContent(Object content, MinecraftServer server) {
         // Fail closed: unknown content must not silently mean "overlaps everything".
-        // Sealed OIItemInput is compile-exhaustive.
+        // Sealed TopoItemInput is compile-exhaustive.
         return switch (content) {
-            case OIItemInput item -> switch (item) {
-                case OIItemInput.Resource resource -> new InputAccept(Set.of(resource.template().item()));
+            case TopoItemInput item -> switch (item) {
+                case TopoItemInput.Resource resource -> new InputAccept(Set.of(resource.template().item()));
                 // Catalyst/die: presence discriminator; participates as a normal accept set.
-                case OIItemInput.Unconsumed unconsumed -> new InputAccept(Set.of(unconsumed.template().item()));
-                case OIItemInput.Tag tag -> tagAccept(tag.tag(), server);
-                case OIItemInput.AnyOf anyOf -> {
+                case TopoItemInput.Unconsumed unconsumed -> new InputAccept(Set.of(unconsumed.template().item()));
+                case TopoItemInput.Tag tag -> tagAccept(tag.tag(), server);
+                case TopoItemInput.AnyOf anyOf -> {
                     Set<Object> keys = new LinkedHashSet<>();
                     for (ItemStackTemplate template : anyOf.templates()) {
                         keys.add(template.item());
@@ -224,7 +224,7 @@ public final class RecipeConflictScanner {
                     yield new InputAccept(Set.copyOf(keys));
                 }
             };
-            case OIFluidIngredient fluid -> new InputAccept(Set.of(fluid.resource()));
+            case TopoFluidIngredient fluid -> new InputAccept(Set.of(fluid.resource()));
             default -> throw new IllegalArgumentException(
                     "RecipeConflictScanner: unsupported recipe content type " + (content == null ? "null" : content.getClass().getName()) + "; add a describeContent branch (scalars must be filtered earlier)");
         };

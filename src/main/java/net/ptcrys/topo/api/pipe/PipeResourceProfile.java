@@ -1,6 +1,6 @@
 package net.ptcrys.topo.api.pipe;
 
-import net.ptcrys.topo.apiv2.machine.resource.MachineResourceType;
+import net.ptcrys.topo.api.machine.resource.MachineResourceType;
 
 import net.neoforged.neoforge.transfer.resource.Resource;
 
@@ -23,7 +23,7 @@ import java.util.function.LongFunction;
  * <p>
  * It has no stable ID, no persistence and no runtime dispatch of its own, so per the
  * freezable-strategy-registry standard it stays a value object; one instance is declared per
- * resource kind in {@code BuiltinOIPipes} and shared by all tiers.
+ * resource kind in {@code BuiltinTopoPipes} and shared by all tiers.
  */
 public record PipeResourceProfile(
                                   MachineResourceType<?> resourceType,

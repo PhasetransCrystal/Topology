@@ -1,9 +1,9 @@
 package net.ptcrys.topo.client.debug;
 
-import net.ptcrys.topo.apiv2.machine.MachineDefinition;
-import net.ptcrys.topo.apiv2.machine.ui.AmountEditorPopup;
-import net.ptcrys.topo.apiv2.machine.ui.ItemPickerPopup;
-import net.ptcrys.topo.datav2.machine.BuiltinOIMachines;
+import net.ptcrys.topo.api.machine.MachineDefinition;
+import net.ptcrys.topo.api.machine.ui.AmountEditorPopup;
+import net.ptcrys.topo.api.machine.ui.ItemPickerPopup;
+import net.ptcrys.topo.data.machine.BuiltinTopoMachines;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Screenshot;
@@ -42,17 +42,17 @@ import java.util.function.Function;
 
 /**
  * 共享模态弹窗壳({@code MachineUiContainerTemplate.openModalPopup})的游戏内回归探针(同
- * {@link PortHighlightProbe} 的流水线骨架,独立 flag):仅当存在 {@code oi-popup-shell-probe.flag}
+ * {@link PortHighlightProbe} 的流水线骨架,独立 flag):仅当存在 {@code topo-popup-shell-probe.flag}
  * 时激活。开一台机器 UI 取根作 host,经共享壳先开数字编辑弹窗截图、再开物品选取弹窗截图,断言两者
  * 都按专属 id 挂上遮罩。物品选取弹窗用平凡 entryFor/previewIcon stub(只验壳 + 正文排版,不验筛选
  * 语义),重点看正文提示是否在面板宽度内换行而非单行溢出。报告写文件后自动退出。
  */
 public final class PopupShellProbe {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("OI-PopupShellProbe");
-    private static final Path FLAG_FILE = Path.of("oi-popup-shell-probe.flag");
-    private static final Path REPORT_FILE = Path.of("oi-popup-shell-probe-report.txt");
-    private static final String LEVEL_ID = "oi-popup-shell-probe-" + (System.currentTimeMillis() % 100_000_000L);
+    private static final Logger LOGGER = LoggerFactory.getLogger("Topo-PopupShellProbe");
+    private static final Path FLAG_FILE = Path.of("topo-popup-shell-probe.flag");
+    private static final Path REPORT_FILE = Path.of("topo-popup-shell-probe-report.txt");
+    private static final String LEVEL_ID = "topo-popup-shell-probe-" + (System.currentTimeMillis() % 100_000_000L);
     private static final int WAIT_TIMEOUT_TICKS = 2400;
 
     private enum State {
@@ -142,8 +142,8 @@ public final class PopupShellProbe {
             }
             case SHOOT_AMOUNT -> {
                 if (--countdown <= 0) {
-                    grabScreenshot(minecraft, "oi-popup-shell-amount");
-                    closePopup(minecraft, "oi_amount_popup_backdrop");
+                    grabScreenshot(minecraft, "topo-popup-shell-amount");
+                    closePopup(minecraft, "topo_amount_popup_backdrop");
                     if (openItemPopup(minecraft)) {
                         countdown = 15;
                         state = State.SHOOT_ITEM;
@@ -155,7 +155,7 @@ public final class PopupShellProbe {
             }
             case SHOOT_ITEM -> {
                 if (--countdown <= 0) {
-                    grabScreenshot(minecraft, "oi-popup-shell-item-picker");
+                    grabScreenshot(minecraft, "topo-popup-shell-item-picker");
                     countdown = 5;
                     state = State.FLUSH;
                 }
@@ -176,7 +176,7 @@ public final class PopupShellProbe {
             return false;
         }
         AmountEditorPopup.open(root, Component.literal("Set amount"), 42L, 0L, 1000L, committed -> Unit.INSTANCE);
-        boolean mounted = findById(root, "oi_amount_popup_backdrop") != null;
+        boolean mounted = findById(root, "topo_amount_popup_backdrop") != null;
         report.append("amount popup mounted via shared shell: ").append(mounted ? "PASS" : "FAIL").append('\n');
         return mounted;
     }
@@ -194,7 +194,7 @@ public final class PopupShellProbe {
                 (Function<ItemStack, String>) stack -> stack.isEmpty() ? null : "probe:" + stack.getItem(),
                 (Function<String, IGuiTexture>) entry -> IGuiTexture.EMPTY,
                 (Consumer<List<String>>) entries -> {});
-        boolean mounted = findById(root, "oi_item_picker_backdrop") != null;
+        boolean mounted = findById(root, "topo_item_picker_backdrop") != null;
         report.append("item-picker popup mounted via shared shell: ").append(mounted ? "PASS" : "FAIL").append('\n');
         return mounted;
     }
@@ -224,7 +224,7 @@ public final class PopupShellProbe {
         }
         // Registry ids are tier-qualified (component_processor_tN); use a deterministic built-in
         // host instead of searching for the obsolete unsuffixed path.
-        MachineDefinition definition = BuiltinOIMachines.COMPONENT_PROCESSOR_T3;
+        MachineDefinition definition = BuiltinTopoMachines.COMPONENT_PROCESSOR_T3;
         server.execute(() -> {
             try {
                 ServerPlayer player = server.getPlayerList().getPlayers().getFirst();

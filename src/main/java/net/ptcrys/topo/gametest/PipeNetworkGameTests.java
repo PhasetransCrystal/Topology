@@ -1,5 +1,8 @@
 package net.ptcrys.topo.gametest;
 
+import net.ptcrys.topo.api.machine.MachineBlockEntity;
+import net.ptcrys.topo.api.machine.MachineDefinition;
+import net.ptcrys.topo.api.machine.component.ComponentKey;
 import net.ptcrys.topo.api.pipe.PipeBlock;
 import net.ptcrys.topo.api.pipe.PipeDefinition;
 import net.ptcrys.topo.api.pipe.PipeSideIntent;
@@ -8,17 +11,14 @@ import net.ptcrys.topo.api.pipe.network.PipeLevelRuntime;
 import net.ptcrys.topo.api.pipe.network.PipeNetwork;
 import net.ptcrys.topo.api.pipe.network.PipeNetworkEngine;
 import net.ptcrys.topo.api.pipe.network.PipeNetworksSavedData;
-import net.ptcrys.topo.apiv2.machine.MachineBlockEntity;
-import net.ptcrys.topo.apiv2.machine.MachineDefinition;
-import net.ptcrys.topo.apiv2.machine.component.ComponentKey;
-import net.ptcrys.topo.data.pipe.BuiltinOIPipeDistributionStrategies;
-import net.ptcrys.topo.data.pipe.BuiltinOIPipes;
-import net.ptcrys.topo.datav2.machine.common.component.resource.FluidResourcePort;
-import net.ptcrys.topo.datav2.machine.common.component.resource.ScalarResource;
-import net.ptcrys.topo.datav2.machine.common.component.resource.ScalarResourcePort;
-import net.ptcrys.topo.datav2.recipe.BuiltinOIResourceIntegrations;
-import net.ptcrys.topo.datav2.recipe.BuiltinOIResourceIntegrations.BuiltinResourceIntegration;
-import net.ptcrys.topo.datav2.recipe.common.ScalarRecipeCapability;
+import net.ptcrys.topo.data.machine.common.component.resource.FluidResourcePort;
+import net.ptcrys.topo.data.machine.common.component.resource.ScalarResource;
+import net.ptcrys.topo.data.machine.common.component.resource.ScalarResourcePort;
+import net.ptcrys.topo.data.pipe.BuiltinTopoPipeDistributionStrategies;
+import net.ptcrys.topo.data.pipe.BuiltinTopoPipes;
+import net.ptcrys.topo.data.recipe.BuiltinTopoResourceIntegrations;
+import net.ptcrys.topo.data.recipe.BuiltinTopoResourceIntegrations.BuiltinResourceIntegration;
+import net.ptcrys.topo.data.recipe.common.ScalarRecipeCapability;
 import net.ptcrys.topo.helper.IdHelper;
 
 import net.minecraft.core.BlockPos;
@@ -57,7 +57,7 @@ import java.util.function.Consumer;
  *
  * <p>
  * 场地约定:石地板铺 y=0 的 5×5,管道与容器立于 y=1。物品测试用原版箱子,
- * 标量/流体测试用 {@link OIPipeGameTestFixtures} 的纯储存缓冲机。所有网络断言走
+ * 标量/流体测试用 {@link TopoPipeGameTestFixtures} 的纯储存缓冲机。所有网络断言走
  * {@code networkAt} 的网络作用域读数,不读全局表(测试与并发测试共享同一份维度 SavedData)。
  */
 public final class PipeNetworkGameTests {
@@ -69,7 +69,7 @@ public final class PipeNetworkGameTests {
     private PipeNetworkGameTests() {}
 
     public static void register(RegisterGameTestsEvent event) {
-        if (!OIScalarGameTestFixtures.enabled()) {
+        if (!TopoScalarGameTestFixtures.enabled()) {
             return;
         }
         Holder<TestEnvironmentDefinition<?>> environment = event.registerEnvironment(IdHelper.oi("pipe_network"), new TestEnvironmentDefinition.AllOf());
@@ -187,9 +187,9 @@ public final class PipeNetworkGameTests {
         ChestBlockEntity source = chest(helper, new BlockPos(0, 1, 2));
         ChestBlockEntity target = chest(helper, new BlockPos(4, 1, 2));
         source.setItem(0, new ItemStack(Items.COAL, 64));
-        placePipe(helper, new BlockPos(1, 1, 2), BuiltinOIPipes.ITEM_PIPE_BASIC);
-        placePipe(helper, new BlockPos(2, 1, 2), BuiltinOIPipes.ITEM_PIPE_BASIC);
-        placePipe(helper, new BlockPos(3, 1, 2), BuiltinOIPipes.ITEM_PIPE_BASIC);
+        placePipe(helper, new BlockPos(1, 1, 2), BuiltinTopoPipes.ITEM_PIPE_BASIC);
+        placePipe(helper, new BlockPos(2, 1, 2), BuiltinTopoPipes.ITEM_PIPE_BASIC);
+        placePipe(helper, new BlockPos(3, 1, 2), BuiltinTopoPipes.ITEM_PIPE_BASIC);
         runtime(helper).setSideIntent(helper.absolutePos(new BlockPos(1, 1, 2)), Direction.WEST, PipeSideIntent.EXTRACT);
 
         helper.startSequence()
@@ -227,7 +227,7 @@ public final class PipeNetworkGameTests {
         placeFloor(helper);
         BlockPos pipePos = new BlockPos(2, 1, 2);
         chest(helper, new BlockPos(3, 1, 2));
-        placePipe(helper, pipePos, BuiltinOIPipes.ITEM_PIPE_BASIC);
+        placePipe(helper, pipePos, BuiltinTopoPipes.ITEM_PIPE_BASIC);
         var player = helper.makeMockPlayer(GameType.SURVIVAL);
         ServerLevel level = helper.getLevel();
         BlockPos absolute = helper.absolutePos(pipePos);
@@ -249,9 +249,9 @@ public final class PipeNetworkGameTests {
         ChestBlockEntity source = chest(helper, new BlockPos(0, 1, 2));
         ChestBlockEntity targetChest = chest(helper, new BlockPos(4, 1, 2));
         fillChest(source, Items.COAL, 320);
-        placePipe(helper, new BlockPos(1, 1, 2), BuiltinOIPipes.ITEM_PIPE_BASIC);
-        placePipe(helper, new BlockPos(2, 1, 2), BuiltinOIPipes.ITEM_PIPE_BASIC);
-        placePipe(helper, new BlockPos(3, 1, 2), BuiltinOIPipes.ITEM_PIPE_BASIC);
+        placePipe(helper, new BlockPos(1, 1, 2), BuiltinTopoPipes.ITEM_PIPE_BASIC);
+        placePipe(helper, new BlockPos(2, 1, 2), BuiltinTopoPipes.ITEM_PIPE_BASIC);
+        placePipe(helper, new BlockPos(3, 1, 2), BuiltinTopoPipes.ITEM_PIPE_BASIC);
         PipeLevelRuntime runtime = runtime(helper);
         BlockPos middle = helper.absolutePos(new BlockPos(2, 1, 2));
         runtime.setSideIntent(helper.absolutePos(new BlockPos(1, 1, 2)), Direction.WEST, PipeSideIntent.EXTRACT);
@@ -300,9 +300,9 @@ public final class PipeNetworkGameTests {
         ChestBlockEntity source = chest(helper, new BlockPos(0, 1, 2));
         ChestBlockEntity target = chest(helper, new BlockPos(4, 1, 2));
         fillChest(source, Items.COAL, 640);
-        placePipe(helper, new BlockPos(1, 1, 2), BuiltinOIPipes.ITEM_PIPE_ELITE);
-        placePipe(helper, new BlockPos(2, 1, 2), BuiltinOIPipes.ITEM_PIPE_BASIC);
-        placePipe(helper, new BlockPos(3, 1, 2), BuiltinOIPipes.ITEM_PIPE_ELITE);
+        placePipe(helper, new BlockPos(1, 1, 2), BuiltinTopoPipes.ITEM_PIPE_ELITE);
+        placePipe(helper, new BlockPos(2, 1, 2), BuiltinTopoPipes.ITEM_PIPE_BASIC);
+        placePipe(helper, new BlockPos(3, 1, 2), BuiltinTopoPipes.ITEM_PIPE_ELITE);
         BlockPos extractor = helper.absolutePos(new BlockPos(1, 1, 2));
         runtime(helper).setSideIntent(extractor, Direction.WEST, PipeSideIntent.EXTRACT);
         int interval = useMinInterval(helper, extractor, Direction.WEST);
@@ -344,11 +344,11 @@ public final class PipeNetworkGameTests {
         ChestBlockEntity targetSouth = chest(helper, new BlockPos(2, 1, 4));
         fillChest(sourceWest, Items.COAL, 27 * 64);
         fillChest(sourceNorth, Items.IRON_INGOT, 27 * 64);
-        placePipe(helper, new BlockPos(1, 1, 2), BuiltinOIPipes.ITEM_PIPE_ELITE);
-        placePipe(helper, new BlockPos(2, 1, 1), BuiltinOIPipes.ITEM_PIPE_ELITE);
-        placePipe(helper, new BlockPos(2, 1, 2), BuiltinOIPipes.ITEM_PIPE_BASIC);
-        placePipe(helper, new BlockPos(3, 1, 2), BuiltinOIPipes.ITEM_PIPE_ELITE);
-        placePipe(helper, new BlockPos(2, 1, 3), BuiltinOIPipes.ITEM_PIPE_ELITE);
+        placePipe(helper, new BlockPos(1, 1, 2), BuiltinTopoPipes.ITEM_PIPE_ELITE);
+        placePipe(helper, new BlockPos(2, 1, 1), BuiltinTopoPipes.ITEM_PIPE_ELITE);
+        placePipe(helper, new BlockPos(2, 1, 2), BuiltinTopoPipes.ITEM_PIPE_BASIC);
+        placePipe(helper, new BlockPos(3, 1, 2), BuiltinTopoPipes.ITEM_PIPE_ELITE);
+        placePipe(helper, new BlockPos(2, 1, 3), BuiltinTopoPipes.ITEM_PIPE_ELITE);
         PipeLevelRuntime runtime = runtime(helper);
         BlockPos extractorWest = helper.absolutePos(new BlockPos(1, 1, 2));
         BlockPos extractorNorth = helper.absolutePos(new BlockPos(2, 1, 1));
@@ -398,11 +398,11 @@ public final class PipeNetworkGameTests {
         ChestBlockEntity targetSouth = chest(helper, new BlockPos(2, 1, 4));
         fillChest(sourceWest, Items.COAL, 27 * 64);
         fillChest(sourceNorth, Items.IRON_INGOT, 27 * 64);
-        placePipe(helper, new BlockPos(1, 1, 2), BuiltinOIPipes.ITEM_PIPE_ELITE);
-        placePipe(helper, new BlockPos(2, 1, 1), BuiltinOIPipes.ITEM_PIPE_ELITE);
-        placePipe(helper, new BlockPos(2, 1, 2), BuiltinOIPipes.ITEM_PIPE_BASIC);
-        placePipe(helper, new BlockPos(3, 1, 2), BuiltinOIPipes.ITEM_PIPE_ELITE);
-        placePipe(helper, new BlockPos(2, 1, 3), BuiltinOIPipes.ITEM_PIPE_ELITE);
+        placePipe(helper, new BlockPos(1, 1, 2), BuiltinTopoPipes.ITEM_PIPE_ELITE);
+        placePipe(helper, new BlockPos(2, 1, 1), BuiltinTopoPipes.ITEM_PIPE_ELITE);
+        placePipe(helper, new BlockPos(2, 1, 2), BuiltinTopoPipes.ITEM_PIPE_BASIC);
+        placePipe(helper, new BlockPos(3, 1, 2), BuiltinTopoPipes.ITEM_PIPE_ELITE);
+        placePipe(helper, new BlockPos(2, 1, 3), BuiltinTopoPipes.ITEM_PIPE_ELITE);
         PipeLevelRuntime runtime = runtime(helper);
         BlockPos extractorWest = helper.absolutePos(new BlockPos(1, 1, 2));
         BlockPos extractorNorth = helper.absolutePos(new BlockPos(2, 1, 1));
@@ -453,10 +453,10 @@ public final class PipeNetworkGameTests {
 
     /** 测试 161:平均分配策略在 T 形两目的地各半填充。 */
     private static void pipeEqualSplitStrategySplits(GameTestHelper helper) {
-        ChestBlockEntity[] chests = placeTee(helper, BuiltinOIPipes.ITEM_PIPE_ADVANCED);
+        ChestBlockEntity[] chests = placeTee(helper, BuiltinTopoPipes.ITEM_PIPE_ADVANCED);
         BlockPos extractor = helper.absolutePos(new BlockPos(2, 1, 2));
         PipeLevelRuntime runtime = runtime(helper);
-        runtime.setExtractStrategy(extractor, Direction.WEST, BuiltinOIPipeDistributionStrategies.EQUAL_SPLIT);
+        runtime.setExtractStrategy(extractor, Direction.WEST, BuiltinTopoPipeDistributionStrategies.EQUAL_SPLIT);
         int interval = useMinInterval(helper, extractor, Direction.WEST);
         int half = 4 * interval / 2;
 
@@ -478,9 +478,9 @@ public final class PipeNetworkGameTests {
 
     /** 测试 162:轮询策略游标轮转,两目的地长期均衡。 */
     private static void pipeRoundRobinStrategyServesBoth(GameTestHelper helper) {
-        ChestBlockEntity[] chests = placeTee(helper, BuiltinOIPipes.ITEM_PIPE_ELITE);
+        ChestBlockEntity[] chests = placeTee(helper, BuiltinTopoPipes.ITEM_PIPE_ELITE);
         BlockPos extractor = helper.absolutePos(new BlockPos(2, 1, 2));
-        runtime(helper).setExtractStrategy(extractor, Direction.WEST, BuiltinOIPipeDistributionStrategies.ROUND_ROBIN);
+        runtime(helper).setExtractStrategy(extractor, Direction.WEST, BuiltinTopoPipeDistributionStrategies.ROUND_ROBIN);
         int interval = useMinInterval(helper, extractor, Direction.WEST);
         int batch = 16 * interval;
 
@@ -503,12 +503,12 @@ public final class PipeNetworkGameTests {
     /** 测试 164:标量三连——能量/高级能量/热各自经基础管在缓冲机间搬运。 */
     private static void pipeScalarPipesMoveAllThree(GameTestHelper helper) {
         placeFloor(helper);
-        scalarRow(helper, 0, OIPipeGameTestFixtures.energyBuffer(), BuiltinOIPipes.ENERGY_PIPE_BASIC,
-                ScalarResourcePort.ENERGY_STORAGE, BuiltinOIResourceIntegrations.ENERGY);
-        scalarRow(helper, 2, OIPipeGameTestFixtures.advancedEnergyBuffer(), BuiltinOIPipes.ADVANCED_ENERGY_PIPE_BASIC,
-                ScalarResourcePort.ADVANCED_ENERGY_STORAGE, BuiltinOIResourceIntegrations.ADVANCED_ENERGY);
-        scalarRow(helper, 4, OIPipeGameTestFixtures.heatBuffer(), BuiltinOIPipes.HEAT_PIPE_BASIC,
-                ScalarResourcePort.HEAT_STORAGE, BuiltinOIResourceIntegrations.HEAT);
+        scalarRow(helper, 0, TopoPipeGameTestFixtures.energyBuffer(), BuiltinTopoPipes.ENERGY_PIPE_BASIC,
+                ScalarResourcePort.ENERGY_STORAGE, BuiltinTopoResourceIntegrations.ENERGY);
+        scalarRow(helper, 2, TopoPipeGameTestFixtures.advancedEnergyBuffer(), BuiltinTopoPipes.ADVANCED_ENERGY_PIPE_BASIC,
+                ScalarResourcePort.ADVANCED_ENERGY_STORAGE, BuiltinTopoResourceIntegrations.ADVANCED_ENERGY);
+        scalarRow(helper, 4, TopoPipeGameTestFixtures.heatBuffer(), BuiltinTopoPipes.HEAT_PIPE_BASIC,
+                ScalarResourcePort.HEAT_STORAGE, BuiltinTopoResourceIntegrations.HEAT);
 
         helper.startSequence()
                 .thenWaitUntil(() -> {
@@ -523,12 +523,12 @@ public final class PipeNetworkGameTests {
     /** 测试 165:基础流体管在储罐机之间搬运水(50mB/t)。 */
     private static void pipeFluidPipeMovesWater(GameTestHelper helper) {
         placeFloor(helper);
-        MachineBlockEntity source = placeMachine(helper, new BlockPos(0, 1, 2), OIPipeGameTestFixtures.fluidTank());
-        placeMachine(helper, new BlockPos(3, 1, 2), OIPipeGameTestFixtures.fluidTank());
+        MachineBlockEntity source = placeMachine(helper, new BlockPos(0, 1, 2), TopoPipeGameTestFixtures.fluidTank());
+        placeMachine(helper, new BlockPos(3, 1, 2), TopoPipeGameTestFixtures.fluidTank());
         insertResource(helper, source.machineComponents().require(FluidResourcePort.FLUID_STORAGE).handler(),
                 FluidResource.of(Fluids.WATER), 8000, "mB water");
-        placePipe(helper, new BlockPos(1, 1, 2), BuiltinOIPipes.FLUID_PIPE_BASIC);
-        placePipe(helper, new BlockPos(2, 1, 2), BuiltinOIPipes.FLUID_PIPE_BASIC);
+        placePipe(helper, new BlockPos(1, 1, 2), BuiltinTopoPipes.FLUID_PIPE_BASIC);
+        placePipe(helper, new BlockPos(2, 1, 2), BuiltinTopoPipes.FLUID_PIPE_BASIC);
         runtime(helper).setSideIntent(helper.absolutePos(new BlockPos(1, 1, 2)), Direction.WEST, PipeSideIntent.EXTRACT);
 
         helper.startSequence()
@@ -552,9 +552,9 @@ public final class PipeNetworkGameTests {
     /** 测试 166:破坏中段管道——掉落自身、SavedData 节点剔除、网络拆为两个 1 节点分量。 */
     private static void pipeBrokenPipePrunesNodeAndSplits(GameTestHelper helper) {
         placeFloor(helper);
-        placePipe(helper, new BlockPos(1, 1, 2), BuiltinOIPipes.ITEM_PIPE_BASIC);
-        placePipe(helper, new BlockPos(2, 1, 2), BuiltinOIPipes.ITEM_PIPE_BASIC);
-        placePipe(helper, new BlockPos(3, 1, 2), BuiltinOIPipes.ITEM_PIPE_BASIC);
+        placePipe(helper, new BlockPos(1, 1, 2), BuiltinTopoPipes.ITEM_PIPE_BASIC);
+        placePipe(helper, new BlockPos(2, 1, 2), BuiltinTopoPipes.ITEM_PIPE_BASIC);
+        placePipe(helper, new BlockPos(3, 1, 2), BuiltinTopoPipes.ITEM_PIPE_BASIC);
         PipeLevelRuntime runtime = runtime(helper);
         BlockPos middle = helper.absolutePos(new BlockPos(2, 1, 2));
 
@@ -577,7 +577,7 @@ public final class PipeNetworkGameTests {
                         helper.fail("Breaking the middle pipe must split into two 1-node components");
                     }
                     helper.assertItemEntityCountIs(
-                            BuiltinOIPipes.ITEM_PIPE_BASIC.registeredBlock().get().asItem(),
+                            BuiltinTopoPipes.ITEM_PIPE_BASIC.registeredBlock().get().asItem(),
                             new BlockPos(2, 1, 2), 2.0, 1);
                 })
                 .thenSucceed();
@@ -587,14 +587,14 @@ public final class PipeNetworkGameTests {
     private static void pipeSavedDataCodecRoundtrip(GameTestHelper helper) {
         placeFloor(helper);
         chest(helper, new BlockPos(0, 1, 2));
-        placePipe(helper, new BlockPos(1, 1, 2), BuiltinOIPipes.ITEM_PIPE_ELITE);
-        placePipe(helper, new BlockPos(2, 1, 2), BuiltinOIPipes.ITEM_PIPE_ELITE);
+        placePipe(helper, new BlockPos(1, 1, 2), BuiltinTopoPipes.ITEM_PIPE_ELITE);
+        placePipe(helper, new BlockPos(2, 1, 2), BuiltinTopoPipes.ITEM_PIPE_ELITE);
         PipeLevelRuntime runtime = runtime(helper);
         BlockPos first = helper.absolutePos(new BlockPos(1, 1, 2));
         runtime.setSideIntent(first, Direction.WEST, PipeSideIntent.EXTRACT);
         runtime.setSideIntent(helper.absolutePos(new BlockPos(2, 1, 2)), Direction.UP, PipeSideIntent.DISABLED);
-        runtime.setExtractConfig(first, Direction.WEST, new BuiltinOIPipeDistributionStrategies.RateConfig(
-                BuiltinOIPipeDistributionStrategies.ROUND_ROBIN, 17, 15));
+        runtime.setExtractConfig(first, Direction.WEST, new BuiltinTopoPipeDistributionStrategies.RateConfig(
+                BuiltinTopoPipeDistributionStrategies.ROUND_ROBIN, 17, 15));
         // 周期量 17 故意不整除 15t——亚每 tick 速率(≈1.13/t)是新语义的核心能力,必须保真往返。
 
         helper.startSequence()
@@ -613,7 +613,7 @@ public final class PipeNetworkGameTests {
                     if (roundTripped.intentBits() != original.intentBits() || roundTripped.roleBits() != original.roleBits() || roundTripped.definition() != original.definition()) {
                         helper.fail("Round trip changed intent/roles/definition");
                     }
-                    if (!(roundTripped.extractConfig(Direction.WEST) instanceof BuiltinOIPipeDistributionStrategies.RateConfig rate) || rate.strategy() != BuiltinOIPipeDistributionStrategies.ROUND_ROBIN || rate.amount() != 17 || rate.interval() != 15) {
+                    if (!(roundTripped.extractConfig(Direction.WEST) instanceof BuiltinTopoPipeDistributionStrategies.RateConfig rate) || rate.strategy() != BuiltinTopoPipeDistributionStrategies.ROUND_ROBIN || rate.amount() != 17 || rate.interval() != 15) {
                         helper.fail("Round trip changed the port config");
                     }
                 })
@@ -623,21 +623,21 @@ public final class PipeNetworkGameTests {
     /** 测试 168:标量版均分——干线+双分支拓扑下,平均分配把能量对半灌进两台缓冲机。 */
     private static void pipeEqualSplitBalancesScalarMachines(GameTestHelper helper) {
         placeFloor(helper);
-        MachineBlockEntity source = placeMachine(helper, new BlockPos(1, 1, 2), OIPipeGameTestFixtures.energyBuffer());
-        placeMachine(helper, new BlockPos(2, 1, 0), OIPipeGameTestFixtures.energyBuffer());
-        placeMachine(helper, new BlockPos(2, 1, 4), OIPipeGameTestFixtures.energyBuffer());
+        MachineBlockEntity source = placeMachine(helper, new BlockPos(1, 1, 2), TopoPipeGameTestFixtures.energyBuffer());
+        placeMachine(helper, new BlockPos(2, 1, 0), TopoPipeGameTestFixtures.energyBuffer());
+        placeMachine(helper, new BlockPos(2, 1, 4), TopoPipeGameTestFixtures.energyBuffer());
         insertResource(helper, source.machineComponents().require(ScalarResourcePort.ENERGY_STORAGE).handler(),
-                BuiltinOIResourceIntegrations.ENERGY.recipeCapability().resource(),
-                OIPipeGameTestFixtures.SCALAR_CAPACITY, "energy");
-        placePipe(helper, new BlockPos(2, 1, 2), BuiltinOIPipes.ENERGY_PIPE_ELITE);
-        placePipe(helper, new BlockPos(2, 1, 1), BuiltinOIPipes.ENERGY_PIPE_ELITE);
-        placePipe(helper, new BlockPos(2, 1, 3), BuiltinOIPipes.ENERGY_PIPE_ELITE);
+                BuiltinTopoResourceIntegrations.ENERGY.recipeCapability().resource(),
+                TopoPipeGameTestFixtures.SCALAR_CAPACITY, "energy");
+        placePipe(helper, new BlockPos(2, 1, 2), BuiltinTopoPipes.ENERGY_PIPE_ELITE);
+        placePipe(helper, new BlockPos(2, 1, 1), BuiltinTopoPipes.ENERGY_PIPE_ELITE);
+        placePipe(helper, new BlockPos(2, 1, 3), BuiltinTopoPipes.ENERGY_PIPE_ELITE);
         PipeLevelRuntime runtime = runtime(helper);
         BlockPos extractor = helper.absolutePos(new BlockPos(2, 1, 2));
         runtime.setSideIntent(extractor, Direction.WEST, PipeSideIntent.EXTRACT);
-        runtime.setExtractStrategy(extractor, Direction.WEST, BuiltinOIPipeDistributionStrategies.EQUAL_SPLIT);
+        runtime.setExtractStrategy(extractor, Direction.WEST, BuiltinTopoPipeDistributionStrategies.EQUAL_SPLIT);
         int interval = useMinInterval(helper, extractor, Direction.WEST);
-        long half = BuiltinOIPipes.ENERGY_PIPE_ELITE.maxBatchAmount(interval) / 2L;
+        long half = BuiltinTopoPipes.ENERGY_PIPE_ELITE.maxBatchAmount(interval) / 2L;
 
         helper.startSequence()
                 .thenWaitUntil(() -> {
@@ -659,20 +659,20 @@ public final class PipeNetworkGameTests {
     /** 测试 169:终极抽取端(131k/t)穿基础共享干线(2048/t)均分到两台机器——饱和瓶颈轮替。 */
     private static void pipeEqualSplitSharesSaturatedBottleneck(GameTestHelper helper) {
         placeFloor(helper);
-        MachineBlockEntity source = placeMachine(helper, new BlockPos(0, 1, 2), OIPipeGameTestFixtures.energyBuffer());
-        placeMachine(helper, new BlockPos(2, 1, 0), OIPipeGameTestFixtures.energyBuffer());
-        placeMachine(helper, new BlockPos(2, 1, 4), OIPipeGameTestFixtures.energyBuffer());
+        MachineBlockEntity source = placeMachine(helper, new BlockPos(0, 1, 2), TopoPipeGameTestFixtures.energyBuffer());
+        placeMachine(helper, new BlockPos(2, 1, 0), TopoPipeGameTestFixtures.energyBuffer());
+        placeMachine(helper, new BlockPos(2, 1, 4), TopoPipeGameTestFixtures.energyBuffer());
         insertResource(helper, source.machineComponents().require(ScalarResourcePort.ENERGY_STORAGE).handler(),
-                BuiltinOIResourceIntegrations.ENERGY.recipeCapability().resource(),
-                OIPipeGameTestFixtures.SCALAR_CAPACITY, "energy");
-        placePipe(helper, new BlockPos(1, 1, 2), BuiltinOIPipes.ENERGY_PIPE_ELITE);
-        placePipe(helper, new BlockPos(2, 1, 2), BuiltinOIPipes.ENERGY_PIPE_BASIC);
-        placePipe(helper, new BlockPos(2, 1, 1), BuiltinOIPipes.ENERGY_PIPE_BASIC);
-        placePipe(helper, new BlockPos(2, 1, 3), BuiltinOIPipes.ENERGY_PIPE_BASIC);
+                BuiltinTopoResourceIntegrations.ENERGY.recipeCapability().resource(),
+                TopoPipeGameTestFixtures.SCALAR_CAPACITY, "energy");
+        placePipe(helper, new BlockPos(1, 1, 2), BuiltinTopoPipes.ENERGY_PIPE_ELITE);
+        placePipe(helper, new BlockPos(2, 1, 2), BuiltinTopoPipes.ENERGY_PIPE_BASIC);
+        placePipe(helper, new BlockPos(2, 1, 1), BuiltinTopoPipes.ENERGY_PIPE_BASIC);
+        placePipe(helper, new BlockPos(2, 1, 3), BuiltinTopoPipes.ENERGY_PIPE_BASIC);
         PipeLevelRuntime runtime = runtime(helper);
         BlockPos extractor = helper.absolutePos(new BlockPos(1, 1, 2));
         runtime.setSideIntent(extractor, Direction.WEST, PipeSideIntent.EXTRACT);
-        runtime.setExtractStrategy(extractor, Direction.WEST, BuiltinOIPipeDistributionStrategies.EQUAL_SPLIT);
+        runtime.setExtractStrategy(extractor, Direction.WEST, BuiltinTopoPipeDistributionStrategies.EQUAL_SPLIT);
         int interval = useMinInterval(helper, extractor, Direction.WEST);
         // 饱和共享干线:每批被共享基础节点窗口钳到 2048 x interval,整批轮替到一侧。
         long saturatedBatch = 2048L * interval;
@@ -700,18 +700,18 @@ public final class PipeNetworkGameTests {
     /** 测试 170:稀缺供给单 tick 真均分——源只有 30 能量、预算 131k,两台机器各 15。 */
     private static void pipeEqualSplitDividesScarceSupply(GameTestHelper helper) {
         placeFloor(helper);
-        MachineBlockEntity source = placeMachine(helper, new BlockPos(1, 1, 2), OIPipeGameTestFixtures.energyBuffer());
-        placeMachine(helper, new BlockPos(2, 1, 0), OIPipeGameTestFixtures.energyBuffer());
-        placeMachine(helper, new BlockPos(2, 1, 4), OIPipeGameTestFixtures.energyBuffer());
+        MachineBlockEntity source = placeMachine(helper, new BlockPos(1, 1, 2), TopoPipeGameTestFixtures.energyBuffer());
+        placeMachine(helper, new BlockPos(2, 1, 0), TopoPipeGameTestFixtures.energyBuffer());
+        placeMachine(helper, new BlockPos(2, 1, 4), TopoPipeGameTestFixtures.energyBuffer());
         insertResource(helper, source.machineComponents().require(ScalarResourcePort.ENERGY_STORAGE).handler(),
-                BuiltinOIResourceIntegrations.ENERGY.recipeCapability().resource(), 30, "energy");
-        placePipe(helper, new BlockPos(2, 1, 2), BuiltinOIPipes.ENERGY_PIPE_ELITE);
-        placePipe(helper, new BlockPos(2, 1, 1), BuiltinOIPipes.ENERGY_PIPE_ELITE);
-        placePipe(helper, new BlockPos(2, 1, 3), BuiltinOIPipes.ENERGY_PIPE_ELITE);
+                BuiltinTopoResourceIntegrations.ENERGY.recipeCapability().resource(), 30, "energy");
+        placePipe(helper, new BlockPos(2, 1, 2), BuiltinTopoPipes.ENERGY_PIPE_ELITE);
+        placePipe(helper, new BlockPos(2, 1, 1), BuiltinTopoPipes.ENERGY_PIPE_ELITE);
+        placePipe(helper, new BlockPos(2, 1, 3), BuiltinTopoPipes.ENERGY_PIPE_ELITE);
         PipeLevelRuntime runtime = runtime(helper);
         BlockPos extractor = helper.absolutePos(new BlockPos(2, 1, 2));
         runtime.setSideIntent(extractor, Direction.WEST, PipeSideIntent.EXTRACT);
-        runtime.setExtractStrategy(extractor, Direction.WEST, BuiltinOIPipeDistributionStrategies.EQUAL_SPLIT);
+        runtime.setExtractStrategy(extractor, Direction.WEST, BuiltinTopoPipeDistributionStrategies.EQUAL_SPLIT);
         useMinInterval(helper, extractor, Direction.WEST);
 
         helper.startSequence()
@@ -734,24 +734,24 @@ public final class PipeNetworkGameTests {
     /** 测试 191:四目的地其一缓冲已满——供给 30 在三台活机器间 10/10/10,死目的地不吃份额。 */
     private static void pipeEqualSplitSkipsDeadDestinations(GameTestHelper helper) {
         placeFloor(helper);
-        MachineBlockEntity source = placeMachine(helper, new BlockPos(1, 1, 2), OIPipeGameTestFixtures.energyBuffer());
-        placeMachine(helper, new BlockPos(2, 1, 0), OIPipeGameTestFixtures.energyBuffer());
-        placeMachine(helper, new BlockPos(2, 1, 4), OIPipeGameTestFixtures.energyBuffer());
-        placeMachine(helper, new BlockPos(4, 1, 2), OIPipeGameTestFixtures.energyBuffer());
-        MachineBlockEntity dead = placeMachine(helper, new BlockPos(2, 2, 2), OIPipeGameTestFixtures.energyBuffer());
+        MachineBlockEntity source = placeMachine(helper, new BlockPos(1, 1, 2), TopoPipeGameTestFixtures.energyBuffer());
+        placeMachine(helper, new BlockPos(2, 1, 0), TopoPipeGameTestFixtures.energyBuffer());
+        placeMachine(helper, new BlockPos(2, 1, 4), TopoPipeGameTestFixtures.energyBuffer());
+        placeMachine(helper, new BlockPos(4, 1, 2), TopoPipeGameTestFixtures.energyBuffer());
+        MachineBlockEntity dead = placeMachine(helper, new BlockPos(2, 2, 2), TopoPipeGameTestFixtures.energyBuffer());
         insertResource(helper, source.machineComponents().require(ScalarResourcePort.ENERGY_STORAGE).handler(),
-                BuiltinOIResourceIntegrations.ENERGY.recipeCapability().resource(), 30, "energy");
+                BuiltinTopoResourceIntegrations.ENERGY.recipeCapability().resource(), 30, "energy");
         insertResource(helper, dead.machineComponents().require(ScalarResourcePort.ENERGY_STORAGE).handler(),
-                BuiltinOIResourceIntegrations.ENERGY.recipeCapability().resource(),
-                OIPipeGameTestFixtures.SCALAR_CAPACITY, "energy (fills the dead buffer)");
-        placePipe(helper, new BlockPos(2, 1, 2), BuiltinOIPipes.ENERGY_PIPE_ELITE);
-        placePipe(helper, new BlockPos(2, 1, 1), BuiltinOIPipes.ENERGY_PIPE_ELITE);
-        placePipe(helper, new BlockPos(2, 1, 3), BuiltinOIPipes.ENERGY_PIPE_ELITE);
-        placePipe(helper, new BlockPos(3, 1, 2), BuiltinOIPipes.ENERGY_PIPE_ELITE);
+                BuiltinTopoResourceIntegrations.ENERGY.recipeCapability().resource(),
+                TopoPipeGameTestFixtures.SCALAR_CAPACITY, "energy (fills the dead buffer)");
+        placePipe(helper, new BlockPos(2, 1, 2), BuiltinTopoPipes.ENERGY_PIPE_ELITE);
+        placePipe(helper, new BlockPos(2, 1, 1), BuiltinTopoPipes.ENERGY_PIPE_ELITE);
+        placePipe(helper, new BlockPos(2, 1, 3), BuiltinTopoPipes.ENERGY_PIPE_ELITE);
+        placePipe(helper, new BlockPos(3, 1, 2), BuiltinTopoPipes.ENERGY_PIPE_ELITE);
         PipeLevelRuntime runtime = runtime(helper);
         BlockPos extractor = helper.absolutePos(new BlockPos(2, 1, 2));
         runtime.setSideIntent(extractor, Direction.WEST, PipeSideIntent.EXTRACT);
-        runtime.setExtractStrategy(extractor, Direction.WEST, BuiltinOIPipeDistributionStrategies.EQUAL_SPLIT);
+        runtime.setExtractStrategy(extractor, Direction.WEST, BuiltinTopoPipeDistributionStrategies.EQUAL_SPLIT);
         useMinInterval(helper, extractor, Direction.WEST);
 
         helper.startSequence()
@@ -769,7 +769,7 @@ public final class PipeNetworkGameTests {
                     if (north != 10 || south != 10 || east != 10) {
                         helper.fail("30 energy over three live machines must land 10/10/10, got " + north + "/" + south + "/" + east);
                     }
-                    if (deadAmount != OIPipeGameTestFixtures.SCALAR_CAPACITY) {
+                    if (deadAmount != TopoPipeGameTestFixtures.SCALAR_CAPACITY) {
                         helper.fail("The full buffer must stay untouched, got " + deadAmount);
                     }
                 })
@@ -784,13 +784,13 @@ public final class PipeNetworkGameTests {
     /** 测试 192:物品 机器→管→机器(免事务直搬通道,消费端是 INSERT-only 方向视图):40 煤完整到达。 */
     private static void pipeItemMachineToMachineDirectLane(GameTestHelper helper) {
         placeFloor(helper);
-        MachineBlockEntity source = placeMachine(helper, new BlockPos(1, 1, 2), OIPipeGameTestFixtures.itemBuffer());
-        MachineBlockEntity sink = placeMachine(helper, new BlockPos(4, 1, 2), OIPipeGameTestFixtures.itemSink());
+        MachineBlockEntity source = placeMachine(helper, new BlockPos(1, 1, 2), TopoPipeGameTestFixtures.itemBuffer());
+        MachineBlockEntity sink = placeMachine(helper, new BlockPos(4, 1, 2), TopoPipeGameTestFixtures.itemSink());
         insertResource(helper, source.machineComponents().require(
-                net.ptcrys.topo.datav2.machine.common.component.resource.ItemResourcePort.ITEM_INPUT_1).handler(),
+                net.ptcrys.topo.data.machine.common.component.resource.ItemResourcePort.ITEM_INPUT_1).handler(),
                 net.neoforged.neoforge.transfer.item.ItemResource.of(Items.COAL), 40, "coal");
-        placePipe(helper, new BlockPos(2, 1, 2), BuiltinOIPipes.ITEM_PIPE_ELITE);
-        placePipe(helper, new BlockPos(3, 1, 2), BuiltinOIPipes.ITEM_PIPE_ELITE);
+        placePipe(helper, new BlockPos(2, 1, 2), BuiltinTopoPipes.ITEM_PIPE_ELITE);
+        placePipe(helper, new BlockPos(3, 1, 2), BuiltinTopoPipes.ITEM_PIPE_ELITE);
         BlockPos extractor = helper.absolutePos(new BlockPos(2, 1, 2));
         runtime(helper).setSideIntent(extractor, Direction.WEST, PipeSideIntent.EXTRACT);
         useMinInterval(helper, extractor, Direction.WEST);
@@ -798,16 +798,16 @@ public final class PipeNetworkGameTests {
         helper.startSequence()
                 .thenWaitUntil(() -> {
                     long arrived = handlerTotal(sink.machineComponents().require(
-                            net.ptcrys.topo.datav2.machine.common.component.resource.ItemResourcePort.ITEM_INPUT_1).handler());
+                            net.ptcrys.topo.data.machine.common.component.resource.ItemResourcePort.ITEM_INPUT_1).handler());
                     if (arrived < 40) {
                         helper.fail("waiting for the machine-to-machine batch");
                     }
                 })
                 .thenExecute(() -> {
                     long arrived = handlerTotal(sink.machineComponents().require(
-                            net.ptcrys.topo.datav2.machine.common.component.resource.ItemResourcePort.ITEM_INPUT_1).handler());
+                            net.ptcrys.topo.data.machine.common.component.resource.ItemResourcePort.ITEM_INPUT_1).handler());
                     long left = handlerTotal(source.machineComponents().require(
-                            net.ptcrys.topo.datav2.machine.common.component.resource.ItemResourcePort.ITEM_INPUT_1).handler());
+                            net.ptcrys.topo.data.machine.common.component.resource.ItemResourcePort.ITEM_INPUT_1).handler());
                     if (arrived != 40 || left != 0) {
                         helper.fail("Expected 40 coal moved machine-to-machine, got arrived=" + arrived + " left=" + left);
                     }
@@ -821,12 +821,12 @@ public final class PipeNetworkGameTests {
      */
     private static void pipeMixedKindSourceFallsBack(GameTestHelper helper) {
         placeFloor(helper);
-        MachineBlockEntity source = placeMachine(helper, new BlockPos(1, 1, 2), OIPipeGameTestFixtures.itemBuffer());
-        MachineBlockEntity sink = placeMachine(helper, new BlockPos(4, 1, 2), OIPipeGameTestFixtures.itemBuffer());
+        MachineBlockEntity source = placeMachine(helper, new BlockPos(1, 1, 2), TopoPipeGameTestFixtures.itemBuffer());
+        MachineBlockEntity sink = placeMachine(helper, new BlockPos(4, 1, 2), TopoPipeGameTestFixtures.itemBuffer());
         ResourceHandler<net.neoforged.neoforge.transfer.item.ItemResource> sourceHandler = source.machineComponents().require(
-                net.ptcrys.topo.datav2.machine.common.component.resource.ItemResourcePort.ITEM_INPUT_1).handler();
+                net.ptcrys.topo.data.machine.common.component.resource.ItemResourcePort.ITEM_INPUT_1).handler();
         ResourceHandler<net.neoforged.neoforge.transfer.item.ItemResource> sinkHandler = sink.machineComponents().require(
-                net.ptcrys.topo.datav2.machine.common.component.resource.ItemResourcePort.ITEM_INPUT_1).handler();
+                net.ptcrys.topo.data.machine.common.component.resource.ItemResourcePort.ITEM_INPUT_1).handler();
         // 源:槽序前排石头、后排煤。目标:9 槽灌到只剩 32 煤位、零空槽 -> freeFor(石头)=0。
         insertResource(helper, sourceHandler,
                 net.neoforged.neoforge.transfer.item.ItemResource.of(Items.STONE), 16, "stone");
@@ -834,8 +834,8 @@ public final class PipeNetworkGameTests {
                 net.neoforged.neoforge.transfer.item.ItemResource.of(Items.COAL), 16, "coal");
         insertResource(helper, sinkHandler,
                 net.neoforged.neoforge.transfer.item.ItemResource.of(Items.COAL), 8 * 64 + 32, "coal prefill");
-        placePipe(helper, new BlockPos(2, 1, 2), BuiltinOIPipes.ITEM_PIPE_ELITE);
-        placePipe(helper, new BlockPos(3, 1, 2), BuiltinOIPipes.ITEM_PIPE_ELITE);
+        placePipe(helper, new BlockPos(2, 1, 2), BuiltinTopoPipes.ITEM_PIPE_ELITE);
+        placePipe(helper, new BlockPos(3, 1, 2), BuiltinTopoPipes.ITEM_PIPE_ELITE);
         BlockPos extractor = helper.absolutePos(new BlockPos(2, 1, 2));
         runtime(helper).setSideIntent(extractor, Direction.WEST, PipeSideIntent.EXTRACT);
         useMinInterval(helper, extractor, Direction.WEST);
@@ -875,14 +875,14 @@ public final class PipeNetworkGameTests {
         ChestBlockEntity near = chest(helper, new BlockPos(3, 1, 2));
         ChestBlockEntity far = chest(helper, new BlockPos(2, 1, 0));
         fillChest(source, Items.COAL, 27 * 64);
-        placePipe(helper, new BlockPos(2, 1, 2), BuiltinOIPipes.ITEM_PIPE_ELITE);
-        placePipe(helper, new BlockPos(2, 1, 1), BuiltinOIPipes.ITEM_PIPE_ELITE);
+        placePipe(helper, new BlockPos(2, 1, 2), BuiltinTopoPipes.ITEM_PIPE_ELITE);
+        placePipe(helper, new BlockPos(2, 1, 1), BuiltinTopoPipes.ITEM_PIPE_ELITE);
         PipeLevelRuntime runtime = runtime(helper);
         BlockPos extractor = helper.absolutePos(new BlockPos(2, 1, 2));
         runtime.setSideIntent(extractor, Direction.WEST, PipeSideIntent.EXTRACT);
-        runtime.setExtractConfig(extractor, Direction.WEST, new BuiltinOIPipeDistributionStrategies.ByDistanceConfig(
-                BuiltinOIPipeDistributionStrategies.BY_DISTANCE,
-                BuiltinOIPipeDistributionStrategies.DistanceOrder.FARTHEST,
+        runtime.setExtractConfig(extractor, Direction.WEST, new BuiltinTopoPipeDistributionStrategies.ByDistanceConfig(
+                BuiltinTopoPipeDistributionStrategies.BY_DISTANCE,
+                BuiltinTopoPipeDistributionStrategies.DistanceOrder.FARTHEST,
                 20, 5));
         int batch = 20;
 
@@ -913,9 +913,9 @@ public final class PipeNetworkGameTests {
         ChestBlockEntity target = chest(helper, new BlockPos(4, 1, 2));
         source.setItem(0, new ItemStack(Items.DIRT, 64));
         source.setItem(1, new ItemStack(Items.IRON_INGOT, 64));
-        placePipe(helper, new BlockPos(1, 1, 2), BuiltinOIPipes.ITEM_PIPE_ADVANCED);
-        placePipe(helper, new BlockPos(2, 1, 2), BuiltinOIPipes.ITEM_PIPE_ADVANCED);
-        placePipe(helper, new BlockPos(3, 1, 2), BuiltinOIPipes.ITEM_PIPE_ADVANCED);
+        placePipe(helper, new BlockPos(1, 1, 2), BuiltinTopoPipes.ITEM_PIPE_ADVANCED);
+        placePipe(helper, new BlockPos(2, 1, 2), BuiltinTopoPipes.ITEM_PIPE_ADVANCED);
+        placePipe(helper, new BlockPos(3, 1, 2), BuiltinTopoPipes.ITEM_PIPE_ADVANCED);
         PipeLevelRuntime runtime = runtime(helper);
         BlockPos extractor = helper.absolutePos(new BlockPos(1, 1, 2));
         runtime.setSideIntent(extractor, Direction.WEST, PipeSideIntent.EXTRACT);
@@ -954,9 +954,9 @@ public final class PipeNetworkGameTests {
         ChestBlockEntity target = chest(helper, new BlockPos(4, 1, 2));
         source.setItem(0, new ItemStack(Items.DIRT, 64));
         source.setItem(1, new ItemStack(Items.COAL, 64));
-        placePipe(helper, new BlockPos(1, 1, 2), BuiltinOIPipes.ITEM_PIPE_ADVANCED);
-        placePipe(helper, new BlockPos(2, 1, 2), BuiltinOIPipes.ITEM_PIPE_ADVANCED);
-        placePipe(helper, new BlockPos(3, 1, 2), BuiltinOIPipes.ITEM_PIPE_ADVANCED);
+        placePipe(helper, new BlockPos(1, 1, 2), BuiltinTopoPipes.ITEM_PIPE_ADVANCED);
+        placePipe(helper, new BlockPos(2, 1, 2), BuiltinTopoPipes.ITEM_PIPE_ADVANCED);
+        placePipe(helper, new BlockPos(3, 1, 2), BuiltinTopoPipes.ITEM_PIPE_ADVANCED);
         PipeLevelRuntime runtime = runtime(helper);
         BlockPos extractor = helper.absolutePos(new BlockPos(1, 1, 2));
         runtime.setSideIntent(extractor, Direction.WEST, PipeSideIntent.EXTRACT);
@@ -987,9 +987,9 @@ public final class PipeNetworkGameTests {
         ChestBlockEntity target = chest(helper, new BlockPos(4, 1, 2));
         source.setItem(0, new ItemStack(Items.GOLD_INGOT, 32));
         source.setItem(1, new ItemStack(Items.IRON_INGOT, 32));
-        placePipe(helper, new BlockPos(1, 1, 2), BuiltinOIPipes.ITEM_PIPE_ADVANCED);
-        placePipe(helper, new BlockPos(2, 1, 2), BuiltinOIPipes.ITEM_PIPE_ADVANCED);
-        placePipe(helper, new BlockPos(3, 1, 2), BuiltinOIPipes.ITEM_PIPE_ADVANCED);
+        placePipe(helper, new BlockPos(1, 1, 2), BuiltinTopoPipes.ITEM_PIPE_ADVANCED);
+        placePipe(helper, new BlockPos(2, 1, 2), BuiltinTopoPipes.ITEM_PIPE_ADVANCED);
+        placePipe(helper, new BlockPos(3, 1, 2), BuiltinTopoPipes.ITEM_PIPE_ADVANCED);
         PipeLevelRuntime runtime = runtime(helper);
         BlockPos extractor = helper.absolutePos(new BlockPos(1, 1, 2));
         runtime.setSideIntent(extractor, Direction.WEST, PipeSideIntent.EXTRACT);
@@ -1022,9 +1022,9 @@ public final class PipeNetworkGameTests {
         ChestBlockEntity target = chest(helper, new BlockPos(4, 1, 2));
         source.setItem(0, new ItemStack(Items.DIRT, 64));
         source.setItem(1, new ItemStack(Items.OAK_PLANKS, 64));
-        placePipe(helper, new BlockPos(1, 1, 2), BuiltinOIPipes.ITEM_PIPE_ADVANCED);
-        placePipe(helper, new BlockPos(2, 1, 2), BuiltinOIPipes.ITEM_PIPE_ADVANCED);
-        placePipe(helper, new BlockPos(3, 1, 2), BuiltinOIPipes.ITEM_PIPE_ADVANCED);
+        placePipe(helper, new BlockPos(1, 1, 2), BuiltinTopoPipes.ITEM_PIPE_ADVANCED);
+        placePipe(helper, new BlockPos(2, 1, 2), BuiltinTopoPipes.ITEM_PIPE_ADVANCED);
+        placePipe(helper, new BlockPos(3, 1, 2), BuiltinTopoPipes.ITEM_PIPE_ADVANCED);
         PipeLevelRuntime runtime = runtime(helper);
         BlockPos extractor = helper.absolutePos(new BlockPos(1, 1, 2));
         runtime.setSideIntent(extractor, Direction.WEST, PipeSideIntent.EXTRACT);
@@ -1051,18 +1051,18 @@ public final class PipeNetworkGameTests {
      */
     private static void pipeFilteredDirectLaneFallsBack(GameTestHelper helper) {
         placeFloor(helper);
-        MachineBlockEntity source = placeMachine(helper, new BlockPos(1, 1, 2), OIPipeGameTestFixtures.itemBuffer());
-        MachineBlockEntity sink = placeMachine(helper, new BlockPos(4, 1, 2), OIPipeGameTestFixtures.itemBuffer());
+        MachineBlockEntity source = placeMachine(helper, new BlockPos(1, 1, 2), TopoPipeGameTestFixtures.itemBuffer());
+        MachineBlockEntity sink = placeMachine(helper, new BlockPos(4, 1, 2), TopoPipeGameTestFixtures.itemBuffer());
         ResourceHandler<net.neoforged.neoforge.transfer.item.ItemResource> sourceHandler = source.machineComponents().require(
-                net.ptcrys.topo.datav2.machine.common.component.resource.ItemResourcePort.ITEM_INPUT_1).handler();
+                net.ptcrys.topo.data.machine.common.component.resource.ItemResourcePort.ITEM_INPUT_1).handler();
         ResourceHandler<net.neoforged.neoforge.transfer.item.ItemResource> sinkHandler = sink.machineComponents().require(
-                net.ptcrys.topo.datav2.machine.common.component.resource.ItemResourcePort.ITEM_INPUT_1).handler();
+                net.ptcrys.topo.data.machine.common.component.resource.ItemResourcePort.ITEM_INPUT_1).handler();
         insertResource(helper, sourceHandler,
                 net.neoforged.neoforge.transfer.item.ItemResource.of(Items.STONE), 16, "stone");
         insertResource(helper, sourceHandler,
                 net.neoforged.neoforge.transfer.item.ItemResource.of(Items.COAL), 16, "coal");
-        placePipe(helper, new BlockPos(2, 1, 2), BuiltinOIPipes.ITEM_PIPE_ELITE);
-        placePipe(helper, new BlockPos(3, 1, 2), BuiltinOIPipes.ITEM_PIPE_ELITE);
+        placePipe(helper, new BlockPos(2, 1, 2), BuiltinTopoPipes.ITEM_PIPE_ELITE);
+        placePipe(helper, new BlockPos(3, 1, 2), BuiltinTopoPipes.ITEM_PIPE_ELITE);
         PipeLevelRuntime runtime = runtime(helper);
         BlockPos extractor = helper.absolutePos(new BlockPos(2, 1, 2));
         runtime.setSideIntent(extractor, Direction.WEST, PipeSideIntent.EXTRACT);
@@ -1177,7 +1177,7 @@ public final class PipeNetworkGameTests {
         MachineBlockEntity source = placeMachine(helper, new BlockPos(0, 1, z), buffer);
         placeMachine(helper, new BlockPos(3, 1, z), buffer);
         insertResource(helper, source.machineComponents().require(key).handler(),
-                integration.recipeCapability().resource(), OIPipeGameTestFixtures.SCALAR_CAPACITY / 2,
+                integration.recipeCapability().resource(), TopoPipeGameTestFixtures.SCALAR_CAPACITY / 2,
                 integration.id().toString());
         placePipe(helper, new BlockPos(1, 1, z), pipe);
         placePipe(helper, new BlockPos(2, 1, z), pipe);

@@ -1,21 +1,21 @@
 package net.ptcrys.topo.gametest;
 
+import net.ptcrys.topo.api.machine.MachineBlockEntity;
+import net.ptcrys.topo.api.machine.MachineDefinition;
+import net.ptcrys.topo.api.machine.component.ComponentKey;
 import net.ptcrys.topo.api.pipe.PipeDefinition;
 import net.ptcrys.topo.api.pipe.PipeDistributionStrategy;
 import net.ptcrys.topo.api.pipe.PipeSideIntent;
 import net.ptcrys.topo.api.pipe.network.PipeLevelRuntime;
 import net.ptcrys.topo.api.pipe.network.PipeNetworkEngine;
-import net.ptcrys.topo.apiv2.machine.MachineBlockEntity;
-import net.ptcrys.topo.apiv2.machine.MachineDefinition;
-import net.ptcrys.topo.apiv2.machine.component.ComponentKey;
-import net.ptcrys.topo.data.pipe.BuiltinOIPipeDistributionStrategies;
-import net.ptcrys.topo.data.pipe.BuiltinOIPipes;
-import net.ptcrys.topo.datav2.machine.common.component.resource.FluidResourcePort;
-import net.ptcrys.topo.datav2.machine.common.component.resource.ScalarResource;
-import net.ptcrys.topo.datav2.machine.common.component.resource.ScalarResourcePort;
-import net.ptcrys.topo.datav2.recipe.BuiltinOIResourceIntegrations;
-import net.ptcrys.topo.datav2.recipe.BuiltinOIResourceIntegrations.BuiltinResourceIntegration;
-import net.ptcrys.topo.datav2.recipe.common.ScalarRecipeCapability;
+import net.ptcrys.topo.data.machine.common.component.resource.FluidResourcePort;
+import net.ptcrys.topo.data.machine.common.component.resource.ScalarResource;
+import net.ptcrys.topo.data.machine.common.component.resource.ScalarResourcePort;
+import net.ptcrys.topo.data.pipe.BuiltinTopoPipeDistributionStrategies;
+import net.ptcrys.topo.data.pipe.BuiltinTopoPipes;
+import net.ptcrys.topo.data.recipe.BuiltinTopoResourceIntegrations;
+import net.ptcrys.topo.data.recipe.BuiltinTopoResourceIntegrations.BuiltinResourceIntegration;
+import net.ptcrys.topo.data.recipe.common.ScalarRecipeCapability;
 import net.ptcrys.topo.helper.IdHelper;
 
 import net.minecraft.core.BlockPos;
@@ -84,7 +84,7 @@ public final class PipeStrategyMatrixGameTests {
                        ToLongBiFunction<GameTestHelper, BlockPos> count) {}
 
     private static Rig itemRig() {
-        return new Rig("item", BuiltinOIPipes.ITEM_PIPE_ELITE,
+        return new Rig("item", BuiltinTopoPipes.ITEM_PIPE_ELITE,
                 (helper, pos) -> {
                     ChestBlockEntity chest = chest(helper, pos);
                     // 相位可能让首批早于基线采样,窗口里最多吃 5 个批次——给足供给。
@@ -106,13 +106,13 @@ public final class PipeStrategyMatrixGameTests {
     }
 
     private static Rig fluidRig() {
-        return new Rig("fluid", BuiltinOIPipes.FLUID_PIPE_ELITE,
+        return new Rig("fluid", BuiltinTopoPipes.FLUID_PIPE_ELITE,
                 (helper, pos) -> {
-                    MachineBlockEntity tank = placeMachine(helper, pos, OIPipeGameTestFixtures.fluidTank());
+                    MachineBlockEntity tank = placeMachine(helper, pos, TopoPipeGameTestFixtures.fluidTank());
                     insertResource(helper, tank.machineComponents().require(FluidResourcePort.FLUID_STORAGE).handler(),
                             FluidResource.of(Fluids.WATER), 50_000, "mB water");
                 },
-                (helper, pos) -> placeMachine(helper, pos, OIPipeGameTestFixtures.fluidTank()),
+                (helper, pos) -> placeMachine(helper, pos, TopoPipeGameTestFixtures.fluidTank()),
                 (helper, pos) -> handlerTotal(helper, pos, FluidResourcePort.FLUID_STORAGE));
     }
 
@@ -123,7 +123,7 @@ public final class PipeStrategyMatrixGameTests {
                 (helper, pos) -> {
                     MachineBlockEntity machine = placeMachine(helper, pos, buffer);
                     insertResource(helper, machine.machineComponents().require(traitKey).handler(),
-                            integration.recipeCapability().resource(), OIPipeGameTestFixtures.SCALAR_CAPACITY / 2,
+                            integration.recipeCapability().resource(), TopoPipeGameTestFixtures.SCALAR_CAPACITY / 2,
                             integration.id().toString());
                 },
                 (helper, pos) -> placeMachine(helper, pos, buffer),
@@ -147,23 +147,23 @@ public final class PipeStrategyMatrixGameTests {
     }
 
     private static Rig energyRig() {
-        return scalarRig("energy", BuiltinOIPipes.ENERGY_PIPE_ELITE, OIPipeGameTestFixtures.energyBuffer(),
-                ScalarResourcePort.ENERGY_STORAGE, BuiltinOIResourceIntegrations.ENERGY);
+        return scalarRig("energy", BuiltinTopoPipes.ENERGY_PIPE_ELITE, TopoPipeGameTestFixtures.energyBuffer(),
+                ScalarResourcePort.ENERGY_STORAGE, BuiltinTopoResourceIntegrations.ENERGY);
     }
 
     private static Rig advancedEnergyRig() {
-        return scalarRig("advanced_energy", BuiltinOIPipes.ADVANCED_ENERGY_PIPE_ELITE,
-                OIPipeGameTestFixtures.advancedEnergyBuffer(),
-                ScalarResourcePort.ADVANCED_ENERGY_STORAGE, BuiltinOIResourceIntegrations.ADVANCED_ENERGY);
+        return scalarRig("advanced_energy", BuiltinTopoPipes.ADVANCED_ENERGY_PIPE_ELITE,
+                TopoPipeGameTestFixtures.advancedEnergyBuffer(),
+                ScalarResourcePort.ADVANCED_ENERGY_STORAGE, BuiltinTopoResourceIntegrations.ADVANCED_ENERGY);
     }
 
     private static Rig heatRig() {
-        return scalarRig("heat", BuiltinOIPipes.HEAT_PIPE_ELITE, OIPipeGameTestFixtures.heatBuffer(),
-                ScalarResourcePort.HEAT_STORAGE, BuiltinOIResourceIntegrations.HEAT);
+        return scalarRig("heat", BuiltinTopoPipes.HEAT_PIPE_ELITE, TopoPipeGameTestFixtures.heatBuffer(),
+                ScalarResourcePort.HEAT_STORAGE, BuiltinTopoResourceIntegrations.HEAT);
     }
 
     public static void register(RegisterGameTestsEvent event) {
-        if (!OIScalarGameTestFixtures.enabled()) {
+        if (!TopoScalarGameTestFixtures.enabled()) {
             return;
         }
         Holder<TestEnvironmentDefinition<?>> environment = event.registerEnvironment(IdHelper.oi("pipe_strategy_matrix"), new TestEnvironmentDefinition.AllOf());
@@ -173,17 +173,17 @@ public final class PipeStrategyMatrixGameTests {
             register(event, environment, index++,
                     "pipe_matrix_" + rig.key() + "_by_distance_nearest",
                     "Per-batch container probe, " + rig.key() + " x by-distance(nearest): every batch lands " + "fully on the near branch and the far branch stays at zero.",
-                    helper -> runScenario(helper, rig, BuiltinOIPipeDistributionStrategies.BY_DISTANCE,
+                    helper -> runScenario(helper, rig, BuiltinTopoPipeDistributionStrategies.BY_DISTANCE,
                             Expectation.constant(1, 0)));
             register(event, environment, index++,
                     "pipe_matrix_" + rig.key() + "_equal_split",
                     "Per-batch container probe, " + rig.key() + " x equal-split: every batch splits exactly in " + "half between the branches.",
-                    helper -> runScenario(helper, rig, BuiltinOIPipeDistributionStrategies.EQUAL_SPLIT,
+                    helper -> runScenario(helper, rig, BuiltinTopoPipeDistributionStrategies.EQUAL_SPLIT,
                             Expectation.halves()));
             register(event, environment, index++,
                     "pipe_matrix_" + rig.key() + "_round_robin",
                     "Per-batch container probe, " + rig.key() + " x round-robin: whole batches alternate " + "between the two branches.",
-                    helper -> runScenario(helper, rig, BuiltinOIPipeDistributionStrategies.ROUND_ROBIN,
+                    helper -> runScenario(helper, rig, BuiltinTopoPipeDistributionStrategies.ROUND_ROBIN,
                             Expectation.alternatingBatches()));
         }
     }

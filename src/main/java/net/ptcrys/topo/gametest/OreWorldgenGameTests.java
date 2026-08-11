@@ -1,10 +1,10 @@
 package net.ptcrys.topo.gametest;
 
-import net.ptcrys.topo.apiv2.ore.engine.OreBlockResolver;
-import net.ptcrys.topo.apiv2.ore.engine.OreVeinPlanner;
-import net.ptcrys.topo.apiv2.ore.engine.PlannedOreBlock;
-import net.ptcrys.topo.datav2.material.BuiltinOIMaterialForms;
-import net.ptcrys.topo.datav2.material.BuiltinOIMaterials;
+import net.ptcrys.topo.api.ore.engine.OreBlockResolver;
+import net.ptcrys.topo.api.ore.engine.OreVeinPlanner;
+import net.ptcrys.topo.api.ore.engine.PlannedOreBlock;
+import net.ptcrys.topo.data.material.BuiltinTopoMaterialForms;
+import net.ptcrys.topo.data.material.BuiltinTopoMaterials;
 import net.ptcrys.topo.helper.IdHelper;
 
 import net.minecraft.core.BlockPos;
@@ -52,10 +52,10 @@ public final class OreWorldgenGameTests {
 
     private static void orePlannerGeneratesAndProbes(GameTestHelper helper) {
         Block expected = OreBlockResolver.materialHelper()
-                .block(BuiltinOIMaterials.LEAD, BuiltinOIMaterialForms.DEEPSLATE_ORE)
+                .block(BuiltinTopoMaterials.LEAD, BuiltinTopoMaterialForms.DEEPSLATE_ORE)
                 .orElseThrow(() -> new IllegalStateException("lead deepslate ore block is not registered"));
 
-        OreVeinPlanner planner = new OreVeinPlanner(List.of(OIOreGameTestFixtures.leadBlob()), OreBlockResolver.materialHelper());
+        OreVeinPlanner planner = new OreVeinPlanner(List.of(TopoOreGameTestFixtures.leadBlob()), OreBlockResolver.materialHelper());
         List<PlannedOreBlock> planned = planner.planChunk(
                 TEST_SEED, Level.OVERWORLD, new ChunkPos(0, 0),
                 pos -> Blocks.DEEPSLATE.defaultBlockState());
@@ -65,7 +65,7 @@ public final class OreWorldgenGameTests {
             return;
         }
         for (PlannedOreBlock block : planned) {
-            if (block.material() != BuiltinOIMaterials.LEAD || block.form() != BuiltinOIMaterialForms.DEEPSLATE_ORE || !block.blockState().is(expected)) {
+            if (block.material() != BuiltinTopoMaterials.LEAD || block.form() != BuiltinTopoMaterialForms.DEEPSLATE_ORE || !block.blockState().is(expected)) {
                 helper.fail(
                         "planned block is not lead deepslate ore: " + block.material().id() + " / " + block.form().id(),
                         BlockPos.ZERO);

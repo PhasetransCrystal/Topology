@@ -1,6 +1,6 @@
 package net.ptcrys.topo.integration.jei.ae2;
 
-import net.ptcrys.topo.apiv2.machine.MachineDefinition;
+import net.ptcrys.topo.api.machine.MachineDefinition;
 
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.MenuType;
@@ -23,9 +23,9 @@ import java.util.Optional;
  * the pattern.
  *
  * <p>
- * Registered for {@code OIMultiblockJeiCategory.TYPE} (whose recipe objects are the controller
+ * Registered for {@code TopoMultiblockJeiCategory.TYPE} (whose recipe objects are the controller
  * {@link MachineDefinition}s themselves) so it shadows AE2's own universal handler for this
- * category — the same shadowing strategy {@link Ae2OIPatternTransferHandler} uses for OI recipe
+ * category — the same shadowing strategy {@link Ae2TopoPatternTransferHandler} uses for Topo recipe
  * types.
  */
 public final class MultiblockPatternTransferHandler

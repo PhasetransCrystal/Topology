@@ -1,6 +1,6 @@
 package net.ptcrys.topo.integration.ae2;
 
-import net.ptcrys.topo.apiv2.machine.resource.ResourceHandlerLongOps;
+import net.ptcrys.topo.api.machine.resource.ResourceHandlerLongOps;
 
 import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.resource.Resource;
@@ -44,7 +44,7 @@ import java.util.List;
  * <p>
  * The total wall-clock cost of {@code sync()} is dominated by Pass 2's
  * {@code Transaction.openRoot()} (~600 ns) plus the per-unique-key
- * {@code network.extractDirect}. To remove that cost from OI's
+ * {@code network.extractDirect}. To remove that cost from Topo's
  * {@code MachineTicker.runProfiledTick} accounting we split the entry point in two:
  * {@link #plan(ResourceHandler, List, AeResourceKeyResolver)} performs Pass 1 only and
  * returns a {@link PendingPlan} value object; {@link #execute(PendingPlan, ResourceHandler,
@@ -54,7 +54,7 @@ import java.util.List;
  * The sync trait's per-40-tick {@code tick()} method therefore only runs {@code plan()}
  * (which makes <em>zero</em> network calls and opens <em>zero</em> transactions). The
  * pending plan is then handed off to AE2's own {@code IGridTickable.tickingRequest}
- * callback (next AE network tick, which is <strong>not</strong> profiled by OI) where
+ * callback (next AE network tick, which is <strong>not</strong> profiled by Topo) where
  * Pass 2 actually moves resources. The work is not eliminated, only relocated to the
  * grid-tick side of the bookkeeping divide — server-tick total CPU is unchanged.
  *

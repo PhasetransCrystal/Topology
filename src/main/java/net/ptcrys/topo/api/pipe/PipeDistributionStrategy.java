@@ -1,6 +1,6 @@
 package net.ptcrys.topo.api.pipe;
 
-import net.ptcrys.topo.api.lang.LangKey;
+import net.ptcrys.topo.api.api.lang.LangKey;
 import net.ptcrys.topo.api.pipe.ui.PipePortAccess;
 import net.ptcrys.topo.api.pipe.ui.PipePortUiCollector;
 

@@ -5,7 +5,7 @@ import net.ptcrys.topo.api.pipe.network.PipeNetwork;
 import net.ptcrys.topo.api.pipe.network.PipeNetworkEngine;
 import net.ptcrys.topo.api.pipe.survey.PipeSurveyManager;
 import net.ptcrys.topo.api.pipe.survey.PipeSurveySnapshot;
-import net.ptcrys.topo.data.pipe.BuiltinOIPipes;
+import net.ptcrys.topo.data.pipe.BuiltinTopoPipes;
 import net.ptcrys.topo.helper.IdHelper;
 
 import net.minecraft.client.Minecraft;
@@ -44,20 +44,20 @@ import java.util.Locale;
 
 /**
  * 管网勘测仪世界内渲染全自动验收探针(同 {@link PipeProbe} 流水线骨架,独立 flag):仅当工作
- * 目录存在 {@code oi-surveyor-probe.flag} 时激活。建平坦世界 → 摆"源-终极口-3×3 基础网格-
+ * 目录存在 {@code topo-surveyor-probe.flag} 时激活。建平坦世界 → 摆"源-终极口-3×3 基础网格-
  * 终极口-汇"的真实流动场景(镜像 gametest 294,3 车道、基础段瓶颈)→ 经真实
  * {@code ServerPlayerGameMode.useItemOn} 管线右键管道锚定测绘(验证勘测仪走的是物品 useOn
  * 而非方块 useItemOn——gametest 直调 useOn 测不出 PipeBlock 返回 PASS 这层)→ 经服务端
  * {@code PipeSurveyManager} 选端点 A/B → 把相机摆到网格斜上方 → 截两张世界叠加层图(仅节点
- * /端口/占用,与 +车道/瓶颈/容量浮签)+ 服务端快照断言写入 {@code oi-surveyor-probe-report.txt}
+ * /端口/占用,与 +车道/瓶颈/容量浮签)+ 服务端快照断言写入 {@code topo-surveyor-probe-report.txt}
  * 后自动退出。客户端渲染走真实 S2C 快照同步路径(集成服务端的 ServerPlayer 有 connection)。
  */
 public final class PipeSurveyorProbe {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("OI-SurveyorProbe");
-    private static final Path FLAG_FILE = Path.of("oi-surveyor-probe.flag");
-    private static final Path REPORT_FILE = Path.of("oi-surveyor-probe-report.txt");
-    private static final String LEVEL_ID = "oi-surveyor-probe-" + (System.currentTimeMillis() % 100_000_000L);
+    private static final Logger LOGGER = LoggerFactory.getLogger("Topo-SurveyorProbe");
+    private static final Path FLAG_FILE = Path.of("topo-surveyor-probe.flag");
+    private static final Path REPORT_FILE = Path.of("topo-surveyor-probe-report.txt");
+    private static final String LEVEL_ID = "topo-surveyor-probe-" + (System.currentTimeMillis() % 100_000_000L);
     private static final int WAIT_TIMEOUT_TICKS = 2400;
 
     private enum State {
@@ -151,7 +151,7 @@ public final class PipeSurveyorProbe {
             case ANCHOR_SHOT -> {
                 feedSource(minecraft);
                 if (countdown == 10) {
-                    grabScreenshot(minecraft, "oi-surveyor-nodes");
+                    grabScreenshot(minecraft, "topo-surveyor-nodes");
                 }
                 if (--countdown <= 0) {
                     selectEndpoints(minecraft);
@@ -162,7 +162,7 @@ public final class PipeSurveyorProbe {
             case SELECT_SHOT -> {
                 feedSource(minecraft);
                 if (countdown == 10) {
-                    grabScreenshot(minecraft, "oi-surveyor-lanes");
+                    grabScreenshot(minecraft, "topo-surveyor-lanes");
                 }
                 if (--countdown <= 0) {
                     runSnapshotAsserts(minecraft);
@@ -214,7 +214,7 @@ public final class PipeSurveyorProbe {
                     for (int z = 0; z <= 2; z++) {
                         boolean endpoint = z == 1 && (x == 0 || x == 2);
                         level.setBlock(base.offset(x, 0, z),
-                                (endpoint ? BuiltinOIPipes.ITEM_PIPE_ELITE : BuiltinOIPipes.ITEM_PIPE_BASIC)
+                                (endpoint ? BuiltinTopoPipes.ITEM_PIPE_ELITE : BuiltinTopoPipes.ITEM_PIPE_BASIC)
                                         .registeredBlock().get().defaultBlockState(),
                                 3);
                     }

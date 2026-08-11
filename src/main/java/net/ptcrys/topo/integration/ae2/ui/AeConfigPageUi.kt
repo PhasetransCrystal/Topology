@@ -1,18 +1,18 @@
 package net.ptcrys.topo.integration.ae2.ui
 
-import net.ptcrys.topo.apiv2.machine.component.ComponentContext
-import net.ptcrys.topo.apiv2.machine.component.ComponentKey
-import net.ptcrys.topo.apiv2.machine.component.ComponentMount
-import net.ptcrys.topo.apiv2.machine.component.MachineComponent
-import net.ptcrys.topo.apiv2.machine.component.MachineComponents
-import net.ptcrys.topo.apiv2.machine.ui.AmountEditorPopup
-import net.ptcrys.topo.apiv2.machine.ui.MachineUiComponentStyle
-import net.ptcrys.topo.apiv2.machine.ui.MachineUiComponentTemplate
-import net.ptcrys.topo.apiv2.machine.ui.MachineUiContainerTemplate
-import net.ptcrys.topo.apiv2.machine.ui.MachineUiContribution
-import net.ptcrys.topo.apiv2.machine.ui.MachineUiLayout
-import net.ptcrys.topo.apiv2.machine.ui.recipe.RecipeUiLayout
-import net.ptcrys.topo.helper.OiCompactNumber
+import net.ptcrys.topo.api.machine.component.ComponentContext
+import net.ptcrys.topo.api.machine.component.ComponentKey
+import net.ptcrys.topo.api.machine.component.ComponentMount
+import net.ptcrys.topo.api.machine.component.MachineComponent
+import net.ptcrys.topo.api.machine.component.MachineComponents
+import net.ptcrys.topo.api.machine.ui.AmountEditorPopup
+import net.ptcrys.topo.api.machine.ui.MachineUiComponentStyle
+import net.ptcrys.topo.api.machine.ui.MachineUiComponentTemplate
+import net.ptcrys.topo.api.machine.ui.MachineUiContainerTemplate
+import net.ptcrys.topo.api.machine.ui.MachineUiContribution
+import net.ptcrys.topo.api.machine.ui.MachineUiLayout
+import net.ptcrys.topo.api.machine.ui.recipe.RecipeUiLayout
+import net.ptcrys.topo.helper.TopoCompactNumber
 import net.ptcrys.topo.integration.ae2.AeConfigSlot
 import net.ptcrys.topo.integration.ae2.AeConfiguredResource
 
@@ -75,7 +75,7 @@ class AeConfigPageUi private constructor(context: ComponentContext<AeConfigPageU
 
     private fun createPage(trait: AeConfiguredResource<*>): UIElement {
         val root = MachineUiContainerTemplate.createPageColumn(RecipeUiLayout.PLAYER_INVENTORY_WIDTH.toFloat())
-        root.setId("oi_ae_config_page")
+        root.setId("topo_ae_config_page")
         root.addChild(
             MachineUiContainerTemplate.createSlotGrid(
                 trait.aeConfigSlotCount(),
@@ -96,7 +96,7 @@ class AeConfigPageUi private constructor(context: ComponentContext<AeConfigPageU
         // Phantom slot (LocalSlot-backed): vanilla container click routing is skipped, JEI ghost
         // drops arrive through the binding's setter.
         val ghost: ItemSlot = MachineUiComponentTemplate.createItemSlot().apply {
-            setId("oi_ae_config_item_slot")
+            setId("topo_ae_config_item_slot")
             bind(
                 DataBindingBuilder.itemStack(
                     { configIconItem(trait.aeConfigSlot(slot)) },
@@ -111,12 +111,12 @@ class AeConfigPageUi private constructor(context: ComponentContext<AeConfigPageU
         }
         val setTargetRpc = registerSetTargetRpc(ghost, trait, slot)
         val targetSync = targetAmountSyncValue(trait, slot)
-        val stockSync = hiddenLongSyncValue("oi_ae_stock_amount_sync") { trait.aeStockedAmount(slot) }
+        val stockSync = hiddenLongSyncValue("topo_ae_stock_amount_sync") { trait.aeStockedAmount(slot) }
         attachItemServerClickHandler(ghost, trait, slot)
         attachClientWheelHandler(ghost, { !ghost.value.isEmpty }, setTargetRpc, targetSync)
         attachMiddleClickAmountEditor(ghost, { !ghost.value.isEmpty }, setTargetRpc, targetSync)
         val stock: ItemSlot = MachineUiComponentTemplate.createItemSlot().apply {
-            setId("oi_ae_stock_item_slot")
+            setId("topo_ae_stock_item_slot")
             bind(
                 DataBindingBuilder.itemStackS2C { stockIconItem(trait, slot) }.build(),
             )
@@ -133,7 +133,7 @@ class AeConfigPageUi private constructor(context: ComponentContext<AeConfigPageU
     private fun fluidCompositeSlot(trait: AeConfiguredResource<FluidResource>, slot: Int): UIElement {
         // 图标式流体槽:数量统一由 cellWithOverlay 的紧凑覆盖层渲染,内置桶单位文字已屏蔽。
         val ghost: FluidSlot = MachineUiComponentTemplate.createFluidIconSlot().apply {
-            setId("oi_ae_config_fluid_slot")
+            setId("topo_ae_config_fluid_slot")
             bind(
                 DataBindingBuilder.fluidStack(
                     { configIconFluid(trait.aeConfigSlot(slot)) },
@@ -146,13 +146,13 @@ class AeConfigPageUi private constructor(context: ComponentContext<AeConfigPageU
         }
         val setTargetRpc = registerSetTargetRpc(ghost, trait, slot)
         val targetSync = targetAmountSyncValue(trait, slot)
-        val stockSync = hiddenLongSyncValue("oi_ae_stock_amount_sync") { trait.aeStockedAmount(slot) }
+        val stockSync = hiddenLongSyncValue("topo_ae_stock_amount_sync") { trait.aeStockedAmount(slot) }
         attachFluidServerClickHandler(ghost, trait, slot)
         attachClientWheelHandler(ghost, { !ghost.value.isEmpty }, setTargetRpc, targetSync)
         attachMiddleClickAmountEditor(ghost, { !ghost.value.isEmpty }, setTargetRpc, targetSync)
         attachFluidExactTooltip(ghost) { readSyncedTarget(targetSync) }
         val stock: FluidSlot = MachineUiComponentTemplate.createFluidIconSlot().apply {
-            setId("oi_ae_stock_fluid_slot")
+            setId("topo_ae_stock_fluid_slot")
             bind(
                 DataBindingBuilder.fluidStackS2C { stockIconFluid(trait, slot) }.build(),
             )
@@ -163,7 +163,7 @@ class AeConfigPageUi private constructor(context: ComponentContext<AeConfigPageU
             stock,
             targetSync = targetSync,
             stockSync = stockSync,
-            format = { OiCompactNumber.formatCompactBuckets(it) },
+            format = { TopoCompactNumber.formatCompactBuckets(it) },
         )
     }
 
@@ -212,16 +212,16 @@ class AeConfigPageUi private constructor(context: ComponentContext<AeConfigPageU
     /**
      * Ghost over stock, each 18×18 with its own bottom-right compact count overlay. [format]
      * renders the corner text: items keep raw counts, fluids are bucket-denominated
-     * ([OiCompactNumber.formatCompactBuckets], "1" = 1000 mB).
+     * ([TopoCompactNumber.formatCompactBuckets], "1" = 1000 mB).
      */
-    private fun slotComposite(ghost: UIElement, stock: UIElement, targetSync: BindableValue<Long>, stockSync: BindableValue<Long>, format: (Long) -> String = { OiCompactNumber.formatCompact(it) }): UIElement {
-        val ghostCell = cellWithOverlay(ghost, targetSync, "oi_ae_config_target_overlay", format)
-        val stockCell = cellWithOverlay(stock, stockSync, "oi_ae_stock_count_overlay", format)
+    private fun slotComposite(ghost: UIElement, stock: UIElement, targetSync: BindableValue<Long>, stockSync: BindableValue<Long>, format: (Long) -> String = { TopoCompactNumber.formatCompact(it) }): UIElement {
+        val ghostCell = cellWithOverlay(ghost, targetSync, "topo_ae_config_target_overlay", format)
+        val stockCell = cellWithOverlay(stock, stockSync, "topo_ae_stock_count_overlay", format)
         return MachineUiLayout.column(
             gap = 0f,
             width = MachineUiComponentStyle.slotSize.toFloat(),
             alignItems = AlignItems.CENTER,
-            id = "oi_ae_config_composite_slot",
+            id = "topo_ae_config_composite_slot",
         ) {
             root.layout { it.height(COMPOSITE_CELL_HEIGHT) }
             add(ghostCell)
@@ -232,7 +232,7 @@ class AeConfigPageUi private constructor(context: ComponentContext<AeConfigPageU
     }
 
     private fun cellWithOverlay(slot: UIElement, amountSync: BindableValue<Long>, overlayId: String, format: (Long) -> String): UIElement = UIElement().apply {
-        setId("oi_ae_slot_cell")
+        setId("topo_ae_slot_cell")
         layout {
             it.width(MachineUiComponentStyle.slotSize.toFloat())
             it.height(MachineUiComponentStyle.slotSize.toFloat())
@@ -273,7 +273,7 @@ class AeConfigPageUi private constructor(context: ComponentContext<AeConfigPageU
         ) { newTarget ->
             val current = trait.aeConfigSlot(slot)
             if (current.configured()) {
-                val clamped = (newTarget?.toLong() ?: 1L).coerceAtLeast(1L)
+                val clamped = (newTarget ?: 1L).coerceAtLeast(1L)
                 trait.setAeConfigSlot(slot, AeConfigSlot.of(current.resource()!!, clamped))
             }
             trait.aeConfigSlot(slot).targetAmount()
@@ -347,7 +347,7 @@ class AeConfigPageUi private constructor(context: ComponentContext<AeConfigPageU
         }, java.lang.Long.valueOf(requested))
     }
 
-    private fun <R : Resource> targetAmountSyncValue(trait: AeConfiguredResource<R>, slot: Int): BindableValue<Long> = hiddenLongSyncValue("oi_ae_config_target_sync") { trait.aeConfigSlot(slot).targetAmount() }
+    private fun <R : Resource> targetAmountSyncValue(trait: AeConfiguredResource<R>, slot: Int): BindableValue<Long> = hiddenLongSyncValue("topo_ae_config_target_sync") { trait.aeConfigSlot(slot).targetAmount() }
 
     /** Hidden typed S2C mirror shared by overlays, tooltips, and target-edit callbacks. */
     private fun hiddenLongSyncValue(id: String, getter: () -> Long): BindableValue<Long> = BindableValue(0L).apply {
@@ -368,7 +368,7 @@ class AeConfigPageUi private constructor(context: ComponentContext<AeConfigPageU
             if (fluid.isEmpty) return@addEventListener
             event.hoverTooltips = HoverTooltips.create(
                 FluidHelper.getDisplayName(fluid),
-                Component.literal(OiCompactNumber.exactBucketsAndMb(amountGetter())),
+                Component.literal(TopoCompactNumber.exactBucketsAndMb(amountGetter())),
             )
             event.stopLaterPropagation()
         }

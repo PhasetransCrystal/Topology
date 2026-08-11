@@ -1,16 +1,16 @@
 package net.ptcrys.topo.gametest;
 
-import net.ptcrys.topo.apiv2.machine.MachineBlockEntity;
-import net.ptcrys.topo.apiv2.machine.MachineDefinition;
-import net.ptcrys.topo.apiv2.machine.resource.DirectSlotResourceAccess;
-import net.ptcrys.topo.apiv2.machine.resource.RecipeRole;
-import net.ptcrys.topo.apiv2.machine.ui.ComponentCollector;
-import net.ptcrys.topo.apiv2.machine.ui.MachineUiFrameTemplate;
-import net.ptcrys.topo.apiv2.machine.ui.PageCollector;
-import net.ptcrys.topo.datav2.machine.BuiltinOIMeMachines;
-import net.ptcrys.topo.datav2.machine.common.component.resource.FluidResourcePort;
-import net.ptcrys.topo.datav2.machine.common.component.resource.ItemResourcePort;
-import net.ptcrys.topo.datav2.recipe.BuiltinOIResourceIntegrations;
+import net.ptcrys.topo.api.machine.MachineBlockEntity;
+import net.ptcrys.topo.api.machine.MachineDefinition;
+import net.ptcrys.topo.api.machine.resource.DirectSlotResourceAccess;
+import net.ptcrys.topo.api.machine.resource.RecipeRole;
+import net.ptcrys.topo.api.machine.ui.ComponentCollector;
+import net.ptcrys.topo.api.machine.ui.MachineUiFrameTemplate;
+import net.ptcrys.topo.api.machine.ui.PageCollector;
+import net.ptcrys.topo.data.machine.BuiltinTopoMeMachines;
+import net.ptcrys.topo.data.machine.common.component.resource.FluidResourcePort;
+import net.ptcrys.topo.data.machine.common.component.resource.ItemResourcePort;
+import net.ptcrys.topo.data.recipe.BuiltinTopoResourceIntegrations;
 import net.ptcrys.topo.helper.IdHelper;
 import net.ptcrys.topo.integration.ae2.AeConfigSlot;
 import net.ptcrys.topo.integration.ae2.AeFluidBufferPort;
@@ -160,7 +160,7 @@ public final class MeHatchGameTests {
                 environment,
                 index++,
                 "me_pattern_nonstandard_stack_handler_respects_transactional_insert",
-                "Tests the explicit direct-access boundary: a stack handler without OI's capability commits " + "through a real transaction, respects custom insert semantics, and rolls back rejection.",
+                "Tests the explicit direct-access boundary: a stack handler without Topo's capability commits " + "through a real transaction, respects custom insert semantics, and rolls back rejection.",
                 MeHatchGameTests::mePatternNonstandardStackHandlerRespectsTransactionalInsert);
         register(
                 event,
@@ -188,7 +188,7 @@ public final class MeHatchGameTests {
     // ---- 069 ----
 
     private static void meGridNodeComesOnlineOnPoweredNetwork(GameTestHelper helper) {
-        placeMeMachine(helper, BuiltinOIMeMachines.ME_DRAWING_ITEM_INPUT_BUS);
+        placeMeMachine(helper, BuiltinTopoMeMachines.ME_DRAWING_ITEM_INPUT_BUS);
         placeAeCreativeEnergyCell(helper, MACHINE_POS.west());
 
         helper.startSequence()
@@ -210,7 +210,7 @@ public final class MeHatchGameTests {
     // ---- 070 ----
 
     private static void meDrawingItemBusPullsToTargetAndStops(GameTestHelper helper) {
-        MachineBlockEntity machine = placeMeMachine(helper, BuiltinOIMeMachines.ME_DRAWING_ITEM_INPUT_BUS);
+        MachineBlockEntity machine = placeMeMachine(helper, BuiltinTopoMeMachines.ME_DRAWING_ITEM_INPUT_BUS);
         placeAeCreativeEnergyCell(helper, MACHINE_POS.west());
         placeAeItemDrive(helper, MACHINE_POS.east(), Items.IRON_INGOT, 64);
 
@@ -242,7 +242,7 @@ public final class MeHatchGameTests {
     // ---- 071 ----
 
     private static void meDirectFluidHatchExposesNetworkStockToRecipeSide(GameTestHelper helper) {
-        MachineBlockEntity machine = placeMeMachine(helper, BuiltinOIMeMachines.ME_DIRECT_FLUID_INPUT_HATCH);
+        MachineBlockEntity machine = placeMeMachine(helper, BuiltinTopoMeMachines.ME_DIRECT_FLUID_INPUT_HATCH);
         placeAeCreativeEnergyCell(helper, MACHINE_POS.west());
         placeAeFluidDrive(helper, MACHINE_POS.east(), Fluids.WATER, 16_000);
 
@@ -281,7 +281,7 @@ public final class MeHatchGameTests {
     // ---- 072 ----
 
     private static void meDirectHatchRollbackRefundsNetwork(GameTestHelper helper) {
-        MachineBlockEntity machine = placeMeMachine(helper, BuiltinOIMeMachines.ME_DIRECT_FLUID_INPUT_HATCH);
+        MachineBlockEntity machine = placeMeMachine(helper, BuiltinTopoMeMachines.ME_DIRECT_FLUID_INPUT_HATCH);
         placeAeCreativeEnergyCell(helper, MACHINE_POS.west());
         placeAeFluidDrive(helper, MACHINE_POS.east(), Fluids.WATER, 16_000);
 
@@ -322,7 +322,7 @@ public final class MeHatchGameTests {
     // ---- 073 ----
 
     private static void mePatternProviderReceivesPushedPatternInputs(GameTestHelper helper) {
-        MachineBlockEntity machine = placeMeMachine(helper, BuiltinOIMeMachines.ME_PATTERN_PROVIDER);
+        MachineBlockEntity machine = placeMeMachine(helper, BuiltinTopoMeMachines.ME_PATTERN_PROVIDER);
         AePatternProvider provider = machine.machineComponents().require(AePatternProvider.AE_PATTERN_PROVIDER);
 
         ItemStack encoded = PatternDetailsHelper.encodeProcessingPattern(
@@ -355,10 +355,10 @@ public final class MeHatchGameTests {
         FluidResource water = FluidResource.of(Fluids.WATER);
         ResourceHandler<FluidResource> fluidBuffer = machine.machineComponents().require(FluidResourcePort.FLUID_INPUT_1).handler();
         if (!(itemBuffer instanceof DirectSlotResourceAccess<?>)) {
-            helper.fail("OI pattern item buffer must opt into direct slot commits", MACHINE_POS);
+            helper.fail("Topo pattern item buffer must opt into direct slot commits", MACHINE_POS);
         }
         if (!(fluidBuffer instanceof DirectSlotResourceAccess<?>)) {
-            helper.fail("OI pattern fluid buffer must opt into direct slot commits", MACHINE_POS);
+            helper.fail("Topo pattern fluid buffer must opt into direct slot commits", MACHINE_POS);
         }
         if (amountOf(itemBuffer, iron) != 2L) {
             helper.fail("Item buffer should hold the pattern's 2 iron, got " + amountOf(itemBuffer, iron),
@@ -409,7 +409,7 @@ public final class MeHatchGameTests {
     // ---- 074 ----
 
     private static void meExportHatchPushesBufferedOutputsToNetwork(GameTestHelper helper) {
-        MachineBlockEntity machine = placeMeMachine(helper, BuiltinOIMeMachines.ME_EXPORT_HATCH);
+        MachineBlockEntity machine = placeMeMachine(helper, BuiltinTopoMeMachines.ME_EXPORT_HATCH);
         placeAeCreativeEnergyCell(helper, MACHINE_POS.west());
         placeAeItemDrive(helper, MACHINE_POS.east(), Items.IRON_INGOT, 0);
         // Above, not south: an AE2 drive's grid node connects on every side EXCEPT its front
@@ -507,7 +507,7 @@ public final class MeHatchGameTests {
     }
 
     private static void mePatternCapacityFailurePreservesAeInputs(GameTestHelper helper) {
-        MachineBlockEntity machine = placeMeMachine(helper, BuiltinOIMeMachines.ME_PATTERN_PROVIDER);
+        MachineBlockEntity machine = placeMeMachine(helper, BuiltinTopoMeMachines.ME_PATTERN_PROVIDER);
         AePatternProvider provider = machine.machineComponents().require(AePatternProvider.AE_PATTERN_PROVIDER);
         provider.setBlocking(false);
 
@@ -828,7 +828,7 @@ public final class MeHatchGameTests {
     }
 
     private static void mePatternProviderPersistReloadSuppressesDirtyCallback(GameTestHelper helper) {
-        MachineBlockEntity machine = placeMeMachine(helper, BuiltinOIMeMachines.ME_PATTERN_PROVIDER);
+        MachineBlockEntity machine = placeMeMachine(helper, BuiltinTopoMeMachines.ME_PATTERN_PROVIDER);
         AePatternProvider provider = machine.machineComponents().require(AePatternProvider.AE_PATTERN_PROVIDER);
         ItemStack encoded = PatternDetailsHelper.encodeProcessingPattern(
                 List.of(new GenericStack(AEItemKey.of(Items.IRON_INGOT), 1)),
@@ -860,7 +860,7 @@ public final class MeHatchGameTests {
     }
 
     private static void mePatternProviderSeparatedModePersists(GameTestHelper helper) {
-        MachineBlockEntity machine = placeMeMachine(helper, BuiltinOIMeMachines.ME_PATTERN_PROVIDER);
+        MachineBlockEntity machine = placeMeMachine(helper, BuiltinTopoMeMachines.ME_PATTERN_PROVIDER);
         AePatternProvider provider = machine.machineComponents().require(AePatternProvider.AE_PATTERN_PROVIDER);
         ResourceHandler<ItemResource> sharedItems = machine.machineComponents().require(ItemResourcePort.ITEM_INPUT_1).handler();
         try (Transaction tx = Transaction.openRoot()) {
@@ -880,7 +880,7 @@ public final class MeHatchGameTests {
         machine.collectMachineUi(pages, components);
         if (MachineUiFrameTemplate.create(
                 machine.getBlockState().getBlock().getName(), pages.entries(), components.entries())
-                .selectId("oi_side_card_live_oi_search_pool")
+                .selectId("topo_side_card_live_topo_search_pool")
                 .findFirst()
                 .isEmpty()) {
             helper.fail("Search-pool live visibility must survive UI normalization");
@@ -935,7 +935,7 @@ public final class MeHatchGameTests {
         ResourceHandler<FluidResource> handler = machine.machineComponents()
                 .resources()
                 .recipeSide()
-                .handler(BuiltinOIResourceIntegrations.FLUID.resourceType(), io);
+                .handler(BuiltinTopoResourceIntegrations.FLUID.resourceType(), io);
         if (handler == null) {
             helper.fail("Machine should expose a recipe-side fluid " + io + " handler", MACHINE_POS);
         }
@@ -947,7 +947,7 @@ public final class MeHatchGameTests {
         ResourceHandler<ItemResource> handler = machine.machineComponents()
                 .resources()
                 .recipeSide()
-                .handler(BuiltinOIResourceIntegrations.ITEM.resourceType(), io);
+                .handler(BuiltinTopoResourceIntegrations.ITEM.resourceType(), io);
         if (handler == null) {
             helper.fail("Machine should expose a recipe-side item " + io + " handler", MACHINE_POS);
         }

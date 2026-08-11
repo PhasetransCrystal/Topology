@@ -1,6 +1,6 @@
 package net.ptcrys.topo.integration.ae2;
 
-import net.ptcrys.topo.apiv2.machine.data.DataItemResourceHandler;
+import net.ptcrys.topo.api.machine.data.DataItemResourceHandler;
 
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;

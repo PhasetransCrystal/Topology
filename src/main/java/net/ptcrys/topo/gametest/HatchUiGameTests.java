@@ -1,12 +1,12 @@
 package net.ptcrys.topo.gametest;
 
-import net.ptcrys.topo.apiv2.machine.MachineBlockEntity;
-import net.ptcrys.topo.apiv2.machine.MachineDefinition;
-import net.ptcrys.topo.apiv2.machine.ui.ComponentCollector;
-import net.ptcrys.topo.apiv2.machine.ui.PageCollector;
-import net.ptcrys.topo.datav2.machine.BuiltinOIMeMachines;
-import net.ptcrys.topo.datav2.machine.BuiltinOIPartMachines;
-import net.ptcrys.topo.datav2.machine.common.component.resource.ItemResourcePort;
+import net.ptcrys.topo.api.machine.MachineBlockEntity;
+import net.ptcrys.topo.api.machine.MachineDefinition;
+import net.ptcrys.topo.api.machine.ui.ComponentCollector;
+import net.ptcrys.topo.api.machine.ui.PageCollector;
+import net.ptcrys.topo.data.machine.BuiltinTopoMeMachines;
+import net.ptcrys.topo.data.machine.BuiltinTopoPartMachines;
+import net.ptcrys.topo.data.machine.common.component.resource.ItemResourcePort;
 import net.ptcrys.topo.helper.IdHelper;
 
 import net.minecraft.core.BlockPos;
@@ -65,7 +65,7 @@ public final class HatchUiGameTests {
     // ---- 075 ----
 
     private static void itemInputHatchContributesStoragePage(GameTestHelper helper) {
-        MachineBlockEntity machine = place(helper, BuiltinOIPartMachines.ITEM_INPUT_HATCH);
+        MachineBlockEntity machine = place(helper, BuiltinTopoPartMachines.ITEM_INPUT_HATCH);
         int slots = machine.machineComponents().require(ItemResourcePort.ITEM_INPUT_1).resourceIndexCount();
         if (slots != 27) {
             helper.fail("Item input hatch should expose 27 slots after the expansion, got " + slots, MACHINE_POS);
@@ -79,21 +79,21 @@ public final class HatchUiGameTests {
     private static void meMachinesContributeExpectedUiPages(GameTestHelper helper) {
         // Single-page contract from the old GTOdyssey reference: the AE config page already shows
         // the live cached / network stock under each ghost slot, so no separate storage page.
-        assertPageKeys(helper, place(helper, BuiltinOIMeMachines.ME_DRAWING_ITEM_INPUT_BUS), List.of("ae_config"));
-        assertPageKeys(helper, place(helper, BuiltinOIMeMachines.ME_DRAWING_FLUID_INPUT_HATCH), List.of("ae_config"));
-        assertPageKeys(helper, place(helper, BuiltinOIMeMachines.ME_DIRECT_ITEM_INPUT_BUS), List.of("ae_config"));
-        assertPageKeys(helper, place(helper, BuiltinOIMeMachines.ME_DIRECT_FLUID_INPUT_HATCH), List.of("ae_config"));
+        assertPageKeys(helper, place(helper, BuiltinTopoMeMachines.ME_DRAWING_ITEM_INPUT_BUS), List.of("ae_config"));
+        assertPageKeys(helper, place(helper, BuiltinTopoMeMachines.ME_DRAWING_FLUID_INPUT_HATCH), List.of("ae_config"));
+        assertPageKeys(helper, place(helper, BuiltinTopoMeMachines.ME_DIRECT_ITEM_INPUT_BUS), List.of("ae_config"));
+        assertPageKeys(helper, place(helper, BuiltinTopoMeMachines.ME_DIRECT_FLUID_INPUT_HATCH), List.of("ae_config"));
 
-        MachineBlockEntity provider = place(helper, BuiltinOIMeMachines.ME_PATTERN_PROVIDER);
+        MachineBlockEntity provider = place(helper, BuiltinTopoMeMachines.ME_PATTERN_PROVIDER);
         assertPageKeys(helper, provider, List.of("ae_patterns"));
         ComponentCollector components = collect(provider).components;
         boolean hasNameComponent = components.entries().stream()
-                .anyMatch(entry -> entry.side() == ComponentCollector.Side.RIGHT && entry.key().equals("oi_ae_pattern_provider_name"));
+                .anyMatch(entry -> entry.side() == ComponentCollector.Side.RIGHT && entry.key().equals("topo_ae_pattern_provider_name"));
         if (!hasNameComponent) {
             helper.fail("Pattern provider should contribute the right-hand name component", MACHINE_POS);
         }
 
-        MachineBlockEntity exportHatch = place(helper, BuiltinOIMeMachines.ME_EXPORT_HATCH);
+        MachineBlockEntity exportHatch = place(helper, BuiltinTopoMeMachines.ME_EXPORT_HATCH);
         assertPageKeys(helper, exportHatch, List.of("ae_buffer"));
 
         helper.succeed();
@@ -103,11 +103,11 @@ public final class HatchUiGameTests {
 
     private static void energyHatchesContributeBarComponentsNoPages(GameTestHelper helper) {
         for (MachineDefinition definition : List.of(
-                BuiltinOIPartMachines.ENERGY_INPUT_HATCH, BuiltinOIPartMachines.ENERGY_OUTPUT_HATCH)) {
+                BuiltinTopoPartMachines.ENERGY_INPUT_HATCH, BuiltinTopoPartMachines.ENERGY_OUTPUT_HATCH)) {
             MachineBlockEntity hatch = place(helper, definition);
             assertPageKeys(helper, hatch, List.of());
             boolean hasBar = collect(hatch).components.entries().stream()
-                    .anyMatch(entry -> entry.side() == ComponentCollector.Side.BOTTOM && entry.key().startsWith("oi_resource_bar_"));
+                    .anyMatch(entry -> entry.side() == ComponentCollector.Side.BOTTOM && entry.key().startsWith("topo_resource_bar_"));
             if (!hasBar) {
                 helper.fail(
                         "Energy hatch " + definition.id() + " should contribute a bottom resource bar",

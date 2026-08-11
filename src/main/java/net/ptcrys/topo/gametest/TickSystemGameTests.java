@@ -1,17 +1,19 @@
 package net.ptcrys.topo.gametest;
 
+import net.ptcrys.topo.api.api.tick.TickHandle;
+import net.ptcrys.topo.api.api.tick.TickHub;
+import net.ptcrys.topo.api.api.tick.TickKind;
+import net.ptcrys.topo.api.machine.MachineBlockEntity;
+import net.ptcrys.topo.api.machine.MachinePerformanceSnapshot;
+import net.ptcrys.topo.api.machine.component.RecipeLogic;
+import net.ptcrys.topo.api.machine.component.RecipeUi;
 import net.ptcrys.topo.api.tick.MachineTicker;
-import net.ptcrys.topo.api.tick.TickHandle;
-import net.ptcrys.topo.api.tick.TickHub;
-import net.ptcrys.topo.api.tick.TickKind;
-import net.ptcrys.topo.apiv2.machine.MachineBlockEntity;
-import net.ptcrys.topo.apiv2.machine.MachinePerformanceSnapshot;
-import net.ptcrys.topo.apiv2.machine.component.RecipeLogic;
-import net.ptcrys.topo.apiv2.machine.component.RecipeUi;
-import net.ptcrys.topo.datav2.machine.BuiltinOIMachines;
-import net.ptcrys.topo.datav2.machine.BuiltinOIMeMachines;
-import net.ptcrys.topo.datav2.machine.common.component.resource.ItemResourcePort;
-import net.ptcrys.topo.datav2.machine.common.component.resource.ScalarResourcePort;
+import net.ptcrys.topo.data.machine.BuiltinTopoMachines;
+import net.ptcrys.topo.data.machine.BuiltinTopoMeMachines;
+import net.ptcrys.topo.data.machine.common.component.resource.ItemResourcePort;
+import net.ptcrys.topo.data.machine.common.component.resource.ScalarResourcePort;
+import net.ptcrys.topo.data.material.BuiltinTopoMaterialForms;
+import net.ptcrys.topo.data.material.BuiltinTopoMaterials;
 import net.ptcrys.topo.helper.IdHelper;
 import net.ptcrys.topo.helper.MaterialHelper;
 import net.ptcrys.topo.integration.ae2.AeFluidInputSync;
@@ -231,7 +233,7 @@ public final class TickSystemGameTests {
     private static void machineTickerPerformanceWindowCoversIntervalTickers(GameTestHelper helper) {
         helper.setBlock(
                 MACHINE_POS,
-                BuiltinOIMeMachines.ME_DRAWING_FLUID_INPUT_HATCH.registeredBlock().getDefaultState());
+                BuiltinTopoMeMachines.ME_DRAWING_FLUID_INPUT_HATCH.registeredBlock().getDefaultState());
         MachineBlockEntity machine = helper.getBlockEntity(MACHINE_POS, MachineBlockEntity.class);
         MachineTicker syncTicker = machine.machineComponents().require(AeFluidInputSync.AE_FLUID_INPUT_SYNC);
         int expectedWindow = syncTicker.tickInterval() + 1;
@@ -264,7 +266,7 @@ public final class TickSystemGameTests {
     }
 
     private static MachineBlockEntity placeMacerator(GameTestHelper helper) {
-        helper.setBlock(MACHINE_POS, BuiltinOIMachines.MACERATOR_T1.registeredBlock().getDefaultState());
+        helper.setBlock(MACHINE_POS, BuiltinTopoMachines.MACERATOR_T1.registeredBlock().getDefaultState());
         MachineBlockEntity machine = helper.getBlockEntity(MACHINE_POS, MachineBlockEntity.class);
         // 研磨配方按 tick 抽电;测试机起手满能,聚焦各自的本职断言。
         ScalarResourcePort energy = machine.machineComponents().require(ScalarResourcePort.ENERGY_INPUT_1);
@@ -274,8 +276,8 @@ public final class TickSystemGameTests {
 
     private static ItemResource ironOreResource() {
         return ItemResource.of(MaterialHelper.requireItem(
-                net.ptcrys.topo.datav2.material.BuiltinOIMaterials.IRON,
-                net.ptcrys.topo.datav2.material.BuiltinOIMaterialForms.ORE));
+                BuiltinTopoMaterials.IRON,
+                BuiltinTopoMaterialForms.ORE));
     }
 
     private static RecipeLogic logic(MachineBlockEntity machine) {

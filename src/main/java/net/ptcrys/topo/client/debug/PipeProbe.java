@@ -7,7 +7,10 @@ import net.ptcrys.topo.api.pipe.PipeSideVisual;
 import net.ptcrys.topo.api.pipe.network.PipeLevelRuntime;
 import net.ptcrys.topo.api.pipe.network.PipeNetworkEngine;
 import net.ptcrys.topo.api.pipe.network.PipeNodeRecord;
-import net.ptcrys.topo.data.pipe.BuiltinOIPipes;
+import net.ptcrys.topo.data.machine.BuiltinTopoMachines;
+import net.ptcrys.topo.data.pipe.BuiltinTopoPipeFilterAdapters;
+import net.ptcrys.topo.data.pipe.BuiltinTopoPipeLang;
+import net.ptcrys.topo.data.pipe.BuiltinTopoPipes;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Screenshot;
@@ -49,28 +52,28 @@ import java.util.Set;
 
 /**
  * 管道端口屏全自动 GUI 验收探针(同 {@link UiPerfProbe} 的流水线骨架,独立 flag 互不干扰):
- * 仅当工作目录存在 {@code oi-pipe-probe.flag} 时激活;自动建平坦世界(每轮唯一名),摆
+ * 仅当工作目录存在 {@code topo-pipe-probe.flag} 时激活;自动建平坦世界(每轮唯一名),摆
  * 箱-终极物品管×3-箱 与 终极能量迷你排,经真实 {@code ServerPlayerGameMode.useItemOn} 管线
  * 打扳手开端口屏,三张 GUI 截图(物品屏/数量弹窗/能量屏)+ 服务端通道断言(过滤/批量/周期
- * 钳制)写入 {@code oi-pipe-probe-report.txt} 后自动退出。传输行为与性能采样不在此探针——
+ * 钳制)写入 {@code topo-pipe-probe-report.txt} 后自动退出。传输行为与性能采样不在此探针——
  * 前者归 gametest 套件,后者的历史采样任务已完成(数据在 pipe-network-system 记忆)。
  */
 public final class PipeProbe {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("OI-PipeProbe");
-    private static final Path FLAG_FILE = Path.of("oi-pipe-probe.flag");
-    private static final Path REPORT_FILE = Path.of("oi-pipe-probe-report.txt");
+    private static final Logger LOGGER = LoggerFactory.getLogger("Topo-PipeProbe");
+    private static final Path FLAG_FILE = Path.of("topo-pipe-probe.flag");
+    private static final Path REPORT_FILE = Path.of("topo-pipe-probe-report.txt");
     /** 每轮唯一世界名:复用同名存档会撞上一轮的残留场景(并行会话共用 run/ 时尤甚)。 */
-    private static final String LEVEL_ID = "oi-pipe-probe-" + (System.currentTimeMillis() % 100_000_000L);
+    private static final String LEVEL_ID = "topo-pipe-probe-" + (System.currentTimeMillis() % 100_000_000L);
     private static final int WAIT_TIMEOUT_TICKS = 2400;
     private static final List<String> STANDARD_BINDING_IDS = List.of(
-            "oi_pipe_port_side_sync",
-            "oi_pipe_port_strategy_value",
-            "oi_pipe_port_amount_value",
-            "oi_pipe_port_interval_value",
-            "oi_pipe_port_order_value",
-            "oi_pipe_port_filter_whitelist_value",
-            "oi_pipe_port_filter_blacklist_value");
+            "topo_pipe_port_side_sync",
+            "topo_pipe_port_strategy_value",
+            "topo_pipe_port_amount_value",
+            "topo_pipe_port_interval_value",
+            "topo_pipe_port_order_value",
+            "topo_pipe_port_filter_whitelist_value",
+            "topo_pipe_port_filter_blacklist_value");
 
     private enum State {
         WAIT_TITLE,
@@ -171,7 +174,7 @@ public final class PipeProbe {
             case SETTLE -> {
                 aimAt(minecraft, galleryCenter);
                 if (--countdown <= 0) {
-                    grabScreenshot(minecraft, "oi-pipe-probe-world-gallery");
+                    grabScreenshot(minecraft, "topo-pipe-probe-world-gallery");
                     report.append("world gallery screenshot captured -> PASS\n");
                     moveToDetailCamera(minecraft);
                     countdown = 30;
@@ -181,7 +184,7 @@ public final class PipeProbe {
             case WORLD_DETAIL_SETTLE -> {
                 aimAt(minecraft, detailCenter);
                 if (--countdown <= 0) {
-                    grabScreenshot(minecraft, "oi-pipe-probe-world-detail");
+                    grabScreenshot(minecraft, "topo-pipe-probe-world-detail");
                     report.append("world detail screenshot captured -> PASS\n");
                     minecraft.options.fov().set(35);
                     moveToCamera(minecraft, straightCamera, straightCenter);
@@ -192,7 +195,7 @@ public final class PipeProbe {
             case WORLD_STRAIGHT_SETTLE -> {
                 aimAt(minecraft, straightCenter);
                 if (--countdown <= 0) {
-                    grabScreenshot(minecraft, "oi-pipe-probe-world-straight");
+                    grabScreenshot(minecraft, "topo-pipe-probe-world-straight");
                     report.append("world straight-run screenshot captured -> PASS\n");
                     moveToCamera(minecraft, terminalCamera, terminalCenter);
                     countdown = 30;
@@ -202,7 +205,7 @@ public final class PipeProbe {
             case WORLD_TERMINAL_SETTLE -> {
                 aimAt(minecraft, terminalCenter);
                 if (--countdown <= 0) {
-                    grabScreenshot(minecraft, "oi-pipe-probe-world-terminal");
+                    grabScreenshot(minecraft, "topo-pipe-probe-world-terminal");
                     report.append("world endpoint-node screenshot captured -> PASS\n");
                     minecraft.options.fov().set(25);
                     moveToCamera(minecraft, extractCamera, extractCenter);
@@ -213,7 +216,7 @@ public final class PipeProbe {
             case WORLD_EXTRACT_SETTLE -> {
                 aimAt(minecraft, extractCenter);
                 if (--countdown <= 0) {
-                    grabScreenshot(minecraft, "oi-pipe-probe-world-extract");
+                    grabScreenshot(minecraft, "topo-pipe-probe-world-extract");
                     report.append("world extraction-port screenshot captured -> PASS\n");
                     minecraft.options.fov().set(35);
                     moveToCamera(minecraft, cornerCamera, cornerCenter);
@@ -224,7 +227,7 @@ public final class PipeProbe {
             case WORLD_CORNER_SETTLE -> {
                 aimAt(minecraft, cornerCenter);
                 if (--countdown <= 0) {
-                    grabScreenshot(minecraft, "oi-pipe-probe-world-corner");
+                    grabScreenshot(minecraft, "topo-pipe-probe-world-corner");
                     report.append("world three-dimensional corner screenshot captured -> PASS\n");
                     minecraft.options.fov().set(originalFov);
                     minecraft.options.hideGui = false;
@@ -255,7 +258,7 @@ public final class PipeProbe {
                     dumpGuiGeometry(minecraft);
                 }
                 if (countdown == 50) {
-                    grabScreenshot(minecraft, "oi-pipe-probe-gui");
+                    grabScreenshot(minecraft, "topo-pipe-probe-gui");
                 }
                 if (countdown == 46) {
                     openItemPickerForShot(minecraft);
@@ -264,7 +267,7 @@ public final class PipeProbe {
                     checkStandardBindingReply(minecraft);
                 }
                 if (countdown == 38) {
-                    grabScreenshot(minecraft, "oi-pipe-probe-gui-picker");
+                    grabScreenshot(minecraft, "topo-pipe-probe-gui-picker");
                 }
                 if (countdown == 34) {
                     removeTopPopup(minecraft);
@@ -273,7 +276,7 @@ public final class PipeProbe {
                     openFluidPickerForShot(minecraft);
                 }
                 if (countdown == 22) {
-                    grabScreenshot(minecraft, "oi-pipe-probe-gui-fluid-picker");
+                    grabScreenshot(minecraft, "topo-pipe-probe-gui-fluid-picker");
                 }
                 if (countdown == 18) {
                     removeTopPopup(minecraft);
@@ -282,7 +285,7 @@ public final class PipeProbe {
                     openAmountPopupForShot(minecraft);
                 }
                 if (countdown == 6) {
-                    grabScreenshot(minecraft, "oi-pipe-probe-gui-popup");
+                    grabScreenshot(minecraft, "topo-pipe-probe-gui-popup");
                 }
                 if (--countdown <= 0) {
                     if (minecraft.player != null) {
@@ -308,7 +311,7 @@ public final class PipeProbe {
             }
             case GUI2_SHOT -> {
                 if (countdown == 5) {
-                    grabScreenshot(minecraft, "oi-pipe-probe-gui-energy");
+                    grabScreenshot(minecraft, "topo-pipe-probe-gui-energy");
                 }
                 if (--countdown <= 0) {
                     if (minecraft.player != null) {
@@ -383,11 +386,11 @@ public final class PipeProbe {
                 buildCornerPreview(level, cornerCenter);
                 level.setBlock(sourceChest, Blocks.CHEST.defaultBlockState(), 3);
                 level.setBlock(extractorPipe,
-                        BuiltinOIPipes.ITEM_PIPE_ELITE.registeredBlock().get().defaultBlockState(), 3);
+                        BuiltinTopoPipes.ITEM_PIPE_ELITE.registeredBlock().get().defaultBlockState(), 3);
                 level.setBlock(middlePipe,
-                        BuiltinOIPipes.ITEM_PIPE_ELITE.registeredBlock().get().defaultBlockState(), 3);
+                        BuiltinTopoPipes.ITEM_PIPE_ELITE.registeredBlock().get().defaultBlockState(), 3);
                 level.setBlock(anchor.relative(Direction.SOUTH, 3),
-                        BuiltinOIPipes.ITEM_PIPE_ELITE.registeredBlock().get().defaultBlockState(), 3);
+                        BuiltinTopoPipes.ITEM_PIPE_ELITE.registeredBlock().get().defaultBlockState(), 3);
                 level.setBlock(targetChest, Blocks.CHEST.defaultBlockState(), 3);
                 if (level.getBlockEntity(sourceChest) instanceof ChestBlockEntity chest) {
                     for (int slot = 0; slot < 27; slot++) {
@@ -398,21 +401,21 @@ public final class PipeProbe {
                         net.minecraft.core.registries.BuiltInRegistries.ITEM.getValue(
                                 net.ptcrys.topo.helper.IdHelper.oi("iron_wrench"))));
                 player.getInventory().setItem(1,
-                        new ItemStack(BuiltinOIPipes.ITEM_PIPE_ELITE.registeredBlock().get()));
+                        new ItemStack(BuiltinTopoPipes.ITEM_PIPE_ELITE.registeredBlock().get()));
 
                 // 终极能量迷你排:只为第二张 GUI 截图(±131k 大步进钮的列宽极端场景)。
                 BlockPos ultAnchor = sourceChest.relative(Direction.EAST, 4);
                 ultEnergyExtractor = ultAnchor.relative(Direction.SOUTH, 1);
                 level.setBlock(ultAnchor,
-                        net.ptcrys.topo.datav2.machine.BuiltinOIMachines.COMBUSTION_GENERATOR_T3
+                        BuiltinTopoMachines.COMBUSTION_GENERATOR_T3
                                 .registeredBlock().getDefaultState(),
                         3);
                 level.setBlock(ultEnergyExtractor,
-                        BuiltinOIPipes.ENERGY_PIPE_ELITE.registeredBlock().get().defaultBlockState(), 3);
+                        BuiltinTopoPipes.ENERGY_PIPE_ELITE.registeredBlock().get().defaultBlockState(), 3);
                 level.setBlock(ultAnchor.relative(Direction.SOUTH, 2),
-                        BuiltinOIPipes.ENERGY_PIPE_ELITE.registeredBlock().get().defaultBlockState(), 3);
+                        BuiltinTopoPipes.ENERGY_PIPE_ELITE.registeredBlock().get().defaultBlockState(), 3);
                 level.setBlock(ultAnchor.relative(Direction.SOUTH, 3),
-                        net.ptcrys.topo.datav2.machine.BuiltinOIMachines.RESISTIVE_HEATER_T3
+                        BuiltinTopoMachines.RESISTIVE_HEATER_T3
                                 .registeredBlock().getDefaultState(),
                         3);
                 PipeNetworkEngine.runtime(level).setSideIntent(ultEnergyExtractor, Direction.NORTH,
@@ -514,8 +517,8 @@ public final class PipeProbe {
         report.append("standard pipe binding anchors: ")
                 .append(missing.isEmpty() ? "all present -> PASS" : "missing " + missing + " -> FAIL")
                 .append('\n');
-        BindableValue<Integer> strategy = findIntBinding(root, "oi_pipe_port_strategy_value");
-        BindableValue<Integer> amount = findIntBinding(root, "oi_pipe_port_amount_value");
+        BindableValue<Integer> strategy = findIntBinding(root, "topo_pipe_port_strategy_value");
+        BindableValue<Integer> amount = findIntBinding(root, "topo_pipe_port_amount_value");
         if (strategy == null || amount == null) {
             return;
         }
@@ -531,8 +534,8 @@ public final class PipeProbe {
         }
         bindingExerciseArmed = false;
         UIElement root = rootElement(minecraft);
-        BindableValue<Integer> strategy = findIntBinding(root, "oi_pipe_port_strategy_value");
-        BindableValue<Integer> amount = findIntBinding(root, "oi_pipe_port_amount_value");
+        BindableValue<Integer> strategy = findIntBinding(root, "topo_pipe_port_strategy_value");
+        BindableValue<Integer> amount = findIntBinding(root, "topo_pipe_port_amount_value");
         if (strategy == null || amount == null) {
             report.append("standard pipe binding reply mirrors unavailable -> FAIL\n");
             return;
@@ -563,16 +566,16 @@ public final class PipeProbe {
 
     private void buildPipeGallery(ServerLevel level, BlockPos base) {
         List<List<PipeDefinition>> rows = List.of(
-                List.of(BuiltinOIPipes.ITEM_PIPE_BASIC, BuiltinOIPipes.ITEM_PIPE_ADVANCED,
-                        BuiltinOIPipes.ITEM_PIPE_ELITE),
-                List.of(BuiltinOIPipes.FLUID_PIPE_BASIC, BuiltinOIPipes.FLUID_PIPE_ADVANCED,
-                        BuiltinOIPipes.FLUID_PIPE_ELITE),
-                List.of(BuiltinOIPipes.ENERGY_PIPE_BASIC, BuiltinOIPipes.ENERGY_PIPE_ADVANCED,
-                        BuiltinOIPipes.ENERGY_PIPE_ELITE),
-                List.of(BuiltinOIPipes.ADVANCED_ENERGY_PIPE_BASIC, BuiltinOIPipes.ADVANCED_ENERGY_PIPE_ADVANCED,
-                        BuiltinOIPipes.ADVANCED_ENERGY_PIPE_ELITE),
-                List.of(BuiltinOIPipes.HEAT_PIPE_BASIC, BuiltinOIPipes.HEAT_PIPE_ADVANCED,
-                        BuiltinOIPipes.HEAT_PIPE_ELITE));
+                List.of(BuiltinTopoPipes.ITEM_PIPE_BASIC, BuiltinTopoPipes.ITEM_PIPE_ADVANCED,
+                        BuiltinTopoPipes.ITEM_PIPE_ELITE),
+                List.of(BuiltinTopoPipes.FLUID_PIPE_BASIC, BuiltinTopoPipes.FLUID_PIPE_ADVANCED,
+                        BuiltinTopoPipes.FLUID_PIPE_ELITE),
+                List.of(BuiltinTopoPipes.ENERGY_PIPE_BASIC, BuiltinTopoPipes.ENERGY_PIPE_ADVANCED,
+                        BuiltinTopoPipes.ENERGY_PIPE_ELITE),
+                List.of(BuiltinTopoPipes.ADVANCED_ENERGY_PIPE_BASIC, BuiltinTopoPipes.ADVANCED_ENERGY_PIPE_ADVANCED,
+                        BuiltinTopoPipes.ADVANCED_ENERGY_PIPE_ELITE),
+                List.of(BuiltinTopoPipes.HEAT_PIPE_BASIC, BuiltinTopoPipes.HEAT_PIPE_ADVANCED,
+                        BuiltinTopoPipes.HEAT_PIPE_ELITE));
 
         for (int x = -2; x <= 10; x++) {
             for (int y = -2; y <= 18; y++) {
@@ -592,7 +595,7 @@ public final class PipeProbe {
                 level.setBlock(center.relative(Direction.WEST), pipe, 3);
             }
         }
-        BlockState featured = BuiltinOIPipes.ADVANCED_ENERGY_PIPE_ADVANCED.registeredBlock().get().defaultBlockState()
+        BlockState featured = BuiltinTopoPipes.ADVANCED_ENERGY_PIPE_ADVANCED.registeredBlock().get().defaultBlockState()
                 .setValue(PipeBlock.property(Direction.NORTH), PipeSideVisual.EXTRACT)
                 .setValue(PipeBlock.property(Direction.EAST), PipeSideVisual.PIPE)
                 .setValue(PipeBlock.property(Direction.WEST), PipeSideVisual.PIPE);
@@ -611,7 +614,7 @@ public final class PipeProbe {
                         (border ? Blocks.POLISHED_BLACKSTONE : Blocks.GRAY_CONCRETE).defaultBlockState(), 3);
             }
         }
-        BlockState pipe = BuiltinOIPipes.ITEM_PIPE_ADVANCED.registeredBlock().get().defaultBlockState();
+        BlockState pipe = BuiltinTopoPipes.ITEM_PIPE_ADVANCED.registeredBlock().get().defaultBlockState();
         level.setBlock(center.relative(Direction.WEST), pipe, 3);
         level.setBlock(center, pipe, 3);
         level.setBlock(center.relative(Direction.EAST), pipe, 3);
@@ -626,7 +629,7 @@ public final class PipeProbe {
                         (border ? Blocks.POLISHED_BLACKSTONE : Blocks.GRAY_CONCRETE).defaultBlockState(), 3);
             }
         }
-        BlockState pipe = BuiltinOIPipes.ITEM_PIPE_ADVANCED.registeredBlock().get().defaultBlockState();
+        BlockState pipe = BuiltinTopoPipes.ITEM_PIPE_ADVANCED.registeredBlock().get().defaultBlockState();
         level.setBlock(center.relative(Direction.SOUTH),
                 pipe.setValue(PipeBlock.property(Direction.NORTH), PipeSideVisual.PIPE), 2);
         level.setBlock(center,
@@ -642,9 +645,9 @@ public final class PipeProbe {
                         (border ? Blocks.POLISHED_BLACKSTONE : Blocks.GRAY_CONCRETE).defaultBlockState(), 3);
             }
         }
-        BlockState pipe = BuiltinOIPipes.ENERGY_PIPE_ELITE.registeredBlock().get().defaultBlockState();
+        BlockState pipe = BuiltinTopoPipes.ENERGY_PIPE_ELITE.registeredBlock().get().defaultBlockState();
         level.setBlock(center.relative(Direction.EAST),
-                net.ptcrys.topo.datav2.machine.BuiltinOIMachines.COMBUSTION_GENERATOR_T3
+                BuiltinTopoMachines.COMBUSTION_GENERATOR_T3
                         .registeredBlock().getDefaultState(),
                 3);
         level.setBlock(center.relative(Direction.WEST), pipe, 3);
@@ -665,7 +668,7 @@ public final class PipeProbe {
             }
         }
 
-        BlockState pipe = BuiltinOIPipes.ITEM_PIPE_ADVANCED.registeredBlock().get().defaultBlockState();
+        BlockState pipe = BuiltinTopoPipes.ITEM_PIPE_ADVANCED.registeredBlock().get().defaultBlockState();
         level.setBlock(center.relative(Direction.UP, 2),
                 pipe.setValue(PipeBlock.property(Direction.DOWN), PipeSideVisual.PIPE), 2);
         level.setBlock(center.relative(Direction.UP),
@@ -768,17 +771,17 @@ public final class PipeProbe {
                 return;
             }
             var root = screen.getMenu().getModularUI().ui.rootElement;
-            var adapter = net.ptcrys.topo.data.pipe.BuiltinOIPipeFilterAdapters.ITEM;
-            net.ptcrys.topo.apiv2.machine.ui.ItemPickerPopup.open(
+            var adapter = BuiltinTopoPipeFilterAdapters.ITEM;
+            net.ptcrys.topo.api.machine.ui.ItemPickerPopup.open(
                     root,
-                    net.ptcrys.topo.data.pipe.BuiltinOIPipeLang.UI_PIPE_PORT_ADD_TO_WHITELIST.getComponent(),
+                    BuiltinTopoPipeLang.UI_PIPE_PORT_ADD_TO_WHITELIST.getComponent(),
                     adapter::entryFromCarried,
                     entry -> previewFor(adapter, entry),
                     entries -> {},
                     java.util.List.of("minecraft:coal", "minecraft:iron_ingot", "minecraft:gold_ingot"));
             report.append("item picker mounted for screenshot -> PASS\n");
-            // JEI 幽灵投放桥已装(JEI runtime 可用时 OIJeiPlugin 安装)= 暂存槽已登记为拖放目标。
-            boolean ghostReady = net.ptcrys.topo.apiv2.machine.ui.ItemGhostDrop.isAvailable();
+            // JEI 幽灵投放桥已装(JEI runtime 可用时 TopoJeiPlugin 安装)= 暂存槽已登记为拖放目标。
+            boolean ghostReady = net.ptcrys.topo.api.machine.ui.ItemGhostDrop.isAvailable();
             report.append("JEI ghost-drop bridge installed=").append(ghostReady)
                     .append(" -> ").append(ghostReady ? "PASS" : "FAIL (drag from JEI won't target staging)")
                     .append('\n');
@@ -796,10 +799,10 @@ public final class PipeProbe {
                 return;
             }
             var root = screen.getMenu().getModularUI().ui.rootElement;
-            var adapter = net.ptcrys.topo.data.pipe.BuiltinOIPipeFilterAdapters.FLUID;
-            net.ptcrys.topo.apiv2.machine.ui.ItemPickerPopup.open(
+            var adapter = BuiltinTopoPipeFilterAdapters.FLUID;
+            net.ptcrys.topo.api.machine.ui.ItemPickerPopup.open(
                     root,
-                    net.ptcrys.topo.data.pipe.BuiltinOIPipeLang.UI_PIPE_PORT_ADD_TO_WHITELIST.getComponent(),
+                    BuiltinTopoPipeLang.UI_PIPE_PORT_ADD_TO_WHITELIST.getComponent(),
                     adapter::entryFromCarried,
                     entry -> previewFor(adapter, entry),
                     entries -> {},
@@ -850,9 +853,9 @@ public final class PipeProbe {
                 return;
             }
             var root = screen.getMenu().getModularUI().ui.rootElement;
-            net.ptcrys.topo.apiv2.machine.ui.AmountEditorPopup.open(
+            net.ptcrys.topo.api.machine.ui.AmountEditorPopup.open(
                     root,
-                    net.ptcrys.topo.data.pipe.BuiltinOIPipeLang.UI_PIPE_PORT_AMOUNT_POPUP_TITLE.getComponent(),
+                    BuiltinTopoPipeLang.UI_PIPE_PORT_AMOUNT_POPUP_TITLE.getComponent(),
                     2560L, 0L, 2560L,
                     committed -> kotlin.Unit.INSTANCE);
             report.append("amount popup mounted for screenshot -> PASS\n");
@@ -908,7 +911,7 @@ public final class PipeProbe {
                 int floored = runtime.portAmount(pipePos, side);
                 runtime.uiAdjustAmount(pipePos, side, Integer.MAX_VALUE / 2);
                 int ceiled = runtime.portAmount(pipePos, side);
-                int expectedCeiling = BuiltinOIPipes.ITEM_PIPE_ELITE
+                int expectedCeiling = BuiltinTopoPipes.ITEM_PIPE_ELITE
                         .maxBatchAmount(runtime.portInterval(pipePos, side));
                 report.append(String.format(Locale.ROOT, "uiAdjustAmount clamp 0..capXinterval -> %d..%d (max %d) -> %s%n",
                         floored, ceiled, expectedCeiling,
@@ -924,7 +927,7 @@ public final class PipeProbe {
                         minInterval, maxInterval, window.minInterval(), window.maxInterval(),
                         minInterval == window.minInterval() && maxInterval == window.maxInterval() ? "PASS" : "FAIL"));
                 // 弹窗精确设置通道:越界值钳制、合法值精确落地(含亚每 tick 的非整除批量)。
-                int maxAtMin = BuiltinOIPipes.ITEM_PIPE_ELITE.maxBatchAmount(minInterval);
+                int maxAtMin = BuiltinTopoPipes.ITEM_PIPE_ELITE.maxBatchAmount(minInterval);
                 runtime.uiSetAmount(pipePos, side, Integer.MAX_VALUE);
                 int setClamped = runtime.portAmount(pipePos, side);
                 runtime.uiSetAmount(pipePos, side, 37);

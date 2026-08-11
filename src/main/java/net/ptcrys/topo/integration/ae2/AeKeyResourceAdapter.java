@@ -10,7 +10,7 @@ import appeng.api.stacks.AEKey;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Lossless adapter between AE2 keys and the NeoForge transfer resources used by OI machines.
+ * Lossless adapter between AE2 keys and the NeoForge transfer resources used by Topo machines.
  */
 public final class AeKeyResourceAdapter {
 

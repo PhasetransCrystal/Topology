@@ -1,15 +1,15 @@
 package net.ptcrys.topo.client.debug;
 
-import net.ptcrys.topo.api.tick.NoopTickHandle;
-import net.ptcrys.topo.apiv2.machine.MachineBlockEntity;
-import net.ptcrys.topo.apiv2.machine.MachinePerformanceSnapshot;
-import net.ptcrys.topo.apiv2.machine.component.RecipeLogic;
-import net.ptcrys.topo.apiv2.recipe.OIRecipe;
-import net.ptcrys.topo.apiv2.recipe.OIRecipeType;
-import net.ptcrys.topo.datav2.machine.BuiltinOIMachines;
-import net.ptcrys.topo.datav2.machine.common.component.resource.ItemResourcePort;
-import net.ptcrys.topo.datav2.machine.common.component.resource.ScalarResourcePort;
-import net.ptcrys.topo.datav2.recipe.BuiltinOIRecipeTypes;
+import net.ptcrys.topo.api.api.tick.NoopTickHandle;
+import net.ptcrys.topo.api.machine.MachineBlockEntity;
+import net.ptcrys.topo.api.machine.MachinePerformanceSnapshot;
+import net.ptcrys.topo.api.machine.component.RecipeLogic;
+import net.ptcrys.topo.api.recipe.TopoRecipe;
+import net.ptcrys.topo.api.recipe.TopoRecipeType;
+import net.ptcrys.topo.data.machine.BuiltinTopoMachines;
+import net.ptcrys.topo.data.machine.common.component.resource.ItemResourcePort;
+import net.ptcrys.topo.data.machine.common.component.resource.ScalarResourcePort;
+import net.ptcrys.topo.data.recipe.BuiltinTopoRecipeTypes;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.TitleScreen;
@@ -50,15 +50,15 @@ import java.util.Locale;
  * 用于判定面板高读数是 JIT 冷代码采样还是真实持续开销。
  *
  * <p>
- * flag: {@code oi-machine-perf-probe.flag};报告: {@code oi-machine-perf-probe-report.txt}。
+ * flag: {@code topo-machine-perf-probe.flag};报告: {@code topo-machine-perf-probe-report.txt}。
  */
 public final class MachinePerfProbe {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("OI-MachinePerfProbe");
-    private static final Path FLAG_FILE = Path.of("oi-machine-perf-probe.flag");
-    private static final Path REPORT_FILE = Path.of("oi-machine-perf-probe-report.txt");
+    private static final Logger LOGGER = LoggerFactory.getLogger("Topo-MachinePerfProbe");
+    private static final Path FLAG_FILE = Path.of("topo-machine-perf-probe.flag");
+    private static final Path REPORT_FILE = Path.of("topo-machine-perf-probe-report.txt");
     /** 每轮唯一世界名:复用同名存档会撞残留场景(并行会话共用 run/ 时尤甚)。 */
-    private static final String LEVEL_ID = "oi-machine-perf-" + (System.currentTimeMillis() % 100_000_000L);
+    private static final String LEVEL_ID = "topo-machine-perf-" + (System.currentTimeMillis() % 100_000_000L);
     private static final int WAIT_TIMEOUT_TICKS = 2400;
     private static final int SETTLE_TICKS = 40;
     private static final int SAMPLE_TICKS = 120;
@@ -190,7 +190,7 @@ public final class MachinePerfProbe {
             ServerLevel level = server.overworld();
             // 放在玩家脚边下方两格:避开准星方向,防止 Jade 数据轮询提前激活监控污染冷段。
             BlockPos pos = players.getFirst().blockPosition().east(4).below(2);
-            level.setBlock(pos, BuiltinOIMachines.COMBUSTION_GENERATOR_T1.registeredBlock().getDefaultState(), 3);
+            level.setBlock(pos, BuiltinTopoMachines.COMBUSTION_GENERATOR_T1.registeredBlock().getDefaultState(), 3);
             if (!(level.getBlockEntity(pos) instanceof MachineBlockEntity machine)) {
                 report.append("machine block entity missing -> FAIL\n");
                 return;
@@ -260,8 +260,8 @@ public final class MachinePerfProbe {
                     return;
                 }
                 RecipeLogic logic = machine.machineComponents().require(RecipeLogic.RECIPE_LOGIC_1);
-                OIRecipeType<OIRecipe> type = BuiltinOIRecipeTypes.COMBUSTION_GENERATOR;
-                RecipeHolder<OIRecipe> holder = type.findRecipe(machine);
+                TopoRecipeType<TopoRecipe> type = BuiltinTopoRecipeTypes.COMBUSTION_GENERATOR;
+                RecipeHolder<TopoRecipe> holder = type.findRecipe(machine);
                 report.append("decompose: parked state=").append(logic.state())
                         .append(", searchCacheable=").append(type.resourceVersionSearchCacheable(machine))
                         .append(", recipeFound=").append(holder != null)
@@ -269,7 +269,7 @@ public final class MachinePerfProbe {
                 if (holder == null) {
                     return;
                 }
-                OIRecipe recipe = holder.value();
+                TopoRecipe recipe = holder.value();
                 report.append("decompose: startRetryStable=").append(recipe.startRetryResourceVersionStable())
                         .append(", directTickIo=").append(recipe.hasDirectTickIo())
                         .append('\n');

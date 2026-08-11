@@ -1,21 +1,21 @@
 package net.ptcrys.topo.gametest;
 
+import net.ptcrys.topo.api.machine.MachineBlockEntity;
+import net.ptcrys.topo.api.machine.MachineDefinition;
+import net.ptcrys.topo.api.machine.Machines;
+import net.ptcrys.topo.api.machine.resource.AutomationIo;
+import net.ptcrys.topo.api.machine.resource.PortAccess;
+import net.ptcrys.topo.api.machine.ui.ComponentCollector;
+import net.ptcrys.topo.api.machine.ui.PageCollector;
 import net.ptcrys.topo.api.pipe.PipeBlock;
 import net.ptcrys.topo.api.pipe.PipeSideVisual;
-import net.ptcrys.topo.apiv2.machine.MachineBlockEntity;
-import net.ptcrys.topo.apiv2.machine.MachineDefinition;
-import net.ptcrys.topo.apiv2.machine.Machines;
-import net.ptcrys.topo.apiv2.machine.resource.AutomationIo;
-import net.ptcrys.topo.apiv2.machine.resource.PortAccess;
-import net.ptcrys.topo.apiv2.machine.ui.ComponentCollector;
-import net.ptcrys.topo.apiv2.machine.ui.PageCollector;
-import net.ptcrys.topo.data.pipe.BuiltinOIPipes;
-import net.ptcrys.topo.datav2.machine.BuiltinOIMachines;
-import net.ptcrys.topo.datav2.machine.common.component.resource.ItemResourcePort;
-import net.ptcrys.topo.datav2.machine.common.component.resource.ScalarResource;
-import net.ptcrys.topo.datav2.machine.common.component.resource.ScalarResourcePort;
-import net.ptcrys.topo.datav2.material.BuiltinOIProcessDies;
-import net.ptcrys.topo.datav2.recipe.BuiltinOIResourceIntegrations;
+import net.ptcrys.topo.data.machine.BuiltinTopoMachines;
+import net.ptcrys.topo.data.machine.common.component.resource.ItemResourcePort;
+import net.ptcrys.topo.data.machine.common.component.resource.ScalarResource;
+import net.ptcrys.topo.data.machine.common.component.resource.ScalarResourcePort;
+import net.ptcrys.topo.data.material.BuiltinTopoProcessDies;
+import net.ptcrys.topo.data.pipe.BuiltinTopoPipes;
+import net.ptcrys.topo.data.recipe.BuiltinTopoResourceIntegrations;
 import net.ptcrys.topo.helper.IdHelper;
 
 import net.minecraft.core.BlockPos;
@@ -47,7 +47,7 @@ import java.util.function.Consumer;
 /**
  * 运行时 per-side capability IO 配置的游戏内测试:声明默认、运行时改面、邻位缓存失效、声明包络
  * 子集拒绝、循环/重置/全禁、持久化往返、UI 卡片贡献、邻管连接刷新。除模具槽用例使用真实锻压机
- * 外,全部使用 {@link OISideIoGameTestFixtures} 的夹具机器(storage(UP)+configurable 物品口、
+ * 外,全部使用 {@link TopoSideIoGameTestFixtures} 的夹具机器(storage(UP)+configurable 物品口、
  * output(DOWN)+configurable 能量口)。
  */
 public final class SideIoGameTests {
@@ -61,7 +61,7 @@ public final class SideIoGameTests {
     private SideIoGameTests() {}
 
     public static void register(RegisterGameTestsEvent event) {
-        if (!OISideIoGameTestFixtures.enabled()) {
+        if (!TopoSideIoGameTestFixtures.enabled()) {
             return;
         }
         Holder<TestEnvironmentDefinition<?>> environment = event.registerEnvironment(IdHelper.oi("side_io"), new TestEnvironmentDefinition.AllOf());
@@ -132,7 +132,7 @@ public final class SideIoGameTests {
     }
 
     private static void sideIoDefaultMatchesDeclaredPolicy(GameTestHelper helper) {
-        MachineBlockEntity machine = place(helper, OISideIoGameTestFixtures.sideIoBuffer());
+        MachineBlockEntity machine = place(helper, TopoSideIoGameTestFixtures.sideIoBuffer());
 
         ResourceHandler<ItemResource> up = requireItemCapability(helper, Direction.UP);
         insertItem(helper, up, 1, "UP must accept inserts on a BOTH default side");
@@ -153,7 +153,7 @@ public final class SideIoGameTests {
         ResourceHandler<ScalarResource> down = requireEnergyCapability(helper, Direction.DOWN);
         extractEnergy(helper, down, 20, "DOWN must extract on an EXTRACT default side");
         try (Transaction transaction = Transaction.openRoot()) {
-            if (down.insert(BuiltinOIResourceIntegrations.ENERGY.recipeCapability().resource(), 5, transaction) != 0) {
+            if (down.insert(BuiltinTopoResourceIntegrations.ENERGY.recipeCapability().resource(), 5, transaction) != 0) {
                 helper.fail("EXTRACT-only DOWN energy capability must reject insertion");
             }
             transaction.commit();
@@ -165,7 +165,7 @@ public final class SideIoGameTests {
     }
 
     private static void sideIoRuntimeOpenedSideAcceptsIo(GameTestHelper helper) {
-        MachineBlockEntity machine = place(helper, OISideIoGameTestFixtures.sideIoBuffer());
+        MachineBlockEntity machine = place(helper, TopoSideIoGameTestFixtures.sideIoBuffer());
         ItemResourcePort storage = machine.machineComponents().require(ItemResourcePort.ITEM_STORAGE);
 
         if (itemCapability(helper, Direction.NORTH) != null) {
@@ -191,7 +191,7 @@ public final class SideIoGameTests {
     }
 
     private static void sideIoClosedSideInvalidatesNeighborCache(GameTestHelper helper) {
-        MachineBlockEntity machine = place(helper, OISideIoGameTestFixtures.sideIoBuffer());
+        MachineBlockEntity machine = place(helper, TopoSideIoGameTestFixtures.sideIoBuffer());
         ItemResourcePort storage = machine.machineComponents().require(ItemResourcePort.ITEM_STORAGE);
         BlockCapability<ResourceHandler<ItemResource>, @Nullable Direction> capability = itemBlockCapability(helper);
         BlockCapabilityCache<ResourceHandler<ItemResource>, @Nullable Direction> cache = BlockCapabilityCache.create(capability, helper.getLevel(), helper.absolutePos(MACHINE_POS), Direction.UP);
@@ -209,7 +209,7 @@ public final class SideIoGameTests {
     }
 
     private static void sideIoRejectsModesOutsideDeclaredEnvelope(GameTestHelper helper) {
-        MachineBlockEntity machine = place(helper, OISideIoGameTestFixtures.sideIoBuffer());
+        MachineBlockEntity machine = place(helper, TopoSideIoGameTestFixtures.sideIoBuffer());
         ScalarResourcePort energy = machine.machineComponents().require(ScalarResourcePort.ENERGY_OUTPUT_1);
 
         if (!energy.sideIoConfigurable()) {
@@ -231,7 +231,7 @@ public final class SideIoGameTests {
 
         helper.setBlock(
                 MACHINE_POS.above(1),
-                OIScalarGameTestFixtures.energyGenerator().registeredBlock().getDefaultState());
+                TopoScalarGameTestFixtures.energyGenerator().registeredBlock().getDefaultState());
         MachineBlockEntity plain = helper.getBlockEntity(MACHINE_POS.above(1), MachineBlockEntity.class);
         ScalarResourcePort plainPort = plain.machineComponents().require(ScalarResourcePort.ENERGY_OUTPUT_1);
         if (plainPort.sideIoConfigurable()) {
@@ -244,7 +244,7 @@ public final class SideIoGameTests {
     }
 
     private static void sideIoCycleResetAndDisableWalkTheEnvelope(GameTestHelper helper) {
-        MachineBlockEntity machine = place(helper, OISideIoGameTestFixtures.sideIoBuffer());
+        MachineBlockEntity machine = place(helper, TopoSideIoGameTestFixtures.sideIoBuffer());
         ItemResourcePort storage = machine.machineComponents().require(ItemResourcePort.ITEM_STORAGE);
         int declaredDefault = PortAccess.withSideMode(0, Direction.UP, AutomationIo.BOTH);
 
@@ -279,7 +279,7 @@ public final class SideIoGameTests {
     }
 
     private static void sideIoPersistsAcrossSerializationRoundtrip(GameTestHelper helper) {
-        MachineBlockEntity machine = place(helper, OISideIoGameTestFixtures.sideIoBuffer());
+        MachineBlockEntity machine = place(helper, TopoSideIoGameTestFixtures.sideIoBuffer());
         ItemResourcePort storage = machine.machineComponents().require(ItemResourcePort.ITEM_STORAGE);
         ScalarResourcePort energy = machine.machineComponents().require(ScalarResourcePort.ENERGY_OUTPUT_1);
 
@@ -311,7 +311,7 @@ public final class SideIoGameTests {
     }
 
     private static void sideIoPanelContributionFollowsConfigurability(GameTestHelper helper) {
-        MachineBlockEntity machine = place(helper, OISideIoGameTestFixtures.sideIoBuffer());
+        MachineBlockEntity machine = place(helper, TopoSideIoGameTestFixtures.sideIoBuffer());
         long sideIoCards = collectSideIoCards(machine);
         if (sideIoCards != 2) {
             helper.fail("The fixture machine has two configurable ports and must contribute exactly two " + "side-IO cards, got " + sideIoCards);
@@ -319,7 +319,7 @@ public final class SideIoGameTests {
 
         helper.setBlock(
                 MACHINE_POS.above(1),
-                OIScalarGameTestFixtures.energyGenerator().registeredBlock().getDefaultState());
+                TopoScalarGameTestFixtures.energyGenerator().registeredBlock().getDefaultState());
         MachineBlockEntity plain = helper.getBlockEntity(MACHINE_POS.above(1), MachineBlockEntity.class);
         if (collectSideIoCards(plain) != 0) {
             helper.fail("A machine without configurable ports must contribute no side-IO cards");
@@ -332,10 +332,10 @@ public final class SideIoGameTests {
      * 角色——运行时改面必须发出该更新,否则邻管保持旧臂直到拆掉重放。
      */
     private static void sideIoChangeRefreshesNeighborPipeConnection(GameTestHelper helper) {
-        MachineBlockEntity machine = place(helper, OISideIoGameTestFixtures.sideIoBuffer());
+        MachineBlockEntity machine = place(helper, TopoSideIoGameTestFixtures.sideIoBuffer());
         ItemResourcePort storage = machine.machineComponents().require(ItemResourcePort.ITEM_STORAGE);
         BlockPos pipePos = MACHINE_POS.north();
-        helper.setBlock(pipePos, BuiltinOIPipes.ITEM_PIPE_BASIC.registeredBlock().get().defaultBlockState());
+        helper.setBlock(pipePos, BuiltinTopoPipes.ITEM_PIPE_BASIC.registeredBlock().get().defaultBlockState());
 
         assertPipeVisual(helper, pipePos, Direction.SOUTH, PipeSideVisual.NONE,
                 "the pipe must start disconnected while the machine NORTH side is closed");
@@ -358,7 +358,7 @@ public final class SideIoGameTests {
      * 进出,reset 回到全关而非包络默认。
      */
     private static void sideIoDieSlotDefaultsClosedAndOpensByConfig(GameTestHelper helper) {
-        MachineBlockEntity machine = place(helper, BuiltinOIMachines.COMPONENT_PROCESSOR_T1);
+        MachineBlockEntity machine = place(helper, BuiltinTopoMachines.COMPONENT_PROCESSOR_T1);
         ItemResourcePort die = machine.machineComponents().require(ItemResourcePort.ITEM_DIE_1);
 
         if (!die.sideIoConfigurable()) {
@@ -377,7 +377,7 @@ public final class SideIoGameTests {
         }
 
         ItemResource rejectedResource = ItemResource.of(Items.IRON_INGOT);
-        ItemResource dieResource = ItemResource.of(BuiltinOIProcessDies.TEMPLATE_PLATE.get());
+        ItemResource dieResource = ItemResource.of(BuiltinTopoProcessDies.TEMPLATE_PLATE.get());
         if (!die.setSideIo(Direction.NORTH, AutomationIo.INSERT)) {
             helper.fail("Opening die slot NORTH as INSERT inside a BOTH envelope must succeed");
         }
@@ -440,7 +440,7 @@ public final class SideIoGameTests {
         machine.collectMachineUi(pages, components);
         return components.entries().stream()
                 .filter(entry -> entry.side() == ComponentCollector.Side.LEFT)
-                .filter(entry -> entry.key().startsWith("oi_side_io_"))
+                .filter(entry -> entry.key().startsWith("topo_side_io_"))
                 .count();
     }
 
@@ -480,7 +480,7 @@ public final class SideIoGameTests {
     private static void fillEnergy(GameTestHelper helper, MachineBlockEntity machine, int amount) {
         ScalarResourcePort storage = machine.machineComponents().require(ScalarResourcePort.ENERGY_OUTPUT_1);
         try (Transaction transaction = Transaction.openRoot()) {
-            int inserted = storage.handler().insert(BuiltinOIResourceIntegrations.ENERGY.recipeCapability().resource(), amount, transaction);
+            int inserted = storage.handler().insert(BuiltinTopoResourceIntegrations.ENERGY.recipeCapability().resource(), amount, transaction);
             if (inserted != amount) {
                 helper.fail("Setup: expected to preload " + amount + " energy, inserted " + inserted);
             }
@@ -494,7 +494,7 @@ public final class SideIoGameTests {
                                       int amount,
                                       String message) {
         try (Transaction transaction = Transaction.openRoot()) {
-            int extracted = handler.extract(BuiltinOIResourceIntegrations.ENERGY.recipeCapability().resource(), amount, transaction);
+            int extracted = handler.extract(BuiltinTopoResourceIntegrations.ENERGY.recipeCapability().resource(), amount, transaction);
             if (extracted != amount) {
                 helper.fail(message + " (expected " + amount + ", extracted " + extracted + ")");
             }
@@ -504,7 +504,7 @@ public final class SideIoGameTests {
 
     private static BlockCapability<ResourceHandler<ItemResource>, @Nullable Direction> itemBlockCapability(
                                                                                                            GameTestHelper helper) {
-        BlockCapability<ResourceHandler<ItemResource>, @Nullable Direction> capability = BuiltinOIResourceIntegrations.ITEM.resourceType().blockCapability();
+        BlockCapability<ResourceHandler<ItemResource>, @Nullable Direction> capability = BuiltinTopoResourceIntegrations.ITEM.resourceType().blockCapability();
         if (capability == null) {
             helper.fail("Item resource type has no block capability");
         }
@@ -528,7 +528,7 @@ public final class SideIoGameTests {
     private static @Nullable ResourceHandler<ScalarResource> energyCapability(
                                                                               GameTestHelper helper,
                                                                               @Nullable Direction side) {
-        BlockCapability<ResourceHandler<ScalarResource>, @Nullable Direction> capability = BuiltinOIResourceIntegrations.ENERGY.resourceType().blockCapability();
+        BlockCapability<ResourceHandler<ScalarResource>, @Nullable Direction> capability = BuiltinTopoResourceIntegrations.ENERGY.resourceType().blockCapability();
         if (capability == null) {
             helper.fail("Energy resource type has no block capability");
             return null;

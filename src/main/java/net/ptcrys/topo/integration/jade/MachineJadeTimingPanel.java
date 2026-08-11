@@ -1,9 +1,9 @@
 package net.ptcrys.topo.integration.jade;
 
-import net.ptcrys.topo.apiv2.machine.ui.LcdData;
-import net.ptcrys.topo.apiv2.machine.ui.MachineUiComponentStyle;
-import net.ptcrys.topo.apiv2.machine.ui.MachineUiContainerTemplate;
-import net.ptcrys.topo.apiv2.machine.ui.MachineUiLayout;
+import net.ptcrys.topo.api.machine.ui.LcdData;
+import net.ptcrys.topo.api.machine.ui.MachineUiComponentStyle;
+import net.ptcrys.topo.api.machine.ui.MachineUiContainerTemplate;
+import net.ptcrys.topo.api.machine.ui.MachineUiLayout;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
@@ -25,7 +25,7 @@ final class MachineJadeTimingPanel {
     private static final float MAX_KEY_COLUMN_WIDTH = 170f;
     private static final float MAX_VALUE_COLUMN_WIDTH = 220f;
     private static final float COLUMN_SLACK = 2f;
-    private static final String ROOT_ID = "oi_jade_machine_timing_root";
+    private static final String ROOT_ID = "topo_jade_machine_timing_root";
 
     private MachineJadeTimingPanel() {}
 

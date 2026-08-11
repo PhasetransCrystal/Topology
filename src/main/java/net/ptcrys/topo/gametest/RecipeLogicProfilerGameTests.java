@@ -1,18 +1,20 @@
 package net.ptcrys.topo.gametest;
 
-import net.ptcrys.topo.api.tick.NoopTickHandle;
-import net.ptcrys.topo.apiv2.machine.MachineBlockEntity;
-import net.ptcrys.topo.apiv2.machine.MachinePerformanceSnapshot;
-import net.ptcrys.topo.apiv2.machine.component.RecipeLogic;
-import net.ptcrys.topo.apiv2.machine.component.RecipeModifier;
-import net.ptcrys.topo.apiv2.recipe.OIRecipe;
-import net.ptcrys.topo.apiv2.recipe.OIRecipeType;
-import net.ptcrys.topo.apiv2.recipe.content.OIItemInput;
-import net.ptcrys.topo.datav2.machine.BuiltinOIMachines;
-import net.ptcrys.topo.datav2.machine.common.component.resource.ItemResourcePort;
-import net.ptcrys.topo.datav2.machine.common.component.resource.ScalarResource;
-import net.ptcrys.topo.datav2.machine.common.component.resource.ScalarResourcePort;
-import net.ptcrys.topo.datav2.recipe.BuiltinOIRecipeTypes;
+import net.ptcrys.topo.api.api.tick.NoopTickHandle;
+import net.ptcrys.topo.api.machine.MachineBlockEntity;
+import net.ptcrys.topo.api.machine.MachinePerformanceSnapshot;
+import net.ptcrys.topo.api.machine.component.RecipeLogic;
+import net.ptcrys.topo.api.machine.component.RecipeModifier;
+import net.ptcrys.topo.api.recipe.TopoRecipe;
+import net.ptcrys.topo.api.recipe.TopoRecipeType;
+import net.ptcrys.topo.api.recipe.content.TopoItemInput;
+import net.ptcrys.topo.data.machine.BuiltinTopoMachines;
+import net.ptcrys.topo.data.machine.common.component.resource.ItemResourcePort;
+import net.ptcrys.topo.data.machine.common.component.resource.ScalarResource;
+import net.ptcrys.topo.data.machine.common.component.resource.ScalarResourcePort;
+import net.ptcrys.topo.data.material.BuiltinTopoMaterialForms;
+import net.ptcrys.topo.data.material.BuiltinTopoMaterials;
+import net.ptcrys.topo.data.recipe.BuiltinTopoRecipeTypes;
 import net.ptcrys.topo.helper.IdHelper;
 import net.ptcrys.topo.helper.MaterialHelper;
 import net.ptcrys.topo.integration.jade.MachineDataProvider;
@@ -87,7 +89,7 @@ public final class RecipeLogicProfilerGameTests {
     private static final long PLANNING_CPU_PEAK_BUDGET_NANOS = 100_000L;
     private static final long PLANNING_BATCH_P99_BUDGET_NANOS = 100_000L;
     private static final int DETAIL_SAMPLE_LIMIT = 12;
-    private static final String SAMPLE_CSV_FILE = "oi-recipe-logic-profiler-samples.csv";
+    private static final String SAMPLE_CSV_FILE = "topo-recipe-logic-profiler-samples.csv";
     /** Mirrors the StackWalker NeoForge's Transaction.openRoot() invokes on every root transaction. */
     private static final StackWalker CALLER_CLASS_WALKER = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
     private static final ThreadMXBean THREAD_MX_BEAN = ManagementFactory.getThreadMXBean();
@@ -141,7 +143,7 @@ public final class RecipeLogicProfilerGameTests {
     }
 
     public static boolean isProfilerOnlyMode() {
-        return Boolean.getBoolean("oi.profiler.only") || "true".equalsIgnoreCase(System.getenv("OI_PROFILER_ONLY"));
+        return Boolean.getBoolean("oi.profiler.only") || "true".equalsIgnoreCase(System.getenv("TOPO_PROFILER_ONLY"));
     }
 
     private static boolean isEnabled() {
@@ -201,7 +203,7 @@ public final class RecipeLogicProfilerGameTests {
                 Integer.getInteger("oi.parallelPlanner.integrationSampleCount", sampleCount / 10));
         PlanningCallStats integration = measureFoldPlanAndScale(helper, scenarios, integrationSamples);
         com.mojang.logging.LogUtils.getLogger().info(
-                "OI modifier-fold + complex LONG plan + withParallel integration: samples={}, wallMean={} us, wallP99={} us, rawWallMax(observationOnly)={} us",
+                "Topo modifier-fold + complex LONG plan + withParallel integration: samples={}, wallMean={} us, wallP99={} us, rawWallMax(observationOnly)={} us",
                 integration.samples(),
                 formatMicros(integration.meanNanos()),
                 formatMicros(integration.p99Nanos()),
@@ -328,7 +330,7 @@ public final class RecipeLogicProfilerGameTests {
                                          PlanningCpuStats cpu) {
         String wall = String.format(
                 Locale.ROOT,
-                "OI maximum-parallel planner [%s]: machines=%d, resources/machine=%d, samples=%d, wallMean=%.3f us, wallP99(operationalPeak)=%.3f us, rawWallMax(observationOnly)=%.3f us, batchTicks=%d, batchWallMeanPerMachine=%.3f us, batchWallP99(operationalPeak)=%.3f us, rawBatchWallMax(observationOnly)=%.3f us",
+                "Topo maximum-parallel planner [%s]: machines=%d, resources/machine=%d, samples=%d, wallMean=%.3f us, wallP99(operationalPeak)=%.3f us, rawWallMax(observationOnly)=%.3f us, batchTicks=%d, batchWallMeanPerMachine=%.3f us, batchWallP99(operationalPeak)=%.3f us, rawBatchWallMax(observationOnly)=%.3f us",
                 workload.label,
                 scenarios.size(),
                 workload.resourceCount(scenarios.getFirst()),
@@ -375,11 +377,11 @@ public final class RecipeLogicProfilerGameTests {
                                                GameTestHelper helper,
                                                List<ParallelPlanningGameTests.PerformanceScenario> scenarios) {
         for (ParallelPlanningGameTests.PerformanceScenario scenario : scenarios) {
-            OIRecipe scaled = foldPlanAndScale(scenario);
+            TopoRecipe scaled = foldPlanAndScale(scenario);
             long expectedItemAmount = Math.multiplyExact(
                     scenario.complexDemand(), scenario.expectedComplexParallel());
             Object firstInput = scaled.inputs()[0].contents().getFirst();
-            if (!(firstInput instanceof OIItemInput itemInput) || itemInput.count() != expectedItemAmount || expectedItemAmount <= Integer.MAX_VALUE) {
+            if (!(firstInput instanceof TopoItemInput itemInput) || itemInput.count() != expectedItemAmount || expectedItemAmount <= Integer.MAX_VALUE) {
                 helper.fail("Modifier/parallel integration must preserve LONG item amounts; expected " + expectedItemAmount + ", got " + firstInput);
             }
             if (scaled.duration() != 20 || !(scaled.tickInputs()[0].contents().getFirst() instanceof Long energy) || energy != 192_000L || !(scaled.tickInputs()[1].contents().getFirst() instanceof Long heat) || heat != 96_000L) {
@@ -398,10 +400,10 @@ public final class RecipeLogicProfilerGameTests {
         for (int iteration = 0; iteration < sampleCount; iteration++) {
             ParallelPlanningGameTests.PerformanceScenario scenario = scenarios.get(iteration % scenarios.size());
             long start = System.nanoTime();
-            OIRecipe scaled = foldPlanAndScale(scenario);
+            TopoRecipe scaled = foldPlanAndScale(scenario);
             long elapsed = System.nanoTime() - start;
             Object firstInput = scaled.inputs()[0].contents().getFirst();
-            if (!(firstInput instanceof OIItemInput itemInput)) {
+            if (!(firstInput instanceof TopoItemInput itemInput)) {
                 helper.fail("Fold/plan/scale integration lost its first LONG item input");
                 throw new IllegalStateException("unreachable");
             }
@@ -418,9 +420,9 @@ public final class RecipeLogicProfilerGameTests {
                 samples[samples.length - 1]);
     }
 
-    private static OIRecipe foldPlanAndScale(
-                                             ParallelPlanningGameTests.PerformanceScenario scenario) {
-        OIRecipe folded = scenario.complexRecipe();
+    private static TopoRecipe foldPlanAndScale(
+                                               ParallelPlanningGameTests.PerformanceScenario scenario) {
+        TopoRecipe folded = scenario.complexRecipe();
         RecipeLogic recipeLogic = logic(scenario.machine());
         for (var match : scenario.machine().machineComponents().services(RecipeModifier.KEY, recipeLogic)) {
             folded = match.value().modify(folded, scenario.machine());
@@ -535,8 +537,8 @@ public final class RecipeLogicProfilerGameTests {
                     if (logic.state() != RecipeLogic.State.WORKING) {
                         helper.fail("Profiler setup should reach WORKING before sampling, got " + logic.state());
                     }
-                    OIRecipe activeRecipe = activeRecipe(
-                            helper, machine, logic, BuiltinOIRecipeTypes.MACERATOR);
+                    TopoRecipe activeRecipe = activeRecipe(
+                            helper, machine, logic, BuiltinTopoRecipeTypes.MACERATOR);
                     results.addAll(runProfile(machine, logic, activeRecipe, helper.getLevel().getGameTime()));
                     refillMaceratorEnergy(machine);
                     logic.setProgressForGameTest(1);
@@ -557,7 +559,7 @@ public final class RecipeLogicProfilerGameTests {
                     results.addAll(overlayTicks.toResults());
                     WorkingBudget budget = workingBudget(overlayTicks, scheduledGcStart[0]);
                     Path report = writeReport(
-                            "oi-recipe-logic-profiler.md",
+                            "topo-recipe-logic-profiler.md",
                             SAMPLE_CSV_FILE,
                             "runRecipeLogicProfilerGameTestServer",
                             "macerator_working_tick_profile",
@@ -565,7 +567,7 @@ public final class RecipeLogicProfilerGameTests {
                             overlayTicks.sampleDetails(),
                             budget.reportLines());
                     com.mojang.logging.LogUtils.getLogger()
-                            .info("OI recipe logic profiler report written to {}", report.toAbsolutePath());
+                            .info("Topo recipe logic profiler report written to {}", report.toAbsolutePath());
                     enforceWorkingBudget(helper, "macerator", budget);
                 })
                 .thenSucceed();
@@ -584,8 +586,8 @@ public final class RecipeLogicProfilerGameTests {
                     if (logic.state() != RecipeLogic.State.WORKING) {
                         helper.fail("Profiler setup should reach WORKING before sampling, got " + logic.state());
                     }
-                    OIRecipe activeRecipe = activeRecipe(
-                            helper, machine, logic, BuiltinOIRecipeTypes.COMBUSTION_GENERATOR);
+                    TopoRecipe activeRecipe = activeRecipe(
+                            helper, machine, logic, BuiltinTopoRecipeTypes.COMBUSTION_GENERATOR);
                     results.addAll(runGeneratorProfile(machine, logic, activeRecipe, helper.getLevel().getGameTime()));
                     drainGeneratorEnergy(machine);
                     logic.setProgressForGameTest(1);
@@ -606,15 +608,15 @@ public final class RecipeLogicProfilerGameTests {
                     results.addAll(overlayTicks.toResults());
                     WorkingBudget budget = workingBudget(overlayTicks, scheduledGcStart[0]);
                     Path report = writeReport(
-                            "oi-energy-generator-profiler.md",
-                            "oi-energy-generator-profiler-samples.csv",
+                            "topo-energy-generator-profiler.md",
+                            "topo-energy-generator-profiler-samples.csv",
                             "runEnergyGeneratorProfilerGameTestServer",
                             "energy_generator_working_tick_profile",
                             results,
                             overlayTicks.sampleDetails(),
                             budget.reportLines());
                     com.mojang.logging.LogUtils.getLogger()
-                            .info("OI energy generator profiler report written to {}", report.toAbsolutePath());
+                            .info("Topo energy generator profiler report written to {}", report.toAbsolutePath());
                     enforceWorkingBudget(helper, "combustion generator", budget);
                 })
                 .thenSucceed();
@@ -670,15 +672,15 @@ public final class RecipeLogicProfilerGameTests {
                             "Scheduled-window GC collections: " + gcDelta.collections(),
                             "Scheduled-window GC time: " + gcDelta.collectionMillis() + " ms");
                     Path report = writeReport(
-                            "oi-combustion-generator-scale-profiler.md",
-                            "oi-combustion-generator-scale-profiler-samples.csv",
+                            "topo-combustion-generator-scale-profiler.md",
+                            "topo-combustion-generator-scale-profiler-samples.csv",
                             "runMachineRuntimeScaleProfilerGameTestServer",
                             "combustion_generator_scale_working_tick_profile",
                             scaleTicks.toResults(),
                             List.of(),
                             notes);
                     com.mojang.logging.LogUtils.getLogger()
-                            .info("OI combustion generator scale profiler report written to {}", report.toAbsolutePath());
+                            .info("Topo combustion generator scale profiler report written to {}", report.toAbsolutePath());
                     if (scaleTicks.samples() < Math.max(80, SCALE_REAL_TICK_ITERATIONS / 2)) {
                         helper.fail("Scale profiler captured too few complete aggregate samples: " + scaleTicks.samples());
                     }
@@ -717,14 +719,14 @@ public final class RecipeLogicProfilerGameTests {
                     }
                     results.addAll(overlayTicks.toResults());
                     Path report = writeReport(
-                            "oi-idle-machine-profiler.md",
-                            "oi-idle-machine-profiler-samples.csv",
+                            "topo-idle-machine-profiler.md",
+                            "topo-idle-machine-profiler-samples.csv",
                             "runIdleMachineProfilerGameTestServer",
                             "advanced_generator_idle_tick_profile",
                             results,
                             List.of());
                     com.mojang.logging.LogUtils.getLogger()
-                            .info("OI idle machine profiler report written to {}", report.toAbsolutePath());
+                            .info("Topo idle machine profiler report written to {}", report.toAbsolutePath());
                 })
                 .thenSucceed();
     }
@@ -741,14 +743,14 @@ public final class RecipeLogicProfilerGameTests {
                                                       long baseGameTime) {
         List<ProfileResult> results = new ArrayList<>();
         RecipeLogic.State parkedState = logic.state();
-        OIRecipeType<OIRecipe> recipeType = BuiltinOIRecipeTypes.ENERGY_COMPRESSOR;
+        TopoRecipeType<TopoRecipe> recipeType = BuiltinTopoRecipeTypes.ENERGY_COMPRESSOR;
 
         var holder = recipeType.findRecipe(machine);
         if (holder == null) {
             helper.fail("Idle profiler expects the pure tick conversion recipe to match an empty machine");
             throw new IllegalStateException("unreachable");
         }
-        OIRecipe recipe = holder.value();
+        TopoRecipe recipe = holder.value();
         results.add(new ProfileResult(
                 "idle_parked_state_" + parkedState,
                 0,
@@ -856,7 +858,7 @@ public final class RecipeLogicProfilerGameTests {
     private static List<ProfileResult> runGeneratorProfile(
                                                            MachineBlockEntity machine,
                                                            RecipeLogic logic,
-                                                           OIRecipe activeRecipe,
+                                                           TopoRecipe activeRecipe,
                                                            long baseGameTime) {
         List<ProfileResult> results = new ArrayList<>();
         ScalarResourcePort energyOutput = machine.machineComponents().require(ScalarResourcePort.ENERGY_OUTPUT_1);
@@ -935,7 +937,7 @@ public final class RecipeLogicProfilerGameTests {
     private static List<ProfileResult> runProfile(
                                                   MachineBlockEntity machine,
                                                   RecipeLogic logic,
-                                                  OIRecipe activeRecipe,
+                                                  TopoRecipe activeRecipe,
                                                   long baseGameTime) {
         List<ProfileResult> results = new ArrayList<>();
 
@@ -1250,7 +1252,7 @@ public final class RecipeLogicProfilerGameTests {
                                        Path csv,
                                        List<String> runNotes) {
         StringBuilder report = new StringBuilder(1024);
-        report.append("# OI Recipe Logic Profiler\n\n");
+        report.append("# Topo Recipe Logic Profiler\n\n");
         report.append("Generated: ").append(Instant.now()).append("\n\n");
         report.append("Iterations: ").append(ITERATIONS).append("\n\n");
         report.append("Scheduled real ticks: ").append(REAL_TICK_ITERATIONS).append("\n\n");
@@ -1445,7 +1447,7 @@ public final class RecipeLogicProfilerGameTests {
     }
 
     private static MachineBlockEntity placeMacerator(GameTestHelper helper) {
-        helper.setBlock(MACHINE_POS, BuiltinOIMachines.MACERATOR_T1.registeredBlock().getDefaultState());
+        helper.setBlock(MACHINE_POS, BuiltinTopoMachines.MACERATOR_T1.registeredBlock().getDefaultState());
         return helper.getBlockEntity(MACHINE_POS, MachineBlockEntity.class);
     }
 
@@ -1454,12 +1456,12 @@ public final class RecipeLogicProfilerGameTests {
     }
 
     private static MachineBlockEntity placeEnergyGenerator(GameTestHelper helper, BlockPos position) {
-        helper.setBlock(position, BuiltinOIMachines.COMBUSTION_GENERATOR_T1.registeredBlock().getDefaultState());
+        helper.setBlock(position, BuiltinTopoMachines.COMBUSTION_GENERATOR_T1.registeredBlock().getDefaultState());
         return helper.getBlockEntity(position, MachineBlockEntity.class);
     }
 
     private static MachineBlockEntity placeAdvancedGenerator(GameTestHelper helper) {
-        helper.setBlock(MACHINE_POS, BuiltinOIMachines.ENERGY_COMPRESSOR_T2.registeredBlock().getDefaultState());
+        helper.setBlock(MACHINE_POS, BuiltinTopoMachines.ENERGY_COMPRESSOR_T2.registeredBlock().getDefaultState());
         return helper.getBlockEntity(MACHINE_POS, MachineBlockEntity.class);
     }
 
@@ -1502,8 +1504,8 @@ public final class RecipeLogicProfilerGameTests {
         }
         try (Transaction transaction = Transaction.openRoot()) {
             int inserted = input.insert(ItemResource.of(MaterialHelper.requireItem(
-                    net.ptcrys.topo.datav2.material.BuiltinOIMaterials.IRON,
-                    net.ptcrys.topo.datav2.material.BuiltinOIMaterialForms.ORE)), 1, transaction);
+                    BuiltinTopoMaterials.IRON,
+                    BuiltinTopoMaterialForms.ORE)), 1, transaction);
             if (inserted != 1) {
                 helper.fail("Profiler setup should insert one iron ore, inserted " + inserted);
             }
@@ -1511,20 +1513,20 @@ public final class RecipeLogicProfilerGameTests {
         }
     }
 
-    private static OIRecipe activeRecipe(
-                                         GameTestHelper helper,
-                                         MachineBlockEntity machine,
-                                         RecipeLogic logic,
-                                         OIRecipeType<OIRecipe> recipeType) {
+    private static TopoRecipe activeRecipe(
+                                           GameTestHelper helper,
+                                           MachineBlockEntity machine,
+                                           RecipeLogic logic,
+                                           TopoRecipeType<TopoRecipe> recipeType) {
         ResourceKey<Recipe<?>> recipeId = logic.activeRecipeId();
         if (recipeId == null) {
             helper.fail("Profiler setup should have an active recipe id");
         }
         var holder = recipeType.resolveRecipe(helper.getLevel().getServer(), recipeId);
         if (holder == null) {
-            helper.fail("Profiler setup should resolve active OI recipe " + recipeId);
+            helper.fail("Profiler setup should resolve active Topo recipe " + recipeId);
         }
-        OIRecipe modified = holder.value();
+        TopoRecipe modified = holder.value();
         for (var match : machine.machineComponents().services(RecipeModifier.KEY, logic)) {
             modified = match.value().modify(modified, machine);
         }

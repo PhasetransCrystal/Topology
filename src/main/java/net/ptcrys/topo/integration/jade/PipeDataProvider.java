@@ -8,7 +8,7 @@ import net.ptcrys.topo.api.pipe.network.PipeLevelRuntime;
 import net.ptcrys.topo.api.pipe.network.PipeNetwork;
 import net.ptcrys.topo.api.pipe.network.PipeNetworkEngine;
 import net.ptcrys.topo.api.pipe.network.PipeNodeRecord;
-import net.ptcrys.topo.data.pipe.BuiltinOIPipeDistributionStrategies;
+import net.ptcrys.topo.data.pipe.BuiltinTopoPipeDistributionStrategies;
 import net.ptcrys.topo.helper.IdHelper;
 
 import net.minecraft.core.BlockPos;
@@ -101,7 +101,7 @@ public final class PipeDataProvider implements IServerDataProvider<BlockAccessor
             extract.putInt(EXTRACT_RATE_KEY, Math.clamp(strategy.budget(definition, config), 0, maxAmount));
             extract.putInt(EXTRACT_CAP_KEY, maxAmount);
             extract.putInt(EXTRACT_INTERVAL_KEY, interval);
-            if (config instanceof BuiltinOIPipeDistributionStrategies.ByDistanceConfig byDistance) {
+            if (config instanceof BuiltinTopoPipeDistributionStrategies.ByDistanceConfig byDistance) {
                 extract.putString(EXTRACT_DETAIL_KEY, byDistance.order().nameLang().key());
             }
             data.put(EXTRACT_PREFIX + direction.getSerializedName(), extract);

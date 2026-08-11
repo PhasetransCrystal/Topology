@@ -1,6 +1,6 @@
 package net.ptcrys.topo.mixin;
 
-import net.ptcrys.topo.apiv2.ore.engine.OreChunkPlacer;
+import net.ptcrys.topo.api.ore.engine.OreChunkPlacer;
 
 import net.minecraft.world.level.StructureManager;
 import net.minecraft.world.level.WorldGenLevel;
@@ -22,10 +22,10 @@ public abstract class OreChunkGeneratorMixin {
 
     @Inject(method = "applyBiomeDecoration", at = @At("TAIL"))
     private void topo$placeDeterministicOres(
-                                                          WorldGenLevel level,
-                                                          ChunkAccess chunk,
-                                                          StructureManager structureManager,
-                                                          CallbackInfo callbackInfo) {
+                                             WorldGenLevel level,
+                                             ChunkAccess chunk,
+                                             StructureManager structureManager,
+                                             CallbackInfo callbackInfo) {
         OreChunkPlacer.place(level, chunk);
     }
 }

@@ -3,7 +3,7 @@ package net.ptcrys.topo.api.pipe;
 import net.ptcrys.registrylib.RegistryCore;
 import net.ptcrys.registrylib.builders.BlockBuilder;
 import net.ptcrys.registrylib.util.entry.BlockEntry;
-import net.ptcrys.topo.apiv2.machine.resource.MachineResourceType;
+import net.ptcrys.topo.api.machine.resource.MachineResourceType;
 
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;

@@ -50,8 +50,8 @@ public class PipeBlock extends Block implements BlockUIMenuType.BlockUI {
     public static final EnumProperty<PipeSideVisual> EAST = EnumProperty.create("east", PipeSideVisual.class);
 
     /**
-     * Pipe interaction accepts anything tagged {@code c:tools/wrench} (OI wrenches carry it; other
-     * mods' wrenches work out of the box). The OI wrench item itself opts into sneak-bypass so the
+     * Pipe interaction accepts anything tagged {@code c:tools/wrench} (Topo wrenches carry it; other
+     * mods' wrenches work out of the box). The Topo wrench item itself opts into sneak-bypass so the
      * shift-click side cycling below stays reachable; foreign tag-only wrenches keep the vanilla
      * sneak behavior and therefore only support the non-sneak interactions.
      */

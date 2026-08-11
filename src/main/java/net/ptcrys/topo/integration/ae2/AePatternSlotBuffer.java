@@ -1,7 +1,7 @@
 package net.ptcrys.topo.integration.ae2;
 
-import net.ptcrys.topo.apiv2.machine.resource.DirectSlotResourceAccess;
-import net.ptcrys.topo.apiv2.machine.resource.RecipeSearchPoolId;
+import net.ptcrys.topo.api.machine.resource.DirectSlotResourceAccess;
+import net.ptcrys.topo.api.machine.resource.RecipeSearchPoolId;
 
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.storage.ValueInput;

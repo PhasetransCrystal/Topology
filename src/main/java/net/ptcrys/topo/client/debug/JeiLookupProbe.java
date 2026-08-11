@@ -1,8 +1,8 @@
 package net.ptcrys.topo.client.debug;
 
-import net.ptcrys.topo.apiv2.machine.MachineDefinition;
-import net.ptcrys.topo.apiv2.machine.Machines;
-import net.ptcrys.topo.apiv2.machine.ui.recipe.XeiRecipeLookup;
+import net.ptcrys.topo.api.machine.MachineDefinition;
+import net.ptcrys.topo.api.machine.Machines;
+import net.ptcrys.topo.api.machine.ui.recipe.XeiRecipeLookup;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.MouseHandler;
@@ -49,24 +49,24 @@ import java.util.Locale;
 
 /**
  * 进度条点击查配方全自动游戏内验证探针(同 {@link TooltipProbe} 的流水线骨架,独立 flag):
- * 仅当工作目录存在 {@code oi-jei-lookup-probe.flag} 时激活;自动建平坦世界,放一台指定机器,
+ * 仅当工作目录存在 {@code topo-jei-lookup-probe.flag} 时激活;自动建平坦世界,放一台指定机器,
  * 经 {@link BlockUIMenuType#openUI} 打开真实机器 UI,等 JEI runtime 就绪(插座可用),在元素树
- * 里按 id 定位 {@code oi_recipe_progress_bar},虚拟鼠标悬停截图(肉眼验收 tooltip),再经
+ * 里按 id 定位 {@code topo_recipe_progress_bar},虚拟鼠标悬停截图(肉眼验收 tooltip),再经
  * {@code Screen.mouseClicked} 走真实点击管线;CHECK 断言当前屏切到 JEI 配方屏(类名 mezz.jei
  * 前缀)并截图;随后在 JEI 屏内沿配方区网格扫描,借 GatherComponents 命中非空物品即停在该槽,
  * 截图物品 tooltip 并断言:模组名行唯一(gather 层恰一条 + Jade 物品模组名功能已被 mods.toml
  * 元数据关停)、面板元素紧贴物品名(index 1,压在模组名行之上),报告写
- * {@code oi-jei-lookup-probe-report.txt} 后自动退出。
+ * {@code topo-jei-lookup-probe-report.txt} 后自动退出。
  */
 public final class JeiLookupProbe {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("OI-JeiLookupProbe");
-    private static final Path FLAG_FILE = Path.of("oi-jei-lookup-probe.flag");
-    private static final Path REPORT_FILE = Path.of("oi-jei-lookup-probe-report.txt");
+    private static final Logger LOGGER = LoggerFactory.getLogger("Topo-JeiLookupProbe");
+    private static final Path FLAG_FILE = Path.of("topo-jei-lookup-probe.flag");
+    private static final Path REPORT_FILE = Path.of("topo-jei-lookup-probe-report.txt");
     /** 每轮唯一世界名:复用同名存档会撞上一轮的残留场景(并行会话共用 run/ 时尤甚)。 */
-    private static final String LEVEL_ID = "oi-jei-lookup-probe-" + (System.currentTimeMillis() % 100_000_000L);
+    private static final String LEVEL_ID = "topo-jei-lookup-probe-" + (System.currentTimeMillis() % 100_000_000L);
     private static final int WAIT_TIMEOUT_TICKS = 2400;
-    private static final String PROGRESS_BAR_ID = "oi_recipe_progress_bar";
+    private static final String PROGRESS_BAR_ID = "topo_recipe_progress_bar";
 
     private enum State {
         WAIT_TITLE,
@@ -170,7 +170,7 @@ public final class JeiLookupProbe {
                     report.append("HUD hidden for unobstructed machine screenshot\n");
                 }
                 if (countdown == 15) {
-                    grabScreenshot(minecraft, "oi-jei-lookup-probe-machine");
+                    grabScreenshot(minecraft, "topo-jei-lookup-probe-machine");
                 }
                 if (countdown == 10) {
                     minecraft.options.hideGui = false;
@@ -214,7 +214,7 @@ public final class JeiLookupProbe {
             case HOVER -> {
                 hoverAt(minecraft, clickGuiX, clickGuiY);
                 if (countdown == 5) {
-                    grabScreenshot(minecraft, "oi-jei-lookup-probe-hover");
+                    grabScreenshot(minecraft, "topo-jei-lookup-probe-hover");
                 }
                 if (--countdown <= 0) {
                     dispatchClick(minecraft);
@@ -226,7 +226,7 @@ public final class JeiLookupProbe {
                 var screen = minecraft.screen;
                 if (screen != null && screen.getClass().getName().startsWith("mezz.jei")) {
                     report.append("JEI screen open: ").append(screen.getClass().getName()).append(" -> PASS\n");
-                    grabScreenshot(minecraft, "oi-jei-lookup-probe-jei-screen");
+                    grabScreenshot(minecraft, "topo-jei-lookup-probe-jei-screen");
                     buildSweepGrid(minecraft);
                     state = State.SWEEP_ITEM;
                     return;
@@ -235,7 +235,7 @@ public final class JeiLookupProbe {
                     report.append("screen after click: ")
                             .append(screen == null ? "null" : screen.getClass().getName())
                             .append(" (expected mezz.jei.* recipes gui) -> FAIL\n");
-                    grabScreenshot(minecraft, "oi-jei-lookup-probe-fail");
+                    grabScreenshot(minecraft, "topo-jei-lookup-probe-fail");
                     countdown = 5;
                     state = State.FLUSH;
                 }
@@ -250,7 +250,7 @@ public final class JeiLookupProbe {
                 }
                 if (sweepIndex >= sweepPoints.size()) {
                     report.append("sweep exhausted without hitting an item slot -> FAIL\n");
-                    grabScreenshot(minecraft, "oi-jei-lookup-probe-sweep-fail");
+                    grabScreenshot(minecraft, "topo-jei-lookup-probe-sweep-fail");
                     countdown = 5;
                     state = State.FLUSH;
                     return;
@@ -264,7 +264,7 @@ public final class JeiLookupProbe {
                 // 停在命中槽位让 tooltip 持续渲染;截图供肉眼验收,再按 gather 快照断言模组名行唯一。
                 hoverAt(minecraft, sweepHoverX, sweepHoverY);
                 if (countdown == 5) {
-                    grabScreenshot(minecraft, "oi-jei-lookup-probe-item-tooltip");
+                    grabScreenshot(minecraft, "topo-jei-lookup-probe-item-tooltip");
                 }
                 if (--countdown <= 0) {
                     assertSingleModNameLine();

@@ -1,12 +1,14 @@
 package net.ptcrys.topo.gametest;
 
-import net.ptcrys.topo.apiv2.machine.MachineBlock;
-import net.ptcrys.topo.apiv2.machine.MachineBlockEntity;
-import net.ptcrys.topo.apiv2.machine.component.MachineWorkControl.WorkMode;
-import net.ptcrys.topo.apiv2.machine.component.RecipeLogic;
-import net.ptcrys.topo.data.pipe.BuiltinOIPipes;
-import net.ptcrys.topo.datav2.machine.BuiltinOIMachines;
-import net.ptcrys.topo.datav2.machine.common.component.resource.ScalarResourcePort;
+import net.ptcrys.topo.api.machine.MachineBlock;
+import net.ptcrys.topo.api.machine.MachineBlockEntity;
+import net.ptcrys.topo.api.machine.component.MachineWorkControl.WorkMode;
+import net.ptcrys.topo.api.machine.component.RecipeLogic;
+import net.ptcrys.topo.data.machine.BuiltinTopoMachines;
+import net.ptcrys.topo.data.machine.common.component.resource.ScalarResourcePort;
+import net.ptcrys.topo.data.material.BuiltinTopoMaterialForms;
+import net.ptcrys.topo.data.material.BuiltinTopoMaterials;
+import net.ptcrys.topo.data.pipe.BuiltinTopoPipes;
 import net.ptcrys.topo.helper.IdHelper;
 import net.ptcrys.topo.helper.MaterialHelper;
 import net.ptcrys.topo.integration.jade.WrenchToolHandler;
@@ -183,7 +185,7 @@ public final class EquipmentGameTests {
 
     private static void wrenchPipeIntentCycleCostsDurability(GameTestHelper helper) {
         BlockPos pipePos = new BlockPos(1, 1, 1);
-        helper.setBlock(pipePos, BuiltinOIPipes.ITEM_PIPE_BASIC.registeredBlock().getDefaultState());
+        helper.setBlock(pipePos, BuiltinTopoPipes.ITEM_PIPE_BASIC.registeredBlock().getDefaultState());
         Player player = helper.makeMockPlayer(GameType.SURVIVAL);
         ItemStack wrench = equipmentStack("iron_wrench");
         player.setItemInHand(InteractionHand.MAIN_HAND, wrench);
@@ -205,7 +207,7 @@ public final class EquipmentGameTests {
 
     // ---- 296 ----
     private static void wrenchDismantlesPipesFast(GameTestHelper helper) {
-        helper.setBlock(PIPE_POS, BuiltinOIPipes.ITEM_PIPE_BASIC.registeredBlock().getDefaultState());
+        helper.setBlock(PIPE_POS, BuiltinTopoPipes.ITEM_PIPE_BASIC.registeredBlock().getDefaultState());
         BlockState pipeState = helper.getLevel().getBlockState(helper.absolutePos(PIPE_POS));
         if (!pipeState.is(MachineBlock.MINEABLE_WITH_WRENCH)) {
             helper.fail("Pipe blocks must join oi:mineable_with_wrench", PIPE_POS);
@@ -342,14 +344,14 @@ public final class EquipmentGameTests {
     // ---- fixtures -----------------------------------------------------------------------------
 
     private static MachineBlockEntity placeMacerator(GameTestHelper helper) {
-        helper.setBlock(MACHINE_POS, BuiltinOIMachines.MACERATOR_T1.registeredBlock().getDefaultState());
+        helper.setBlock(MACHINE_POS, BuiltinTopoMachines.MACERATOR_T1.registeredBlock().getDefaultState());
         return helper.getBlockEntity(MACHINE_POS, MachineBlockEntity.class);
     }
 
     private static ItemResource ironOreResource() {
         return ItemResource.of(MaterialHelper.requireItem(
-                net.ptcrys.topo.datav2.material.BuiltinOIMaterials.IRON,
-                net.ptcrys.topo.datav2.material.BuiltinOIMaterialForms.ORE));
+                BuiltinTopoMaterials.IRON,
+                BuiltinTopoMaterialForms.ORE));
     }
 
     private static MachineBlockEntity chargeEnergy(MachineBlockEntity machine) {

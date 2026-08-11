@@ -1,9 +1,9 @@
 package net.ptcrys.topo.integration.jade;
 
-import net.ptcrys.topo.apiv2.machine.ui.MachineUiComponentStyle;
-import net.ptcrys.topo.apiv2.machine.ui.MachineUiComponentTemplate;
-import net.ptcrys.topo.apiv2.machine.ui.MachineUiLayout;
-import net.ptcrys.topo.apiv2.machine.ui.ResourceBar;
+import net.ptcrys.topo.api.machine.ui.MachineUiComponentStyle;
+import net.ptcrys.topo.api.machine.ui.MachineUiComponentTemplate;
+import net.ptcrys.topo.api.machine.ui.MachineUiLayout;
+import net.ptcrys.topo.api.machine.ui.ResourceBar;
 import net.ptcrys.topo.client.debug.UiPerfProbe;
 import net.ptcrys.topo.helper.IdHelper;
 
@@ -27,7 +27,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/** Client-side Jade tooltip renderer for OI machine scalar resource bars and timing trees. */
+/** Client-side Jade tooltip renderer for Topo machine scalar resource bars and timing trees. */
 public final class MachineComponentProvider implements IBlockComponentProvider {
 
     public static final MachineComponentProvider INSTANCE = new MachineComponentProvider();
@@ -191,7 +191,7 @@ public final class MachineComponentProvider implements IBlockComponentProvider {
                         Float.NaN,
                         AlignItems.FLEX_START,
                         null,
-                        "oi_jade_scalar_bars",
+                        "topo_jade_scalar_bars",
                         scope -> {
                             for (ResourceBar bar : bars) {
                                 scope.add(bar);

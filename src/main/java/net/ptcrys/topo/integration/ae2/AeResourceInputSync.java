@@ -1,12 +1,12 @@
 package net.ptcrys.topo.integration.ae2;
 
+import net.ptcrys.topo.api.api.tick.TickHandle;
+import net.ptcrys.topo.api.machine.component.ComponentContext;
+import net.ptcrys.topo.api.machine.component.ComponentKey;
+import net.ptcrys.topo.api.machine.component.MachineComponents;
+import net.ptcrys.topo.api.machine.data.DataValueIoField;
+import net.ptcrys.topo.api.machine.resource.ResourcePort;
 import net.ptcrys.topo.api.tick.MachineTicker;
-import net.ptcrys.topo.api.tick.TickHandle;
-import net.ptcrys.topo.apiv2.machine.component.ComponentContext;
-import net.ptcrys.topo.apiv2.machine.component.ComponentKey;
-import net.ptcrys.topo.apiv2.machine.component.MachineComponents;
-import net.ptcrys.topo.apiv2.machine.data.DataValueIoField;
-import net.ptcrys.topo.apiv2.machine.resource.ResourcePort;
 
 import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.resource.Resource;
@@ -23,10 +23,10 @@ import java.util.List;
  *
  * <p>
  * This trait runs every 40 game ticks via {@link MachineTicker}, but the work it triggers is
- * split into two halves to keep OI's {@code runProfiledTick} accounting tight:
+ * split into two halves to keep Topo's {@code runProfiledTick} accounting tight:
  *
  * <ol>
- * <li>{@link #tick(long, TickHandle)} (the OI-profiled half) runs {@link #fastPlan()} only:
+ * <li>{@link #tick(long, TickHandle)} (the Topo-profiled half) runs {@link #fastPlan()} only:
  * it reads slot state, makes intent decisions, and writes them into a parallel-array
  * {@link AeConfiguredResourceSync.PendingPlan}. It opens no transaction and makes no
  * network extract/insert call beyond the rare stray-content push branch.</li>

@@ -1,6 +1,6 @@
 package net.ptcrys.topo.api.pipe.survey;
 
-import net.ptcrys.topo.api.lang.OIApiLang;
+import net.ptcrys.topo.api.api.lang.TopoApiLang;
 import net.ptcrys.topo.api.pipe.PipeSideRole;
 import net.ptcrys.topo.api.pipe.network.PipeLevelRuntime;
 import net.ptcrys.topo.api.pipe.network.PipeNetwork;
@@ -67,7 +67,7 @@ public final class PipeSurveyManager {
         Survey survey = new Survey(player.level().dimension(), pos.asLong(), range);
         SURVEYS.put(player.getUUID(), survey);
         player.sendOverlayMessage(
-                OIApiLang.EQUIPMENT_PIPE_SURVEYOR_ANCHORED.getComponent(range));
+                TopoApiLang.EQUIPMENT_PIPE_SURVEYOR_ANCHORED.getComponent(range));
         send(player, survey);
     }
 
@@ -76,7 +76,7 @@ public final class PipeSurveyManager {
         Survey survey = SURVEYS.get(player.getUUID());
         if (survey == null || player.level().dimension() != survey.dimension) {
             player.sendOverlayMessage(
-                    OIApiLang.EQUIPMENT_PIPE_SURVEYOR_NEED_ANCHOR.getComponent());
+                    TopoApiLang.EQUIPMENT_PIPE_SURVEYOR_NEED_ANCHOR.getComponent());
             return;
         }
         long packed = pos.asLong();
@@ -84,11 +84,11 @@ public final class PipeSurveyManager {
             survey.pointA = packed;
             survey.pointB = PipeSurveySnapshot.NO_POINT;
             player.sendOverlayMessage(
-                    OIApiLang.EQUIPMENT_PIPE_SURVEYOR_POINT_A.getComponent());
+                    TopoApiLang.EQUIPMENT_PIPE_SURVEYOR_POINT_A.getComponent());
         } else if (packed != survey.pointA) {
             survey.pointB = packed;
             player.sendOverlayMessage(
-                    OIApiLang.EQUIPMENT_PIPE_SURVEYOR_POINT_B.getComponent());
+                    TopoApiLang.EQUIPMENT_PIPE_SURVEYOR_POINT_B.getComponent());
         }
         survey.lastSendGameTime = Long.MIN_VALUE; // 选点立即可见,不受限频
         send(player, survey);
@@ -98,7 +98,7 @@ public final class PipeSurveyManager {
     public static void clear(net.minecraft.world.entity.player.Player player) {
         if (SURVEYS.remove(player.getUUID()) != null) {
             player.sendOverlayMessage(
-                    OIApiLang.EQUIPMENT_PIPE_SURVEYOR_CLEARED.getComponent());
+                    TopoApiLang.EQUIPMENT_PIPE_SURVEYOR_CLEARED.getComponent());
             sendPayload(player, PipeSurveySnapshot.empty());
         }
     }

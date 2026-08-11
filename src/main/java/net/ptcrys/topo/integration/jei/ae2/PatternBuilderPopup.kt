@@ -1,16 +1,16 @@
 package net.ptcrys.topo.integration.jei.ae2
 
-import net.ptcrys.topo.apiv2.machine.MachineDefinition
-import net.ptcrys.topo.apiv2.machine.multiblock.MultiblockControllerMetadata
-import net.ptcrys.topo.apiv2.machine.multiblock.ability.PartRole
-import net.ptcrys.topo.apiv2.machine.multiblock.ui.BlueprintPreview
-import net.ptcrys.topo.apiv2.machine.ui.LcdData
-import net.ptcrys.topo.apiv2.machine.ui.MachineUiComponentStyle
-import net.ptcrys.topo.apiv2.machine.ui.MachineUiComponentTemplate
-import net.ptcrys.topo.apiv2.machine.ui.MachineUiContainerTemplate
-import net.ptcrys.topo.apiv2.machine.ui.MachineUiIcons
-import net.ptcrys.topo.apiv2.machine.ui.MachineUiLayout
-import net.ptcrys.topo.datav2.machine.BuiltinOIMachineUiLang
+import net.ptcrys.topo.api.machine.MachineDefinition
+import net.ptcrys.topo.api.machine.multiblock.MultiblockControllerMetadata
+import net.ptcrys.topo.api.machine.multiblock.ability.PartRole
+import net.ptcrys.topo.api.machine.multiblock.ui.BlueprintPreview
+import net.ptcrys.topo.api.machine.ui.LcdData
+import net.ptcrys.topo.api.machine.ui.MachineUiComponentStyle
+import net.ptcrys.topo.api.machine.ui.MachineUiComponentTemplate
+import net.ptcrys.topo.api.machine.ui.MachineUiContainerTemplate
+import net.ptcrys.topo.api.machine.ui.MachineUiIcons
+import net.ptcrys.topo.api.machine.ui.MachineUiLayout
+import net.ptcrys.topo.data.machine.BuiltinTopoMachineUiLang
 
 import net.minecraft.client.Minecraft
 import net.minecraft.core.component.DataComponents
@@ -225,7 +225,7 @@ object PatternBuilderPopup {
 
     private val logger = LoggerFactory.getLogger(PatternBuilderPopup::class.java)
 
-    // Pattern-builder labels come from BuiltinOIMachineUiLang handles — no key concatenation.
+    // Pattern-builder labels come from BuiltinTopoMachineUiLang handles — no key concatenation.
 
     // ====================================================================== //
     //  JEI transfer entry point
@@ -306,7 +306,7 @@ object PatternBuilderPopup {
 
     private fun buildPopup(state: PatternBuilderState, title: Component, onCommit: () -> Unit, onClose: () -> Unit): UIElement {
         val panel = MachineUiContainerTemplate.createPopupPanel(MachineUiComponentStyle.patternBuilderPanelWidth).apply {
-            setId("oi_pattern_builder_panel")
+            setId("topo_pattern_builder_panel")
             // Stop clicks on the panel from reaching the backdrop's cancel path, and wheel events
             // from reaching whatever sits underneath.
             addEventListener(UIEvents.MOUSE_DOWN) { it.stopPropagation() }
@@ -314,7 +314,7 @@ object PatternBuilderPopup {
 
             addChild(
                 Label().apply {
-                    setId("oi_pattern_builder_title")
+                    setId("topo_pattern_builder_title")
                     setText(title)
                     textStyle {
                         it.textColor(MachineUiComponentStyle.textSelected)
@@ -330,7 +330,7 @@ object PatternBuilderPopup {
                 addChild(
                     MachineUiLayout.horizontalDivider(
                         height = MachineUiComponentStyle.boxTextureWidth,
-                        id = "oi_pattern_builder_section_divider",
+                        id = "topo_pattern_builder_section_divider",
                     ),
                 )
             }
@@ -340,7 +340,7 @@ object PatternBuilderPopup {
         }
 
         return MachineUiContainerTemplate.createPopupBackdrop().apply {
-            setId("oi_pattern_builder_backdrop")
+            setId("topo_pattern_builder_backdrop")
             // ESC is handled by the layered Screen (see openFromTransfer); only backdrop clicks
             // need an explicit cancel here.
             addEventListener(UIEvents.MOUSE_DOWN) { event ->
@@ -355,12 +355,12 @@ object PatternBuilderPopup {
     //  Fixed block section
     // ====================================================================== //
 
-    private fun buildFixedSection(state: PatternBuilderState): UIElement = MachineUiLayout.column(gap = ROW_GAP, id = "oi_pattern_builder_fixed_section") {
+    private fun buildFixedSection(state: PatternBuilderState): UIElement = MachineUiLayout.column(gap = ROW_GAP, id = "topo_pattern_builder_fixed_section") {
         root.layout { it.widthPercent(100f) }
         add(
             Label().apply {
-                setId("oi_pattern_builder_fixed_header")
-                setText(BuiltinOIMachineUiLang.UI_PATTERN_BUILDER_FIXED_BLOCKS.getComponent())
+                setId("topo_pattern_builder_fixed_header")
+                setText(BuiltinTopoMachineUiLang.UI_PATTERN_BUILDER_FIXED_BLOCKS.getComponent())
                 textStyle {
                     it.textColor(MachineUiComponentStyle.textMuted)
                     it.textShadow(false)
@@ -382,17 +382,17 @@ object PatternBuilderPopup {
             DynamicTexture.of {
                 if (state.fixedEnabled.getOrDefault(index, true)) Icons.CHECKBOX_MARKED else Icons.CHECKBOX_BLANK
             },
-            BuiltinOIMachineUiLang.UI_PATTERN_BUILDER_TOGGLE_FIXED.key(),
+            BuiltinTopoMachineUiLang.UI_PATTERN_BUILDER_TOGGLE_FIXED.key(),
         ) {
             val current = state.fixedEnabled.getOrDefault(index, true)
             state.fixedEnabled[index] = !current
             state.notifyChanged()
         }.apply {
-            setId("oi_pattern_builder_fixed_toggle_$index")
+            setId("topo_pattern_builder_fixed_toggle_$index")
         }
 
         val slot = MachineUiComponentTemplate.createItemSlot().apply {
-            setId("oi_pattern_builder_fixed_slot_$index")
+            setId("topo_pattern_builder_fixed_slot_$index")
             setItem(entry.displayStack)
             layout {
                 it.width(MachineUiComponentStyle.slotSize.toFloat())
@@ -402,7 +402,7 @@ object PatternBuilderPopup {
         }
 
         val nameLabel = Label().apply {
-            setId("oi_pattern_builder_fixed_name_$index")
+            setId("topo_pattern_builder_fixed_name_$index")
             setText(entry.displayStack.hoverName)
             textStyle {
                 it.textColor(MachineUiComponentStyle.textNormal)
@@ -413,7 +413,7 @@ object PatternBuilderPopup {
         }
 
         val countChip = Label().apply {
-            setId("oi_pattern_builder_fixed_count_$index")
+            setId("topo_pattern_builder_fixed_count_$index")
             setText(Component.literal("×${entry.currentCount(state)}"))
             textStyle {
                 it.textColor(if (isCasingGroup) MachineUiComponentStyle.ledInfo else MachineUiComponentStyle.ledWaiting)
@@ -451,7 +451,7 @@ object PatternBuilderPopup {
             gap = MachineUiComponentStyle.boxAllGap,
             widthPercent = 100f,
             alignItems = AlignItems.CENTER,
-            id = "oi_pattern_builder_fixed_row_$index",
+            id = "topo_pattern_builder_fixed_row_$index",
         ) {
             add(toggleButton)
             add(slot)
@@ -478,7 +478,7 @@ object PatternBuilderPopup {
             capabilityContentWidth(),
             estimateScrollerHeight(state, constraintList),
         ).apply {
-            setId("oi_pattern_builder_capability_scroller")
+            setId("topo_pattern_builder_capability_scroller")
         }
         for ((index, constraint) in constraintList.withIndex()) {
             val candidates = state.candidatesByCapability[constraint.capability] ?: continue
@@ -519,11 +519,11 @@ object PatternBuilderPopup {
             gap = 0f,
             widthPercent = 100f,
             alignItems = AlignItems.CENTER,
-            id = "oi_pattern_builder_capability_header_$idPath",
+            id = "topo_pattern_builder_capability_header_$idPath",
         ) {
             add(
                 Label().apply {
-                    setId("oi_pattern_builder_capability_name_$idPath")
+                    setId("topo_pattern_builder_capability_name_$idPath")
                     setText(capability.displayName())
                     textStyle {
                         it.textColor(MachineUiComponentStyle.textNormal)
@@ -536,7 +536,7 @@ object PatternBuilderPopup {
             )
             add(
                 Label().apply {
-                    setId("oi_pattern_builder_capability_min_$idPath")
+                    setId("topo_pattern_builder_capability_min_$idPath")
                     setText(Component.literal("≥${constraint.min}"))
                     textStyle {
                         it.textColor(MachineUiComponentStyle.ledInfo)
@@ -561,7 +561,7 @@ object PatternBuilderPopup {
             widthPercent = 100f,
             alignItems = AlignItems.CENTER,
             flexWrap = FlexWrap.WRAP,
-            id = "oi_pattern_builder_capability_body_$idPath",
+            id = "topo_pattern_builder_capability_body_$idPath",
         ) {
             for (candidate in candidates) {
                 add(buildCandidateEntry(state, candidate))
@@ -570,7 +570,7 @@ object PatternBuilderPopup {
 
         val card = MachineUiLayout.column(
             gap = ROW_GAP,
-            id = "oi_pattern_builder_capability_card_$idPath",
+            id = "topo_pattern_builder_capability_card_$idPath",
         ) {
             root.layout {
                 it.paddingAll(MachineUiComponentStyle.boxAllPadding)
@@ -595,7 +595,7 @@ object PatternBuilderPopup {
         val item = candidate.item
 
         val slot = MachineUiComponentTemplate.createItemSlot().apply {
-            setId("oi_pattern_builder_candidate_slot")
+            setId("topo_pattern_builder_candidate_slot")
             setItem(candidate.displayStack)
             layout {
                 it.width(MachineUiComponentStyle.slotSize.toFloat())
@@ -607,7 +607,7 @@ object PatternBuilderPopup {
         }
 
         val countLabel = Label().apply {
-            setId("oi_pattern_builder_candidate_count")
+            setId("topo_pattern_builder_candidate_count")
             setText(Component.literal("${state.selections.getOrDefault(item, 0)}"))
             textStyle {
                 it.textColor(candidateCountColor(state.stockIndex, item, state.selections.getOrDefault(item, 0)))
@@ -625,25 +625,25 @@ object PatternBuilderPopup {
 
         val minusButton = MachineUiComponentTemplate.createIconButton(
             MachineUiIcons.minus(),
-            BuiltinOIMachineUiLang.UI_PATTERN_BUILDER_REMOVE.key(),
+            BuiltinTopoMachineUiLang.UI_PATTERN_BUILDER_REMOVE.key(),
         ) {
             val count = state.selections.getOrDefault(item, 0)
             if (count > 0) {
                 state.selections[item] = count - 1
                 state.notifyChanged()
             }
-        }.apply { setId("oi_pattern_builder_candidate_minus") }
+        }.apply { setId("topo_pattern_builder_candidate_minus") }
 
         val plusButton = MachineUiComponentTemplate.createIconButton(
             MachineUiIcons.plus(),
-            BuiltinOIMachineUiLang.UI_PATTERN_BUILDER_ADD.key(),
+            BuiltinTopoMachineUiLang.UI_PATTERN_BUILDER_ADD.key(),
         ) {
             val count = state.selections.getOrDefault(item, 0)
             if (count < candidate.eligiblePositions && groupHasCapacity(state, candidate)) {
                 state.selections[item] = count + 1
                 state.notifyChanged()
             }
-        }.apply { setId("oi_pattern_builder_candidate_plus") }
+        }.apply { setId("topo_pattern_builder_candidate_plus") }
 
         // Update count display and availability color on every state change.
         state.onChanged {
@@ -655,7 +655,7 @@ object PatternBuilderPopup {
         return MachineUiLayout.row(
             gap = ROW_GAP,
             alignItems = AlignItems.CENTER,
-            id = "oi_pattern_builder_candidate_entry",
+            id = "topo_pattern_builder_candidate_entry",
         ) {
             root.style { it.background(MachineUiComponentStyle.patternBuilderEntryTexture()) }
             root.layout { it.paddingAll(ENTRY_PADDING) }
@@ -703,7 +703,7 @@ object PatternBuilderPopup {
         // Right panel: AE2 pattern input slot usage.
         val rightPanel = MachineUiContainerTemplate.createLcdData(LcdData.Orientation.VERTICAL)
         rightPanel.addLocalBoundEntry(
-            BuiltinOIMachineUiLang.UI_PATTERN_BUILDER_INPUTS_SHORT.getComponent(),
+            BuiltinTopoMachineUiLang.UI_PATTERN_BUILDER_INPUTS_SHORT.getComponent(),
             { Component.literal("${state.distinctInputCount()}/$AE2_MAX_INPUTS") },
             {
                 if (state.distinctInputCount() <= AE2_MAX_INPUTS) {
@@ -718,7 +718,7 @@ object PatternBuilderPopup {
             gap = MachineUiComponentStyle.boxAllGap,
             widthPercent = 100f,
             alignItems = AlignItems.STRETCH,
-            id = "oi_pattern_builder_checklist",
+            id = "topo_pattern_builder_checklist",
         ) {
             if (displayConstraints.isNotEmpty()) {
                 add(
@@ -747,9 +747,9 @@ object PatternBuilderPopup {
 
     private fun buildActionRow(state: PatternBuilderState, onCommit: () -> Unit, onClose: () -> Unit): UIElement {
         val writeButton = MachineUiComponentTemplate.createButton(
-            BuiltinOIMachineUiLang.UI_PATTERN_BUILDER_WRITE.getComponent(),
+            BuiltinTopoMachineUiLang.UI_PATTERN_BUILDER_WRITE.getComponent(),
         ).apply {
-            setId("oi_pattern_builder_commit")
+            setId("topo_pattern_builder_commit")
             layout {
                 it.width(MachineUiComponentStyle.popupActionButtonWidth)
             }
@@ -781,13 +781,13 @@ object PatternBuilderPopup {
             widthPercent = 100f,
             alignItems = AlignItems.CENTER,
             justifyContent = AlignContent.SPACE_BETWEEN,
-            id = "oi_pattern_builder_action_row",
+            id = "topo_pattern_builder_action_row",
         ) {
             add(
                 MachineUiComponentTemplate.createButton(
-                    BuiltinOIMachineUiLang.UI_PATTERN_BUILDER_CANCEL.getComponent(),
+                    BuiltinTopoMachineUiLang.UI_PATTERN_BUILDER_CANCEL.getComponent(),
                 ).apply {
-                    setId("oi_pattern_builder_cancel")
+                    setId("topo_pattern_builder_cancel")
                     layout {
                         it.width(MachineUiComponentStyle.popupActionButtonWidth)
                     }

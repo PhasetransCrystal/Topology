@@ -1,5 +1,12 @@
 package net.ptcrys.topo.api.pipe.ui
 
+import net.ptcrys.topo.api.machine.ui.AmountEditorPopup
+import net.ptcrys.topo.api.machine.ui.ItemPickerPopup
+import net.ptcrys.topo.api.machine.ui.MachineUiComponentStyle
+import net.ptcrys.topo.api.machine.ui.MachineUiContainerTemplate
+import net.ptcrys.topo.api.machine.ui.MachineUiIcons
+import net.ptcrys.topo.api.machine.ui.MachineUiLayout
+import net.ptcrys.topo.api.machine.ui.TopoTextField
 import net.ptcrys.topo.api.pipe.AggregationWindow
 import net.ptcrys.topo.api.pipe.PipeDefinition
 import net.ptcrys.topo.api.pipe.PipeDistributionStrategy
@@ -8,14 +15,7 @@ import net.ptcrys.topo.api.pipe.PipePortFilter
 import net.ptcrys.topo.api.pipe.PipePortStrategyConfig
 import net.ptcrys.topo.api.pipe.network.PipeLevelRuntime
 import net.ptcrys.topo.api.pipe.network.PipeNetworkEngine
-import net.ptcrys.topo.apiv2.machine.ui.AmountEditorPopup
-import net.ptcrys.topo.apiv2.machine.ui.ItemPickerPopup
-import net.ptcrys.topo.apiv2.machine.ui.MachineUiComponentStyle
-import net.ptcrys.topo.apiv2.machine.ui.MachineUiContainerTemplate
-import net.ptcrys.topo.apiv2.machine.ui.MachineUiIcons
-import net.ptcrys.topo.apiv2.machine.ui.MachineUiLayout
-import net.ptcrys.topo.apiv2.machine.ui.OiTextField
-import net.ptcrys.topo.data.pipe.BuiltinOIPipeLang
+import net.ptcrys.topo.data.pipe.BuiltinTopoPipeLang
 
 import net.minecraft.core.BlockPos
 import net.minecraft.core.Direction
@@ -139,26 +139,26 @@ object PipePortConfigUi {
             refreshAmountDerived()
         }
         val sideBinding = boundValue(
-            "oi_pipe_port_side_sync",
+            "topo_pipe_port_side_sync",
             -1,
             DataBindingBuilder.intValS2C { session?.side?.ordinal ?: -1 },
         ).also(syncAnchors::add)
         val strategyBinding = authoritativeIntValue(
-            "oi_pipe_port_strategy_value",
+            "topo_pipe_port_strategy_value",
             0,
             Supplier { session?.run { runtime.portStrategyIndex(pos, side) } ?: 0 },
             Consumer { selected -> session?.run { runtime.uiSelectStrategy(pos, side, selected) } },
             Consumer(::applyStrategy),
         ).also(syncAnchors::add)
         val amountBinding = authoritativeIntValue(
-            "oi_pipe_port_amount_value",
+            "topo_pipe_port_amount_value",
             0,
             Supplier { session?.run { runtime.portAmount(pos, side) } ?: 0 },
             Consumer { amount -> session?.run { runtime.uiSetAmount(pos, side, amount) } },
             Consumer(::applyAmount),
         ).also(syncAnchors::add)
         val intervalBinding = authoritativeIntValue(
-            "oi_pipe_port_interval_value",
+            "topo_pipe_port_interval_value",
             lastInterval,
             Supplier { session?.run { runtime.portInterval(pos, side) } ?: 1 },
             Consumer { interval -> session?.run { runtime.uiSetInterval(pos, side, interval) } },
@@ -197,22 +197,22 @@ object PipePortConfigUi {
 
             val window = offer.aggregation()
             val intervalValue = valueLabel(
-                "oi_pipe_port_interval_value_$index",
+                "topo_pipe_port_interval_value_$index",
                 intervalText(window.initialInterval(), window),
             )
             intervalLabels.add(intervalValue)
             val intervalTitle = if (window.fixed()) {
-                BuiltinOIPipeLang.UI_PIPE_PORT_INTERVAL_FIXED.getComponent()
+                BuiltinTopoPipeLang.UI_PIPE_PORT_INTERVAL_FIXED.getComponent()
             } else {
-                BuiltinOIPipeLang.UI_PIPE_PORT_INTERVAL.getComponent()
+                BuiltinTopoPipeLang.UI_PIPE_PORT_INTERVAL.getComponent()
             }
             val intervalElement: UIElement = if (window.fixed()) {
-                valueChip("oi_pipe_port_interval_chip_$index", intervalValue)
+                valueChip("topo_pipe_port_interval_chip_$index", intervalValue)
             } else {
-                clickableValue("oi_pipe_port_interval_click_$index", intervalValue) {
+                clickableValue("topo_pipe_port_interval_click_$index", intervalValue) {
                     AmountEditorPopup.open(
                         intervalValue,
-                        BuiltinOIPipeLang.UI_PIPE_PORT_INTERVAL_POPUP_TITLE.getComponent(),
+                        BuiltinTopoPipeLang.UI_PIPE_PORT_INTERVAL_POPUP_TITLE.getComponent(),
                         lastInterval.toLong(),
                         window.minInterval().toLong(),
                         window.maxInterval().toLong(),
@@ -223,14 +223,14 @@ object PipePortConfigUi {
             }
 
             val rateValue = valueLabel(
-                "oi_pipe_port_rate_value_$index",
+                "topo_pipe_port_rate_value_$index",
                 amountText(definition, 0, window.initialInterval()),
             )
             rateLabels.add(rateValue)
-            val rateElement = clickableValue("oi_pipe_port_rate_click_$index", rateValue) {
+            val rateElement = clickableValue("topo_pipe_port_rate_click_$index", rateValue) {
                 AmountEditorPopup.open(
                     rateValue,
-                    BuiltinOIPipeLang.UI_PIPE_PORT_AMOUNT_POPUP_TITLE.getComponent(),
+                    BuiltinTopoPipeLang.UI_PIPE_PORT_AMOUNT_POPUP_TITLE.getComponent(),
                     lastAmount.toLong(),
                     0L,
                     definition.maxBatchAmount(lastInterval).toLong(),
@@ -252,12 +252,12 @@ object PipePortConfigUi {
         }
 
         // --- shell ------------------------------------------------------------------------------
-        val sideTitle = mutedLabel("oi_pipe_port_side", Component.literal("..."))
+        val sideTitle = mutedLabel("topo_pipe_port_side", Component.literal("..."))
         val hasFilter = definition.filterSettings().enabled()
         val contentWidth = innerWidth(PANEL_WIDTH)
         val filterView = if (hasFilter) FilterView(definition, session, contentWidth) else null
 
-        val settingsInset = MachineUiLayout.column(gap = 0f, id = "oi_pipe_port_settings") {
+        val settingsInset = MachineUiLayout.column(gap = 0f, id = "topo_pipe_port_settings") {
             root.layout {
                 it.widthPercent(100f)
                 it.flexShrink(0f)
@@ -266,7 +266,7 @@ object PipePortConfigUi {
         }
 
         val panel = MachineUiContainerTemplate.createPopupPanel(PANEL_WIDTH).apply {
-            setId("oi_pipe_port_panel")
+            setId("topo_pipe_port_panel")
             addChild(headerRow(definition, sideTitle, contentWidth))
             addChild(settingsInset)
             filterView?.let { addChild(it.root) }
@@ -275,7 +275,7 @@ object PipePortConfigUi {
         val tabStrip = MachineUiLayout.row(
             gap = MachineUiComponentStyle.boxAllGap,
             widthPercent = 100f,
-            id = "oi_pipe_port_tabs",
+            id = "topo_pipe_port_tabs",
         ) {
             root.layout {
                 it.paddingAll(MachineUiComponentStyle.boxAllPadding)
@@ -290,17 +290,17 @@ object PipePortConfigUi {
         // 确定宽内容根：ModularUI 按根尺寸居中。勿用 widthMaxContent + 子级 widthPercent，
         // 否则根宽测偏小 → leftPos 偏大 → 面板整体偏右（见 MachineUiLayout.modularContentRoot）。
         // 根也不占满屏，JEI 才能把物品列表画在面板两侧。
-        val root = MachineUiLayout.modularContentRoot(PANEL_WIDTH, id = "oi_pipe_port_root") {
+        val root = MachineUiLayout.modularContentRoot(PANEL_WIDTH, id = "topo_pipe_port_root") {
             add(
                 MachineUiLayout.column(
                     gap = MachineUiComponentStyle.boxAllGap,
                     width = PANEL_WIDTH,
                     alignItems = AlignItems.STRETCH,
-                    id = "oi_pipe_port_window",
+                    id = "topo_pipe_port_window",
                 ) {
                     add(
                         UIElement().apply {
-                            setId("oi_pipe_port_sync_host")
+                            setId("topo_pipe_port_sync_host")
                             isAllowHitTest = false
                             syncAnchors.forEach(::addChild)
                         },
@@ -322,7 +322,7 @@ object PipePortConfigUi {
                     Component.literal("side ")
                         .withColor(MachineUiComponentStyle.textMuted)
                         .append(
-                            BuiltinOIPipeLang.side(side).getComponent()
+                            BuiltinTopoPipeLang.side(side).getComponent()
                                 .withColor(MachineUiComponentStyle.textSelected),
                         )
                 },
@@ -341,7 +341,7 @@ object PipePortConfigUi {
     private fun innerWidth(width: Float): Float = width - innerChrome() * 2f
 
     private fun headerRow(definition: PipeDefinition, sideTitle: Label, contentWidth: Float): UIElement = MachineUiLayout.box(needPadding = true, needGap = false) {
-        root.setId("oi_pipe_port_header")
+        root.setId("topo_pipe_port_header")
         root.layout {
             it.widthPercent(100f)
             it.flexShrink(0f)
@@ -351,12 +351,12 @@ object PipePortConfigUi {
                 gap = MachineUiComponentStyle.boxAllGap,
                 widthPercent = 100f,
                 alignItems = AlignItems.CENTER,
-                id = "oi_pipe_port_header_row",
+                id = "topo_pipe_port_header_row",
             ) {
                 add(headerIcon(definition))
                 add(
                     Label().apply {
-                        setId("oi_pipe_port_title")
+                        setId("topo_pipe_port_title")
                         setText(Component.literal(definition.displayName()))
                         textStyle {
                             it.textColor(MachineUiComponentStyle.textSelected)
@@ -380,7 +380,7 @@ object PipePortConfigUi {
                 )
                 add(
                     fixedLabelChip(
-                        "oi_pipe_port_side_chip",
+                        "topo_pipe_port_side_chip",
                         sideTitle.apply {
                             textStyle {
                                 it.textColor(MachineUiComponentStyle.textSelected)
@@ -395,7 +395,7 @@ object PipePortConfigUi {
     }
 
     private fun headerIcon(definition: PipeDefinition): UIElement = UIElement().apply {
-        setId("oi_pipe_port_icon")
+        setId("topo_pipe_port_icon")
         isAllowHitTest = false
         layout {
             it.width(HEADER_ICON_SIZE)
@@ -427,7 +427,7 @@ object PipePortConfigUi {
     /** One top-strip tab: short code label, full strategy name in the tooltip. */
     private fun railTab(index: Int, strategy: PipeDistributionStrategy, selectedStrategy: BindableValue<Int>, tabSink: ArrayList<Button>, labelSink: ArrayList<Label>): Button {
         val button = Button()
-        button.setId("oi_pipe_port_tab_$index")
+        button.setId("topo_pipe_port_tab_$index")
         button.noText()
         button.buttonStyle {
             it.baseTexture(MachineUiComponentStyle.tabButtonBaseTexture(index == 0))
@@ -444,7 +444,7 @@ object PipePortConfigUi {
             it.alignItems(AlignItems.CENTER)
         }
         val label = centeredButtonLabel(
-            "oi_pipe_port_tab_label_$index",
+            "topo_pipe_port_tab_label_$index",
             strategy.shortName(),
             if (index == 0) MachineUiComponentStyle.textSelected else MachineUiComponentStyle.textMuted,
         )
@@ -469,22 +469,22 @@ object PipePortConfigUi {
      */
     private fun settingsSection(index: Int, collector: PipePortUiCollector, strategyTitle: Component, intervalTitle: Component, intervalElement: UIElement, rateElement: UIElement): UIElement {
         val card = MachineUiLayout.accentContentCard(
-            id = "oi_pipe_port_section_card_$index",
-            accentId = "oi_pipe_port_section_accent_$index",
-            contentId = "oi_pipe_port_section_content_$index",
+            id = "topo_pipe_port_section_card_$index",
+            accentId = "topo_pipe_port_section_accent_$index",
+            contentId = "topo_pipe_port_section_content_$index",
         ) {
             add(sectionHeader(index, strategyTitle))
             collector.rows().forEach { add(it) }
-            add(parameterRow("oi_pipe_port_interval_row_$index", intervalTitle, intervalElement))
+            add(parameterRow("topo_pipe_port_interval_row_$index", intervalTitle, intervalElement))
             add(
                 parameterRow(
-                    "oi_pipe_port_rate_row_$index",
-                    BuiltinOIPipeLang.UI_PIPE_PORT_RATE.getComponent(),
+                    "topo_pipe_port_rate_row_$index",
+                    BuiltinTopoPipeLang.UI_PIPE_PORT_RATE.getComponent(),
                     rateElement,
                 ),
             )
         }
-        return MachineUiLayout.column(gap = 0f, id = "oi_pipe_port_section_$index") {
+        return MachineUiLayout.column(gap = 0f, id = "topo_pipe_port_section_$index") {
             root.layout {
                 it.widthPercent(100f)
                 it.flexShrink(0f)
@@ -497,7 +497,7 @@ object PipePortConfigUi {
         gap = MachineUiComponentStyle.boxAllGap,
         alignItems = AlignItems.CENTER,
         justifyContent = AlignContent.SPACE_BETWEEN,
-        id = "oi_pipe_port_section_header_$index",
+        id = "topo_pipe_port_section_header_$index",
     ) {
         root.layout {
             it.widthPercent(100f)
@@ -505,7 +505,7 @@ object PipePortConfigUi {
         }
         add(
             Label().apply {
-                setId("oi_pipe_port_section_title_$index")
+                setId("topo_pipe_port_section_title_$index")
                 setText(title)
                 textStyle {
                     it.textColor(MachineUiComponentStyle.textSelected)
@@ -518,8 +518,8 @@ object PipePortConfigUi {
         )
         add(
             mutedLabel(
-                "oi_pipe_port_section_hint_$index",
-                BuiltinOIPipeLang.UI_PIPE_PORT_SECTION_HINT.getComponent(),
+                "topo_pipe_port_section_hint_$index",
+                BuiltinTopoPipeLang.UI_PIPE_PORT_SECTION_HINT.getComponent(),
             ),
         )
     }
@@ -588,7 +588,7 @@ object PipePortConfigUi {
         }
         addChild(label)
         addChild(chevronGlyph("${id}_chevron"))
-        style.tooltips(BuiltinOIPipeLang.UI_PIPE_PORT_CLICK_TO_EDIT.getComponent())
+        style.tooltips(BuiltinTopoPipeLang.UI_PIPE_PORT_CLICK_TO_EDIT.getComponent())
         setOnClick { event ->
             if (event.button == 0) {
                 onClick()
@@ -748,36 +748,36 @@ object PipePortConfigUi {
             }
         }
 
-        private val whiteTabLabel = tabLabel("oi_pipe_port_filter_tab_white_label", whiteText())
-        private val blackTabLabel = tabLabel("oi_pipe_port_filter_tab_black_label", blackText())
+        private val whiteTabLabel = tabLabel("topo_pipe_port_filter_tab_white_label", whiteText())
+        private val blackTabLabel = tabLabel("topo_pipe_port_filter_tab_black_label", blackText())
         private val whiteTab = pageTab(
-            "oi_pipe_port_filter_tab_white",
+            "topo_pipe_port_filter_tab_white",
             whiteTabLabel,
-            BuiltinOIPipeLang.UI_PIPE_PORT_WHITELIST.getComponent(),
+            BuiltinTopoPipeLang.UI_PIPE_PORT_WHITELIST.getComponent(),
         ) { selectPage(true) }
         private val blackTab = pageTab(
-            "oi_pipe_port_filter_tab_black",
+            "topo_pipe_port_filter_tab_black",
             blackTabLabel,
-            BuiltinOIPipeLang.UI_PIPE_PORT_BLACKLIST.getComponent(),
+            BuiltinTopoPipeLang.UI_PIPE_PORT_BLACKLIST.getComponent(),
         ) { selectPage(false) }
-        private val countLabel = mutedLabel("oi_pipe_port_filter_count", countText())
-        private val rowsHost = MachineUiLayout.column(gap = 0f, width = filterRowContentWidth, id = "oi_pipe_port_filter_rows") {}
+        private val countLabel = mutedLabel("topo_pipe_port_filter_count", countText())
+        private val rowsHost = MachineUiLayout.column(gap = 0f, width = filterRowContentWidth, id = "topo_pipe_port_filter_rows") {}
         private val scroller: ScrollerView =
             MachineUiContainerTemplate.createScrollView(
                 filterContentWidth - MachineUiComponentStyle.scrollBarWidth,
                 FILTER_LIST_HEIGHT,
             )
                 .apply {
-                    setId("oi_pipe_port_filter_scroller")
+                    setId("topo_pipe_port_filter_scroller")
                     addScrollViewChild(rowsHost)
                 }
-        private val input = OiTextField().apply {
-            setId("oi_pipe_port_filter_input")
+        private val input = TopoTextField().apply {
+            setId("topo_pipe_port_filter_input")
             setAnyString()
             setText("", false)
             // 空值时渲染的是 TextFieldStyle.placeholder(默认字面 "Empty"),换成本屏的输入提示。
             textFieldStyle {
-                it.placeholder(BuiltinOIPipeLang.UI_PIPE_PORT_FILTER_PLACEHOLDER.getComponent())
+                it.placeholder(BuiltinTopoPipeLang.UI_PIPE_PORT_FILTER_PLACEHOLDER.getComponent())
                 it.textColor(MachineUiComponentStyle.textSelected)
                 it.cursorColor(MachineUiComponentStyle.textSelected)
                 it.textShadow(false)
@@ -794,10 +794,10 @@ object PipePortConfigUi {
                 it.paddingLeft(MachineUiComponentStyle.boxAllPadding)
                 it.paddingRight(MachineUiComponentStyle.boxAllPadding)
             }
-            style { it.tooltips(BuiltinOIPipeLang.UI_PIPE_PORT_FILTER_INPUT_TOOLTIP.getComponent()) }
+            style { it.tooltips(BuiltinTopoPipeLang.UI_PIPE_PORT_FILTER_INPUT_TOOLTIP.getComponent()) }
         }
         private val whitelistBinding = boundValue(
-            "oi_pipe_port_filter_whitelist_value",
+            "topo_pipe_port_filter_whitelist_value",
             "",
             DataBindingBuilder.stringS2C {
                 session?.run { runtime.portFilter(pos, side).whitelist().joinToString("\n") } ?: ""
@@ -809,7 +809,7 @@ object PipePortConfigUi {
             }
         }
         private val blacklistBinding = boundValue(
-            "oi_pipe_port_filter_blacklist_value",
+            "topo_pipe_port_filter_blacklist_value",
             "",
             DataBindingBuilder.stringS2C {
                 session?.run { runtime.portFilter(pos, side).blacklist().joinToString("\n") } ?: ""
@@ -823,9 +823,9 @@ object PipePortConfigUi {
 
         // 行式卡片:左缘强调竖条(与设置卡同标准件 accentContentCard)+ 内容列。
         val root: UIElement = MachineUiLayout.accentContentCard(
-            id = "oi_pipe_port_filter",
-            accentId = "oi_pipe_port_filter_accent",
-            contentId = "oi_pipe_port_filter_content",
+            id = "topo_pipe_port_filter",
+            accentId = "topo_pipe_port_filter_accent",
+            contentId = "topo_pipe_port_filter_content",
         ) {
             add(whitelistBinding)
             add(blacklistBinding)
@@ -843,8 +843,8 @@ object PipePortConfigUi {
         }
 
         private fun filterTitle(): Label = Label().apply {
-            setId("oi_pipe_port_filter_title")
-            setText(BuiltinOIPipeLang.UI_PIPE_PORT_FILTER_RULES.getComponent())
+            setId("topo_pipe_port_filter_title")
+            setText(BuiltinTopoPipeLang.UI_PIPE_PORT_FILTER_RULES.getComponent())
             textStyle {
                 it.textColor(MachineUiComponentStyle.textSelected)
                 it.textShadow(true)
@@ -869,7 +869,7 @@ object PipePortConfigUi {
             gap = MachineUiComponentStyle.boxAllGap,
             widthPercent = 100f,
             alignItems = AlignItems.CENTER,
-            id = "oi_pipe_port_filter_tabs_row",
+            id = "topo_pipe_port_filter_tabs_row",
         ) {
             add(whiteTab)
             add(blackTab)
@@ -880,7 +880,7 @@ object PipePortConfigUi {
             gap = MachineUiComponentStyle.boxAllGap,
             widthPercent = 100f,
             alignItems = AlignItems.CENTER,
-            id = "oi_pipe_port_filter_input_row",
+            id = "topo_pipe_port_filter_input_row",
         ) {
             add(pickerButton())
             add(input)
@@ -892,7 +892,7 @@ object PipePortConfigUi {
             height = CONTROL_HEIGHT,
             alignItems = AlignItems.CENTER,
             justifyContent = AlignContent.FLEX_END,
-            id = "oi_pipe_port_filter_count_chip",
+            id = "topo_pipe_port_filter_count_chip",
         ) {
             root.layout {
                 it.width(0f)
@@ -906,9 +906,9 @@ object PipePortConfigUi {
 
         /** 加号(左):打开物品选择弹窗,确认后把暂存物品逐个转条目写入当前页名单。 */
         private fun pickerButton(): Button = Button().apply {
-            setId("oi_pipe_port_filter_pick")
+            setId("topo_pipe_port_filter_pick")
             noText()
-            addChild(plusIconChild("oi_pipe_port_filter_pick_icon"))
+            addChild(plusIconChild("topo_pipe_port_filter_pick_icon"))
             buttonStyle {
                 it.baseTexture(MachineUiComponentStyle.sideIoCellBaseTexture())
                 it.hoverTexture(MachineUiComponentStyle.sideIoCellHoverTexture())
@@ -922,7 +922,7 @@ object PipePortConfigUi {
                 it.justifyContent(AlignContent.CENTER)
                 it.alignItems(AlignItems.CENTER)
             }
-            style.tooltips(BuiltinOIPipeLang.UI_PIPE_PORT_FILTER_PICK_TOOLTIP.getComponent())
+            style.tooltips(BuiltinTopoPipeLang.UI_PIPE_PORT_FILTER_PICK_TOOLTIP.getComponent())
             setOnClick { event ->
                 if (event.button == 0) {
                     openPicker()
@@ -936,9 +936,9 @@ object PipePortConfigUi {
             ItemPickerPopup.open(
                 root,
                 if (activeWhite) {
-                    BuiltinOIPipeLang.UI_PIPE_PORT_ADD_TO_WHITELIST.getComponent()
+                    BuiltinTopoPipeLang.UI_PIPE_PORT_ADD_TO_WHITELIST.getComponent()
                 } else {
-                    BuiltinOIPipeLang.UI_PIPE_PORT_ADD_TO_BLACKLIST.getComponent()
+                    BuiltinTopoPipeLang.UI_PIPE_PORT_ADD_TO_BLACKLIST.getComponent()
                 },
                 // 物品→条目:物品管=注册名;流体管=经 entryFromCarried 读物品流体能力抽出的流体名。
                 Function { stack -> entryAdapter.entryFromCarried(stack) },
@@ -963,9 +963,9 @@ object PipePortConfigUi {
         }
 
         private fun addButton(): Button = Button().apply {
-            setId("oi_pipe_port_filter_add")
+            setId("topo_pipe_port_filter_add")
             noText()
-            addChild(plusIconChild("oi_pipe_port_filter_add_icon"))
+            addChild(plusIconChild("topo_pipe_port_filter_add_icon"))
             buttonStyle {
                 it.baseTexture(MachineUiComponentStyle.sideIoCellBaseTexture())
                 it.hoverTexture(MachineUiComponentStyle.sideIoCellHoverTexture())
@@ -979,7 +979,7 @@ object PipePortConfigUi {
                 it.justifyContent(AlignContent.CENTER)
                 it.alignItems(AlignItems.CENTER)
             }
-            style.tooltips(BuiltinOIPipeLang.UI_PIPE_PORT_FILTER_ADD_TOOLTIP.getComponent())
+            style.tooltips(BuiltinTopoPipeLang.UI_PIPE_PORT_FILTER_ADD_TOOLTIP.getComponent())
             setOnClick { event ->
                 if (event.button == 0) {
                     commitInput()
@@ -1026,18 +1026,18 @@ object PipePortConfigUi {
         private fun whiteText(): Component = Component.literal("● ")
             .withColor(MachineUiComponentStyle.ledOutput)
             .append(
-                BuiltinOIPipeLang.UI_PIPE_PORT_WHITELIST_SHORT.getComponent(whiteEntries.size)
+                BuiltinTopoPipeLang.UI_PIPE_PORT_WHITELIST_SHORT.getComponent(whiteEntries.size)
                     .withColor(MachineUiComponentStyle.textNormal),
             )
 
         private fun blackText(): Component = Component.literal("● ")
             .withColor(MachineUiComponentStyle.ledError)
             .append(
-                BuiltinOIPipeLang.UI_PIPE_PORT_BLACKLIST_SHORT.getComponent(blackEntries.size)
+                BuiltinTopoPipeLang.UI_PIPE_PORT_BLACKLIST_SHORT.getComponent(blackEntries.size)
                     .withColor(MachineUiComponentStyle.textNormal),
             )
 
-        private fun countText(): Component = BuiltinOIPipeLang.UI_PIPE_PORT_FILTER_COUNT.getComponent(
+        private fun countText(): Component = BuiltinTopoPipeLang.UI_PIPE_PORT_FILTER_COUNT.getComponent(
             (if (activeWhite) whiteEntries else blackEntries).size,
             capacity,
         )
@@ -1062,7 +1062,7 @@ object PipePortConfigUi {
             height = FILTER_ROW_HEIGHT,
             widthPercent = 100f,
             alignItems = AlignItems.CENTER,
-            id = "oi_pipe_port_filter_row",
+            id = "topo_pipe_port_filter_row",
         ) {
             root.layout {
                 it.paddingLeft(2f)
@@ -1087,7 +1087,7 @@ object PipePortConfigUi {
                     else ->
                         leadingSlot(
                             centeredGlyphLabel(
-                                "oi_pipe_port_filter_row_badge_label",
+                                "topo_pipe_port_filter_row_badge_label",
                                 if (tag) "#" else "?",
                                 MachineUiComponentStyle.ledInfo,
                             ),
@@ -1099,7 +1099,7 @@ object PipePortConfigUi {
             val name = plainStack?.hoverName ?: plainFluid?.let(FluidHelper::getDisplayName) ?: Component.literal(entry)
             add(
                 Label().apply {
-                    setId("oi_pipe_port_filter_row_name")
+                    setId("topo_pipe_port_filter_row_name")
                     setText(name)
                     textStyle {
                         it.textColor(if (tag) MachineUiComponentStyle.ledInfo else MachineUiComponentStyle.textNormal)
@@ -1122,25 +1122,25 @@ object PipePortConfigUi {
         private fun entryTypeHint(tag: Boolean, stacks: List<ItemStack>, fluids: List<FluidStack>): Label {
             val text = when {
                 tag && fluids.isNotEmpty() ->
-                    BuiltinOIPipeLang.UI_PIPE_PORT_FILTER_ENTRY_PREVIEW.getComponent(fluids.size)
+                    BuiltinTopoPipeLang.UI_PIPE_PORT_FILTER_ENTRY_PREVIEW.getComponent(fluids.size)
 
                 tag && stacks.isNotEmpty() ->
-                    BuiltinOIPipeLang.UI_PIPE_PORT_FILTER_ENTRY_PREVIEW.getComponent(stacks.size)
+                    BuiltinTopoPipeLang.UI_PIPE_PORT_FILTER_ENTRY_PREVIEW.getComponent(stacks.size)
 
-                tag -> BuiltinOIPipeLang.UI_PIPE_PORT_FILTER_ENTRY_TAG.getComponent()
+                tag -> BuiltinTopoPipeLang.UI_PIPE_PORT_FILTER_ENTRY_TAG.getComponent()
 
-                fluids.isNotEmpty() -> BuiltinOIPipeLang.UI_PIPE_PORT_FILTER_ENTRY_FLUID.getComponent()
+                fluids.isNotEmpty() -> BuiltinTopoPipeLang.UI_PIPE_PORT_FILTER_ENTRY_FLUID.getComponent()
 
-                stacks.isNotEmpty() -> BuiltinOIPipeLang.UI_PIPE_PORT_FILTER_ENTRY_ITEM.getComponent()
+                stacks.isNotEmpty() -> BuiltinTopoPipeLang.UI_PIPE_PORT_FILTER_ENTRY_ITEM.getComponent()
 
                 else -> Component.empty()
             }
-            return mutedLabel("oi_pipe_port_filter_row_type", text)
+            return mutedLabel("topo_pipe_port_filter_row_type", text)
         }
 
         /** 前导框:统一白框槽([FILTER_ROW_BOX_SIZE] 见方),内含图标或徽章字形;与删除钮同尺寸同基线。 */
         private fun leadingSlot(content: UIElement): UIElement = UIElement().apply {
-            setId("oi_pipe_port_filter_row_lead")
+            setId("topo_pipe_port_filter_row_lead")
             layout {
                 it.width(FILTER_ROW_BOX_SIZE)
                 it.height(FILTER_ROW_BOX_SIZE)
@@ -1153,7 +1153,7 @@ object PipePortConfigUi {
         }
 
         private fun rowIcon(texture: IGuiTexture): UIElement = UIElement().apply {
-            setId("oi_pipe_port_filter_row_icon")
+            setId("topo_pipe_port_filter_row_icon")
             isAllowHitTest = false
             layout {
                 it.width(FILTER_ROW_ICON_SIZE)
@@ -1164,7 +1164,7 @@ object PipePortConfigUi {
         }
 
         private fun removeButton(white: Boolean, entry: String): Button = Button().apply {
-            setId("oi_pipe_port_filter_row_remove")
+            setId("topo_pipe_port_filter_row_remove")
             noText()
             buttonStyle {
                 it.baseTexture(MachineUiComponentStyle.sideIoCellBaseTexture())
@@ -1180,7 +1180,7 @@ object PipePortConfigUi {
             }
             addChild(
                 UIElement().apply {
-                    setId("oi_pipe_port_filter_row_remove_icon")
+                    setId("topo_pipe_port_filter_row_remove_icon")
                     isAllowHitTest = false
                     layout {
                         it.width(8f)
@@ -1287,7 +1287,7 @@ object PipePortConfigUi {
     /** 服务端解析被点击的端口;客户端(或 pending 缺失)为 null,展示值等待同步。 */
     private fun resolveSession(holder: BlockUIMenuType.BlockUIHolder): Session? {
         val player = holder.player as? ServerPlayer ?: return null
-        val level = player.level() as? ServerLevel ?: return null
+        val level = player.level()
         val runtime = PipeNetworkEngine.runtime(level)
         val pending = runtime.consumePendingPortScreen(player.uuid) ?: return null
         return Session(runtime, pending.pos, pending.side)
@@ -1296,7 +1296,7 @@ object PipePortConfigUi {
     private class Session(val runtime: PipeLevelRuntime, val pos: BlockPos, val side: Direction)
 
     /** 等效每周期批量值 "amount / max",max = 每 tick 承载量 × 当前周期。 */
-    private fun amountText(definition: PipeDefinition, amount: Int, interval: Int): Component = BuiltinOIPipeLang.UI_PIPE_PORT_RATE_VALUE.getComponent(
+    private fun amountText(definition: PipeDefinition, amount: Int, interval: Int): Component = BuiltinTopoPipeLang.UI_PIPE_PORT_RATE_VALUE.getComponent(
         definition.profile().formatAmount(amount.toLong()),
         definition.profile().formatAmount(definition.maxBatchAmount(interval).toLong()),
     )
@@ -1304,7 +1304,7 @@ object PipePortConfigUi {
     private fun intervalText(interval: Int, window: AggregationWindow): Component {
         val clamped = window.clamp(interval)
         val seconds = String.format(Locale.ROOT, "%.1f", clamped / 20.0)
-        return BuiltinOIPipeLang.UI_PIPE_PORT_INTERVAL_VALUE.getComponent(clamped, seconds)
+        return BuiltinTopoPipeLang.UI_PIPE_PORT_INTERVAL_VALUE.getComponent(clamped, seconds)
     }
 
     private fun mutedLabel(id: String, text: Component): Label = Label().apply {

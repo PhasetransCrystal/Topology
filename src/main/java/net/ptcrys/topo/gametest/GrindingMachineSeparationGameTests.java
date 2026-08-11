@@ -1,9 +1,9 @@
 package net.ptcrys.topo.gametest;
 
-import net.ptcrys.topo.apiv2.machine.MachineBlockEntity;
-import net.ptcrys.topo.apiv2.machine.component.RecipeLogic;
-import net.ptcrys.topo.datav2.machine.BuiltinOIMachines;
-import net.ptcrys.topo.datav2.machine.common.component.resource.ScalarResourcePort;
+import net.ptcrys.topo.api.machine.MachineBlockEntity;
+import net.ptcrys.topo.api.machine.component.RecipeLogic;
+import net.ptcrys.topo.data.machine.BuiltinTopoMachines;
+import net.ptcrys.topo.data.machine.common.component.resource.ScalarResourcePort;
 import net.ptcrys.topo.helper.IdHelper;
 import net.ptcrys.topo.helper.MaterialHelper;
 
@@ -25,11 +25,11 @@ import net.neoforged.neoforge.transfer.transaction.Transaction;
 
 import java.util.function.Consumer;
 
-import static net.ptcrys.topo.datav2.material.BuiltinOIMaterialForms.CRUDE_DUST;
-import static net.ptcrys.topo.datav2.material.BuiltinOIMaterialForms.DUST;
-import static net.ptcrys.topo.datav2.material.BuiltinOIMaterialForms.INGOT;
-import static net.ptcrys.topo.datav2.material.BuiltinOIMaterialForms.ORE;
-import static net.ptcrys.topo.datav2.material.BuiltinOIMaterials.IRON;
+import static net.ptcrys.topo.data.material.BuiltinTopoMaterialForms.CRUDE_DUST;
+import static net.ptcrys.topo.data.material.BuiltinTopoMaterialForms.DUST;
+import static net.ptcrys.topo.data.material.BuiltinTopoMaterialForms.INGOT;
+import static net.ptcrys.topo.data.material.BuiltinTopoMaterialForms.ORE;
+import static net.ptcrys.topo.data.material.BuiltinTopoMaterials.IRON;
 
 /** Real-machine coverage for the hard macerator/fine-grinder recipe boundary. */
 public final class GrindingMachineSeparationGameTests {
@@ -111,7 +111,7 @@ public final class GrindingMachineSeparationGameTests {
                                                      boolean macerator) {
         helper.setBlock(
                 pos,
-                (macerator ? BuiltinOIMachines.MACERATOR_T1 : BuiltinOIMachines.FINE_GRINDER_T1)
+                (macerator ? BuiltinTopoMachines.MACERATOR_T1 : BuiltinTopoMachines.FINE_GRINDER_T1)
                         .registeredBlock()
                         .getDefaultState());
         MachineBlockEntity machine = helper.getBlockEntity(pos, MachineBlockEntity.class);
@@ -190,7 +190,7 @@ public final class GrindingMachineSeparationGameTests {
         return amount;
     }
 
-    private static ItemResource item(net.ptcrys.topo.apiv2.material.form.MaterialForm form) {
+    private static ItemResource item(net.ptcrys.topo.api.material.form.MaterialForm form) {
         return ItemResource.of(MaterialHelper.requireItem(IRON, form));
     }
 

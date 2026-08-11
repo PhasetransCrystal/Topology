@@ -5,7 +5,7 @@ import net.ptcrys.topo.api.pipe.PipeSideIntent;
 import net.ptcrys.topo.api.pipe.network.PipeLevelRuntime;
 import net.ptcrys.topo.api.pipe.network.PipeNetwork;
 import net.ptcrys.topo.api.pipe.network.PipeNetworkEngine;
-import net.ptcrys.topo.data.pipe.BuiltinOIPipes;
+import net.ptcrys.topo.data.pipe.BuiltinTopoPipes;
 import net.ptcrys.topo.helper.IdHelper;
 
 import net.minecraft.core.BlockPos;
@@ -52,7 +52,7 @@ public final class PipeTopologyRateGameTests {
     private PipeTopologyRateGameTests() {}
 
     public static void register(RegisterGameTestsEvent event) {
-        if (!OIScalarGameTestFixtures.enabled()) {
+        if (!TopoScalarGameTestFixtures.enabled()) {
             return;
         }
         Holder<TestEnvironmentDefinition<?>> environment = event.registerEnvironment(IdHelper.oi("pipe_topology_rate"), new TestEnvironmentDefinition.AllOf());
@@ -82,15 +82,15 @@ public final class PipeTopologyRateGameTests {
         ChestBlockEntity target = chest(helper, new BlockPos(0, 1, 4));
         fillChest(source, Items.COAL, SOURCE_FILL);
         // 紫端:东北引流柄 + 入口角 + 出口角;绿格:3×4 满网格其余 10 节点。
-        placePipe(helper, new BlockPos(3, 1, 0), BuiltinOIPipes.ITEM_PIPE_ELITE);
-        placePipe(helper, new BlockPos(3, 1, 1), BuiltinOIPipes.ITEM_PIPE_ELITE);
-        placePipe(helper, new BlockPos(1, 1, 4), BuiltinOIPipes.ITEM_PIPE_ELITE);
+        placePipe(helper, new BlockPos(3, 1, 0), BuiltinTopoPipes.ITEM_PIPE_ELITE);
+        placePipe(helper, new BlockPos(3, 1, 1), BuiltinTopoPipes.ITEM_PIPE_ELITE);
+        placePipe(helper, new BlockPos(1, 1, 4), BuiltinTopoPipes.ITEM_PIPE_ELITE);
         for (int x = 1; x <= 3; x++) {
             for (int z = 1; z <= 4; z++) {
                 if ((x == 3 && z == 1) || (x == 1 && z == 4)) {
                     continue;
                 }
-                placePipe(helper, new BlockPos(x, 1, z), BuiltinOIPipes.ITEM_PIPE_BASIC);
+                placePipe(helper, new BlockPos(x, 1, z), BuiltinTopoPipes.ITEM_PIPE_BASIC);
             }
         }
         int interval = startExtraction(helper, new BlockPos(3, 1, 0), Direction.EAST);
@@ -103,18 +103,18 @@ public final class PipeTopologyRateGameTests {
         ChestBlockEntity source = chest(helper, new BlockPos(0, 1, 0));
         ChestBlockEntity target = chest(helper, new BlockPos(0, 1, 4));
         fillChest(source, Items.COAL, SOURCE_FILL);
-        placePipe(helper, new BlockPos(1, 1, 0), BuiltinOIPipes.ITEM_PIPE_ELITE);
-        placePipe(helper, new BlockPos(1, 1, 4), BuiltinOIPipes.ITEM_PIPE_ELITE);
+        placePipe(helper, new BlockPos(1, 1, 0), BuiltinTopoPipes.ITEM_PIPE_ELITE);
+        placePipe(helper, new BlockPos(1, 1, 4), BuiltinTopoPipes.ITEM_PIPE_ELITE);
         // 北环 2×2、单腰 (3,2)、南环 2×2:唯一割点是腰。
-        placePipe(helper, new BlockPos(2, 1, 0), BuiltinOIPipes.ITEM_PIPE_BASIC);
-        placePipe(helper, new BlockPos(3, 1, 0), BuiltinOIPipes.ITEM_PIPE_BASIC);
-        placePipe(helper, new BlockPos(2, 1, 1), BuiltinOIPipes.ITEM_PIPE_BASIC);
-        placePipe(helper, new BlockPos(3, 1, 1), BuiltinOIPipes.ITEM_PIPE_BASIC);
-        placePipe(helper, new BlockPos(3, 1, 2), BuiltinOIPipes.ITEM_PIPE_BASIC);
-        placePipe(helper, new BlockPos(2, 1, 3), BuiltinOIPipes.ITEM_PIPE_BASIC);
-        placePipe(helper, new BlockPos(3, 1, 3), BuiltinOIPipes.ITEM_PIPE_BASIC);
-        placePipe(helper, new BlockPos(2, 1, 4), BuiltinOIPipes.ITEM_PIPE_BASIC);
-        placePipe(helper, new BlockPos(3, 1, 4), BuiltinOIPipes.ITEM_PIPE_BASIC);
+        placePipe(helper, new BlockPos(2, 1, 0), BuiltinTopoPipes.ITEM_PIPE_BASIC);
+        placePipe(helper, new BlockPos(3, 1, 0), BuiltinTopoPipes.ITEM_PIPE_BASIC);
+        placePipe(helper, new BlockPos(2, 1, 1), BuiltinTopoPipes.ITEM_PIPE_BASIC);
+        placePipe(helper, new BlockPos(3, 1, 1), BuiltinTopoPipes.ITEM_PIPE_BASIC);
+        placePipe(helper, new BlockPos(3, 1, 2), BuiltinTopoPipes.ITEM_PIPE_BASIC);
+        placePipe(helper, new BlockPos(2, 1, 3), BuiltinTopoPipes.ITEM_PIPE_BASIC);
+        placePipe(helper, new BlockPos(3, 1, 3), BuiltinTopoPipes.ITEM_PIPE_BASIC);
+        placePipe(helper, new BlockPos(2, 1, 4), BuiltinTopoPipes.ITEM_PIPE_BASIC);
+        placePipe(helper, new BlockPos(3, 1, 4), BuiltinTopoPipes.ITEM_PIPE_BASIC);
         int interval = startExtraction(helper, new BlockPos(1, 1, 0), Direction.WEST);
         assertSteadyBatches(helper, source, target, new BlockPos(1, 1, 0), 11, BASIC_RATE * interval);
     }
@@ -125,12 +125,12 @@ public final class PipeTopologyRateGameTests {
         ChestBlockEntity source = chest(helper, new BlockPos(0, 1, 2));
         ChestBlockEntity target = chest(helper, new BlockPos(4, 1, 2));
         fillChest(source, Items.COAL, SOURCE_FILL);
-        placePipe(helper, new BlockPos(1, 1, 2), BuiltinOIPipes.ITEM_PIPE_ELITE);
-        placePipe(helper, new BlockPos(3, 1, 2), BuiltinOIPipes.ITEM_PIPE_ELITE);
+        placePipe(helper, new BlockPos(1, 1, 2), BuiltinTopoPipes.ITEM_PIPE_ELITE);
+        placePipe(helper, new BlockPos(3, 1, 2), BuiltinTopoPipes.ITEM_PIPE_ELITE);
         // 北股与南股各 3 节点,中间 (2,2) 留空成两条独立车道。
         for (int x = 1; x <= 3; x++) {
-            placePipe(helper, new BlockPos(x, 1, 1), BuiltinOIPipes.ITEM_PIPE_BASIC);
-            placePipe(helper, new BlockPos(x, 1, 3), BuiltinOIPipes.ITEM_PIPE_BASIC);
+            placePipe(helper, new BlockPos(x, 1, 1), BuiltinTopoPipes.ITEM_PIPE_BASIC);
+            placePipe(helper, new BlockPos(x, 1, 3), BuiltinTopoPipes.ITEM_PIPE_BASIC);
         }
         int interval = startExtraction(helper, new BlockPos(1, 1, 2), Direction.WEST);
         assertSteadyBatches(helper, source, target, new BlockPos(1, 1, 2), 8, 2 * BASIC_RATE * interval);
@@ -142,14 +142,14 @@ public final class PipeTopologyRateGameTests {
         ChestBlockEntity source = chest(helper, new BlockPos(0, 1, 2));
         ChestBlockEntity target = chest(helper, new BlockPos(4, 1, 2));
         fillChest(source, Items.COAL, SOURCE_FILL);
-        placePipe(helper, new BlockPos(1, 1, 2), BuiltinOIPipes.ITEM_PIPE_ELITE);
-        placePipe(helper, new BlockPos(3, 1, 2), BuiltinOIPipes.ITEM_PIPE_ELITE);
+        placePipe(helper, new BlockPos(1, 1, 2), BuiltinTopoPipes.ITEM_PIPE_ELITE);
+        placePipe(helper, new BlockPos(3, 1, 2), BuiltinTopoPipes.ITEM_PIPE_ELITE);
         for (int x = 1; x <= 3; x++) {
             for (int z = 1; z <= 3; z++) {
                 if (z == 2 && (x == 1 || x == 3)) {
                     continue;
                 }
-                placePipe(helper, new BlockPos(x, 1, z), BuiltinOIPipes.ITEM_PIPE_BASIC);
+                placePipe(helper, new BlockPos(x, 1, z), BuiltinTopoPipes.ITEM_PIPE_BASIC);
             }
         }
         int interval = startExtraction(helper, new BlockPos(1, 1, 2), Direction.WEST);

@@ -1,17 +1,17 @@
 package net.ptcrys.topo.integration.ae2.ui
 
-import net.ptcrys.topo.apiv2.machine.component.ComponentContext
-import net.ptcrys.topo.apiv2.machine.component.ComponentKey
-import net.ptcrys.topo.apiv2.machine.component.ComponentMount
-import net.ptcrys.topo.apiv2.machine.component.MachineComponent
-import net.ptcrys.topo.apiv2.machine.component.MachineComponents
-import net.ptcrys.topo.apiv2.machine.resource.RecipeSearchPoolId
-import net.ptcrys.topo.apiv2.machine.ui.MachineUiComponentStyle
-import net.ptcrys.topo.apiv2.machine.ui.MachineUiComponentTemplate
-import net.ptcrys.topo.apiv2.machine.ui.MachineUiContainerTemplate
-import net.ptcrys.topo.apiv2.machine.ui.MachineUiContribution
-import net.ptcrys.topo.apiv2.machine.ui.MachineUiLayout
-import net.ptcrys.topo.apiv2.machine.ui.recipe.RecipeUiLayout
+import net.ptcrys.topo.api.machine.component.ComponentContext
+import net.ptcrys.topo.api.machine.component.ComponentKey
+import net.ptcrys.topo.api.machine.component.ComponentMount
+import net.ptcrys.topo.api.machine.component.MachineComponent
+import net.ptcrys.topo.api.machine.component.MachineComponents
+import net.ptcrys.topo.api.machine.resource.RecipeSearchPoolId
+import net.ptcrys.topo.api.machine.ui.MachineUiComponentStyle
+import net.ptcrys.topo.api.machine.ui.MachineUiComponentTemplate
+import net.ptcrys.topo.api.machine.ui.MachineUiContainerTemplate
+import net.ptcrys.topo.api.machine.ui.MachineUiContribution
+import net.ptcrys.topo.api.machine.ui.MachineUiLayout
+import net.ptcrys.topo.api.machine.ui.recipe.RecipeUiLayout
 import net.ptcrys.topo.integration.ae2.AePatternProvider
 
 import net.minecraft.network.chat.Component
@@ -47,12 +47,12 @@ class AePatternProviderUi private constructor(context: ComponentContext<AePatter
             createPatternsPage(trait),
         )
         contribution.leftPanel(
-            "oi_ae_pattern_provider_modes",
+            "topo_ae_pattern_provider_modes",
             Component.translatable("ui.topo.ae_pattern_provider.modes"),
             element = createModesBody(trait),
         )
         contribution.rightPanel(
-            "oi_ae_pattern_provider_name",
+            "topo_ae_pattern_provider_name",
             Component.translatable("ui.topo.ae_pattern_provider.name"),
             element = createNameBody(trait),
         )
@@ -64,10 +64,10 @@ class AePatternProviderUi private constructor(context: ComponentContext<AePatter
         var separatedChrome = false
         var slotPoolIdsChrome = ""
         return MachineUiLayout.pageColumn(RecipeUiLayout.PLAYER_INVENTORY_WIDTH.toFloat()) {
-            root.setId("oi_ae_patterns_page")
+            root.setId("topo_ae_patterns_page")
             add(
                 BindableValue(false).apply {
-                    setId("oi_ae_pattern_separated_chrome")
+                    setId("topo_ae_pattern_separated_chrome")
                     setDisplay(false)
                     isAllowHitTest = false
                     bind(
@@ -81,7 +81,7 @@ class AePatternProviderUi private constructor(context: ComponentContext<AePatter
             )
             add(
                 BindableValue("").apply {
-                    setId("oi_ae_pattern_slot_pool_ids_chrome")
+                    setId("topo_ae_pattern_slot_pool_ids_chrome")
                     setDisplay(false)
                     isAllowHitTest = false
                     bind(
@@ -96,7 +96,7 @@ class AePatternProviderUi private constructor(context: ComponentContext<AePatter
             add(
                 MachineUiContainerTemplate.createSlotGrid(patterns.size()) { slot ->
                     MachineUiComponentTemplate.createItemSlot().apply {
-                        setId("oi_ae_pattern_slot")
+                        setId("topo_ae_pattern_slot")
                         slotStyle.slotOverlay(PATTERN_SLOT_OVERLAY)
                         slotStyle.showSlotOverlayOnlyEmpty(false)
                         bind(patterns, slot)
@@ -167,11 +167,11 @@ class AePatternProviderUi private constructor(context: ComponentContext<AePatter
             gap = MachineUiComponentStyle.pageColumnGap,
             width = width,
             alignItems = dev.vfyjxf.taffy.style.AlignItems.STRETCH,
-            id = "oi_ae_pattern_provider_modes",
+            id = "topo_ae_pattern_provider_modes",
         ) {
             add(
                 modeButton(
-                    "oi_ae_pattern_provider_blocking",
+                    "topo_ae_pattern_provider_blocking",
                     "ui.topo.ae_pattern_provider.blocking",
                     "ui.topo.ae_pattern_provider.blocking.tooltip",
                     selectedGetter = { trait.blocking() },
@@ -180,7 +180,7 @@ class AePatternProviderUi private constructor(context: ComponentContext<AePatter
             )
             add(
                 validatedModeButton(
-                    "oi_ae_pattern_provider_separated",
+                    "topo_ae_pattern_provider_separated",
                     "ui.topo.ae_pattern_provider.separated",
                     "ui.topo.ae_pattern_provider.separated.tooltip",
                     selectedGetter = { trait.separated() },
@@ -196,7 +196,7 @@ class AePatternProviderUi private constructor(context: ComponentContext<AePatter
         placeholder = Component.translatable("ui.topo.ae_pattern_provider.name_placeholder"),
         normalizeForDisplay = { it.trim().take(AePatternProvider.MAX_CUSTOM_NAME_LENGTH) },
     ).apply {
-        setId("oi_ae_pattern_provider_name_field")
+        setId("topo_ae_pattern_provider_name_field")
         layout {
             it.width(MachineUiComponentStyle.nameFieldWidth)
             it.height(MachineUiComponentStyle.nameFieldHeight)

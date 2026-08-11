@@ -1,7 +1,11 @@
 package net.ptcrys.topo.api.pipe.network;
 
-import net.ptcrys.topo.api.lang.LangKey;
-import net.ptcrys.topo.api.lang.OIApiLang;
+import net.ptcrys.topo.api.api.lang.LangKey;
+import net.ptcrys.topo.api.api.lang.TopoApiLang;
+import net.ptcrys.topo.api.api.tick.TickHandle;
+import net.ptcrys.topo.api.api.tick.TickHub;
+import net.ptcrys.topo.api.api.tick.TickKind;
+import net.ptcrys.topo.api.machine.resource.MachineResourceType;
 import net.ptcrys.topo.api.pipe.AggregationWindow;
 import net.ptcrys.topo.api.pipe.PipeBlock;
 import net.ptcrys.topo.api.pipe.PipeDefinition;
@@ -14,10 +18,6 @@ import net.ptcrys.topo.api.pipe.PipePortStrategyConfig;
 import net.ptcrys.topo.api.pipe.PipeSideIntent;
 import net.ptcrys.topo.api.pipe.PipeSideRole;
 import net.ptcrys.topo.api.pipe.PipeStrategyOffer;
-import net.ptcrys.topo.api.tick.TickHandle;
-import net.ptcrys.topo.api.tick.TickHub;
-import net.ptcrys.topo.api.tick.TickKind;
-import net.ptcrys.topo.apiv2.machine.resource.MachineResourceType;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -776,7 +776,7 @@ public final class PipeLevelRuntime {
         data.putExtractConfig(record, side, next.strategy().initialPortConfig(definition, next.aggregation()));
         configGeneration++;
         refreshPortsAt(pos.asLong());
-        player.sendOverlayMessage(OIApiLang.PIPE_STRATEGY_SELECTED.getComponent(
+        player.sendOverlayMessage(TopoApiLang.PIPE_STRATEGY_SELECTED.getComponent(
                 next.strategy().displayName()));
     }
 
@@ -815,27 +815,27 @@ public final class PipeLevelRuntime {
         data.setIntentBits(record, PipeSideIntent.pack(record.intentBits(), side, next));
         recomputeRoles(key, true);
         player.sendOverlayMessage(
-                OIApiLang.PIPE_SIDE_MODE.getComponent(
+                TopoApiLang.PIPE_SIDE_MODE.getComponent(
                         sideLang(side).getComponent(),
                         modeLang(next).getComponent()));
     }
 
     private static LangKey sideLang(Direction side) {
         return switch (side) {
-            case DOWN -> OIApiLang.PIPE_SIDE_DOWN;
-            case UP -> OIApiLang.PIPE_SIDE_UP;
-            case NORTH -> OIApiLang.PIPE_SIDE_NORTH;
-            case SOUTH -> OIApiLang.PIPE_SIDE_SOUTH;
-            case WEST -> OIApiLang.PIPE_SIDE_WEST;
-            case EAST -> OIApiLang.PIPE_SIDE_EAST;
+            case DOWN -> TopoApiLang.PIPE_SIDE_DOWN;
+            case UP -> TopoApiLang.PIPE_SIDE_UP;
+            case NORTH -> TopoApiLang.PIPE_SIDE_NORTH;
+            case SOUTH -> TopoApiLang.PIPE_SIDE_SOUTH;
+            case WEST -> TopoApiLang.PIPE_SIDE_WEST;
+            case EAST -> TopoApiLang.PIPE_SIDE_EAST;
         };
     }
 
     private static LangKey modeLang(PipeSideIntent intent) {
         return switch (intent) {
-            case AUTO -> OIApiLang.PIPE_MODE_AUTO;
-            case DISABLED -> OIApiLang.PIPE_MODE_DISABLED;
-            case EXTRACT -> OIApiLang.PIPE_MODE_EXTRACT;
+            case AUTO -> TopoApiLang.PIPE_MODE_AUTO;
+            case DISABLED -> TopoApiLang.PIPE_MODE_DISABLED;
+            case EXTRACT -> TopoApiLang.PIPE_MODE_EXTRACT;
         };
     }
 
