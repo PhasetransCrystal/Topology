@@ -1,0 +1,30 @@
+// 此代码块展开指定资源目标中所有声明的替换属性。
+// 缺少属性会导致错误。使用${} Groovy表示法展开属性。
+var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {
+    var replaceProperties = [minecraft_version      : minecraft_version,
+                             minecraft_version_range: minecraft_version_range,
+                             neo_version            : neo_version,
+                             neo_version_range      : neo_version_range,
+                             loader_version_range   : loader_version_range,
+                             mod_id                 : mod_id,
+                             mod_name               : mod_name,
+                             mod_url                : mod_url,
+                             mod_authors            : mod_authors,
+                             mod_license            : mod_license,
+                             mod_version            : mod_version,
+                             mod_description        : mod_description,
+                             registry_lib_version    : registry_lib_version,
+                             jei_version            : jei_version,
+                             ldlib2_version         : ldlib2_version,
+                             ae2_version            : ae2_version,
+    ]
+    inputs.properties replaceProperties
+    expand replaceProperties
+    from "src/main/templates"
+    into "build/generated/sources/modMetadata"
+}
+// 将"generateModMetadata"的输出包含为构建的输入目录
+// 这适用于通过Gradle和IDE构建的情况。
+sourceSets.main.resources.srcDir generateModMetadata
+// 为避免手动运行"generateModMetadata"，使其在每次项目重新加载时运行
+neoForge.ideSyncTask generateModMetadata

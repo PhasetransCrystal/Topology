@@ -1,0 +1,70 @@
+test {
+    useJUnitPlatform()
+}
+
+neoForge {
+    // 指定要使用的NeoForge版本。
+    version = project.neo_version
+
+    // This line is optional. Access Transformers are automatically detected
+    accessTransformers = project.files('src/main/resources/META-INF/accesstransformer.cfg')
+
+    // Default run configurations.
+    // These can be tweaked, removed, or duplicated as needed.
+    runs {
+        client {
+            client()
+            gameDirectory.set(file('run/client'))
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+        }
+        server {
+            server()
+            programArgument '--nogui'
+            gameDirectory.set(file('run/server'))
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+        }
+
+        clientData {
+            clientData()
+            ideName = "clientData"
+            gameDirectory.set(file('run/clientData'))
+            programArguments.addAll('--mod', project.mod_id)
+            programArguments.addAll('--all')
+            programArguments.addAll('--output', file('src/generated/resources/').getAbsolutePath())
+            programArguments.addAll('--existing', file('src/main/resources/').getAbsolutePath())
+        }
+        serverData {
+            serverData()
+            ideName = "serverData"
+            gameDirectory.set(file('run/serverData'))
+            programArguments.addAll('--mod', project.mod_id)
+            programArguments.addAll('--all')
+            programArguments.addAll('--output', file('src/generated/resources/').getAbsolutePath())
+            programArguments.addAll('--existing', file('src/main/resources/').getAbsolutePath())
+        }
+
+        configureEach {
+            // 用户开发环境推荐的日志数据
+            // 可以按需添加/移除标记，用逗号分隔。
+            // "SCAN"：用于mod扫描
+            // "REGISTRIES"：用于触发注册表事件
+            // "REGISTRYDUMP"：用于获取所有注册表内容
+            systemProperty 'forge.logging.markers', 'REGISTRIES'
+            logLevel = org.slf4j.event.Level.INFO
+        }
+    }
+
+    mods {
+        // 定义mod与源码的绑定关系
+        // 这些用于告诉游戏哪些源码属于哪个mod
+        // 多mod项目应为每个mod定义一个
+        "${mod_id}" {
+            sourceSet(sourceSets.main)
+        }
+    }
+
+    unitTest {
+        enable()
+        testedMod = mods.getByName(mod_id)
+    }
+}

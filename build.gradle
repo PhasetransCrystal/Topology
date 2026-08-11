@@ -1,0 +1,93 @@
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+    id 'idea'
+    alias libs.plugins.modDevGradleLegacy
+    alias libs.plugins.kotlinDevGradleLegacy
+    alias libs.plugins.lombokLegacy
+    alias libs.plugins.kotlinLombokLegacy
+    alias libs.plugins.spotless
+}
+
+allprojects {
+    group = 'net.ptcrys'
+}
+
+def buildDate = new Date()
+def dynamicVersion = "${String.format('%ty', buildDate)}.${buildDate.month + 1}.${buildDate.date}"
+ext.mod_version = dynamicVersion
+version = dynamicVersion
+group = mod_group_id
+
+tasks.named('wrapper', Wrapper).configure {
+    distributionType = Wrapper.DistributionType.BIN
+}
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(25)
+
+// 包含数据生成器生成的资源.
+sourceSets.main.resources { srcDir 'src/generated/resources' }
+sourceSets.main.kotlin { srcDir("src/main/java") }
+
+apply from: "$projectDir/gradle/scripts/moddevgradle.gradle"
+apply from: "$projectDir/dependencies.gradle"
+apply from: "$projectDir/gradle/scripts/resources.gradle"
+apply from: "$projectDir/gradle/scripts/jars.gradle"
+apply from: "$projectDir/gradle/scripts/repositories.gradle"
+apply from: "$projectDir/gradle/scripts/spotless.gradle"
+
+generateModMetadata.doFirst {
+    mkdir('run/client')
+    mkdir('run/server')
+    mkdir('run/clientData')
+    mkdir('run/serverData')
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
+    options.compilerArgs << "-Xlint:-deprecation" << "-Xlint:-removal"
+}
+
+configurations {
+    libraries
+    api.extendsFrom libraries
+
+    localImplementation
+    runtimeClasspath.extendsFrom localImplementation
+    compileOnly.extendsFrom localImplementation
+}
+
+jar{
+    exclude "**/.cache"
+    exclude "**/SimplifiedToTraditional.properties"
+}
+
+java {
+    withSourcesJar()
+}
+
+publishing {
+    publications {
+        register('mavenJava', MavenPublication) {
+            from components.java
+        }
+    }
+    repositories {
+        maven {
+            name = "PtcrysReleases"
+            url = uri("https://maven.ptcrys.net/releases")
+            credentials {
+                username = project.findProperty('ptcrysUsername')
+                password = project.findProperty('ptcrysPassword')
+            }
+        }
+    }
+}
+
+// IDEA不再自动下载依赖项的源码/javadoc jar，因此需要显式启用此行为。
+idea {
+    module {
+        downloadSources = true
+        downloadJavadoc = true
+    }
+}
