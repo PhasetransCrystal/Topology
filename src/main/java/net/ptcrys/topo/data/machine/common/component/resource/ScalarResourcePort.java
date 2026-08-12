@@ -39,15 +39,15 @@ public final class ScalarResourcePort extends ResourcePort<ResourceStack<ScalarR
     @Deprecated(forRemoval = false)
     public static final int CONTENTS_PERSIST_INTERVAL_TICKS = 20;
 
-    public static final ComponentKey<ScalarResourcePort> ENERGY_INPUT_1 = ComponentKey.oi("energy_input_1", ScalarResourcePort.class);
-    public static final ComponentKey<ScalarResourcePort> ENERGY_OUTPUT_1 = ComponentKey.oi("energy_output_1", ScalarResourcePort.class);
-    public static final ComponentKey<ScalarResourcePort> ENERGY_STORAGE = ComponentKey.oi("energy_storage", ScalarResourcePort.class);
-    public static final ComponentKey<ScalarResourcePort> ADVANCED_ENERGY_INPUT_1 = ComponentKey.oi("advanced_energy_input_1", ScalarResourcePort.class);
-    public static final ComponentKey<ScalarResourcePort> ADVANCED_ENERGY_OUTPUT_1 = ComponentKey.oi("advanced_energy_output_1", ScalarResourcePort.class);
-    public static final ComponentKey<ScalarResourcePort> ADVANCED_ENERGY_STORAGE = ComponentKey.oi("advanced_energy_storage", ScalarResourcePort.class);
-    public static final ComponentKey<ScalarResourcePort> HEAT_INPUT_1 = ComponentKey.oi("heat_input_1", ScalarResourcePort.class);
-    public static final ComponentKey<ScalarResourcePort> HEAT_OUTPUT_1 = ComponentKey.oi("heat_output_1", ScalarResourcePort.class);
-    public static final ComponentKey<ScalarResourcePort> HEAT_STORAGE = ComponentKey.oi("heat_storage", ScalarResourcePort.class);
+    public static final ComponentKey<ScalarResourcePort> ENERGY_INPUT_1 = ComponentKey.id("energy_input_1", ScalarResourcePort.class);
+    public static final ComponentKey<ScalarResourcePort> ENERGY_OUTPUT_1 = ComponentKey.id("energy_output_1", ScalarResourcePort.class);
+    public static final ComponentKey<ScalarResourcePort> ENERGY_STORAGE = ComponentKey.id("energy_storage", ScalarResourcePort.class);
+    public static final ComponentKey<ScalarResourcePort> ADVANCED_ENERGY_INPUT_1 = ComponentKey.id("advanced_energy_input_1", ScalarResourcePort.class);
+    public static final ComponentKey<ScalarResourcePort> ADVANCED_ENERGY_OUTPUT_1 = ComponentKey.id("advanced_energy_output_1", ScalarResourcePort.class);
+    public static final ComponentKey<ScalarResourcePort> ADVANCED_ENERGY_STORAGE = ComponentKey.id("advanced_energy_storage", ScalarResourcePort.class);
+    public static final ComponentKey<ScalarResourcePort> HEAT_INPUT_1 = ComponentKey.id("heat_input_1", ScalarResourcePort.class);
+    public static final ComponentKey<ScalarResourcePort> HEAT_OUTPUT_1 = ComponentKey.id("heat_output_1", ScalarResourcePort.class);
+    public static final ComponentKey<ScalarResourcePort> HEAT_STORAGE = ComponentKey.id("heat_storage", ScalarResourcePort.class);
 
     private ScalarResourcePort(
                                ComponentContext<ScalarResourcePort> context,

@@ -208,7 +208,7 @@ class AeBufferPageUi private constructor(context: ComponentContext<AeBufferPageU
     companion object {
         @JvmField
         val AE_BUFFER_UI: ComponentKey<AeBufferPageUi> =
-            ComponentKey.oi("ae_buffer_ui", AeBufferPageUi::class.java)
+            ComponentKey.id("ae_buffer_ui", AeBufferPageUi::class.java)
 
         const val PAGE_KEY: String = "ae_buffer"
 

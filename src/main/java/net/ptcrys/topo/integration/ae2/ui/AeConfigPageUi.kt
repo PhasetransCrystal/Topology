@@ -448,7 +448,7 @@ class AeConfigPageUi private constructor(context: ComponentContext<AeConfigPageU
     companion object {
         @JvmField
         val AE_CONFIG_UI: ComponentKey<AeConfigPageUi> =
-            ComponentKey.oi("ae_config_ui", AeConfigPageUi::class.java)
+            ComponentKey.id("ae_config_ui", AeConfigPageUi::class.java)
 
         const val PAGE_KEY: String = "ae_config"
 

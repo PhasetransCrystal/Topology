@@ -264,7 +264,7 @@ class RecipeUi private constructor(context: ComponentContext<RecipeUi>, private 
 
         @JvmField
         val RECIPE_UI_1: ComponentKey<RecipeUi> =
-            ComponentKey.oi("recipe_ui_1", RecipeUi::class.java)
+            ComponentKey.id("recipe_ui_1", RecipeUi::class.java)
 
         @JvmStatic
         fun mount(key: ComponentKey<RecipeUi>, recipeLogicKey: ComponentKey<RecipeLogic>): ComponentMount<RecipeUi> = mount(key, recipeLogicKey, RecipePageGate.alwaysOpen())

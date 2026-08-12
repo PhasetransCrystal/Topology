@@ -53,7 +53,7 @@ class MultiblockUi private constructor(context: ComponentContext<MultiblockUi>, 
     companion object {
         @JvmField
         val MULTIBLOCK_UI: ComponentKey<MultiblockUi> =
-            ComponentKey.oi("multiblock_ui", MultiblockUi::class.java)
+            ComponentKey.id("multiblock_ui", MultiblockUi::class.java)
 
         @JvmStatic
         fun mount(): ComponentMount<MultiblockUi> = mount(MULTIBLOCK_UI, MultiblockController.CONTROLLER)

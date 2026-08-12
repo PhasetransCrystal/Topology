@@ -71,12 +71,12 @@ class ExampleBuffer private constructor(context: ComponentContext<ExampleBuffer>
 
         @JvmField
         val LEFT: ComponentKey<ExampleBuffer> =
-            ComponentKey.oi("left_buffer", ExampleBuffer::class.java)
+            ComponentKey.id("left_buffer", ExampleBuffer::class.java)
                 .service(PROCESS_VALUE) { trait, _ -> ProcessValueView { trait.processValue() } }
 
         @JvmField
         val RIGHT: ComponentKey<ExampleBuffer> =
-            ComponentKey.oi("right_buffer", ExampleBuffer::class.java)
+            ComponentKey.id("right_buffer", ExampleBuffer::class.java)
                 .service(PROCESS_VALUE) { trait, _ -> ProcessValueView { trait.processValue() } }
 
         @JvmStatic

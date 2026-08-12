@@ -8,7 +8,7 @@ import net.neoforged.neoforge.transfer.fluid.FluidResource;
 
 public final class AeFluidOutputPush extends AeResourceOutputPush<FluidResource> {
 
-    public static final ComponentKey<AeFluidOutputPush> AE_FLUID_OUTPUT_PUSH = ComponentKey.oi("ae_fluid_output_push", AeFluidOutputPush.class);
+    public static final ComponentKey<AeFluidOutputPush> AE_FLUID_OUTPUT_PUSH = ComponentKey.id("ae_fluid_output_push", AeFluidOutputPush.class);
 
     private AeFluidOutputPush(ComponentContext<AeFluidOutputPush> context) {
         super(context, AeFluidBufferPort.AE_FLUID_BUFFER_PORT);

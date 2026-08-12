@@ -13,7 +13,7 @@ import net.neoforged.neoforge.transfer.item.ItemResource;
 
 public final class AeStockingItemPort extends AeStockingPort<ItemResource> {
 
-    public static final ComponentKey<AeStockingItemPort> AE_STOCKING_ITEM_PORT = ComponentKey.oi("ae_stocking_item_port", AeStockingItemPort.class);
+    public static final ComponentKey<AeStockingItemPort> AE_STOCKING_ITEM_PORT = ComponentKey.id("ae_stocking_item_port", AeStockingItemPort.class);
 
     private AeStockingItemPort(ComponentContext<AeStockingItemPort> context, int slots) {
         super(

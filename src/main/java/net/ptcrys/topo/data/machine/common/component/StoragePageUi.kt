@@ -55,7 +55,7 @@ class StoragePageUi private constructor(context: ComponentContext<StoragePageUi>
     companion object {
         @JvmField
         val STORAGE_UI: ComponentKey<StoragePageUi> =
-            ComponentKey.oi("storage_ui", StoragePageUi::class.java)
+            ComponentKey.id("storage_ui", StoragePageUi::class.java)
 
         const val PAGE_KEY: String = "storage"
 

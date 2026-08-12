@@ -9,7 +9,7 @@ import net.ptcrys.topo.api.machine.component.MachineComponents;
 /** Example controller that resolves three named sibling traits and reads their domain data. */
 public final class ExampleController extends MachineComponent {
 
-    public static final ComponentKey<ExampleController> KEY = ComponentKey.oi("controller", ExampleController.class);
+    public static final ComponentKey<ExampleController> KEY = ComponentKey.id("controller", ExampleController.class);
 
     private ExampleController(ComponentContext<ExampleController> context) {
         super(context);

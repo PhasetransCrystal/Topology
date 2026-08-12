@@ -23,21 +23,21 @@ import java.util.function.Predicate;
 
 public final class ItemResourcePort extends ResourcePort<ItemStack, ItemResource> {
 
-    public static final ComponentKey<ItemResourcePort> ITEM_INPUT_1 = ComponentKey.oi("item_input_1", ItemResourcePort.class);
-    public static final ComponentKey<ItemResourcePort> ITEM_INPUT_2 = ComponentKey.oi("item_input_2", ItemResourcePort.class);
-    public static final ComponentKey<ItemResourcePort> ITEM_INPUT_3 = ComponentKey.oi("item_input_3", ItemResourcePort.class);
-    public static final ComponentKey<ItemResourcePort> ITEM_INPUT_4 = ComponentKey.oi("item_input_4", ItemResourcePort.class);
-    public static final ComponentKey<ItemResourcePort> ITEM_OUTPUT_1 = ComponentKey.oi("item_output_1", ItemResourcePort.class);
-    public static final ComponentKey<ItemResourcePort> ITEM_OUTPUT_2 = ComponentKey.oi("item_output_2", ItemResourcePort.class);
-    public static final ComponentKey<ItemResourcePort> ITEM_OUTPUT_3 = ComponentKey.oi("item_output_3", ItemResourcePort.class);
-    public static final ComponentKey<ItemResourcePort> ITEM_OUTPUT_4 = ComponentKey.oi("item_output_4", ItemResourcePort.class);
-    public static final ComponentKey<ItemResourcePort> ITEM_STORAGE = ComponentKey.oi("item_storage", ItemResourcePort.class);
+    public static final ComponentKey<ItemResourcePort> ITEM_INPUT_1 = ComponentKey.id("item_input_1", ItemResourcePort.class);
+    public static final ComponentKey<ItemResourcePort> ITEM_INPUT_2 = ComponentKey.id("item_input_2", ItemResourcePort.class);
+    public static final ComponentKey<ItemResourcePort> ITEM_INPUT_3 = ComponentKey.id("item_input_3", ItemResourcePort.class);
+    public static final ComponentKey<ItemResourcePort> ITEM_INPUT_4 = ComponentKey.id("item_input_4", ItemResourcePort.class);
+    public static final ComponentKey<ItemResourcePort> ITEM_OUTPUT_1 = ComponentKey.id("item_output_1", ItemResourcePort.class);
+    public static final ComponentKey<ItemResourcePort> ITEM_OUTPUT_2 = ComponentKey.id("item_output_2", ItemResourcePort.class);
+    public static final ComponentKey<ItemResourcePort> ITEM_OUTPUT_3 = ComponentKey.id("item_output_3", ItemResourcePort.class);
+    public static final ComponentKey<ItemResourcePort> ITEM_OUTPUT_4 = ComponentKey.id("item_output_4", ItemResourcePort.class);
+    public static final ComponentKey<ItemResourcePort> ITEM_STORAGE = ComponentKey.id("item_storage", ItemResourcePort.class);
     /**
      * Domain identity for a process-die / catalyst slot (persistence + UI). Content rules and
      * access are declared at the mount site via {@link PortAccess} + {@link ResourceFilterHelper}, not
      * via a die-specific factory.
      */
-    public static final ComponentKey<ItemResourcePort> ITEM_DIE_1 = ComponentKey.oi("item_die_1", ItemResourcePort.class, "Die Slot", "模具槽");
+    public static final ComponentKey<ItemResourcePort> ITEM_DIE_1 = ComponentKey.id("item_die_1", ItemResourcePort.class, "Die Slot", "模具槽");
 
     private ItemResourcePort(
                              ComponentContext<ItemResourcePort> context,

@@ -17,15 +17,15 @@ import java.util.function.Predicate;
 
 public final class FluidResourcePort extends ResourcePort<FluidStack, FluidResource> {
 
-    public static final ComponentKey<FluidResourcePort> FLUID_INPUT_1 = ComponentKey.oi("fluid_input_1", FluidResourcePort.class);
-    public static final ComponentKey<FluidResourcePort> FLUID_INPUT_2 = ComponentKey.oi("fluid_input_2", FluidResourcePort.class);
-    public static final ComponentKey<FluidResourcePort> FLUID_INPUT_3 = ComponentKey.oi("fluid_input_3", FluidResourcePort.class);
-    public static final ComponentKey<FluidResourcePort> FLUID_INPUT_4 = ComponentKey.oi("fluid_input_4", FluidResourcePort.class);
-    public static final ComponentKey<FluidResourcePort> FLUID_OUTPUT_1 = ComponentKey.oi("fluid_output_1", FluidResourcePort.class);
-    public static final ComponentKey<FluidResourcePort> FLUID_OUTPUT_2 = ComponentKey.oi("fluid_output_2", FluidResourcePort.class);
-    public static final ComponentKey<FluidResourcePort> FLUID_OUTPUT_3 = ComponentKey.oi("fluid_output_3", FluidResourcePort.class);
-    public static final ComponentKey<FluidResourcePort> FLUID_OUTPUT_4 = ComponentKey.oi("fluid_output_4", FluidResourcePort.class);
-    public static final ComponentKey<FluidResourcePort> FLUID_STORAGE = ComponentKey.oi("fluid_storage", FluidResourcePort.class);
+    public static final ComponentKey<FluidResourcePort> FLUID_INPUT_1 = ComponentKey.id("fluid_input_1", FluidResourcePort.class);
+    public static final ComponentKey<FluidResourcePort> FLUID_INPUT_2 = ComponentKey.id("fluid_input_2", FluidResourcePort.class);
+    public static final ComponentKey<FluidResourcePort> FLUID_INPUT_3 = ComponentKey.id("fluid_input_3", FluidResourcePort.class);
+    public static final ComponentKey<FluidResourcePort> FLUID_INPUT_4 = ComponentKey.id("fluid_input_4", FluidResourcePort.class);
+    public static final ComponentKey<FluidResourcePort> FLUID_OUTPUT_1 = ComponentKey.id("fluid_output_1", FluidResourcePort.class);
+    public static final ComponentKey<FluidResourcePort> FLUID_OUTPUT_2 = ComponentKey.id("fluid_output_2", FluidResourcePort.class);
+    public static final ComponentKey<FluidResourcePort> FLUID_OUTPUT_3 = ComponentKey.id("fluid_output_3", FluidResourcePort.class);
+    public static final ComponentKey<FluidResourcePort> FLUID_OUTPUT_4 = ComponentKey.id("fluid_output_4", FluidResourcePort.class);
+    public static final ComponentKey<FluidResourcePort> FLUID_STORAGE = ComponentKey.id("fluid_storage", FluidResourcePort.class);
 
     private FluidResourcePort(
                               ComponentContext<FluidResourcePort> context,

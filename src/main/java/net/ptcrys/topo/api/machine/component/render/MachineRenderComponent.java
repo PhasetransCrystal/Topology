@@ -38,7 +38,7 @@ public abstract class MachineRenderComponent<S extends MachineRenderState<?>> ex
 
     /** Build a trait key with the render capability already bound, so subclasses never wire it by hand. */
     protected static <T extends MachineRenderComponent<?>> ComponentKey<T> renderKey(String path, Class<T> type) {
-        return ComponentKey.oi(path, type).service(KEY, (trait, unused) -> trait);
+        return ComponentKey.id(path, type).service(KEY, (trait, unused) -> trait);
     }
 
     @Override

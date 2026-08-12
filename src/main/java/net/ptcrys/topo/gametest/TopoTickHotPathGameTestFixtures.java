@@ -100,8 +100,8 @@ public final class TopoTickHotPathGameTestFixtures {
      */
     static final class FixtureTicker extends MachineTicker {
 
-        static final ComponentKey<FixtureTicker> TICKER_A = ComponentKey.oi("gametest_hot_path_ticker_a", FixtureTicker.class);
-        static final ComponentKey<FixtureTicker> TICKER_B = ComponentKey.oi("gametest_hot_path_ticker_b", FixtureTicker.class);
+        static final ComponentKey<FixtureTicker> TICKER_A = ComponentKey.id("gametest_hot_path_ticker_a", FixtureTicker.class);
+        static final ComponentKey<FixtureTicker> TICKER_B = ComponentKey.id("gametest_hot_path_ticker_b", FixtureTicker.class);
 
         FixtureTicker(ComponentContext<FixtureTicker> context, boolean countsRecomputes) {
             super(context);

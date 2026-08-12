@@ -23,7 +23,7 @@ import net.neoforged.neoforge.transfer.resource.ResourceStack;
 public final class CreativeScalarResourcePort
                                               extends ResourcePort<ResourceStack<ScalarResource>, ScalarResource> {
 
-    public static final ComponentKey<CreativeScalarResourcePort> CREATIVE_ENERGY_STORAGE = ComponentKey.oi("creative_energy_storage", CreativeScalarResourcePort.class);
+    public static final ComponentKey<CreativeScalarResourcePort> CREATIVE_ENERGY_STORAGE = ComponentKey.id("creative_energy_storage", CreativeScalarResourcePort.class);
 
     private CreativeScalarResourcePort(
                                        ComponentContext<CreativeScalarResourcePort> context,

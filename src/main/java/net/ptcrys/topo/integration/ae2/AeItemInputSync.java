@@ -9,7 +9,7 @@ import net.neoforged.neoforge.transfer.item.ItemResource;
 
 public final class AeItemInputSync extends AeResourceInputSync<ItemResource> {
 
-    public static final ComponentKey<AeItemInputSync> AE_ITEM_INPUT_SYNC = ComponentKey.oi("ae_item_input_sync", AeItemInputSync.class);
+    public static final ComponentKey<AeItemInputSync> AE_ITEM_INPUT_SYNC = ComponentKey.id("ae_item_input_sync", AeItemInputSync.class);
 
     private AeItemInputSync(
                             ComponentContext<AeItemInputSync> context,

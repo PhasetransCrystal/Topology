@@ -54,7 +54,7 @@ import java.util.List;
 public final class AeGridNode extends MachineComponent
                               implements IInWorldGridNodeHost, IActionHost, IGridTickable, PatternContainer {
 
-    public static final ComponentKey<AeGridNode> AE_GRID = ComponentKey.oi("ae_grid", AeGridNode.class);
+    public static final ComponentKey<AeGridNode> AE_GRID = ComponentKey.id("ae_grid", AeGridNode.class);
 
     private static final String NODE_TAG = "node";
     private static final IGridNodeListener<AeGridNode> LISTENER = new IGridNodeListener<>() {

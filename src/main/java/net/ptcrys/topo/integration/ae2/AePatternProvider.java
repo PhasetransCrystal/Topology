@@ -61,7 +61,7 @@ import java.util.function.Consumer;
 public final class AePatternProvider extends MachineTicker
                                      implements ICraftingProvider, PatternContainer, SearchPoolUiControl, RecipeInputPortControl {
 
-    public static final ComponentKey<AePatternProvider> AE_PATTERN_PROVIDER = ComponentKey.oi("ae_pattern_provider", AePatternProvider.class)
+    public static final ComponentKey<AePatternProvider> AE_PATTERN_PROVIDER = ComponentKey.id("ae_pattern_provider", AePatternProvider.class)
             .service(SearchPoolUiControl.KEY, (trait, unused) -> trait)
             .service(RecipeInputPortControl.KEY, (trait, unused) -> trait);
 

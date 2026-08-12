@@ -12,7 +12,7 @@ import com.google.common.primitives.Ints;
 
 public final class AeStockingFluidPort extends AeStockingPort<FluidResource> {
 
-    public static final ComponentKey<AeStockingFluidPort> AE_STOCKING_FLUID_PORT = ComponentKey.oi("ae_stocking_fluid_port", AeStockingFluidPort.class);
+    public static final ComponentKey<AeStockingFluidPort> AE_STOCKING_FLUID_PORT = ComponentKey.id("ae_stocking_fluid_port", AeStockingFluidPort.class);
 
     /** Preview capacity for JEI slot footprints; live capacity is each slot's configured target. */
     private static final int PREVIEW_TANK_CAPACITY = Ints.saturatedCast(64_000L);

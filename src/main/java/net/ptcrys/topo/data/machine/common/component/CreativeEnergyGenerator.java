@@ -30,7 +30,7 @@ import java.util.Objects;
  */
 public final class CreativeEnergyGenerator extends MachineTicker {
 
-    public static final ComponentKey<CreativeEnergyGenerator> CREATIVE_GENERATOR = ComponentKey.oi("creative_generator", CreativeEnergyGenerator.class);
+    public static final ComponentKey<CreativeEnergyGenerator> CREATIVE_GENERATOR = ComponentKey.id("creative_generator", CreativeEnergyGenerator.class);
 
     /** Upper bound on the settable rate (energy/tick); also the output buffer's natural capacity. */
     public static final int MAX_RATE = 1_000_000_000;

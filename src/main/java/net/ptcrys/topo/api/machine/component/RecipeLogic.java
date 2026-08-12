@@ -31,7 +31,7 @@ import java.util.function.LongSupplier;
 public class RecipeLogic extends MachineTicker
                          implements MachineWorkView, MachineWorkControl, MachineResourceWake {
 
-    public static final ComponentKey<RecipeLogic> RECIPE_LOGIC_1 = ComponentKey.oi("recipe_logic_1", RecipeLogic.class)
+    public static final ComponentKey<RecipeLogic> RECIPE_LOGIC_1 = ComponentKey.id("recipe_logic_1", RecipeLogic.class)
             .service(MachineWorkView.KEY, (trait, unused) -> trait)
             .service(MachineWorkControl.KEY, (trait, unused) -> trait)
             .service(MachineResourceWake.KEY, (trait, unused) -> trait);

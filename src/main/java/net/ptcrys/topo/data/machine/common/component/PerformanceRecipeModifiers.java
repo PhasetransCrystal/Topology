@@ -58,7 +58,7 @@ public final class PerformanceRecipeModifiers {
     /** Scales ENERGY capability only. Use {@link #of} alone, or with {@link HeatTierModifier#amounts}. */
     public static final class EnergyTierModifier extends MachineComponent implements RecipeModifier {
 
-        public static final ComponentKey<EnergyTierModifier> KEY = ComponentKey.oi(
+        public static final ComponentKey<EnergyTierModifier> KEY = ComponentKey.id(
                 "energy_tier_modifier", EnergyTierModifier.class)
                 .service(RecipeModifier.KEY, (t, u) -> t);
 
@@ -144,7 +144,7 @@ public final class PerformanceRecipeModifiers {
      */
     public static final class HeatTierModifier extends MachineComponent implements RecipeModifier {
 
-        public static final ComponentKey<HeatTierModifier> KEY = ComponentKey.oi(
+        public static final ComponentKey<HeatTierModifier> KEY = ComponentKey.id(
                 "heat_tier_modifier", HeatTierModifier.class)
                 .service(RecipeModifier.KEY, (t, u) -> t);
 
@@ -262,7 +262,7 @@ public final class PerformanceRecipeModifiers {
 
     public static final class AdvancedEnergyTierModifier extends MachineComponent implements RecipeModifier {
 
-        public static final ComponentKey<AdvancedEnergyTierModifier> KEY = ComponentKey.oi(
+        public static final ComponentKey<AdvancedEnergyTierModifier> KEY = ComponentKey.id(
                 "advanced_energy_tier_modifier", AdvancedEnergyTierModifier.class)
                 .service(RecipeModifier.KEY, (t, u) -> t);
 
@@ -343,7 +343,7 @@ public final class PerformanceRecipeModifiers {
 
     public static final class EnergyGenerationTierModifier extends MachineComponent implements RecipeModifier {
 
-        public static final ComponentKey<EnergyGenerationTierModifier> KEY = ComponentKey.oi(
+        public static final ComponentKey<EnergyGenerationTierModifier> KEY = ComponentKey.id(
                 "energy_generation_tier_modifier", EnergyGenerationTierModifier.class)
                 .service(RecipeModifier.KEY, (t, u) -> t);
 
@@ -413,7 +413,7 @@ public final class PerformanceRecipeModifiers {
 
     public static final class HeatGenerationTierModifier extends MachineComponent implements RecipeModifier {
 
-        public static final ComponentKey<HeatGenerationTierModifier> KEY = ComponentKey.oi(
+        public static final ComponentKey<HeatGenerationTierModifier> KEY = ComponentKey.id(
                 "heat_generation_tier_modifier", HeatGenerationTierModifier.class)
                 .service(RecipeModifier.KEY, (t, u) -> t);
 
@@ -482,7 +482,7 @@ public final class PerformanceRecipeModifiers {
 
     public static final class EnergyConversionTierModifier extends MachineComponent implements RecipeModifier {
 
-        public static final ComponentKey<EnergyConversionTierModifier> KEY = ComponentKey.oi(
+        public static final ComponentKey<EnergyConversionTierModifier> KEY = ComponentKey.id(
                 "energy_conversion_tier_modifier", EnergyConversionTierModifier.class)
                 .service(RecipeModifier.KEY, (t, u) -> t);
 
@@ -591,7 +591,7 @@ public final class PerformanceRecipeModifiers {
      */
     public static final class ParallelModifier extends MachineComponent implements RecipeModifier {
 
-        public static final ComponentKey<ParallelModifier> KEY = ComponentKey.oi(
+        public static final ComponentKey<ParallelModifier> KEY = ComponentKey.id(
                 "parallel_modifier", ParallelModifier.class)
                 .service(RecipeModifier.KEY, (t, u) -> t);
 

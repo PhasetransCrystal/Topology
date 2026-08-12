@@ -8,7 +8,7 @@ import net.neoforged.neoforge.transfer.item.ItemResource;
 
 public final class AeItemOutputPush extends AeResourceOutputPush<ItemResource> {
 
-    public static final ComponentKey<AeItemOutputPush> AE_ITEM_OUTPUT_PUSH = ComponentKey.oi("ae_item_output_push", AeItemOutputPush.class);
+    public static final ComponentKey<AeItemOutputPush> AE_ITEM_OUTPUT_PUSH = ComponentKey.id("ae_item_output_push", AeItemOutputPush.class);
 
     private AeItemOutputPush(ComponentContext<AeItemOutputPush> context) {
         super(context, AeItemBufferPort.AE_ITEM_BUFFER_PORT);

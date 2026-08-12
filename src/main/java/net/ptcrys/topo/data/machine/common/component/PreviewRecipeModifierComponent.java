@@ -101,7 +101,7 @@ public final class PreviewRecipeModifierComponent extends MachineComponent imple
     }
 
     private static ComponentKey<PreviewRecipeModifierComponent> key(String path) {
-        return ComponentKey.oi(path, PreviewRecipeModifierComponent.class)
+        return ComponentKey.id(path, PreviewRecipeModifierComponent.class)
                 .service(RecipeModifier.KEY, (trait, unused) -> trait);
     }
 

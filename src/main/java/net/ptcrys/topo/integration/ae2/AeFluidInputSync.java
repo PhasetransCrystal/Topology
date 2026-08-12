@@ -9,7 +9,7 @@ import net.neoforged.neoforge.transfer.fluid.FluidResource;
 
 public final class AeFluidInputSync extends AeResourceInputSync<FluidResource> {
 
-    public static final ComponentKey<AeFluidInputSync> AE_FLUID_INPUT_SYNC = ComponentKey.oi("ae_fluid_input_sync", AeFluidInputSync.class);
+    public static final ComponentKey<AeFluidInputSync> AE_FLUID_INPUT_SYNC = ComponentKey.id("ae_fluid_input_sync", AeFluidInputSync.class);
 
     private AeFluidInputSync(
                              ComponentContext<AeFluidInputSync> context,

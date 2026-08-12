@@ -13,7 +13,7 @@ import net.neoforged.neoforge.transfer.item.ItemResource;
 
 public final class AeItemBufferPort extends AeBufferPort<ItemResource> {
 
-    public static final ComponentKey<AeItemBufferPort> AE_ITEM_BUFFER_PORT = ComponentKey.oi("ae_item_buffer_port", AeItemBufferPort.class);
+    public static final ComponentKey<AeItemBufferPort> AE_ITEM_BUFFER_PORT = ComponentKey.id("ae_item_buffer_port", AeItemBufferPort.class);
 
     private AeItemBufferPort(ComponentContext<AeItemBufferPort> context, int maxKinds) {
         super(

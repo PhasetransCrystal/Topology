@@ -206,7 +206,7 @@ class AePatternProviderUi private constructor(context: ComponentContext<AePatter
     companion object {
         @JvmField
         val AE_PATTERN_PROVIDER_UI: ComponentKey<AePatternProviderUi> =
-            ComponentKey.oi("ae_pattern_provider_ui", AePatternProviderUi::class.java)
+            ComponentKey.id("ae_pattern_provider_ui", AePatternProviderUi::class.java)
 
         const val PAGE_KEY: String = "ae_patterns"
 

@@ -8,6 +8,7 @@ import net.ptcrys.topo.data.recipe.common.ScalarRecipeCapability;
 
 import net.neoforged.neoforge.transfer.resource.Resource;
 
+import net.ptcrys.topo.helper.ResourceFilterHelper;
 import org.jspecify.annotations.Nullable;
 
 import java.util.function.Predicate;

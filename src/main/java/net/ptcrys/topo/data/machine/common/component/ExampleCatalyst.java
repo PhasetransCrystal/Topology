@@ -8,7 +8,7 @@ import net.ptcrys.topo.api.machine.component.MachineComponent;
 /** Example plain trait consumed by the controller together with two buffer traits. */
 public final class ExampleCatalyst extends MachineComponent {
 
-    public static final ComponentKey<ExampleCatalyst> KEY = ComponentKey.oi("catalyst", ExampleCatalyst.class);
+    public static final ComponentKey<ExampleCatalyst> KEY = ComponentKey.id("catalyst", ExampleCatalyst.class);
 
     private static final int PROCESS_VALUE = 5;
 
