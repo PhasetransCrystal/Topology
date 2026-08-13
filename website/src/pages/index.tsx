@@ -1,6 +1,6 @@
 import Link from '@docusaurus/Link';
 import Layout from '@theme/Layout';
-import {Redirect} from '@docusaurus/router';
+import {JSX} from "react";
 
 export default function Home(): JSX.Element {
   return (
@@ -27,7 +27,7 @@ export default function Home(): JSX.Element {
         <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', justifyContent: 'center' }}>
           <Link
             className="button button--primary button--lg"
-            to="/docs/intro"
+            to="/docs"
             style={{ borderRadius: '8px', fontSize: '1rem', padding: '0.65rem 1.8rem' }}
           >
             Get Started →
@@ -50,12 +50,12 @@ export default function Home(): JSX.Element {
           maxWidth: 560,
         }}>
           {[
-            ['Machine', '/docs/automation/machine'],
-            ['Recipe', '/docs/automation/recipe'],
-            ['Pipe', '/docs/automation/pipe'],
-            ['Material', '/docs/materials-world/material'],
-            ['Equipment', '/docs/materials-world/equipment'],
-            ['Ore', '/docs/materials-world/ore'],
+            ['Machine', '/docs/machine/'],
+            ['Recipe', '/docs/recipe/'],
+            ['Pipe', '/docs/pipe/'],
+            ['Material', '/docs/material/'],
+            ['Equipment', '/docs/equipment/'],
+            ['Ore', '/docs/ore/'],
           ].map(([label, to]) => (
             <Link
               key={label}

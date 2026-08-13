@@ -1,14 +1,27 @@
 ---
-sidebar_position: 4
+sidebar_position: 1
 ---
 
 # Pipe
 
 管道系统提供可视化物流网络。管道自动形成连接图、执行分发策略，通过统一网络引擎处理传输。
 
-## 何时阅读
+## 关键概念
 
-需要添加物品或流体的传输管道时。部分 Mod 才需要。
+```
+PipeDefinition       ← 一种管道（资源类型 × 等级）
+  ├── PipeBlockTemplate   ← 外观/模型模板
+  ├── PipeDistributionStrategy ← 分发策略（决定每 tick 送多少到哪些目标）
+  └── PipeSurveyTool      ← 勘测器物品（网络吞吐可视化）
+```
+
+## 页面导航
+
+| 页面 | 内容 | 何时阅读 |
+|------|------|----------|
+| [PipeStrategy](pipe/pipe-strategy.md) | 继承 `PipeDistributionStrategy` 自定义分发逻辑 + 配置 UI | 需要轮询/均分之外的分发行为 |
+| [Pipe Surveyor](pipe/pipe-survey.md) | `PipeSurveyTool` 标记接口 + 勘测行为 | 需要网络勘测工具 |
+| **Pipe（本页）** | `Pipes.register` 声明管道、交互规则 | 添加传输管道 |
 
 ## 注册管道
 
@@ -20,8 +33,7 @@ Pipes.register("item_pipe_t1")
     .maxExtractRate(64)                                  // 每 tick 最大提取
     .nodeThroughput(128)                                 // 每节点每 tick 吞吐
     .filter(PipeFilterSettings.NONE)                     // 无需过滤
-    .strategy(BuiltinTopoPipeDistributionStrategies.ROUND_ROBIN,
-        new AggregationWindow(1, 16,4,4))
+    .strategy(myRoundRobin, new AggregationWindow(1, 16, 4, 4))  // 你的分发策略 + 聚合窗口
     .build();
 ```
 
@@ -60,9 +72,16 @@ public class MyPipeBlockTemplate implements PipeBlockTemplate {
 - 任何标记为 `c:tools/wrench` 的物品均可操作
 - 管道放置/移除时自动加入/离开最近的兼容网络段
 
+## 勘测器
+
+管道网络勘测工具（`PipeSurveyTool` 标记接口 + `PipeSurveyManager` 行为驱动）——
+物品实现接口即成为勘测器，详情见 [Pipe Surveyor](pipe/pipe-survey.md)。
+
 ## 分发策略
 
-策略由 `PipeDistributionStrategy` 接口定义，由 `BuiltinTopoPipeDistributionStrategies` 提供内置实现。支持轮询、最近/最远优先等模式。
+策略由 `PipeDistributionStrategy` 接口定义——库不内置具体策略，继承实现后通过
+`PipeDistributionStrategies.register(strategy)` 注册。接口签名、上下文方法与注册时机见
+[PipeStrategy](pipe/pipe-strategy.md)。
 
 ## API 速查
 

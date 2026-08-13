@@ -1,10 +1,12 @@
 ---
-sidebar_position: 2
+sidebar_position: 6
 ---
 
 # Multi-block Patterns
 
 多方块结构通过声明式 `Blueprint` 定义。定义形状 → 挂载到机器 → 框架自动处理结构匹配、成型验证和异步诊断。
+
+本页是 [Machine](../machine.md) 模块的子页——概念与页面导航见 [Machine](../machine.md)。
 
 ## 何时阅读
 
@@ -34,14 +36,13 @@ Blueprint blueprint = Blueprint.of()
 Machines.begin(Identifier.fromNamespaceAndPath("mymod", "my_multiblock"),registry)
     .displayName("My Multiblock","大型多方块机器")
     .component(MultiblockController.mount(blueprint))
-    .component(EnergyBuffer.key())
-    .component(ItemResourcePort.ITEM_INPUT)
-    .component(ItemResourcePort.ITEM_OUTPUT)
-    .component(RecipeLogic.mount(recipeTypes))
+    .component(MyItemPort.mount(MyItemPort.KEY, 2))          // 你的自定义端口组件
+    .component(RecipeLogic.mount(RecipeLogic.RECIPE_LOGIC_1, recipeType))
     .build();
 ```
 
-:::info 蓝图中的 `@` 字符标记控制器位置，框架自动扫描定位。
+:::info
+蓝图中的 `@` 字符标记控制器位置，框架自动扫描定位。
 :::
 
 ## CellPredicate — 方块匹配规则
@@ -67,21 +68,27 @@ CellPredicate custom = (state, expected) -> state.is(BlockTags.MINEABLE_WITH_PIC
 
 ## PropertyRule — 方块状态约束
 
-通过 `where` 的重载形式附加状态约束：
+通过 `where` 的重载形式附加状态约束（第 3 参是旋转前的**规范状态**，第 4 参是旋转协变规则）：
 
 ```java
 Blueprint.of()
     .aisle("C C")
-    .where('C',CellPredicates.block(casingBlock),
-        DirectionPropertyRule.of(BlockDirectionProperties.FACING, Direction.NORTH))
+    .where('C', CellPredicates.block(casingBlock),
+        casingBlock.defaultBlockState(),                       // expectedState（预旋转）
+        PropertyRules.direction(BlockDirectionProperties.FACING))   // FACING 随结构旋转协变
     .build();
 ```
 
-PropertyRules 提供的工厂方法：
+`PropertyRules` 提供的工厂方法：
 
-- `DirectionPropertyRule.direction(EnumProperty<Direction>...)`
-- `DirectionPropertyRule.axis(EnumProperty<Direction.Axis>)`
-- `DerivedPropertyRule.derived(Property<?>...)`
+- `PropertyRules.direction(EnumProperty<Direction>...)` — 朝向属性（水平 4 向拒绝俯仰旋转）
+- `PropertyRules.axis(EnumProperty<Direction.Axis>)` — 轴属性
+- `PropertyRules.half(EnumProperty<Half>)` — 半格属性（TOP/BOTTOM）
+- `PropertyRules.derived(Property<?>...)` — 派生属性（如楼梯 shape，屏蔽比较 + 备用编码）
+
+:::info
+部件角色（舱口/总线）与方块状态显示注册见 [Multiblock Abilities](multiblock-ability.md)。
+:::
 
 ## 运行时过程
 
