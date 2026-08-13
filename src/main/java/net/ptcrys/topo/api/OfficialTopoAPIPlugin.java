@@ -14,12 +14,12 @@ import net.ptcrys.topo.api.machine.component.RecipeLogicMetadata;
 import net.ptcrys.topo.api.machine.component.RecipeModifierDisplay;
 import net.ptcrys.topo.api.machine.multiblock.MultiblockControllerMetadata;
 import net.ptcrys.topo.api.machine.multiblock.ability.PartRoleAttachment;
-import net.ptcrys.topo.data.OfficialTopoPlugin;
 
 /**
  * Official API plugin: runtime API lang and machine attachment-type activation for code under
  * {@code net.ptcrys.topo.api} / {@code apiv2}. Shares {@link Topology#MODID} and
- * {@link Topology#REGISTRY} with {@link OfficialTopoPlugin}.
+ * {@link Topology#REGISTRY} with the content plugin (registered by the content mod that hosts
+ * product tables, e.g. {@code breakdown}).
  *
  * <p>
  * Does not contribute product materials / equipment / machine / ore / recipe tables — those live

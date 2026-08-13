@@ -1,7 +1,7 @@
 package net.ptcrys.topo.api.machine.ui.tooltip
 
+import net.ptcrys.topo.api.api.infrastructure.ExternalUiInstrumentation
 import net.ptcrys.topo.api.machine.ui.MachineUiTooltipTemplate
-import net.ptcrys.topo.client.debug.UiPerfProbe
 
 import net.minecraft.world.inventory.tooltip.TooltipComponent
 
@@ -22,7 +22,7 @@ class LazyHoverPanel(private val panel: Supplier<UIElement>) {
     fun get(): TooltipComponent {
         component?.let { return it }
         val root = panel.get()
-        UiPerfProbe.instrumentExternal("tooltip", root)
+        ExternalUiInstrumentation.instrument("tooltip", root)
         return MachineUiTooltipTemplate.createTooltipComponent(root).also { component = it }
     }
 

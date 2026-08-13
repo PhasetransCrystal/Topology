@@ -1,11 +1,11 @@
 package net.ptcrys.topo.api.machine.ui
 
 import net.ptcrys.topo.api.api.lang.LangKey
+import net.ptcrys.topo.api.api.lang.TopoApiLang
 import net.ptcrys.topo.api.machine.resource.AutomationIo
 import net.ptcrys.topo.api.machine.resource.PortAccess
 import net.ptcrys.topo.api.machine.resource.RecipeRole
 import net.ptcrys.topo.api.machine.resource.ResourcePort
-import net.ptcrys.topo.data.machine.BuiltinTopoMachineUiLang
 
 import net.minecraft.core.Direction
 import net.minecraft.network.chat.Component
@@ -106,11 +106,11 @@ class SideIoConfigGrid private constructor(defaultPacked: Int, private val serve
                 gridW,
                 cell,
                 gap,
-                controlButton("topo_side_io_reset", BuiltinTopoMachineUiLang.UI_SIDE_IO_RESET, MachineUiIcons.reset()) {
+                controlButton("topo_side_io_reset", TopoApiLang.UI_SIDE_IO_RESET, MachineUiIcons.reset()) {
                     sendAction(RESET_PAYLOAD)
                 },
                 faceCell(Direction.UP, "up"),
-                controlButton("topo_side_io_disable", BuiltinTopoMachineUiLang.UI_SIDE_IO_DISABLE, MachineUiIcons.forbidden()) {
+                controlButton("topo_side_io_disable", TopoApiLang.UI_SIDE_IO_DISABLE, MachineUiIcons.forbidden()) {
                     sendAction(DISABLE_PAYLOAD)
                 },
             ),
@@ -239,7 +239,7 @@ class SideIoConfigGrid private constructor(defaultPacked: Int, private val serve
     }
 
     private class FaceCell(localSide: Direction, faceKey: String, onClick: () -> Unit) : Button() {
-        private val faceName = BuiltinTopoMachineUiLang.sideIoFace(faceKey).getComponent()
+        private val faceName = TopoApiLang.sideIoFace(faceKey).getComponent()
         private val outerRing = ring("topo_side_io_ring_outer", MachineUiComponentStyle.sideIoRingSize)
         private val innerRing = ring("topo_side_io_ring_inner", MachineUiComponentStyle.sideIoInnerRingSize)
 
@@ -301,9 +301,9 @@ class SideIoConfigGrid private constructor(defaultPacked: Int, private val serve
             }
             style {
                 it.tooltips(
-                    BuiltinTopoMachineUiLang.UI_SIDE_IO_TOOLTIP.getComponent(
+                    TopoApiLang.UI_SIDE_IO_TOOLTIP.getComponent(
                         faceName,
-                        BuiltinTopoMachineUiLang.sideIoMode(mode).getComponent(),
+                        TopoApiLang.sideIoMode(mode).getComponent(),
                     ),
                 )
             }
@@ -337,7 +337,7 @@ class SideIoConfigGrid private constructor(defaultPacked: Int, private val serve
             val portLabel = portDisplayName(
                 port.id(),
                 resourceType.displayName(),
-                BuiltinTopoMachineUiLang.sideIoTitle(port.recipeIo()).getComponent(),
+                TopoApiLang.sideIoTitle(port.recipeIo()).getComponent(),
             )
             val cell = MachineUiComponentStyle.sideIoCellSize
             val gap = MachineUiComponentStyle.sideIoCellGap

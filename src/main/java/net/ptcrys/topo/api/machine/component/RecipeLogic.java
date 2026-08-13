@@ -916,7 +916,7 @@ public class RecipeLogic extends MachineTicker
             return running;
         }
 
-        /** UI display of this state; values live in {@code BuiltinTopoMachineUiLang}. */
+        /** UI display of this state; values live in {@code TopoApiLang}. */
         public net.minecraft.network.chat.Component displayName() {
             return switch (this) {
                 case IDLE -> TopoApiLang.UI_RECIPE_STATE_IDLE.getComponent();

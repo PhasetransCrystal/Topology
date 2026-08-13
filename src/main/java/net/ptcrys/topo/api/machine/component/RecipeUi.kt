@@ -1,5 +1,6 @@
 package net.ptcrys.topo.api.machine.component
 
+import net.ptcrys.topo.api.api.lang.TopoApiLang
 import net.ptcrys.topo.api.machine.ui.LcdData
 import net.ptcrys.topo.api.machine.ui.MachineUiComponentStyle
 import net.ptcrys.topo.api.machine.ui.MachineUiComponentTemplate
@@ -9,7 +10,6 @@ import net.ptcrys.topo.api.machine.ui.MachineUiLayout
 import net.ptcrys.topo.api.machine.ui.recipe.LiveRecipeSlots
 import net.ptcrys.topo.api.machine.ui.recipe.RecipeUiLayout
 import net.ptcrys.topo.api.machine.ui.recipe.XeiRecipeLookup
-import net.ptcrys.topo.data.machine.BuiltinTopoMachineUiLang
 
 import net.minecraft.network.chat.Component
 
@@ -44,31 +44,31 @@ class RecipeUi private constructor(context: ComponentContext<RecipeUi>, private 
     override fun collectMachineUi(contribution: MachineUiContribution) {
         contribution.mainPage(
             pageKey,
-            BuiltinTopoMachineUiLang.UI_RECIPE_PAGE.getComponent(),
+            TopoApiLang.UI_RECIPE_PAGE.getComponent(),
             createRecipePage(),
         )
 
         // Visible on every page: keeps the right column stable across tab switches.
         contribution.rightPanel(
             statusPanelKey,
-            BuiltinTopoMachineUiLang.UI_RECIPE_STATUS.getComponent(),
+            TopoApiLang.UI_RECIPE_STATUS.getComponent(),
         ) {
             lcdPanel(minValueWidth = LCD_VALUE_MIN_WIDTH) {
                 addBoundEntry(
-                    BuiltinTopoMachineUiLang.UI_RECIPE_STATE.getComponent(),
+                    TopoApiLang.UI_RECIPE_STATE.getComponent(),
                     ::stateText,
                     stateLedSupplier(),
                 )
                 // Progress changes every tick. Pin this hot value so its changing natural width
                 // cannot feed a right-aligned fractional width back into repeated layout passes.
                 addPinnedBoundEntry(
-                    BuiltinTopoMachineUiLang.UI_RECIPE_PROGRESS.getComponent(),
+                    TopoApiLang.UI_RECIPE_PROGRESS.getComponent(),
                     ::progressText,
                     LCD_VALUE_MIN_WIDTH,
                     LcdData.LED_RUNNING,
                 )
                 addBoundEntry(
-                    BuiltinTopoMachineUiLang.UI_RECIPE_DURATION.getComponent(),
+                    TopoApiLang.UI_RECIPE_DURATION.getComponent(),
                     ::durationText,
                     LcdData.LED_TEXT,
                 )
@@ -80,7 +80,7 @@ class RecipeUi private constructor(context: ComponentContext<RecipeUi>, private 
             // rightPanel 正文已是 verticalList；块与块之间用 MODIFIER_BLOCK_GAP。
             contribution.rightPanel(
                 modifiersPanelKey,
-                BuiltinTopoMachineUiLang.UI_RECIPE_MODIFIERS.getComponent(),
+                TopoApiLang.UI_RECIPE_MODIFIERS.getComponent(),
                 gap = MODIFIER_BLOCK_GAP,
                 maxWidth = SIDE_PANEL_MAX_WIDTH,
             ) {
@@ -161,7 +161,7 @@ class RecipeUi private constructor(context: ComponentContext<RecipeUi>, private 
         bar.addEventListener(UIEvents.HOVER_TOOLTIPS) { event ->
             if (XeiRecipeLookup.isAvailable()) {
                 event.hoverTooltips = HoverTooltips.create(
-                    BuiltinTopoMachineUiLang.UI_RECIPE_SHOW_RECIPES.getComponent(),
+                    TopoApiLang.UI_RECIPE_SHOW_RECIPES.getComponent(),
                 )
             }
         }
@@ -173,7 +173,7 @@ class RecipeUi private constructor(context: ComponentContext<RecipeUi>, private 
     }
 
     private fun stateText(): Component = if (logic.workMode() == MachineWorkControl.WorkMode.HALTED) {
-        BuiltinTopoMachineUiLang.UI_RECIPE_STATE_HALTED.getComponent()
+        TopoApiLang.UI_RECIPE_STATE_HALTED.getComponent()
     } else {
         logic.state().displayName()
     }

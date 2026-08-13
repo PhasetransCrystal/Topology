@@ -1,6 +1,6 @@
 package net.ptcrys.topo.api.machine.ui
 
-import net.ptcrys.topo.data.machine.BuiltinTopoMachineUiLang
+import net.ptcrys.topo.api.api.lang.TopoApiLang
 
 import net.minecraft.client.Minecraft
 import net.minecraft.network.chat.Component
@@ -218,14 +218,14 @@ object AmountEditorPopup {
         add(
             actionButton(
                 "topo_amount_popup_cancel",
-                BuiltinTopoMachineUiLang.UI_AMOUNT_POPUP_CANCEL.getComponent(),
+                TopoApiLang.UI_AMOUNT_POPUP_CANCEL.getComponent(),
                 onCancel,
             ),
         )
         add(
             actionButton(
                 "topo_amount_popup_confirm",
-                BuiltinTopoMachineUiLang.UI_AMOUNT_POPUP_CONFIRM.getComponent(),
+                TopoApiLang.UI_AMOUNT_POPUP_CONFIRM.getComponent(),
                 onConfirm,
             ),
         )

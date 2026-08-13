@@ -1,8 +1,8 @@
 package net.ptcrys.topo.api.machine.ui.tooltip
 
+import net.ptcrys.topo.api.api.infrastructure.ExternalUiInstrumentation
 import net.ptcrys.topo.api.api.infrastructure.FreezableStrategyRegistry
 import net.ptcrys.topo.api.machine.ui.MachineUiTooltipTemplate
-import net.ptcrys.topo.client.debug.UiPerfProbe
 
 import net.minecraft.world.inventory.tooltip.TooltipComponent
 import net.minecraft.world.item.Item
@@ -54,7 +54,7 @@ object ItemTooltipUis {
             val key = CacheKey(stack.item, provider.cacheKey(stack))
             CACHE[key]?.let { return it }
             val root = provider.build(stack)
-            UiPerfProbe.instrumentExternal("tooltip", root)
+            ExternalUiInstrumentation.instrument("tooltip", root)
             val component = MachineUiTooltipTemplate.createTooltipComponent(root)
             CACHE[key] = component
             component

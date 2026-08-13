@@ -1,4 +1,4 @@
-package net.ptcrys.topo.data.recipe.common;
+package net.ptcrys.topo.api.recipe.common;
 
 import net.ptcrys.topo.api.machine.MachineDefinition;
 import net.ptcrys.topo.api.machine.Machines;

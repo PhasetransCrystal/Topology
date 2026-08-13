@@ -35,7 +35,7 @@ import java.util.Objects;
  *
  * <p>
  * This type is vanilla-only and pure (no Minecraft bootstrap required); it never references the
- * {@code net.ptcrys.topo.data} package, per the api &perp; data rule.
+ * {@code net.ptcrys.breakdown.data} package, per the api &perp; content rule.
  *
  * @see Orientations
  */
