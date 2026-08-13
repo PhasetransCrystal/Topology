@@ -27,7 +27,7 @@ import java.util.Objects;
  */
 public final class MachineSearchPoolConfig extends MachineComponent implements RecipeSearchPoolSettings {
 
-    public static final ComponentKey<MachineSearchPoolConfig> RECIPE_SEARCH_POOL = ComponentKey.oi("recipe_search_pool", MachineSearchPoolConfig.class)
+    public static final ComponentKey<MachineSearchPoolConfig> RECIPE_SEARCH_POOL = ComponentKey.id("recipe_search_pool", MachineSearchPoolConfig.class)
             .service(RecipeSearchPoolSettings.KEY, (trait, unused) -> trait);
 
     private final RecipeSearchPoolId fieldDefault;

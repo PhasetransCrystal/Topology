@@ -70,7 +70,7 @@ import java.util.concurrent.CompletableFuture;
  */
 public final class MultiblockController extends MachineTicker {
 
-    public static final ComponentKey<MultiblockController> CONTROLLER = ComponentKey.oi("multiblock_controller", MultiblockController.class)
+    public static final ComponentKey<MultiblockController> CONTROLLER = ComponentKey.id("multiblock_controller", MultiblockController.class)
             .service(RecipeCondition.KEY, (trait, unused) -> trait::formed)
             // Roles bridge: the controller-mounted recipe logic folds this single modifier,
             // which in turn folds every member-mounted RecipeModifier capability through

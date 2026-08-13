@@ -1,12 +1,12 @@
 package net.ptcrys.topo.api.pipe.ui
 
+import net.ptcrys.topo.api.api.lang.TopoApiLang
 import net.ptcrys.topo.api.machine.ui.LcdData
 import net.ptcrys.topo.api.machine.ui.MachineUiContainerTemplate
 import net.ptcrys.topo.api.machine.ui.tooltip.ItemTooltipUis
 import net.ptcrys.topo.api.pipe.PipeDefinition
 import net.ptcrys.topo.api.pipe.PipeDistributionStrategy
 import net.ptcrys.topo.api.pipe.Pipes
-import net.ptcrys.topo.data.pipe.BuiltinTopoPipeLang
 
 import net.minecraft.network.chat.Component
 import net.neoforged.bus.api.IEventBus
@@ -48,17 +48,17 @@ object PipeSpecTooltips {
         val lcd = MachineUiContainerTemplate.createTooltipLcdData(LcdData.Orientation.VERTICAL)
         lcd.setId("topo_pipe_spec_tooltip")
         lcd.addStaticEntry(
-            BuiltinTopoPipeLang.TOOLTIP_PIPE_MAX_RATE.getComponent(),
+            TopoApiLang.TOOLTIP_PIPE_MAX_RATE.getComponent(),
             perTick(definition, definition.maxExtractRate()),
             LcdData.LED_TEXT,
         )
         lcd.addStaticEntry(
-            BuiltinTopoPipeLang.TOOLTIP_PIPE_NODE_THROUGHPUT.getComponent(),
+            TopoApiLang.TOOLTIP_PIPE_NODE_THROUGHPUT.getComponent(),
             perTick(definition, definition.nodeThroughput()),
             LcdData.LED_TEXT,
         )
         lcd.addStaticEntry(
-            BuiltinTopoPipeLang.TOOLTIP_PIPE_STRATEGIES.getComponent(),
+            TopoApiLang.TOOLTIP_PIPE_STRATEGIES.getComponent(),
             strategyCountValue(definition.strategies().size),
             LcdData.LED_TEXT,
         )
@@ -66,18 +66,18 @@ object PipeSpecTooltips {
             lcd.addStaticSubEntry(name, desc, LcdData.LED_TEXT)
         }
         lcd.addStaticEntry(
-            BuiltinTopoPipeLang.TOOLTIP_PIPE_FILTER.getComponent(),
+            TopoApiLang.TOOLTIP_PIPE_FILTER.getComponent(),
             filterSpec(definition),
             LcdData.LED_TEXT,
         )
         return lcd
     }
 
-    private fun perTick(definition: PipeDefinition, amount: Int): Component = BuiltinTopoPipeLang.TOOLTIP_PIPE_PER_TICK.getComponent(definition.profile().formatAmount(amount.toLong()))
+    private fun perTick(definition: PipeDefinition, amount: Int): Component = TopoApiLang.TOOLTIP_PIPE_PER_TICK.getComponent(definition.profile().formatAmount(amount.toLong()))
 
     /** 策略行右列:可用策略数量(测试 292)。 */
     @JvmStatic
-    fun strategyCountValue(count: Int): Component = BuiltinTopoPipeLang.TOOLTIP_PIPE_STRATEGY_COUNT.getComponent(count)
+    fun strategyCountValue(count: Int): Component = TopoApiLang.TOOLTIP_PIPE_STRATEGY_COUNT.getComponent(count)
 
     /**
      * 策略子项纯函数(测试 292):每个策略从自身句柄取 (displayName, description),声明顺序。
@@ -89,12 +89,12 @@ object PipeSpecTooltips {
     private fun filterSpec(definition: PipeDefinition): Component {
         val filter = definition.filterSettings()
         if (!filter.enabled()) {
-            return BuiltinTopoPipeLang.TOOLTIP_PIPE_FILTER_NONE.getComponent()
+            return TopoApiLang.TOOLTIP_PIPE_FILTER_NONE.getComponent()
         }
         return if (filter.allowTags) {
-            BuiltinTopoPipeLang.TOOLTIP_PIPE_FILTER_ENTRIES_TAGS.getComponent(filter.entryCapacity())
+            TopoApiLang.TOOLTIP_PIPE_FILTER_ENTRIES_TAGS.getComponent(filter.entryCapacity())
         } else {
-            BuiltinTopoPipeLang.TOOLTIP_PIPE_FILTER_ENTRIES.getComponent(filter.entryCapacity())
+            TopoApiLang.TOOLTIP_PIPE_FILTER_ENTRIES.getComponent(filter.entryCapacity())
         }
     }
 }

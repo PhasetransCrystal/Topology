@@ -1,5 +1,5 @@
 ---
-sidebar_position: 2
+sidebar_position: 3
 ---
 
 # Tick System
@@ -63,8 +63,8 @@ boolean done = handle.isCancelled();
 | `SYNC`   | 游戏主线程 | 世界修改、BlockState、UI（绝大多数） |
 | `ASYNC`  | 调度器线程 | 纯计算（路径搜索、网络图计算）       |
 
-:::caution 异步 Tick
-`ASYNC` 回调中 **禁止**访问或修改 Minecraft 世界状态（方块、实体、BlockEntity）。只用于纯数据计算。
+:::caution
+**异步 Tick** — `ASYNC` 回调中 **禁止**访问或修改 Minecraft 世界状态（方块、实体、BlockEntity）。只用于纯数据计算。
 :::
 
 ## 分桶机制

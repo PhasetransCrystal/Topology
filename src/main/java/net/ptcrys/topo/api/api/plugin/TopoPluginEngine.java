@@ -34,8 +34,8 @@ import net.ptcrys.topo.api.pipe.PipeDistributionStrategies;
 import net.ptcrys.topo.api.pipe.Pipes;
 import net.ptcrys.topo.api.recipe.TopoRecipeTypes;
 import net.ptcrys.topo.api.recipe.capability.RecipeCapabilities;
+import net.ptcrys.topo.api.recipe.common.RecipePreviewPlans;
 import net.ptcrys.topo.api.recipe.productionline.ProductionLines;
-import net.ptcrys.topo.data.recipe.common.RecipePreviewPlans;
 
 import java.util.Map;
 

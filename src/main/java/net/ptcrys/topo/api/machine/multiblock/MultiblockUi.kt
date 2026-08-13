@@ -14,7 +14,7 @@ import com.lowdragmc.lowdraglib2.gui.ui.UIElement
 
 /**
  * Multiblock structure UI trait: Structure main page (interactive 3D scene) plus a right-side
- * diagnostics panel. Labels are translation keys (see `BuiltinTopoMachineUiLang`).
+ * diagnostics panel. Labels are translation keys (see `TopoApiLang`).
  */
 class MultiblockUi private constructor(context: ComponentContext<MultiblockUi>, private val controllerKey: ComponentKey<MultiblockController>) : MachineComponent(context) {
     private val pageKey: String = context.id().path
@@ -53,7 +53,7 @@ class MultiblockUi private constructor(context: ComponentContext<MultiblockUi>, 
     companion object {
         @JvmField
         val MULTIBLOCK_UI: ComponentKey<MultiblockUi> =
-            ComponentKey.oi("multiblock_ui", MultiblockUi::class.java)
+            ComponentKey.id("multiblock_ui", MultiblockUi::class.java)
 
         @JvmStatic
         fun mount(): ComponentMount<MultiblockUi> = mount(MULTIBLOCK_UI, MultiblockController.CONTROLLER)

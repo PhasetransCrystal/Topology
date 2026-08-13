@@ -43,13 +43,13 @@ public final class ComponentKey<T extends MachineComponent> {
      * Topo-host component key under the official API plugin namespace. Third-party mods must use
      * {@link #of(Identifier, Class)} with their own plugin {@code machine().id(path)}.
      */
-    public static <T extends MachineComponent> ComponentKey<T> oi(String path, Class<T> type) {
+    public static <T extends MachineComponent> ComponentKey<T> id(String path, Class<T> type) {
         return of(OfficialTopoAPIPlugin.INSTANCE.machine().id(path), type);
     }
 
-    public static <T extends MachineComponent> ComponentKey<T> oi(
+    public static <T extends MachineComponent> ComponentKey<T> id(
                                                                   String path, Class<T> type, String langEn, String langCn) {
-        ComponentKey<T> key = oi(path, type);
+        ComponentKey<T> key = id(path, type);
         OfficialTopoAPIPlugin.INSTANCE.lang().resource(key.id(), "trait", langEn, langCn);
         return key;
     }
