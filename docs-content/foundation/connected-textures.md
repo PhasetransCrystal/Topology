@@ -45,11 +45,11 @@ public interface ConnectedTextureHost {
 
 ## API 速查
 
-| 类/方法                                | 用途                            |
-|----------------------------------------|---------------------------------|
-| `CtmBlockStateModelCodecs.register(registrar)` | 注册全部 CTM codec     |
-| `CtmClientInit.register(modEventBus)`  | 客户端注册（纯库嵌入必调）      |
-| `ConnectedTextureHost.connectedTextureFamily()` | 方块所属纹理族          |
-| `ConnectedTextureFamily(id)`           | 纹理族身份（同 id 连接）        |
-| `ConnectedTextureProperties.CTM_ACTIVE`| 运行期激活状态方块属性          |
-| `ConnectedTextureProperties.setActive(level, pos, active)` | 更新激活状态 |
+| 类/方法                                                    | 用途                       |
+|------------------------------------------------------------|----------------------------|
+| `CtmBlockStateModelCodecs.register(registrar)`             | 注册全部 CTM codec         |
+| `CtmClientInit.register(modEventBus)`                      | 客户端注册（纯库嵌入必调） |
+| `ConnectedTextureHost.connectedTextureFamily()`            | 方块所属纹理族             |
+| `ConnectedTextureFamily(id)`                               | 纹理族身份（同 id 连接）   |
+| `ConnectedTextureProperties.CTM_ACTIVE`                    | 运行期激活状态方块属性     |
+| `ConnectedTextureProperties.setActive(level, pos, active)` | 更新激活状态               |

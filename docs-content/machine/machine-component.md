@@ -122,18 +122,18 @@ Machines.begin(id, registry)
 
 ## API 速查
 
-| 类/方法                                | 用途                            |
-|----------------------------------------|---------------------------------|
-| `ComponentKey.of(id, type)`            | 第三方组件 key（发布后不可改名）|
-| `ComponentKey.id(path, type)`          | 宿主保留捷径（topo 命名空间）   |
-| `key.mount(factory)`                   | 组件挂载工厂 → `ComponentMount` |
-| `key.service(serviceKey, provider)`    | capability 式服务绑定           |
-| `MachineComponent.resolveDependencies(traits)` | 结构校验（禁读持久化） |
-| `MachineComponent.collectMachineUi(contribution)` | 面板贡献              |
-| `MachineComponent.transferHandler(type, side)` | 自动化 I/O 面            |
-| `MachineComponent.recipeResourceHandler(type, io)` | 配方 I/O 面           |
-| `MachineComponents.require(key)` / `.optional(key)` | 兄弟组件查找       |
-| `MachineComponents.services(key, context)` | 服务发现                     |
-| `MachineComponents.resources()`        | 资源视图聚合                    |
-| `MachineTicker.kind()` / `.tickInterval()` / `.tick(time, handle)` | tick 通道 |
-| `DataScope.intField(name, initial)` 等 | 声明数据字段（两轴必填）        |
+| 类/方法                                                            | 用途                             |
+|--------------------------------------------------------------------|----------------------------------|
+| `ComponentKey.of(id, type)`                                        | 第三方组件 key（发布后不可改名） |
+| `ComponentKey.id(path, type)`                                      | 宿主保留捷径（topo 命名空间）    |
+| `key.mount(factory)`                                               | 组件挂载工厂 → `ComponentMount`  |
+| `key.service(serviceKey, provider)`                                | capability 式服务绑定            |
+| `MachineComponent.resolveDependencies(traits)`                     | 结构校验（禁读持久化）           |
+| `MachineComponent.collectMachineUi(contribution)`                  | 面板贡献                         |
+| `MachineComponent.transferHandler(type, side)`                     | 自动化 I/O 面                    |
+| `MachineComponent.recipeResourceHandler(type, io)`                 | 配方 I/O 面                      |
+| `MachineComponents.require(key)` / `.optional(key)`                | 兄弟组件查找                     |
+| `MachineComponents.services(key, context)`                         | 服务发现                         |
+| `MachineComponents.resources()`                                    | 资源视图聚合                     |
+| `MachineTicker.kind()` / `.tickInterval()` / `.tick(time, handle)` | tick 通道                        |
+| `DataScope.intField(name, initial)` 等                             | 声明数据字段（两轴必填）         |

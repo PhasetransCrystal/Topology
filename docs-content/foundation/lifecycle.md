@@ -8,25 +8,25 @@ sidebar_position: 1
 
 ## 钩子全表
 
-| # | 钩子 | 冻结于此钩子之后 | 此时可访问 |
-|---|------|------------------|------------|
-| 1 | `registerRecipeFoundation(recipe)` | `RecipeCapabilities` | 机器资源类型、配方能力 |
-| 2 | `registerRecipeTypes(recipe)` | `TopoRecipeTypes` | 已冻结的配方能力 |
-| 3 | `registerMaterialFoundation(material)` | 材质四表（data/form/post-processor） | 尚未有材质实例 |
-| 4 | `registerMaterials(material)` | `MaterialRegistry` | 已冻结的表单、数据类型、后处理器 |
-| 5 | `registerMaterialCreativeTabs(material)` | — | 已冻结的材质 |
-| 6 | （引擎内部） | — | 为每个材质铸造表单物品；先跑全部 `validate` 再跑全部 `process` |
-| 7 | `registerMaterialFollowUps(material)` | — | 全部表单物品已存在 |
-| 8 | `registerRecipes(recipe)` | `ProductionLines` | 全部材质 + 表单物品 |
-| 9 | `registerEquipmentKinds(equipment)` | `EquipmentRegistry` | 全部材质（含数据）；之后引擎按 (材料 × 种类) 铸造物品 |
-| 10 | `registerMachineFoundation(machine)` | 机器六表（resource type / UI icon / render / part role / property display / attachment） | 尚未有机器定义 |
-| 11 | `registerMachines(machine)` | `Machines` | 已冻结的机器基础表；之后引擎铸造方块/BE 并安装预览计划 |
-| 12 | `registerMachineFollowUps(machine)` | `PipeDistributionStrategies`、`Pipes` | 全部机器定义（方块/BE 已铸造） |
-| 13 | `registerOreFoundation(ore)` | 矿石四表（shape / mode / air exposure / conflict） | 尚未有矿脉 |
-| 14 | `registerOreDisplays(ore)` | `OreVeinDisplays` | 已冻结的模式表；每种模式必须有对应显示 |
-| 15 | `registerOreVeins(ore)` | `OreVeins` | 已冻结的矿石基础表 |
-| 16 | `registerOreDatagen(ore)` | — | 全部矿脉 |
-| 17 | `registerLang(lang)` | `LangRegistry` | 全部 |
+| #  | 钩子                                     | 冻结于此钩子之后                                                                         | 此时可访问                                                     |
+|----|------------------------------------------|------------------------------------------------------------------------------------------|----------------------------------------------------------------|
+| 1  | `registerRecipeFoundation(recipe)`       | `RecipeCapabilities`                                                                     | 机器资源类型、配方能力                                         |
+| 2  | `registerRecipeTypes(recipe)`            | `TopoRecipeTypes`                                                                        | 已冻结的配方能力                                               |
+| 3  | `registerMaterialFoundation(material)`   | 材质四表（data/form/post-processor）                                                     | 尚未有材质实例                                                 |
+| 4  | `registerMaterials(material)`            | `MaterialRegistry`                                                                       | 已冻结的表单、数据类型、后处理器                               |
+| 5  | `registerMaterialCreativeTabs(material)` | —                                                                                        | 已冻结的材质                                                   |
+| 6  | （引擎内部）                             | —                                                                                        | 为每个材质铸造表单物品；先跑全部 `validate` 再跑全部 `process` |
+| 7  | `registerMaterialFollowUps(material)`    | —                                                                                        | 全部表单物品已存在                                             |
+| 8  | `registerRecipes(recipe)`                | `ProductionLines`                                                                        | 全部材质 + 表单物品                                            |
+| 9  | `registerEquipmentKinds(equipment)`      | `EquipmentRegistry`                                                                      | 全部材质（含数据）；之后引擎按 (材料 × 种类) 铸造物品          |
+| 10 | `registerMachineFoundation(machine)`     | 机器六表（resource type / UI icon / render / part role / property display / attachment） | 尚未有机器定义                                                 |
+| 11 | `registerMachines(machine)`              | `Machines`                                                                               | 已冻结的机器基础表；之后引擎铸造方块/BE 并安装预览计划         |
+| 12 | `registerMachineFollowUps(machine)`      | `PipeDistributionStrategies`、`Pipes`                                                    | 全部机器定义（方块/BE 已铸造）                                 |
+| 13 | `registerOreFoundation(ore)`             | 矿石四表（shape / mode / air exposure / conflict）                                       | 尚未有矿脉                                                     |
+| 14 | `registerOreDisplays(ore)`               | `OreVeinDisplays`                                                                        | 已冻结的模式表；每种模式必须有对应显示                         |
+| 15 | `registerOreVeins(ore)`                  | `OreVeins`                                                                               | 已冻结的矿石基础表                                             |
+| 16 | `registerOreDatagen(ore)`                | —                                                                                        | 全部矿脉                                                       |
+| 17 | `registerLang(lang)`                     | `LangRegistry`                                                                           | 全部                                                           |
 
 ## 引擎顺序
 

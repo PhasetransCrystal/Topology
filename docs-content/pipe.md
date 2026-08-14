@@ -17,11 +17,11 @@ PipeDefinition       ← 一种管道（资源类型 × 等级）
 
 ## 页面导航
 
-| 页面 | 内容 | 何时阅读 |
-|------|------|----------|
+| 页面                                  | 内容                                                     | 何时阅读                    |
+|---------------------------------------|----------------------------------------------------------|-----------------------------|
 | [PipeStrategy](pipe/pipe-strategy.md) | 继承 `PipeDistributionStrategy` 自定义分发逻辑 + 配置 UI | 需要轮询/均分之外的分发行为 |
-| [Pipe Surveyor](pipe/pipe-survey.md) | `PipeSurveyTool` 标记接口 + 勘测行为 | 需要网络勘测工具 |
-| **Pipe（本页）** | `Pipes.register` 声明管道、交互规则 | 添加传输管道 |
+| [Pipe Surveyor](pipe/pipe-survey.md)  | `PipeSurveyTool` 标记接口 + 勘测行为                     | 需要网络勘测工具            |
+| **Pipe（本页）**                      | `Pipes.register` 声明管道、交互规则                      | 添加传输管道                |
 
 ## 注册管道
 
@@ -53,14 +53,18 @@ Pipes.register("item_pipe_t1")
 ```java
 public class MyPipeBlockTemplate implements PipeBlockTemplate {
     @Override
-    public BlockBehaviour.Properties blockProperties(PipeDefinition def) {
-        return BlockBehaviour.Properties.of()
-                .strength(1.5f).sound(SoundType.METAL);
+    public BlockBehaviour.Properties styleBlockProperties(BlockBehaviour.Properties properties) {
+        return properties.strength(1.5f).sound(SoundType.METAL);
     }
 
     @Override
-    public void generateBlockModels(PipeDefinition def, /* datagen context */) {
-        // 数据生成阶段生成 blockstates / models
+    public void configureBlock(BlockBuilder<PipeBlock, RegistryCore> builder, PipeDefinition def) {
+        // 方块接线：属性、标签、战利品、blockstate/model 数据生成
+    }
+
+    @Override
+    public void configureItem(ItemBuilder<BlockItem, ?> item, PipeDefinition def) {
+        // 物品接线：展示模型绑定 + 物品数据生成
     }
 }
 ```

@@ -62,17 +62,17 @@ String mb = TopoCompactNumber.formatCompactBuckets(amountMb);     // 流体桶�
 
 ## API 速查
 
-| 类/方法                                | 用途                            |
-|----------------------------------------|---------------------------------|
-| `IdHelper.oi(path)`                    | topo 命名空间 id 铸造           |
-| `MaterialHelper.item(material, form)`  | 表单物品解析（含覆盖目标）      |
-| `MaterialHelper.itemId(material, form)`| 物品注册 id（含覆盖分支）       |
-| `MaterialHelper.itemPath(material, form)` | 注册路径                     |
-| `MaterialHelper.requireItem(material, form)` | 必须存在的物品            |
-| `ResourceFilterHelper.itemTag(tag)` / `.fluidTag(tag)` | 标签过滤       |
-| `ResourceFilterHelper.itemExact(resource)` | 精确物品过滤              |
-| `ResourceFilterHelper.any()`           | 放行一切                        |
-| `TagHelper.item(group)` / `.block(group)` / `.fluid(group)` | c: 标签 key     |
-| `TagHelper.itemMaterial(group, material)` | 材质标签 key（c:copper_dusts）|
-| `TopoCompactNumber.formatCompact(value)`| 大数字缩写                      |
-| `TopoCompactNumber.formatCompactBuckets(mb)` | 流体桶格式化             |
+| 类/方法                                                     | 用途                           |
+|-------------------------------------------------------------|--------------------------------|
+| `IdHelper.id(path)`                                         | topo 命名空间 id 铸造          |
+| `MaterialHelper.item(material, form)`                       | 表单物品解析（含覆盖目标）     |
+| `MaterialHelper.itemId(material, form)`                     | 物品注册 id（含覆盖分支）      |
+| `MaterialHelper.itemPath(material, form)`                   | 注册路径                       |
+| `MaterialHelper.requireItem(material, form)`                | 必须存在的物品                 |
+| `ResourceFilterHelper.itemTag(tag)` / `.fluidTag(tag)`      | 标签过滤                       |
+| `ResourceFilterHelper.itemExact(resource)`                  | 精确物品过滤                   |
+| `ResourceFilterHelper.any()`                                | 放行一切                       |
+| `TagHelper.item(group)` / `.block(group)` / `.fluid(group)` | c: 标签 key                    |
+| `TagHelper.itemMaterial(group, material)`                   | 材质标签 key（c:copper_dusts） |
+| `TopoCompactNumber.formatCompact(value)`                    | 大数字缩写                     |
+| `TopoCompactNumber.formatCompactBuckets(mb)`                | 流体桶格式化                   |

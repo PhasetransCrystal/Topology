@@ -137,7 +137,7 @@ PortAccess.input(Direction first, Direction... more)   // 限定可传输面
 PortAccess.output()                   // OUTPUT 配方角色 + EXTRACT
 PortAccess.output(Direction first, Direction... more)
 PortAccess.storage()                  // 双向存储（配方 I/O 均可）
-// 链式：.withRecipeIo(...) / .withAutomationIo(...) / .withPlayerAccess(...)
+// 链式：.withRecipeIo(...) / .withAutomationIo(...) / .withPlayerSlotAccess(...) / .withPlayerConfigurableSides()
 
 boolean playerConfigurableSides();    // true = 玩家可逐面配置（ResourcePort 自动获得 side-io 字段）
 ```
@@ -171,14 +171,14 @@ Machines.begin(id, registry)
 
 ## API 速查
 
-| 类/方法                                | 用途                            |
-|----------------------------------------|---------------------------------|
-| `MachineResourceTypes.begin(id, type, capability, factory)` | 注册资源类型 |
-| `MachineResourceTypes.valueIoDataFieldFactory()` | 标量型存储工厂         |
-| `machine.resourceType(path, type, capability)` | 领域入口（valueIo 默认）|
-| `machine.resourceTypeWithDataField(path, type, capability, factory)` | 自定义工厂 |
-| `machine.bindResourceName(type, en, cn)` | 资源显示名（同点绑定）       |
-| `MachineUiIcons.register(type, icon)`  | 资源图标（同点绑定）            |
-| `ResourcePort.setSideIo(side, mode)` / `.cycleSideIo(side)` / `.resetSideIo()` | 逐面配置 |
-| `PortAccess.input()` / `.output()` / `.storage()` | 访问策略工厂         |
-| `ResourcePortMetadata.recipePoolIsolatable()` | 配方搜索池隔离声明      |
+| 类/方法                                                                        | 用途                     |
+|--------------------------------------------------------------------------------|--------------------------|
+| `MachineResourceTypes.begin(id, type, capability, factory)`                    | 注册资源类型             |
+| `MachineResourceTypes.valueIoDataFieldFactory()`                               | 标量型存储工厂           |
+| `machine.resourceType(path, type, capability)`                                 | 领域入口（valueIo 默认） |
+| `machine.resourceTypeWithDataField(path, type, capability, factory)`           | 自定义工厂               |
+| `machine.bindResourceName(type, en, cn)`                                       | 资源显示名（同点绑定）   |
+| `MachineUiIcons.register(type, icon)`                                          | 资源图标（同点绑定）     |
+| `ResourcePort.setSideIo(side, mode)` / `.cycleSideIo(side)` / `.resetSideIo()` | 逐面配置                 |
+| `PortAccess.input()` / `.output()` / `.storage()`                              | 访问策略工厂             |
+| `ResourcePortMetadata.recipePoolIsolatable()`                                  | 配方搜索池隔离声明       |

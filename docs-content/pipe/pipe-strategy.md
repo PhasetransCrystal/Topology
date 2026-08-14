@@ -153,15 +153,15 @@ public void contributeConfigUi(PipePortUiCollector collector, PipePortAccess acc
 
 ## API 速查
 
-| 类/方法                                | 用途                            |
-|----------------------------------------|---------------------------------|
-| `PipeDistributionStrategy.id()`        | 持久化身份（发布后不可改）      |
-| `nameLang()` / `.shortNameLang()` / `.descriptionLang()` | 三键     |
-| `configCodec()` / `initialPortConfig(def, window)` | 配置持久化      |
-| `distribute(context)`                  | 分发执行                        |
-| `contributeConfigUi(collector, access)` | 策略配置 UI 行               |
-| `PipeDistributionStrategies.register(strategy)` | 注册（钩子 12）        |
-| `PipeDistributionContext.budgetRemaining()` / `.sourceAvailable()` | 预算/源量 |
-| `context.destinationCount()` / `.destinationAcceptance(i)` | 目标状态    |
-| `context.transfer(i, amount)`          | 向目标转移                      |
-| `context.cursor()` / `.setCursor(i)`   | 跨 tick 轮询游标                |
+| 类/方法                                                            | 用途                       |
+|--------------------------------------------------------------------|----------------------------|
+| `PipeDistributionStrategy.id()`                                    | 持久化身份（发布后不可改） |
+| `nameLang()` / `.shortNameLang()` / `.descriptionLang()`           | 三键                       |
+| `configCodec()` / `initialPortConfig(def, window)`                 | 配置持久化                 |
+| `distribute(context)`                                              | 分发执行                   |
+| `contributeConfigUi(collector, access)`                            | 策略配置 UI 行             |
+| `PipeDistributionStrategies.register(strategy)`                    | 注册（钩子 12）            |
+| `PipeDistributionContext.budgetRemaining()` / `.sourceAvailable()` | 预算/源量                  |
+| `context.destinationCount()` / `.destinationAcceptance(i)`         | 目标状态                   |
+| `context.transfer(i, amount)`                                      | 向目标转移                 |
+| `context.cursor()` / `.setCursor(i)`                               | 跨 tick 轮询游标           |

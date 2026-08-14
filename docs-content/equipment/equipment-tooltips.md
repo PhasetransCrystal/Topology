@@ -67,9 +67,9 @@ TOOLTIP_EQUIPMENT_RANGE_BLOCKS = lang.key("tooltip", "equipment.range_blocks", "
 
 ## API 速查
 
-| 类/方法                                | 用途                            |
-|----------------------------------------|---------------------------------|
-| `Builder.tooltipLine(key, en, cn, descEn, descCn)` | 声明功能说明行       |
-| `ItemTooltipUis.register(item, provider)` | 按物品注册面板              |
-| `TopoTooltipUiProvider.build(stack)`   | 构建面板元素树                  |
-| `TopoTooltipUiProvider.cacheKey(stack)`| 缓存键（耐久变化用损伤值）      |
+| 类/方法                                            | 用途                       |
+|----------------------------------------------------|----------------------------|
+| `Builder.tooltipLine(key, en, cn, descEn, descCn)` | 声明功能说明行             |
+| `ItemTooltipUis.register(item, provider)`          | 按物品注册面板             |
+| `TopoTooltipUiProvider.build(stack)`               | 构建面板元素树             |
+| `TopoTooltipUiProvider.cacheKey(stack)`            | 缓存键（耐久变化用损伤值） |

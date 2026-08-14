@@ -21,12 +21,12 @@ Material          ← 一个材料（铜、铁、硫酸……）
 
 ## 页面导航
 
-| 页面 | 内容 | 何时阅读 |
-|------|------|----------|
-| [MaterialForm](material/material-form.md) | 继承 `MaterialFormStrategy` 自定义形态 | 需要锭/粉/板之外的新形态 |
-| [MaterialDataType](material/material-data.md) | 继承 `MaterialDataType<D>` 附加属性 | 需要颜色/质量/工具属性等新属性 |
-| [MaterialPostProcessor](material/material-post-processor.md) | 批量派生配方链 | 需要按材质批量生成配方 |
-| **Material（本页）** | 声明材料、两阶段注册、查询 | 添加新材料 |
+| 页面                                                         | 内容                                   | 何时阅读                       |
+|--------------------------------------------------------------|----------------------------------------|--------------------------------|
+| [MaterialForm](material/material-form.md)                    | 继承 `MaterialFormStrategy` 自定义形态 | 需要锭/粉/板之外的新形态       |
+| [MaterialDataType](material/material-data.md)                | 继承 `MaterialDataType<D>` 附加属性    | 需要颜色/质量/工具属性等新属性 |
+| [MaterialPostProcessor](material/material-post-processor.md) | 批量派生配方链                         | 需要按材质批量生成配方         |
+| **Material（本页）**                                         | 声明材料、两阶段注册、查询             | 添加新材料                     |
 
 ## 两阶段模式
 
@@ -120,12 +120,12 @@ public void registerMaterialFoundation(MaterialDomainRegistration m) {
 
 ## API 速查
 
-| 类/方法                                | 用途                            |
-|----------------------------------------|---------------------------------|
-| `m.material(path).lang(en, cn)`        | 材料声明开始                    |
-| `.form(form)` / `.forms(...)`          | 引用已注册形态                  |
-| `.data(use)`                           | 附加材质数据                    |
-| `.build()`                             | 注册并返回 `Material`           |
-| `MaterialRegistry.require(id)` / `.registered()` | 查询                    |
-| `material.displayName()` / `.displayNameEn()` / `.displayNameCn()` | 显示名 |
-| `material.strategy().forms()` / `.data(type)` | 形态表 / 数据读取      |
+| 类/方法                                                            | 用途                  |
+|--------------------------------------------------------------------|-----------------------|
+| `m.material(path).lang(en, cn)`                                    | 材料声明开始          |
+| `.form(form)` / `.forms(...)`                                      | 引用已注册形态        |
+| `.data(use)`                                                       | 附加材质数据          |
+| `.build()`                                                         | 注册并返回 `Material` |
+| `MaterialRegistry.require(id)` / `.registered()`                   | 查询                  |
+| `material.displayName()` / `.displayNameEn()` / `.displayNameCn()` | 显示名                |
+| `material.strategy().forms()` / `.data(type)`                      | 形态表 / 数据读取     |

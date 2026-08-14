@@ -23,15 +23,15 @@ MachineDefinition  ← 注册后的不可变句柄
 
 ## 页面导航
 
-| 页面 | 内容 | 何时阅读 |
-|------|------|----------|
-| [MachineComponent](machine/machine-component.md) | 继承 `MachineComponent` 实现行为 trait、tick、数据字段 | 写自定义机器组件 |
-| [MachineRender](machine/machine-render.md) | 继承 `MachineRenderComponent` 自定义渲染 + 自定义方块渲染类型 | 机器需要专属外观/动态渲染 |
-| [Machine Resource Ports](machine/machine-resource.md) | 继承 `ResourcePort` 实现资源端口、`PortAccess` 侧配置 | 机器需要物品/流体/能量存取 |
-| [Multiblock Abilities](machine/multiblock-ability.md) | PartRole 部件角色、PropertyDisplay 状态显示 | 构建多方块舱口/诊断显示 |
-| [Multi-block Patterns](machine/multiblock.md) | Blueprint 声明式结构匹配 | 构建多方块机器 |
-| [Machine UI](machine/machine-ui.md) | `collectMachineUi` 面板贡献、配方页构建块、XEI 集成 | 机器需要自定义界面 |
-| **Machine（本页）** | `Machines.begin` 声明机器、挂载组件 | 添加任何机器 |
+| 页面                                                  | 内容                                                          | 何时阅读                   |
+|-------------------------------------------------------|---------------------------------------------------------------|----------------------------|
+| [MachineComponent](machine/machine-component.md)      | 继承 `MachineComponent` 实现行为 trait、tick、数据字段        | 写自定义机器组件           |
+| [MachineRender](machine/machine-render.md)            | 继承 `MachineRenderComponent` 自定义渲染 + 自定义方块渲染类型 | 机器需要专属外观/动态渲染  |
+| [Machine Resource Ports](machine/machine-resource.md) | 继承 `ResourcePort` 实现资源端口、`PortAccess` 侧配置         | 机器需要物品/流体/能量存取 |
+| [Multiblock Abilities](machine/multiblock-ability.md) | PartRole 部件角色、PropertyDisplay 状态显示                   | 构建多方块舱口/诊断显示    |
+| [Multi-block Patterns](machine/multiblock.md)         | Blueprint 声明式结构匹配                                      | 构建多方块机器             |
+| [Machine UI](machine/machine-ui.md)                   | `collectMachineUi` 面板贡献、配方页构建块、XEI 集成           | 机器需要自定义界面         |
+| **Machine（本页）**                                   | `Machines.begin` 声明机器、挂载组件                           | 添加任何机器               |
 
 ## 完整示例：注册一台机器
 

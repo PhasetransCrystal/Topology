@@ -19,11 +19,11 @@ OreVein             ← 一条矿脉（材料成分 + 高度 + 生成参数）
 
 ## 页面导航
 
-| 页面 | 内容 | 何时阅读 |
-|------|------|----------|
-| [Ore Strategies](ore/ore-strategies.md) | 形状/模式/暴露/冲突四个策略接口 | 需要新矿体几何或生成通道 |
-| [Ore Display](ore/ore-display.md) | `OreVeinDisplay` JEI 预览（每模式必配） | 注册新生成模式后 |
-| **Ore（本页）** | 环境构造、矿脉声明（feature/grid） | 添加矿石生成 |
+| 页面                                    | 内容                                    | 何时阅读                 |
+|-----------------------------------------|-----------------------------------------|--------------------------|
+| [Ore Strategies](ore/ore-strategies.md) | 形状/模式/暴露/冲突四个策略接口         | 需要新矿体几何或生成通道 |
+| [Ore Display](ore/ore-display.md)       | `OreVeinDisplay` JEI 预览（每模式必配） | 注册新生成模式后         |
+| **Ore（本页）**                         | 环境构造、矿脉声明（feature/grid）      | 添加矿石生成             |
 
 :::info
 库不内置任何环境、模式或形状常量。本章的 `registerOreFoundation` 示例声明了全部前置注册项，照抄即可。
@@ -148,14 +148,14 @@ ore.vein("iron_grid")
 
 ### Grid 参数
 
-| 参数                          | 说明                                 |
-|-------------------------------|--------------------------------------|
-| `shape`                       | 矿脉形状（你自定义的 `OreVeinShape`） |
-| `radius`                      | 矿脉半径（blocks）                   |
-| `spacing(gridChunks, offset)` | 最小 chunk 间距 + 随机偏移（blocks） |
-| `density`                     | 0–1，矿脉内部填充密度                |
-| `weight`                      | 同区域竞争时的随机权重               |
-| `priority`                    | 冲突时高优先覆盖低优                 |
+| 参数                          | 说明                                       |
+|-------------------------------|--------------------------------------------|
+| `shape`                       | 矿脉形状（你自定义的 `OreVeinShape`）      |
+| `radius`                      | 矿脉半径（blocks）                         |
+| `spacing(gridChunks, offset)` | 最小 chunk 间距 + 随机偏移（blocks）       |
+| `density`                     | 0–1，矿脉内部填充密度                      |
+| `weight`                      | 同区域竞争时的随机权重                     |
+| `priority`                    | 冲突时高优先覆盖低优                       |
 | `conflict`                    | 冲突策略（你自定义的 `OreConflictPolicy`） |
 
 ## 查询矿脉
@@ -179,18 +179,18 @@ OreVeins.view().forEach(v -> System.out.println(v.id()));
 
 ## API 速查
 
-| 类/方法                         | 用途                                                   |
-|---------------------------------|--------------------------------------------------------|
-| `OreDomainRegistration.shape(path, strategy)` | 注册矿脉形状（`registerOreFoundation`）  |
-| `OreDomainRegistration.mode(path, strategy)`  | 注册生成通道模式（`registerOreFoundation`）|
-| `OreDomainRegistration.airExposure(path, strategy)` | 注册空气暴露策略           |
-| `OreDomainRegistration.conflict(path, strategy)` | 注册冲突策略                 |
-| `OreDomainRegistration.vein(path)` | 开始矿脉注册                                       |
-| `OreVeins.byMaterial(Material)` | 按材料反向查询                                         |
-| `OreVeins.view()`               | 所有已注册矿脉                                         |
-| `OreVein.entries()`             | 矿脉的材料+权重组成                                    |
-| `OreVein.environment()`         | 生成环境                                               |
-| `OreVein.placement()`           | 通过 `instanceof Feature` / `instanceof Grid` 判断模式 |
-| `OreEnvironment`                | 维度规则 + 宿主规则的组合                              |
-| `OreVeinMode`                   | 生成通道（feature / grid）                             |
-| `OreVeinShape`                  | Grid 模式矿脉形状（包含测试函数）                      |
+| 类/方法                                             | 用途                                                   |
+|-----------------------------------------------------|--------------------------------------------------------|
+| `OreDomainRegistration.shape(path, strategy)`       | 注册矿脉形状（`registerOreFoundation`）                |
+| `OreDomainRegistration.mode(path, strategy)`        | 注册生成通道模式（`registerOreFoundation`）            |
+| `OreDomainRegistration.airExposure(path, strategy)` | 注册空气暴露策略                                       |
+| `OreDomainRegistration.conflict(path, strategy)`    | 注册冲突策略                                           |
+| `OreDomainRegistration.vein(path)`                  | 开始矿脉注册                                           |
+| `OreVeins.byMaterial(Material)`                     | 按材料反向查询                                         |
+| `OreVeins.view()`                                   | 所有已注册矿脉                                         |
+| `OreVein.entries()`                                 | 矿脉的材料+权重组成                                    |
+| `OreVein.environment()`                             | 生成环境                                               |
+| `OreVein.placement()`                               | 通过 `instanceof Feature` / `instanceof Grid` 判断模式 |
+| `OreEnvironment`                                    | 维度规则 + 宿主规则的组合                              |
+| `OreVeinMode`                                       | 生成通道（feature / grid）                             |
+| `OreVeinShape`                                      | Grid 模式矿脉形状（包含测试函数）                      |

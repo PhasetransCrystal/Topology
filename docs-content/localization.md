@@ -23,11 +23,11 @@ LangKey           ← 一个翻译键句柄（key + en + cn），注册后不可
 
 ## 页面导航
 
-| 页面 | 内容 | 何时阅读 |
-|------|------|----------|
-| **Localization（本页）** | 隐式键、LangKey 句柄、生命周期 | 理解机制 |
-| [Keys & Families](localization/keys-and-families.md) | `LangDomainRegistration` 三种铸造形态、`LangKeyFamily` 分组 | 注册自定义 UI 文本 |
-| [Display Names](localization/display-names.md) | `DisplayNames` 模板、`RegistryDisplayLang` 桥 | 自定义物品/方块命名 |
+| 页面                                                 | 内容                                                        | 何时阅读            |
+|------------------------------------------------------|-------------------------------------------------------------|---------------------|
+| **Localization（本页）**                             | 隐式键、LangKey 句柄、生命周期                              | 理解机制            |
+| [Keys & Families](localization/keys-and-families.md) | `LangDomainRegistration` 三种铸造形态、`LangKeyFamily` 分组 | 注册自定义 UI 文本  |
+| [Display Names](localization/display-names.md)       | `DisplayNames` 模板、`RegistryDisplayLang` 桥               | 自定义物品/方块命名 |
 
 ## 基本用法
 
@@ -37,11 +37,11 @@ LangKey           ← 一个翻译键句柄（key + en + cn），注册后不可
 // Material
 m.material("copper").lang("Copper", "铜").build();          // → material.mymod.copper
 
-// Machine
-m.begin(id, registry).displayName("Furnace", "电炉").build(); // → machine.mymod.furnace
+// Machine（方块名经 RegistryLib 铸造为 block.*）
+Machines.begin(id, registry).displayName("Furnace", "电炉").build(); // → block.mymod.furnace
 
 // Ore
-ore.vein("copper").lang("Copper Vein", "铜矿脉").build();    // → ore.mymod.copper_vein
+ore.vein("copper").lang("Copper Vein", "铜矿脉").build();    // → ore_vein.mymod.copper
 ```
 
 ## LangKey — 强类型翻译键

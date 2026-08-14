@@ -102,11 +102,11 @@ public final class MyUiLang {
 
 ## API 速查
 
-| 类/方法                                | 用途                            |
-|----------------------------------------|---------------------------------|
-| `lang.key(category, path, en, cn)`     | 嵌套路径键 → `category.modId.path` |
-| `lang.resource(id, category, en, cn)`  | 注册项派生键（id 命名空间须匹配）|
-| `lang.absolute(fullKey, en, cn)`       | 外部约定键形（须含 modId）      |
-| `LangKeyFamily.ofEnum(lang, category, type, pathFn, enFn, cnFn)` | 枚举族 |
-| `LangKeyFamily.derived(lang, category, sources, pathFn, enFn, cnFn)` | 派生族（源表冻结后） |
-| `family.get(k)`                        | 取值（未知成员抛异常）          |
+| 类/方法                                                              | 用途                               |
+|----------------------------------------------------------------------|------------------------------------|
+| `lang.key(category, path, en, cn)`                                   | 嵌套路径键 → `category.modId.path` |
+| `lang.resource(id, category, en, cn)`                                | 注册项派生键（id 命名空间须匹配）  |
+| `lang.absolute(fullKey, en, cn)`                                     | 外部约定键形（须含 modId）         |
+| `LangKeyFamily.ofEnum(lang, category, type, pathFn, enFn, cnFn)`     | 枚举族                             |
+| `LangKeyFamily.derived(lang, category, sources, pathFn, enFn, cnFn)` | 派生族（源表冻结后）               |
+| `family.get(k)`                                                      | 取值（未知成员抛异常）             |

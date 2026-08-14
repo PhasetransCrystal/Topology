@@ -122,14 +122,14 @@ Machines.begin(id, registry)
 
 ## API 速查
 
-| 类/方法                                | 用途                            |
-|----------------------------------------|---------------------------------|
-| `MachineRenderComponent.renderKey(path, type)` | 渲染 key（预绑定发现服务）|
-| `MachineRenderComponent.createRenderState()` | trait→state 配对（客户端）|
-| `MachineRenderComponent.resolveRenderDependencies(traits)` | 结构校验（sealed）|
-| `MachineRenderState.bind(field)`       | 绑定 DataField 快照（仅 IntValue）|
-| `MachineRenderState.submit(pose, collector, camera)` | 每帧绘制       |
-| `MachineBlockRenderType.use(data)`     | 渲染用途（挂 builder）          |
-| `MachineBlockRenderStrategy.validate(data)` | 渲染数据校验             |
-| `MachineBlockRenderStrategy.applyBlockModel(builder, data, def)` | 数据生成期模型 |
-| `machine.renderType(path, handle, strategy)` | 注册渲染类型（钩子 10）|
+| 类/方法                                                          | 用途                               |
+|------------------------------------------------------------------|------------------------------------|
+| `MachineRenderComponent.renderKey(path, type)`                   | 渲染 key（预绑定发现服务）         |
+| `MachineRenderComponent.createRenderState()`                     | trait→state 配对（客户端）         |
+| `MachineRenderComponent.resolveRenderDependencies(traits)`       | 结构校验（sealed）                 |
+| `MachineRenderState.bind(field)`                                 | 绑定 DataField 快照（仅 IntValue） |
+| `MachineRenderState.submit(pose, collector, camera)`             | 每帧绘制                           |
+| `MachineBlockRenderType.use(data)`                               | 渲染用途（挂 builder）             |
+| `MachineBlockRenderStrategy.validate(data)`                      | 渲染数据校验                       |
+| `MachineBlockRenderStrategy.applyBlockModel(builder, data, def)` | 数据生成期模型                     |
+| `machine.renderType(path, handle, strategy)`                     | 注册渲染类型（钩子 10）            |

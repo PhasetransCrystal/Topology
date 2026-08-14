@@ -32,7 +32,7 @@ public final class Pipes {
 
     /** Begin declaring a pipe. The path is the identity definition point in the Topo namespace. */
     public static Builder register(String path) {
-        return new Builder(IdHelper.oi(Objects.requireNonNull(path, "pipe path")));
+        return new Builder(IdHelper.id(Objects.requireNonNull(path, "pipe path")));
     }
 
     public static PipeDefinition require(Identifier id) {

@@ -11,22 +11,22 @@ sidebar_position: 3
 
 以下每一项都在宿主 `Topology` 构造器里执行（`Topology.java:46-62`），嵌入时逐条复制：
 
-| 调用 | 用途 |
-|------|------|
-| `TopoPlugins.register(OfficialTopoAPIPlugin.INSTANCE)` | API 插件（附件类型 + API 语言键） |
-| `TopoPlugins.register(你的插件)` | 你自己的内容插件 |
-| `Machines.registerResourceCapabilities(modEventBus)` | 机器资源能力的原版 capability 注册 |
-| `PipeSpecTooltips.register(modEventBus)` | 管道规格悬浮面板（freeze `ItemTooltipUis`） |
-| `CtmClientInit.register(modEventBus)` | CTM blockstate-model codec 客户端注册 |
-| `MachineDataNetworking.register(modEventBus)` | 机器数据同步网络通道 |
-| `MachineDataSyncBatcher.register(modEventBus)` | 同步批量器 |
-| `TopoAsyncExecutors.register()` | 异步执行器 |
-| `TopoRecipeSearchEvents.register(modEventBus)` | 配方搜索索引生命周期 |
-| `MultiblockChangeWatcher.register()` | 多方块变更监听 |
-| `PipeNetworkEngine.register()` | 管道网络引擎 |
-| `PipeSurveyNetworking.register(modEventBus)` | 管道勘测网络通道 |
-| `PipeSurveyClientRenderer.register()` | 勘测客户端渲染 |
-| `TickHeartbeat.register(modEventBus)` | tick 心跳 |
+| 调用                                                   | 用途                                        |
+|--------------------------------------------------------|---------------------------------------------|
+| `TopoPlugins.register(OfficialTopoAPIPlugin.INSTANCE)` | API 插件（附件类型 + API 语言键）           |
+| `TopoPlugins.register(你的插件)`                       | 你自己的内容插件                            |
+| `Machines.registerResourceCapabilities(modEventBus)`   | 机器资源能力的原版 capability 注册          |
+| `PipeSpecTooltips.register(modEventBus)`               | 管道规格悬浮面板（freeze `ItemTooltipUis`） |
+| `CtmClientInit.register(modEventBus)`                  | CTM blockstate-model codec 客户端注册       |
+| `MachineDataNetworking.register(modEventBus)`          | 机器数据同步网络通道                        |
+| `MachineDataSyncBatcher.register(modEventBus)`         | 同步批量器                                  |
+| `TopoAsyncExecutors.register()`                        | 异步执行器                                  |
+| `TopoRecipeSearchEvents.register(modEventBus)`         | 配方搜索索引生命周期                        |
+| `MultiblockChangeWatcher.register()`                   | 多方块变更监听                              |
+| `PipeNetworkEngine.register()`                         | 管道网络引擎                                |
+| `PipeSurveyNetworking.register(modEventBus)`           | 管道勘测网络通道                            |
+| `PipeSurveyClientRenderer.register()`                  | 勘测客户端渲染                              |
+| `TickHeartbeat.register(modEventBus)`                  | tick 心跳                                   |
 
 ## 启动管线
 

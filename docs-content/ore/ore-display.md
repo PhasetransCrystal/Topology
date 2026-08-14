@@ -36,8 +36,8 @@ public void registerOreDisplays(OreDomainRegistration ore) {
 
 ## API 速查
 
-| 类/方法                                | 用途                            |
-|----------------------------------------|---------------------------------|
-| `OreVeinDisplay.Strategy.buildPreview(vein)` | JEI 预览元素构建         |
-| `ore.display(modeId, strategy)`        | 注册显示（钩子 14，每模式必配）|
-| `OreVeinDisplays.require(modeId)`      | 按模式 id 反查                  |
+| 类/方法                                      | 用途                            |
+|----------------------------------------------|---------------------------------|
+| `OreVeinDisplay.Strategy.buildPreview(vein)` | JEI 预览元素构建                |
+| `ore.display(modeId, strategy)`              | 注册显示（钩子 14，每模式必配） |
+| `OreVeinDisplays.require(modeId)`            | 按模式 id 反查                  |

@@ -66,7 +66,7 @@ public final class PipeNetworksSavedData extends SavedData {
 
     public static final Codec<PipeNetworksSavedData> CODEC = ENTRIES_CODEC.fieldOf("nodes").codec().xmap(PipeNetworksSavedData::new, PipeNetworksSavedData::toEntries);
 
-    public static final SavedDataType<PipeNetworksSavedData> TYPE = new SavedDataType<>(IdHelper.oi("pipe_networks"), PipeNetworksSavedData::new, CODEC);
+    public static final SavedDataType<PipeNetworksSavedData> TYPE = new SavedDataType<>(IdHelper.id("pipe_networks"), PipeNetworksSavedData::new, CODEC);
 
     private final Long2ObjectOpenHashMap<PipeNodeRecord> nodes = new Long2ObjectOpenHashMap<>();
     /** Runtime index: chunk long -> node positions inside it. Rebuilt on load, maintained on edit. */

@@ -86,9 +86,9 @@ RESUMED_KEY = lang.key("equipment", "regulator.resumed", "Machine resumed", "机
 
 ## API 速查
 
-| 类/方法                                | 用途                            |
-|----------------------------------------|---------------------------------|
-| `MachineItemBehavior.useOnMachine(...)`| 右键机器行为（双端分派）        |
-| `MachineItemBehaviors.register(item, behavior)` | 注册物品行为           |
-| `MachineItemBehaviors.find(item)`      | 查询（每次右键一次冻结表读取）  |
-| `MachineItemBehaviors.freeze()`        | 冻结（注册后调用）              |
+| 类/方法                                         | 用途                           |
+|-------------------------------------------------|--------------------------------|
+| `MachineItemBehavior.useOnMachine(...)`         | 右键机器行为（双端分派）       |
+| `MachineItemBehaviors.register(item, behavior)` | 注册物品行为                   |
+| `MachineItemBehaviors.find(item)`               | 查询（每次右键一次冻结表读取） |
+| `MachineItemBehaviors.freeze()`                 | 冻结（注册后调用）             |

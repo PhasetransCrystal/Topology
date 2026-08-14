@@ -19,11 +19,11 @@ Equipment "helmet"   +  Material "copper"  →  铜头盔物品
 
 ## 页面导航
 
-| 页面 | 内容 | 何时阅读 |
-|------|------|----------|
-| **Equipment（本页）** | `EquipmentStrategy` 接口、builder 式种类注册、查询 | 添加工具/护甲种类 |
-| [Equipment Behavior](equipment/equipment-behavior.md) | `MachineItemBehavior` 右键机器行为（扳手/调节器） | 装备需要机器交互 |
-| [Equipment Tooltips](equipment/equipment-tooltips.md) | `tooltipLine` 功能说明行、悬浮面板注册、固定标签键 | 装备需要悬浮信息 |
+| 页面                                                  | 内容                                               | 何时阅读          |
+|-------------------------------------------------------|----------------------------------------------------|-------------------|
+| **Equipment（本页）**                                 | `EquipmentStrategy` 接口、builder 式种类注册、查询 | 添加工具/护甲种类 |
+| [Equipment Behavior](equipment/equipment-behavior.md) | `MachineItemBehavior` 右键机器行为（扳手/调节器）  | 装备需要机器交互  |
+| [Equipment Tooltips](equipment/equipment-tooltips.md) | `tooltipLine` 功能说明行、悬浮面板注册、固定标签键 | 装备需要悬浮信息  |
 
 ## 接口
 
@@ -131,11 +131,11 @@ for (EquipmentRegistry.EquipmentItemRecord record : EquipmentRegistry.itemRecord
 
 ## API 速查
 
-| 类/方法                                            | 用途               |
-|----------------------------------------------------|--------------------|
-| `EquipmentDomainRegistration.kind(path, strategy)` | 注册设备种类       |
-| `EquipmentRegistry.require(id)`                    | 按 ID 查找设备种类 |
-| `EquipmentRegistry.itemRecords()`                  | 所有已生成设备物品 |
-| `EquipmentStrategy.appliesTo(material)`            | 判断该材料是否适用 |
-| `EquipmentStrategy.register(context, self)`        | 为指定材料生成物品 |
+| 类/方法                                            | 用途                 |
+|----------------------------------------------------|----------------------|
+| `EquipmentDomainRegistration.kind(path, strategy)` | 注册设备种类         |
+| `EquipmentRegistry.require(id)`                    | 按 ID 查找设备种类   |
+| `EquipmentRegistry.itemRecords()`                  | 所有已生成设备物品   |
+| `EquipmentStrategy.appliesTo(material)`            | 判断该材料是否适用   |
+| `EquipmentStrategy.register(context, self)`        | 为指定材料生成物品   |
 | `EquipmentStrategy.machineBehavior()`              | 右键机器行为（可选） |

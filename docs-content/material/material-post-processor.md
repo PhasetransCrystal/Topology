@@ -63,12 +63,12 @@ m.material("copper").data(processor.activation()).build();
 
 ## API 速查
 
-| 类/方法                                | 用途                            |
-|----------------------------------------|---------------------------------|
-| `MaterialPostProcessor(id, requiredForms...)` | 基类构造            |
-| `processor.activation()`               | 材质激活数据（`.data(...)` 用） |
-| `processor.validate(material)`         | 结构校验（先于全部 process）    |
-| `processor.process(material)`          | 每材质发射配方链                |
-| `processor.notDeclaredOn(material)`    | 未激活判定（process 首行 guard）|
-| `processor.require(material, form)`    | 表单存在断言                    |
-| `material.postProcessor(path, processor)` | 领域注册（钩子 3，id 须匹配）|
+| 类/方法                                       | 用途                             |
+|-----------------------------------------------|----------------------------------|
+| `MaterialPostProcessor(id, requiredForms...)` | 基类构造                         |
+| `processor.activation()`                      | 材质激活数据（`.data(...)` 用）  |
+| `processor.validate(material)`                | 结构校验（先于全部 process）     |
+| `processor.process(material)`                 | 每材质发射配方链                 |
+| `processor.notDeclaredOn(material)`           | 未激活判定（process 首行 guard） |
+| `processor.require(material, form)`           | 表单存在断言                     |
+| `material.postProcessor(path, processor)`     | 领域注册（钩子 3，id 须匹配）    |

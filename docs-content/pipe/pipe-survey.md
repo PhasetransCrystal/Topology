@@ -37,10 +37,10 @@ PipeSurveyManager.selectPoint(player, pos);       // 设置端点 A（首次）/
 
 ## API 速查
 
-| 类/方法                                | 用途                            |
-|----------------------------------------|---------------------------------|
-| `PipeSurveyTool`                       | 勘测器标记接口                  |
-| `PipeSurveyManager.activate(player, pos, range)` | 锚定勘测             |
-| `PipeSurveyManager.selectPoint(player, pos)` | 端点 A/B 设置              |
-| `PipeSurveyManager.MAX_LANES`          | 快照通道上限（6）               |
-| `PipeSurveyNetworking.register(modEventBus)` | 网络通道（宿主已注册）   |
+| 类/方法                                          | 用途                   |
+|--------------------------------------------------|------------------------|
+| `PipeSurveyTool`                                 | 勘测器标记接口         |
+| `PipeSurveyManager.activate(player, pos, range)` | 锚定勘测               |
+| `PipeSurveyManager.selectPoint(player, pos)`     | 端点 A/B 设置          |
+| `PipeSurveyManager.MAX_LANES`                    | 快照通道上限（6）      |
+| `PipeSurveyNetworking.register(modEventBus)`     | 网络通道（宿主已注册） |

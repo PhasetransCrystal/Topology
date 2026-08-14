@@ -88,13 +88,13 @@ new TopoRecipe.Builder<>(type, "mymod:iron_dust")
 
 ## API 速查
 
-| 类/方法                                | 用途                            |
-|----------------------------------------|---------------------------------|
-| `TopoRecipeType(id, factory)`          | 自定义配方类型（默认工厂够用）  |
-| `displayName(en, cn)` / `progressBar(...)` | 显示与进度条               |
-| `importRecipesFrom(...)` / `exportRecipesTo(...)` | 外部表桥接         |
-| `recipeType.recipe(name)` / `.addRecipe(name, recipe)` | 配方写入       |
-| `recipeType.findRecipe(machine)`       | 机器侧查找                      |
-| `recipe.recipeType(path[, customType])` | 领域注册（钩子 2）            |
-| `recipe.productionLine(path)`          | 生产线（钩子 2/8，freeze 在 8 末）|
-| `TopoRecipe.Builder(type, id)` + `.input/.output/.tickInput/.tickOutput/.duration/.productionLine/.replacesImported/.buildRecipe/.save` | 配方构建 |
+| 类/方法                                                                                                                                 | 用途                               |
+|-----------------------------------------------------------------------------------------------------------------------------------------|------------------------------------|
+| `TopoRecipeType(id, factory)`                                                                                                           | 自定义配方类型（默认工厂够用）     |
+| `displayName(en, cn)` / `progressBar(...)`                                                                                              | 显示与进度条                       |
+| `importRecipesFrom(...)` / `exportRecipesTo(...)`                                                                                       | 外部表桥接                         |
+| `recipeType.recipe(name)` / `.addRecipe(name, recipe)`                                                                                  | 配方写入                           |
+| `recipeType.findRecipe(machine)`                                                                                                        | 机器侧查找                         |
+| `recipe.recipeType(path[, customType])`                                                                                                 | 领域注册（钩子 2）                 |
+| `recipe.productionLine(path)`                                                                                                           | 生产线（钩子 2/8，freeze 在 8 末） |
+| `TopoRecipe.Builder(type, id)` + `.input/.output/.tickInput/.tickOutput/.duration/.productionLine/.replacesImported/.buildRecipe/.save` | 配方构建                           |

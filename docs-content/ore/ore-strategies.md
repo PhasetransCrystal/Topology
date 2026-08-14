@@ -76,28 +76,28 @@ ore.conflict("replace_lower", (candidate, existing) -> candidate >= existing);
 
 ## 注册时机速查
 
-| 策略 | 注册入口 | 钩子 |
-|------|----------|------|
-| 形状 | `ore.shape(path, strategy)` | 13 registerOreFoundation |
-| 模式 | `ore.mode(path, strategy)` | 13 |
-| 空气暴露 | `ore.airExposure(path, strategy)` | 13 |
-| 冲突 | `ore.conflict(path, strategy)` | 13 |
-| 显示 | `ore.display(modeId, strategy)` | 14 registerOreDisplays |
+| 策略     | 注册入口                          | 钩子                     |
+|----------|-----------------------------------|--------------------------|
+| 形状     | `ore.shape(path, strategy)`       | 13 registerOreFoundation |
+| 模式     | `ore.mode(path, strategy)`        | 13                       |
+| 空气暴露 | `ore.airExposure(path, strategy)` | 13                       |
+| 冲突     | `ore.conflict(path, strategy)`    | 13                       |
+| 显示     | `ore.display(modeId, strategy)`   | 14 registerOreDisplays   |
 
 矿脉声明与环境构造见 [Ore](../ore.md)。
 
 ## API 速查
 
-| 类/方法                                | 用途                            |
-|----------------------------------------|---------------------------------|
-| `ore.shape(path, strategy)`            | 注册矿脉形状（钩子 13）         |
-| `ore.mode(path, strategy)`             | 注册生成通道                    |
-| `ore.airExposure(path, strategy)`      | 注册空气暴露策略                |
-| `ore.conflict(path, strategy)`         | 注册冲突策略                    |
-| `OreVeinShape.Strategy.contains(dx, dy, dz, radius)` | 几何包含测试   |
-| `OreVeinMode.Strategy.validate(placement)` | 通道校验（sealed 区分）    |
-| `OreVeinMode.Strategy.collectGrid(vein, collector)` | 网格通道收集        |
-| `OreVeinMode.Strategy.collectFeature(vein, collector)` | feature 通道收集  |
-| `OreAirExposurePolicy.Strategy.discardExposed(chance, sample)` | 暴露判定 |
-| `OreAirExposurePolicy.Strategy.describe(chance)` | 标签            |
-| `OreConflictPolicy.Strategy.canReplace(candidate, existing)` | 冲突判定 |
+| 类/方法                                                        | 用途                    |
+|----------------------------------------------------------------|-------------------------|
+| `ore.shape(path, strategy)`                                    | 注册矿脉形状（钩子 13） |
+| `ore.mode(path, strategy)`                                     | 注册生成通道            |
+| `ore.airExposure(path, strategy)`                              | 注册空气暴露策略        |
+| `ore.conflict(path, strategy)`                                 | 注册冲突策略            |
+| `OreVeinShape.Strategy.contains(dx, dy, dz, radius)`           | 几何包含测试            |
+| `OreVeinMode.Strategy.validate(placement)`                     | 通道校验（sealed 区分） |
+| `OreVeinMode.Strategy.collectGrid(vein, collector)`            | 网格通道收集            |
+| `OreVeinMode.Strategy.collectFeature(vein, collector)`         | feature 通道收集        |
+| `OreAirExposurePolicy.Strategy.discardExposed(chance, sample)` | 暴露判定                |
+| `OreAirExposurePolicy.Strategy.describe(chance)`               | 标签                    |
+| `OreConflictPolicy.Strategy.canReplace(candidate, existing)`   | 冲突判定                |

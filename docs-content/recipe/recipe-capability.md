@@ -129,14 +129,14 @@ new TopoRecipe.Builder<>(type, "mymod:spell")
 
 ## API 速查
 
-| 类/方法                                | 用途                            |
-|----------------------------------------|---------------------------------|
-| `RecipeCapability(id, inType, outType, inCodec, outCodec, inStream, outStream)` | 基类构造 |
-| `resourceType()`                       | 配对资源类型                    |
-| `matchInput` / `matchOutput`           | 启动 I/O 匹配                   |
-| `handleInputChecked` / `handleOutputChecked` | 事务性执行             |
-| `scaleInput` / `scaleOutput`（+ ForParallel） | 配方缩放             |
-| `hasAnyContent(machine)`               | 存量查询                        |
-| `inputUse(content)` / `outputUse(content)` | 铸造权（protected）        |
-| `recipe.capability(cap)`               | 领域注册（钩子 1）              |
-| `SlottedRecipeCapability.countPreviewSlots(port)` | 槽位预览          |
+| 类/方法                                                                         | 用途                |
+|---------------------------------------------------------------------------------|---------------------|
+| `RecipeCapability(id, inType, outType, inCodec, outCodec, inStream, outStream)` | 基类构造            |
+| `resourceType()`                                                                | 配对资源类型        |
+| `matchInput` / `matchOutput`                                                    | 启动 I/O 匹配       |
+| `handleInputChecked` / `handleOutputChecked`                                    | 事务性执行          |
+| `scaleInput` / `scaleOutput`（+ ForParallel）                                   | 配方缩放            |
+| `hasAnyContent(machine)`                                                        | 存量查询            |
+| `inputUse(content)` / `outputUse(content)`                                      | 铸造权（protected） |
+| `recipe.capability(cap)`                                                        | 领域注册（钩子 1）  |
+| `SlottedRecipeCapability.countPreviewSlots(port)`                               | 槽位预览            |

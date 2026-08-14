@@ -44,16 +44,17 @@ Machines.begin(id, registry)
 machine.propertyEnum("facing", /* label LangKey */, /* Map<Facing, LangKey> */,
         BlockStateProperties.FACING, BlockStateProperties.HORIZONTAL_FACING);
 
-machine.propertyBoolean("waterlogged", /* label LangKey */, BlockStateProperties.WATERLOGGED);
+machine.propertyBoolean("waterlogged", /* label LangKey */,
+        /* whenTrue LangKey */, /* whenFalse LangKey */, BlockStateProperties.WATERLOGGED);
 ```
 
 `propertyEnum` 要求枚举实现 `StringRepresentable`；`propertyBoolean` 是 `propertyEnum` 的布尔便捷形式。
 
 ## API 速查
 
-| 类/方法                                | 用途                            |
-|----------------------------------------|---------------------------------|
-| `machine.partRole(path, en, cn, resourceType, recipeIo)` | 注册部件角色 |
-| `PartRoleMount.role(capability)`       | 端口挂载链式附加角色            |
-| `machine.propertyEnum(path, label, valueTexts, properties...)` | 状态显示   |
-| `machine.propertyBoolean(path, label, property)` | 布尔便捷形式         |
+| 类/方法                                                                    | 用途                 |
+|----------------------------------------------------------------------------|----------------------|
+| `machine.partRole(path, en, cn, resourceType, recipeIo)`                   | 注册部件角色         |
+| `PartRoleMount.role(capability)`                                           | 端口挂载链式附加角色 |
+| `machine.propertyEnum(path, label, valueTexts, properties...)`             | 状态显示             |
+| `machine.propertyBoolean(path, label, whenTrue, whenFalse, properties...)` | 布尔便捷形式         |

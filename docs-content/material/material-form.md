@@ -110,14 +110,14 @@ m.material("moonstone").lang("Moonstone", "月长石").form(orbForm).build();
 
 ## API 速查
 
-| 类/方法                                | 用途                            |
-|----------------------------------------|---------------------------------|
-| `MaterialFormStrategy(Collection<FormDataUse<?>>)` | 基类构造      |
-| `strategy.data(type)` / `.requireData(type)` | 表单参数读取            |
-| `strategy.registryPath()`              | 注册 id 模板（`%s_ingot`）      |
-| `strategy.validateMaterial(material, form)` | 材质冻结时校验           |
-| `strategy.register(context, form)`     | 每材质铸造一次                  |
-| `strategy.requireMaterialData(material, form, required)` | 材质数据依赖校验 |
-| `material.form(path).lang(en, cn).strategy(s).build()` | 领域注册（钩子 3）|
-| `MaterialFormOptions.overrideItem(target)` / `.overrideBlock(target)` | 外部覆盖 |
-| `ExternalTargets.mcItem(path)` / `.mcBlock(path)` | 原版覆盖目标        |
+| 类/方法                                                               | 用途                       |
+|-----------------------------------------------------------------------|----------------------------|
+| `MaterialFormStrategy(Collection<FormDataUse<?>>)`                    | 基类构造                   |
+| `strategy.data(type)` / `.requireData(type)`                          | 表单参数读取               |
+| `strategy.registryPath()`                                             | 注册 id 模板（`%s_ingot`） |
+| `strategy.validateMaterial(material, form)`                           | 材质冻结时校验             |
+| `strategy.register(context, form)`                                    | 每材质铸造一次             |
+| `strategy.requireMaterialData(material, form, required)`              | 材质数据依赖校验           |
+| `material.form(path).lang(en, cn).strategy(s).build()`                | 领域注册（钩子 3）         |
+| `MaterialFormOptions.overrideItem(target)` / `.overrideBlock(target)` | 外部覆盖                   |
+| `ExternalTargets.mcItem(path)` / `.mcBlock(path)`                     | 原版覆盖目标               |

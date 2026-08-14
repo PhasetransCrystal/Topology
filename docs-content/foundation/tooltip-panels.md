@@ -46,9 +46,9 @@ modEventBus.addListener((FMLCommonSetupEvent event) -> event.enqueueWork(() -> {
 
 ## API 速查
 
-| 类/方法                                | 用途                            |
-|----------------------------------------|---------------------------------|
-| `ItemTooltipUis.register(item, provider)` | 按物品注册面板              |
-| `ItemTooltipUis.freeze()`              | 冻结（库的 PipeSpecTooltips 触发）|
-| `ItemTooltipUis.find(stack)`           | 按物品栈查找提供器              |
-| `ItemTooltipUis.componentFor(stack)`   | 构建缓存组件（渲染线程专用）    |
+| 类/方法                                   | 用途                               |
+|-------------------------------------------|------------------------------------|
+| `ItemTooltipUis.register(item, provider)` | 按物品注册面板                     |
+| `ItemTooltipUis.freeze()`                 | 冻结（库的 PipeSpecTooltips 触发） |
+| `ItemTooltipUis.find(stack)`              | 按物品栈查找提供器                 |
+| `ItemTooltipUis.componentFor(stack)`      | 构建缓存组件（渲染线程专用）       |

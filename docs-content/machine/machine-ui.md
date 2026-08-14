@@ -69,12 +69,12 @@ XeiRecipeLookup.install { recipeTypes ->
 
 API：
 
-| 方法 | 用途 |
-|------|------|
-| `XeiRecipeLookup.install(Opener)` | 安装查看器打开器（覆盖旧值） |
-| `XeiRecipeLookup.uninstall()` | 移除 |
-| `XeiRecipeLookup.isAvailable()` | 查看器是否就绪（进度条提示依赖此状态） |
-| `XeiRecipeLookup.showRecipes(recipeTypes)` | 框架 UI 触发打开 |
+| 方法                                       | 用途                                   |
+|--------------------------------------------|----------------------------------------|
+| `XeiRecipeLookup.install(Opener)`          | 安装查看器打开器（覆盖旧值）           |
+| `XeiRecipeLookup.uninstall()`              | 移除                                   |
+| `XeiRecipeLookup.isAvailable()`            | 查看器是否就绪（进度条提示依赖此状态） |
+| `XeiRecipeLookup.showRecipes(recipeTypes)` | 框架 UI 触发打开                       |
 
 未安装查看器时，`isAvailable()` 为 false——配方 UI 自动隐藏「查看配方」悬浮提示。
 
@@ -86,14 +86,14 @@ API：
 
 ## API 速查
 
-| 类/方法                                | 用途                            |
-|----------------------------------------|---------------------------------|
-| `MachineUiContribution.mainPage(key, title, build)` | 主区分页        |
-| `MachineUiContribution.leftPanel(...)` / `.rightPanel(...)` | 侧栏卡片     |
-| `MachineUiContribution.bottomStrip(...)` | 底条（资源条等）             |
-| `RecipeUiLayout.buildRecipeIoRow(type, counts, slotFactory, binder)` | 配方 I/O 行 |
-| `RecipeUiLayout.buildProgressBar(type, binder)` | 进度条                   |
-| `LiveRecipeSlots.forMachine(machine)`  | 真实 SlotPlan 推导              |
-| `LiveRecipeSlots.createMachineSlot(machine, counts, io, index)` | 活槽绑定  |
-| `XeiRecipeLookup.install(opener)` / `.uninstall()` | 查看器插座       |
-| `XeiRecipeLookup.isAvailable()` / `.showRecipes(types)` | 查看器状态/触发 |
+| 类/方法                                                              | 用途               |
+|----------------------------------------------------------------------|--------------------|
+| `MachineUiContribution.mainPage(key, title, build)`                  | 主区分页           |
+| `MachineUiContribution.leftPanel(...)` / `.rightPanel(...)`          | 侧栏卡片           |
+| `MachineUiContribution.bottomStrip(...)`                             | 底条（资源条等）   |
+| `RecipeUiLayout.buildRecipeIoRow(type, counts, slotFactory, binder)` | 配方 I/O 行        |
+| `RecipeUiLayout.buildProgressBar(type, binder)`                      | 进度条             |
+| `LiveRecipeSlots.forMachine(machine)`                                | 真实 SlotPlan 推导 |
+| `LiveRecipeSlots.createMachineSlot(machine, counts, io, index)`      | 活槽绑定           |
+| `XeiRecipeLookup.install(opener)` / `.uninstall()`                   | 查看器插座         |
+| `XeiRecipeLookup.isAvailable()` / `.showRecipes(types)`              | 查看器状态/触发    |

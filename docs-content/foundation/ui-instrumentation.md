@@ -34,7 +34,7 @@ ExternalUiInstrumentation.install((tag, root) -> {
 
 ## API 速查
 
-| 类/方法                                | 用途                            |
-|----------------------------------------|---------------------------------|
-| `ExternalUiInstrumentation.install(Instrumenter)` | 安装仪表器（一次）    |
-| `ExternalUiInstrumentation.instrument(tag, root)` | API 运行时 UI 钩子     |
+| 类/方法                                           | 用途               |
+|---------------------------------------------------|--------------------|
+| `ExternalUiInstrumentation.install(Instrumenter)` | 安装仪表器（一次） |
+| `ExternalUiInstrumentation.instrument(tag, root)` | API 运行时 UI 钩子 |
