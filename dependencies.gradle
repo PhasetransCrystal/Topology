@@ -9,21 +9,25 @@ dependencies {
     testImplementation("it.unimi.dsi:fastutil:8.5.18")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
+    //https://maven.ptcrys.net/release/net/ptcrys/RegistryLib
     jarJar(api("net.ptcrys:RegistryLib:${registry_lib_version}"))
 
+    //https://maven.blamejared.com/mezz/jei/jei-26.1.2-neoforge
     compileOnly "mezz.jei:jei-${minecraft_version}-common-api:${jei_version}"
     compileOnly "mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}"
     runtimeOnly "mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}"
 
     implementation "com.github.houbb:opencc4j:1.14.0"
+    // https://maven.firstdark.dev/snapshots/com/lowdragmc/ldlib2/ldlib2-neoforge-26.1/
     implementation "com.lowdragmc.ldlib2:ldlib2-neoforge-26.1:${ldlib2_version}"
 
+    // https://central.sonatype.com/repository/maven-snapshots/org/appliedenergistics
     runtimeOnly("org.appliedenergistics:guideme:${guideme_version}")
     compileOnly "org.appliedenergistics:appliedenergistics2:${ae2_version}"
     runtimeOnly "org.appliedenergistics:appliedenergistics2:${ae2_version}"
 
-    compileOnly "curse.maven:jade-324717:8068368"
-    runtimeOnly "curse.maven:jade-324717:8068368"
+    compileOnly "curse.maven:jade-324717:8651070"
+    runtimeOnly "curse.maven:jade-324717:8651070"
 
-    runtimeOnly "curse.maven:spark-361579:${spark_file_id}"
+    runtimeOnly "curse.maven:spark-361579:8275631"
 }
