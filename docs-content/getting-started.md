@@ -135,17 +135,18 @@ modEventBus.addListener((FMLCommonSetupEvent event) -> event.enqueueWork(() -> {
 common setup / client setup 的 `enqueueWork` 均在冻结点之前；不同 Mod 的任务间不保证顺序。
 Plugin 的内容排序不影响这些事件任务。
 
-同一 Mod 可以提供多个 Plugin，但必须共用其 RegistryCore，且注册 ID 唯一。
-默认 ID 是类的完整名称。需要稳定 ID 或同阶段依赖时，在注册处提供可选调度参数：
+同一 Mod 可以提供多个 Plugin，但必须共用其 RegistryCore。注册时无需提供 Plugin ID，
+也不声明 Plugin 之间的依赖：各阶段会遍历全部 Plugin，再统一冻结对应注册表。
+因此 API Plugin 应在 foundation 钩子声明数据类型、形态等基础内容，具体内容 Plugin
+在后续内容钩子使用这些声明。插件在相同钩子中的执行次序不是依赖契约；独立贡献才可安全组合。
 
 ```java
-TopoPlugins.register("mymod:api", new MyApiPlugin());
-TopoPlugins.register("mymod:content", new MyContentPlugin(), "mymod:api");
+TopoPlugins.register(new MyApiPlugin());
+TopoPlugins.register(new MyContentPlugin());
 ```
 
-未声明依赖的插件按 ID 字典序执行，不采用构造器到达顺序。官方 API 插件始终优先。
-缺少依赖、重复 ID、循环依赖都会在内容钩子执行前明确报错。
-这些元数据不需要在 `TopoPlugin` 中实现额外方法。
+引擎按 Mod ID 和类名稳定遍历插件，使结果不受模组构造器到达顺序影响；此排序只为可复现性，
+不应用于表达同一阶段内的先后依赖。
 
 :::info
 Topo 宿主还负责资源能力、管道引擎、网络、渲染、tick 心跳等框架运行时。

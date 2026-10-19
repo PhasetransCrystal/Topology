@@ -3,51 +3,33 @@ package net.ptcrys.topo.api.api.plugin;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
-import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class TopoPluginsOrderTest {
 
-    private static TopoPlugins.BoundPlugin binding(String id, Set<String> after) {
-        return new TopoPlugins.BoundPlugin(id, new TestPlugin(), after);
+    @Test
+    void executionOrderIsStableAndDoesNotRequireDependencyMetadata() {
+        var z = new TopoPlugins.BoundPlugin(new ZPlugin());
+        var a = new TopoPlugins.BoundPlugin(new APlugin());
+
+        assertEquals(List.of(a, z), TopoPlugins.executionOrder(List.of(z, a)));
+        assertEquals(List.of(a, z), TopoPlugins.executionOrder(List.of(a, z)));
     }
 
-    @Test
-    void dependenciesOverrideConstructorArrivalAndAlphabeticalOrder() {
-        var foundation = binding("z:foundation", Set.of());
-        var content = binding("a:content", Set.of("z:foundation"));
-        assertEquals(List.of(foundation, content), TopoPlugins.order(List.of(content, foundation)));
+    private static final class APlugin extends TestPlugin {
+
+        @Override
+        public String modId() {
+            return "test";
+        }
     }
 
-    @Test
-    void independentPluginsHaveTheSameOrderForEitherArrivalOrder() {
-        var a = binding("a", Set.of());
-        var b = binding("b", Set.of());
-        assertEquals(List.of(a, b), TopoPlugins.order(List.of(b, a)));
-        assertEquals(List.of(a, b), TopoPlugins.order(List.of(a, b)));
-    }
+    private static final class ZPlugin extends TestPlugin {
 
-    @Test
-    void missingDependenciesFailWithBothIds() {
-        var plugin = binding("content", Set.of("missing"));
-        var error = assertThrows(IllegalStateException.class, () -> TopoPlugins.order(List.of(plugin)));
-        assertTrue(error.getMessage().contains("content"));
-        assertTrue(error.getMessage().contains("missing"));
-    }
-
-    @Test
-    void cyclesAndSelfDependenciesAreRejected() {
-        var a = binding("a", Set.of("b"));
-        var b = binding("b", Set.of("a"));
-        assertThrows(IllegalStateException.class, () -> TopoPlugins.order(List.of(a, b)));
-        assertThrows(IllegalStateException.class,
-                () -> TopoPlugins.order(List.of(binding("self", Set.of("self")))));
-    }
-
-    @Test
-    void duplicateIdsAreRejectedEvenWhenModsMayShareNamespaces() {
-        assertThrows(IllegalStateException.class, () -> TopoPlugins.order(List.of(
-                binding("same", Set.of()), binding("same", Set.of()))));
+        @Override
+        public String modId() {
+            return "test";
+        }
     }
 }

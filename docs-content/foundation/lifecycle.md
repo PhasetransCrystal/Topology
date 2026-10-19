@@ -35,7 +35,7 @@ sidebar_position: 1
 | 时机 | 执行内容 | 边界 |
 |------|----------|------|
 | 所有 Mod 构造期 | `TopoPlugins.register(plugin)` | 只登记插件；不要手工提前启动引擎 |
-| 首个 `RegisterEvent`，`HIGHEST` | 锁定并排序插件，执行上表钩子 1–17 | 完成所有游戏内容的 RegistryLib 排队 |
+| 首个 `RegisterEvent`，`HIGHEST` | 锁定插件表并执行上表钩子 1–17 | 完成所有游戏内容的 RegistryLib 排队 |
 | `RegisterEvent`，RegistryLib `LOW` | 将排队条目注册到游戏注册表 | 此前只能传递 Entry / Supplier，不能提前 `.get()` |
 | `FMLCommonSetupEvent.enqueueWork` | 宿主绑定管道面板；依赖方在自己的事件任务中绑定 provider / behavior | 主线程，游戏条目可用；不同 Mod 任务间无先后承诺 |
 | sided setup 的 deferred work | 完成客户端专用绑定 | 同样必须在 load complete 前完成 |
@@ -56,16 +56,13 @@ RegistryLib 的 `LOW`。common setup 属于并行生命周期事件，不能靠�
 
 ## 插件顺序
 
-- `TopoPlugins.register(plugin)` 默认使用完整类名作为 ID。
-- 有调度需求时使用 `register(id, plugin, after...)`，在注册处指定稳定 ID 和必需前置插件。
-- 排序元数据不属于 `TopoPlugin` 接口；依赖只决定内容钩子内的顺序，不能跨越冻结点，也不控制 NeoForge 事件任务。
-- 官方 API 插件 ID 为 `topo:api`，存在时自动成为其他插件的前置插件。
-- 其余按依赖拓扑排序；同样可执行的插件按 ID 字典序选择，与 Mod 构造线程的到达顺序无关。
-- 重复 ID、缺少必需插件和依赖环在任何内容钩子执行前报错；最终顺序写入日志。
+插件只需调用 `TopoPlugins.register(plugin)`，无需分配插件 ID 或声明依赖。
+引擎在每个阶段遍历全部插件后再冻结该阶段注册表；foundation 钩子因此总是先于对应内容钩子，
+不需要 API Plugin 与内容 Plugin 之间建立依赖。引擎按 Mod ID 和插件类名稳定排序，仅用于让独立贡献
+和诊断结果可复现；插件不得依赖同一阶段其他插件先执行。模组构造器到达顺序不属于 API 契约。
 
 ```java
-TopoPlugins.register("mymod:api", new MyApiPlugin());
-TopoPlugins.register("mymod:content", new MyContentPlugin(), "mymod:api");
+TopoPlugins.register(new MyModPlugin());
 ```
 
 插件的领域 API 通过 `XDomainRegistration.of(this)` 创建一次并保存在字段中。
@@ -80,7 +77,7 @@ Plugin 的 `modId()`、RegistryCore 的 namespace 和所有领域 API 的归属�
 引擎严格按 recipe → material → equipment → machine → ore → lang → runtime → ready 执行。
 已完成的阶段可重复调用，不重复生成内容；越序和重入会报错。
 阶段执行异常后保留原始原因并终止后续启动，不能重试已经部分修改的注册表。
-插件钩子的异常包含插件 ID 和钩子名称；修正后必须重启进程。
+插件钩子的异常包含插件类名、Mod ID 和钩子名称；修正后必须重启进程。
 
 冻结点后写入会抛异常。例如 `MaterialForm` 必须在 `registerMaterialFoundation` 声明，
 `registerMaterials` 只能引用已经声明的形态。静态字段不会因锁定插件表而自动初始化，
@@ -100,7 +97,7 @@ tooltip 和物品行为继续在依赖方自己的 `FMLCommonSetupEvent.enqueueW
 
 ## 引擎职责与扩展边界
 
-- `TopoPlugins`：登记内容插件、校验归属、锁定排序。排序信息在注册时提供，不增加 Plugin 方法。
+- `TopoPlugins`：登记内容插件、校验归属，并在启动时稳定排序；不声明插件间依赖。
 - `PluginLifecycle`：阶段成功后才标记完成，拒绝越序、重入和失败后续跑，不处理领域内容。
 - `TopoPluginEngine`：把 NeoForge 事件映射到阶段；保留既有显式 bootstrap 入口并统一管理运行时冻结。
 - `TopoContentBootstrap`：执行各领域的声明、校验、内容生成和冻结，不监听事件。

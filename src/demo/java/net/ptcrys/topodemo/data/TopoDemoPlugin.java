@@ -9,11 +9,12 @@ import net.ptcrys.topo.api.api.builtin.OreDomainRegistration;
 import net.ptcrys.topo.api.api.builtin.RecipeDomainRegistration;
 import net.ptcrys.topo.api.api.plugin.TopoPlugin;
 import net.ptcrys.topodemo.TopoDemo;
+import net.ptcrys.topodemo.data.material.BuiltinDemoMaterials;
 
 import lombok.Getter;
 import lombok.experimental.Accessors;
 
-/** Composition root only. Domain declarations live in the Demo* catalogs. */
+/** Content plugin: lifecycle hooks only activate the concrete declaration tables. */
 @Getter
 @Accessors(fluent = true)
 public final class TopoDemoPlugin implements TopoPlugin {
@@ -37,5 +38,10 @@ public final class TopoDemoPlugin implements TopoPlugin {
     @Override
     public RegistryCore registry() {
         return TopoDemo.REGISTRY;
+    }
+
+    @Override
+    public void registerMaterials(MaterialDomainRegistration material) {
+        BuiltinDemoMaterials.init();
     }
 }

@@ -54,8 +54,8 @@ public class LifecycleTestEntrypoint {
                 lang.absolute("jade.config." + modId() + ".owned", "Config", "配置");
             }
         };
-        TopoPlugins.register("test:b", b, "test:a");
-        TopoPlugins.register("test:a", a);
+        TopoPlugins.register(b);
+        TopoPlugins.register(a);
         TopoPlugins.register(OfficialTopoAPIPlugin.INSTANCE);
 
         bus.addListener((FMLCommonSetupEvent event) -> event.enqueueWork(() -> {

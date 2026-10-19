@@ -175,7 +175,7 @@ final class TopoContentBootstrap {
             try {
                 action.accept(bound);
             } catch (RuntimeException | LinkageError error) {
-                throw new IllegalStateException("TopoPluginEngine: plugin '" + bound.id() + "' failed in " + hook, error);
+                throw new IllegalStateException("TopoPluginEngine: plugin '" + bound.label() + "' failed in " + hook, error);
             }
         }
     }

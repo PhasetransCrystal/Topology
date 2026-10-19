@@ -8,7 +8,6 @@ import net.minecraft.world.item.Items;
 
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
 import java.util.Set;
 
 import static net.ptcrys.topo.api.api.plugin.LifecycleTestEntrypoint.*;
@@ -19,7 +18,7 @@ class TopoPluginEngineIntegrationTest {
     @Test
     void hostRunsAllPluginsAndLegacyCommonSetupBeforeFreezingSharedRegistries() {
         TopoPluginEngine.bootstrapContent();
-        assertSame(OfficialTopoAPIPlugin.INSTANCE, TopoPlugins.view().getFirst());
+        assertTrue(TopoPlugins.view().contains(OfficialTopoAPIPlugin.INSTANCE));
         assertEquals(1, a.lang().registeredKeys().size());
         assertEquals(2, b.lang().registeredKeys().size());
         assertTrue(a.lang().registeredKeys().getFirst().key().contains("topo_test_a"));
@@ -30,7 +29,7 @@ class TopoPluginEngineIntegrationTest {
         assertEquals("甲", coreA.languages.get("ui.topo_test_a.owned_a").get("zh_cn"));
         assertEquals(Set.of("en_us", "zh_cn", "zh_tw"), coreA.languages.get("ui.topo_test_a.owned_a").keySet());
         TopoPluginEngine.bootstrapRuntime();
-        assertEquals(List.of("a", "b"), bindings);
+        assertEquals(Set.of("a", "b"), Set.copyOf(bindings));
         assertSame(behavior, MachineItemBehaviors.find(Items.STICK));
         assertSame(behavior, MachineItemBehaviors.find(Items.BONE));
         assertTrue(legacyBound);
@@ -42,9 +41,8 @@ class TopoPluginEngineIntegrationTest {
         TopoPluginEngine.bootstrapRuntime();
         TopoPluginEngine.freezeRuntime();
         TopoPlugins.register(a); // registering the same instance remains idempotent after lock
-        assertEquals(List.of("a", "b"), bindings);
-        TopoPlugins.register("test:a", a);
-        assertThrows(IllegalStateException.class, () -> TopoPlugins.register("renamed", a));
+        assertEquals(Set.of("a", "b"), Set.copyOf(bindings));
+        assertEquals(2, bindings.size());
         assertThrows(IllegalStateException.class, () -> TopoPlugins.register(new TestPlugin()));
     }
 }
