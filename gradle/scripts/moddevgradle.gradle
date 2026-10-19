@@ -1,13 +1,41 @@
 test {
     useJUnitPlatform()
+    testLogging {
+        events 'passed', 'skipped', 'failed'
+        exceptionFormat = 'full'
+    }
+}
+
+// A separate development mod: never part of main's jar, sources jar, or publication.
+sourceSets {
+    demo {
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+}
+
+configurations {
+    demoImplementation.extendsFrom implementation
+    demoCompileOnly.extendsFrom compileOnly
+    demoRuntimeOnly.extendsFrom runtimeOnly
 }
 
 neoForge {
     // 指定要使用的NeoForge版本。
     version = project.neo_version
+    addModdingDependenciesTo(sourceSets.demo)
 
     // This line is optional. Access Transformers are automatically detected
     accessTransformers = project.files('src/main/resources/META-INF/accesstransformer.cfg')
+
+    mods {
+        "${mod_id}" {
+            sourceSet(sourceSets.main)
+        }
+        topodemo {
+            sourceSet(sourceSets.demo)
+        }
+    }
 
     // Default run configurations.
     // These can be tweaked, removed, or duplicated as needed.
@@ -44,6 +72,11 @@ neoForge {
         }
 
         configureEach {
+            // ModDevGradle otherwise loads every declared source mod, including in datagen.
+            loadedMods = [project.neoForge.mods.getByName(project.mod_id)]
+            if (name in ['client', 'server']) {
+                loadedMods.add(project.neoForge.mods.getByName('topodemo'))
+            }
             // 用户开发环境推荐的日志数据
             // 可以按需添加/移除标记，用逗号分隔。
             // "SCAN"：用于mod扫描
@@ -54,17 +87,9 @@ neoForge {
         }
     }
 
-    mods {
-        // 定义mod与源码的绑定关系
-        // 这些用于告诉游戏哪些源码属于哪个mod
-        // 多mod项目应为每个mod定义一个
-        "${mod_id}" {
-            sourceSet(sourceSets.main)
-        }
-    }
-
     unitTest {
         enable()
         testedMod = mods.getByName(mod_id)
+        loadedMods = [mods.getByName(mod_id)]
     }
 }
