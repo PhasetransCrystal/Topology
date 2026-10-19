@@ -29,11 +29,12 @@ equipment.kind("wrench",
 ## 面板构建 — ItemTooltipUis 注册
 
 面板是 LCD 结构：耐久行（可损耗才有）+ 功能区（父行 `Function | 行数` + 每条说明一行缩进子项）。
-在 Mod 的 `FMLCommonSetupEvent.enqueueWork` 中为每个装备物品注册（此时物品已经绑定）：
+在插件的 `registerRuntime(RuntimeDomainRegistration runtime)` 中为本插件生成的装备物品注册（此时物品已经绑定）：
 
 ```java
 for (EquipmentRegistry.EquipmentItemRecord record : EquipmentRegistry.itemRecords()) {
-    ItemTooltipUis.register(record.entry().get(), new TopoTooltipUiProvider() {
+    if (!record.material().id().getNamespace().equals(modId())) continue;
+    runtime.tooltip(record.entry().get(), new TopoTooltipUiProvider() {
         @Override
         public UIElement build(ItemStack stack) {
             // 耐久行（可损耗才有）+ 每个 tooltipLine 一条缩进子项

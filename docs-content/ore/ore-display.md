@@ -17,7 +17,7 @@ public interface OreVeinDisplay.Strategy {
 }
 ```
 
-## 注册（钩子 14 registerOreDisplays）
+## 注册（钩子 13 registerOreDisplays）
 
 ```java
 @Override
@@ -29,7 +29,7 @@ public void registerOreDisplays(OreDomainRegistration ore) {
 }
 ```
 
-`modeId` 必须指向 `registerOreFoundation`（钩子 13）里已注册的模式；`OreVeinDisplays.require(modeId)`
+`modeId` 必须指向 `registerOreFoundation`（钩子 12）里已注册的模式；`OreVeinDisplays.require(modeId)`
 按模式 id 反查。
 
 矿脉声明与模式注册见 [Ore](../ore.md)。
@@ -39,5 +39,5 @@ public void registerOreDisplays(OreDomainRegistration ore) {
 | 类/方法                                      | 用途                            |
 |----------------------------------------------|---------------------------------|
 | `OreVeinDisplay.Strategy.buildPreview(vein)` | JEI 预览元素构建                |
-| `ore.display(modeId, strategy)`              | 注册显示（钩子 14，每模式必配） |
+| `ore.display(modeId, strategy)`              | 注册显示（钩子 13，每模式必配） |
 | `OreVeinDisplays.require(modeId)`            | 按模式 id 反查                  |

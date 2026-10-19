@@ -4,7 +4,7 @@ sidebar_position: 5
 
 # Multiblock Abilities
 
-多方块的**能力注册门**（钩子 10 `registerMachineFoundation`）：部件角色与方块状态显示。
+多方块的**能力注册门**（钩子 9 `registerMachineFoundation`）：部件角色与方块状态显示。
 两者都先于 `Machines.freeze()` 冻结，`registerMachines` 只能引用。
 
 本页是 [Machine](../machine.md) 模块的子页——概念与页面导航见 [Machine](../machine.md)。

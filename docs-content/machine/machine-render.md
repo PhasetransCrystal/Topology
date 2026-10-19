@@ -117,7 +117,7 @@ Machines.begin(id, registry)
 ```
 
 :::caution
-渲染类型是冻结表——必须在 `registerMachineFoundation`（钩子 10）注册，`registerMachines` 只能引用。
+渲染类型是冻结表——必须在 `registerMachineFoundation`（钩子 9）注册，`registerMachines` 只能引用。
 :::
 
 ## API 速查
@@ -132,4 +132,4 @@ Machines.begin(id, registry)
 | `MachineBlockRenderType.use(data)`                               | 渲染用途（挂 builder）             |
 | `MachineBlockRenderStrategy.validate(data)`                      | 渲染数据校验                       |
 | `MachineBlockRenderStrategy.applyBlockModel(builder, data, def)` | 数据生成期模型                     |
-| `machine.renderType(path, handle, strategy)`                     | 注册渲染类型（钩子 10）            |
+| `machine.renderType(path, handle, strategy)`                     | 注册渲染类型（钩子 9）            |

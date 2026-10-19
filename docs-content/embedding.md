@@ -5,18 +5,18 @@ sidebar_position: 3
 # Embedding（无 topo 宿主）
 
 默认集成依赖库的宿主 Mod `@Mod("topo")`——它注册 API 插件并接线全部框架运行时。
-如果你的 Mod 想**完全内嵌库**（不出现在依赖列表的 `topo` mod），需要自己复制这份接线清单。
+当前仅保证保留 `topo` 宿主的依赖库模式。下列清单说明宿主承担的职责；
+完全内嵌还需要迁移共享条目及自动事件订阅，不能通过复制接线完成。
 
 ## 完整接线清单
 
-以下每一项都在宿主 `Topology` 构造器里执行，嵌入时逐条复制：
+以下列出宿主 `Topology` 构造器及其内部模块承担的接线：
 
 | 调用                                                   | 用途                                        |
 |--------------------------------------------------------|---------------------------------------------|
 | `TopoPlugins.register(OfficialTopoAPIPlugin.INSTANCE)` | API 插件（附件类型 + API 语言键）           |
 | `TopoPlugins.register(你的插件)`                       | 你自己的内容插件                            |
-| `Machines.registerResourceCapabilities(modEventBus)`   | 机器资源能力的原版 capability 注册          |
-| `TopoPluginEngine.register(modEventBus)`              | 内容管线、运行时钩子及统一冻结点 |
+| `TopoPlugins.attachHost(modEventBus)`              | 内容管线、资源能力、运行时钩子及统一冻结点 |
 | `CtmClientInit.register(modEventBus)`                  | CTM blockstate-model codec 客户端注册       |
 | `MachineDataNetworking.register(modEventBus)`          | 机器数据同步网络通道                        |
 | `MachineDataSyncBatcher.register(modEventBus)`         | 同步批量器                                  |
@@ -33,7 +33,7 @@ sidebar_position: 3
 宿主只接线一次：
 
 ```java
-TopoPluginEngine.register(modEventBus);
+TopoPlugins.attachHost(modEventBus);
 ```
 
 引擎负责首个 `RegisterEvent` 的 HIGHEST 内容阶段、common setup 的 Plugin 运行时绑定，

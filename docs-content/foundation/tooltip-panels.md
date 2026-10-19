@@ -26,14 +26,14 @@ ItemTooltipUis.register(myItem) { stack ->
 ## 注册与冻结
 
 ```java
-// 在你的 Mod 构造器内接线；游戏注册表绑定后在主线程执行：
-modEventBus.addListener((FMLCommonSetupEvent event) -> event.enqueueWork(() -> {
-    ItemTooltipUis.register(MY_ITEM.get(), MyTooltipProvider.INSTANCE);
-}));
+@Override
+public void registerRuntime(RuntimeDomainRegistration runtime) {
+    runtime.tooltip(MY_ITEM.get(), MyTooltipProvider.INSTANCE);
+}
 ```
 
 共享表在 load complete 由 `TopoPluginEngine` 统一冻结，插件不要自行调用 `freeze()`。
-common / client setup 的 `enqueueWork` 注册均在冻结窗口内；无需争抢管道模块的监听顺序。
+宿主在 common setup 调用运行时钩子；客户端专用绑定也可使用 client setup 的 deferred work。
 不同 Mod 的任务间无顺序承诺；语言键须在内容阶段提前声明。
 
 ## 缓存语义

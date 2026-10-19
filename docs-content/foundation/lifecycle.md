@@ -4,11 +4,11 @@ sidebar_position: 1
 
 # Plugin Lifecycle
 
-`TopoPlugin` 的钩子由 `TopoPluginEngine` 按固定顺序驱动。继承任何组件前，先确认**你的类在哪个钩子里注册**——这决定它能访问什么、以及它写入的注册表何时冻结。
+`TopoPlugin` 的钩子由 `TopoPluginEngine` 按领域模块声明的依赖驱动。继承任何组件前，先确认**你的类在哪个钩子里注册**——这决定它能访问什么、以及它写入的注册表何时冻结。
 
-## 钩子全表
+## 钩子与冻结责任
 
-| #  | 钩子                                     | 冻结于此钩子之后                                                                         | 此时可访问                                                     |
+| 索引 | 钩子                                     | 冻结于此钩子之后                                                                         | 此时可访问                                                     |
 |----|------------------------------------------|------------------------------------------------------------------------------------------|----------------------------------------------------------------|
 | 1  | `registerRecipeFoundation(recipe)`       | `RecipeCapabilities`                                                                     | 机器资源类型、配方能力                                         |
 | 2  | `registerRecipeTypes(recipe)`            | `TopoRecipeTypes`                                                                        | 已冻结的配方能力                                               |
@@ -17,27 +17,30 @@ sidebar_position: 1
 | 5  | `registerMaterialCreativeTabs(material)` | —                                                                                        | 已冻结的材质                                                   |
 | 6  | （引擎内部）                             | —                                                                                        | 为每个材质铸造表单物品；先跑全部 `validate` 再跑全部 `process` |
 | 7  | `registerMaterialFollowUps(material)`    | —                                                                                        | 全部表单物品已存在                                             |
-| 8  | `registerRecipes(recipe)`                | `ProductionLines`                                                                        | 全部材质 + 表单物品                                            |
-| 9  | `registerEquipmentKinds(equipment)`      | `EquipmentRegistry`                                                                      | 全部材质（含数据）；之后引擎按 (材料 × 种类) 铸造物品          |
-| 10 | `registerMachineFoundation(machine)`     | 机器六表（resource type / UI icon / render / part role / property display / attachment） | 尚未有机器定义                                                 |
-| 11 | `registerMachines(machine)`              | `Machines`                                                                               | 已冻结的机器基础表；之后引擎铸造方块/BE 并安装预览计划         |
-| 12 | `registerMachineFollowUps(machine)`      | `PipeDistributionStrategies`、`Pipes`                                                    | 全部机器定义（方块/BE 已铸造）                                 |
-| 13 | `registerOreFoundation(ore)`             | 矿石四表（shape / mode / air exposure / conflict）                                       | 尚未有矿脉                                                     |
-| 14 | `registerOreDisplays(ore)`               | `OreVeinDisplays`                                                                        | 已冻结的模式表；每种模式必须有对应显示                         |
-| 15 | `registerOreVeins(ore)`                  | `OreVeins`                                                                               | 已冻结的矿石基础表                                             |
-| 16 | `registerOreDatagen(ore)`                | —                                                                                        | 全部矿脉                                                       |
+| 8  | `registerEquipmentKinds(equipment)`      | `EquipmentRegistry`                                                                      | 全部材质（含数据）；之后引擎按 (材料 × 种类) 铸造物品          |
+| 9  | `registerMachineFoundation(machine)`     | 机器六表（resource type / UI icon / render / part role / property display / attachment） | 尚未有机器定义                                                 |
+| 10 | `registerMachines(machine)`              | `Machines`                                                                               | 已冻结的机器基础表；之后引擎铸造方块/BE 并安装预览计划         |
+| 11 | `registerMachineFollowUps(machine)`      | `PipeDistributionStrategies`、`Pipes`                                                    | 全部机器定义（方块/BE 已铸造）                                 |
+| 12 | `registerOreFoundation(ore)`             | 矿石四表（shape / mode / air exposure / conflict）                                       | 尚未有矿脉                                                     |
+| 13 | `registerOreDisplays(ore)`               | `OreVeinDisplays`                                                                        | 已冻结的模式表；每种模式必须有对应显示                         |
+| 14 | `registerOreVeins(ore)`                  | `OreVeins`                                                                               | 已冻结的矿石基础表                                             |
+| 15 | `registerOreDatagen(ore)`                | —                                                                                        | 全部矿脉                                                       |
+| 16 | `registerRecipes(recipe)`                | `ProductionLines`                                                                        | 全部领域定义及已排队的 RegistryLib Entry；游戏对象仍未绑定      |
 | 17 | `registerLang(lang)`                     | `LangRegistry`                                                                           | 全部                                                           |
+
+表中索引用于查找，不是跨领域的依赖声明。矿石基础只依赖材质内容生成，机器与矿石可以独立编排；
+全部 CONTENT 步骤完成后才进入具体配方和语言阶段。不要依赖无依赖边步骤之间的偶然次序。
 
 ## 加载与事件顺序
 
-默认依赖模式下，只有 Topo 宿主接线 `TopoPluginEngine.register(modEventBus)`：
+默认依赖模式下，只有 Topo 宿主接线 `TopoPlugins.attachHost(modEventBus)`：
 
 | 时机 | 执行内容 | 边界 |
 |------|----------|------|
 | 所有 Mod 构造期 | `TopoPlugins.register(plugin)` | 只登记插件；不要手工提前启动引擎 |
 | 首个 `RegisterEvent`，`HIGHEST` | 锁定插件表并执行上表钩子 1–17 | 完成所有游戏内容的 RegistryLib 排队 |
 | `RegisterEvent`，RegistryLib `LOW` | 将排队条目注册到游戏注册表 | 此前只能传递 Entry / Supplier，不能提前 `.get()` |
-| `FMLCommonSetupEvent.enqueueWork` | 宿主绑定管道面板；依赖方在自己的事件任务中绑定 provider / behavior | 主线程，游戏条目可用；不同 Mod 任务间无先后承诺 |
+| `FMLCommonSetupEvent.enqueueWork` | 宿主绑定管道面板与装备行为，再调用全部插件的 `registerRuntime(runtime)` | 主线程，游戏条目可用；不同 Mod 任务间无先后承诺 |
 | sided setup 的 deferred work | 完成客户端专用绑定 | 同样必须在 load complete 前完成 |
 | `RegisterCapabilitiesEvent` | 为共享机器 BE 安装已声明资源类型的能力 | 由宿主接线，资源类型表已经冻结 |
 | `FMLLoadCompleteEvent.enqueueWork` | 引擎冻结 `ItemTooltipUis`、`MachineItemBehaviors` | 此后不能再注册 provider / behavior |
@@ -65,8 +68,8 @@ RegistryLib 的 `LOW`。common setup 属于并行生命周期事件，不能靠�
 TopoPlugins.register(new MyModPlugin());
 ```
 
-插件的领域 API 通过 `XDomainRegistration.of(this)` 创建一次并保存在字段中。
-Plugin 的 `modId()`、RegistryCore 的 namespace 和所有领域 API 的归属必须一致。
+插件继承 `TopoPlugin` 并在构造器中 `super(registry)`。基类缓存领域 API，
+`modId()` 从 RegistryCore 推导，各领域 API 使用同一归属；无需手工维护 getter。
 材质没有所属 Plugin 时直接报错，不能退回任意其他 Plugin 的 RegistryCore。
 在 `registerMachineFollowUps(machine)` 中使用 `machine.pipe("copper_pipe")`，管道及共享资源生成
 使用该 Plugin 的 RegistryCore。旧 `Pipes.register("...")` 保留 `topo` 命名空间和宿主归属，
@@ -74,7 +77,8 @@ Plugin 的 `modId()`、RegistryCore 的 namespace 和所有领域 API 的归属�
 
 ## 阶段状态与失败
 
-引擎严格按 recipe → material → equipment → machine → ore → lang → runtime → ready 执行。
+引擎依次执行 CONTENT → DERIVED → LANGUAGE → RUNTIME → READY。
+CONTENT 内按领域依赖排序；DERIVED 执行具体配方，LANGUAGE 统一导出翻译。
 已完成的阶段可重复调用，不重复生成内容；越序和重入会报错。
 阶段执行异常后保留原始原因并终止后续启动，不能重试已经部分修改的注册表。
 插件钩子的异常包含插件类名、Mod ID 和钩子名称；修正后必须重启进程。
@@ -85,25 +89,38 @@ Plugin 的 `modId()`、RegistryCore 的 namespace 和所有领域 API 的归属�
 
 ## 接入与迁移
 
-依赖方只在构造期注册插件，移除重复的引擎事件接线。
-旧的 `prepare()`、`bootstrapMachine()`、`bootstrapOre()`、`bootstrapLang()` 保留，
-供兼容代码按上述顺序调用；推荐宿主统一使用 `register(modEventBus)`。
+依赖方只在构造期 `TopoPlugins.register(new MyPlugin())`。原有命名钩子继续直接覆写，
+无需 `configure` 或手工登记回调。领域对象的字段和 getter 改由基类持有。
+宿主只调用一次 `TopoPlugins.attachHost(modEventBus)`；分阶段启动方法属于内部实现，不能提前启动内容管线。
 
-tooltip 和物品行为继续在依赖方自己的 `FMLCommonSetupEvent.enqueueWork` 中注册，
-移除各内容模块的 `freeze()`。客户端专用绑定也可使用 client setup 的 deferred work。
-不再单独调用 `PipeSpecTooltips.register`；宿主引擎负责注册管道面板。
-所有运行时注册最迟在 common / sided setup 完成，禁止延迟到 load complete 才开始贡献。
-跨 Mod 的运行时绑定应独立完成；存在依赖的任务应由参与方明确协调，不能靠 Plugin 排序或监听器到达顺序推断。
+`registerRecipes` 位于全部内容领域之后；被材质后处理器引用的配方类型和生产线应在
+`registerRecipeTypes` 声明，其余具体配方在 `registerRecipes` 组装。
+此时 Entry 已排队，但 RegistryLib 尚未绑定游戏对象，不能提前 `.get()`。
 
-## 引擎职责与扩展边界
+provider 和额外物品行为放在 `registerRuntime(runtime)`，使用 `runtime.tooltip` /
+`runtime.itemBehavior`。装备策略的 `machineBehavior()` 由框架在该钩子前自动绑定。
+不再单独接线 `PipeSpecTooltips`，也不要在领域代码中冻结共享运行时表。
+客户端专用绑定可使用 client setup；所有共享表贡献最迟在 common / sided setup 完成。
 
-- `TopoPlugins`：登记内容插件、校验归属，并在启动时稳定排序；不声明插件间依赖。
-- `PluginLifecycle`：阶段成功后才标记完成，拒绝越序、重入和失败后续跑，不处理领域内容。
-- `TopoPluginEngine`：把 NeoForge 事件映射到阶段；保留既有显式 bootstrap 入口并统一管理运行时冻结。
-- `TopoContentBootstrap`：执行各领域的声明、校验、内容生成和冻结，不监听事件。
+## 包分组与扩展边界
 
-新增领域时，领域实现与冻结点放在内容编排层，由引擎接入明确阶段；冻结必须跟在所有插件贡献之后。
-只有新的内容声明语义才需要考虑增加 Plugin 钩子；排序、宿主事件和冻结职责不再加入 Plugin 接口。
-当前仍采用固定领域管线，不开放第三方任意插入冻结步骤：注册表之间存在真实依赖，开放任意步骤会削弱加载契约。
-若将来需要第三方领域模块，应先定义它依赖的阶段、允许写入的表和冻结责任，再设计模块扩展协议。
-现有共享机器 BE 仍由 Topo 宿主持有，当前拆分不等于已经支持多宿主、热重载或移除 Topo Mod 的完全嵌入。
+| 包 | 职责 |
+|---|---|
+| `api.api.plugin` | `TopoPlugin`、`TopoPlugins`、领域 API 工厂与贡献标记 |
+| `plugin.hook` | 按领域组织的命名钩子，基类提供全部内置接口 |
+| `plugin.internal` | 不可变快照、依赖计划、阶段状态及 NeoForge 事件适配 |
+| `plugin.internal.module` | 各领域的声明调度、生成、校验与冻结责任 |
+
+`internal` 中为跨子包组合而公开的类型仍是框架实现，不是下游接入契约。
+新增框架领域时：
+
+1. 定义领域 API 和 `RegistrationDomain` 工厂；定义继承 `TopoContribution` 的命名钩子接口。
+2. 在领域模块中用 `RegistrationPoint` 绑定接口方法与 API；通过 `RegistrationModule.define` 声明步骤依赖及贡献后的冻结动作。
+3. 将模块加入 `TopoContentBootstrap` 的组合清单；使用该领域的插件实现对应接口。
+
+不需要修改引擎或给 `TopoPlugin` 增加调度逻辑；若希望所有插件自动获得新领域的默认钩子，
+可让基类继承该接口。模块只声明真实依赖，不依赖组合清单的先后顺序。
+计划在执行前拒绝缺失依赖、环、指向更晚阶段的依赖、重复步骤和未安装的贡献接口；
+同一依赖层按步骤 ID 确定顺序。新增 CONTENT 领域也会自动处于具体配方与语言导出之前。
+
+当前仅保证 Topo 单宿主的静态加载；不支持热重载，也不承诺可移除 Topo Mod 的完全嵌入。

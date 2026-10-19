@@ -42,7 +42,7 @@ public void registerRecipeTypes(RecipeDomainRegistration recipe) {
     recipe.recipeType("smelting")
             .displayName("Smelting", "冶炼");
 
-    // 生产线在同阶段声明（最晚 registerRecipes，见钩子 8）：
+    // 生产线在同阶段声明（最晚 registerRecipes，见钩子 16）：
     maceratingLine = recipe.productionLine("macerating");
 }
 ```

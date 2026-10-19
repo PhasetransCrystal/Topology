@@ -88,6 +88,7 @@ const sidebars: SidebarsConfig = {
       items: [
         'foundation/lifecycle',
         'foundation/extension-points',
+        'foundation/testing',
         'foundation/tick-system',
         'foundation/tooltip-panels',
         'foundation/connected-textures',

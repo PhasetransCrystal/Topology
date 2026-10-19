@@ -113,7 +113,7 @@ PipeDistributionStrategies.register(new GreedyStrategy());
 ```
 
 :::caution
-策略在 `registerMachineFollowUps` 注册——引擎在 `Pipes.freeze()` 之后才冻结策略表。`id()` 持久化，
+策略在 `registerMachineFollowUps` 注册——引擎先冻结策略表，再执行 `Pipes.freeze()`。`id()` 持久化，
 发布后不可改。
 :::
 
@@ -160,7 +160,7 @@ public void contributeConfigUi(PipePortUiCollector collector, PipePortAccess acc
 | `configCodec()` / `initialPortConfig(def, window)`                 | 配置持久化                 |
 | `distribute(context)`                                              | 分发执行                   |
 | `contributeConfigUi(collector, access)`                            | 策略配置 UI 行             |
-| `PipeDistributionStrategies.register(strategy)`                    | 注册（钩子 12）            |
+| `PipeDistributionStrategies.register(strategy)`                    | 注册（钩子 11）            |
 | `PipeDistributionContext.budgetRemaining()` / `.sourceAvailable()` | 预算/源量                  |
 | `context.destinationCount()` / `.destinationAcceptance(i)`         | 目标状态                   |
 | `context.transfer(i, amount)`                                      | 向目标转移                 |

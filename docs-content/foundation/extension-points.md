@@ -27,14 +27,14 @@ Topology 的每个领域都遵循同一个扩展模式：**框架提供基类/�
 | `MaterialFormStrategy`                               | 自定义材质形态                       | 3 `registerMaterialFoundation` | [MaterialForm](../material/material-form.md)                    |
 | `MaterialDataType<D>`                                | 材质附加属性                         | 3 `registerMaterialFoundation` | [MaterialDataType](../material/material-data.md)                |
 | `MaterialPostProcessor`                              | 批量派生配方链                       | 3 `registerMaterialFoundation` | [MaterialPostProcessor](../material/material-post-processor.md) |
-| `EquipmentStrategy`                                  | 装备种类（种类 × 材料 = 物品）       | 9 `registerEquipmentKinds`     | [Equipment](../equipment.md)                                    |
-| `MachineBlockRenderType<D>` + Strategy               | 自定义机器方块渲染类型               | 10 `registerMachineFoundation` | [MachineRender](../machine/machine-render.md)                   |
-| `PartRole` / `PropertyDisplay`                       | 多方块部件角色、状态显示             | 10 `registerMachineFoundation` | [Multiblock Abilities](../machine/multiblock-ability.md)        |
-| `MachineComponent` / `MachineTicker`                 | 机器行为 trait、tick、数据字段       | 11 `registerMachines`          | [MachineComponent](../machine/machine-component.md)             |
-| `ResourcePort<S, R>`                                 | 资源端口组件                         | 11 `registerMachines`          | [Machine Resource Ports](../machine/machine-resource.md)        |
-| `PipeDistributionStrategy`                           | 管道分发策略                         | 12 `registerMachineFollowUps`  | [PipeStrategy](../pipe/pipe-strategy.md)                        |
-| `OreVeinShape` / `OreVeinMode` / 两个 Policy         | 矿脉几何、生成通道、暴露/冲突规则    | 13 `registerOreFoundation`     | [Ore Strategies](../ore/ore-strategies.md)                      |
-| `OreVeinDisplay.Strategy`                            | 矿脉 JEI 预览                        | 14 `registerOreDisplays`       | [Ore Display](../ore/ore-display.md)                            |
+| `EquipmentStrategy`                                  | 装备种类（种类 × 材料 = 物品）       | 8 `registerEquipmentKinds`     | [Equipment](../equipment.md)                                    |
+| `MachineBlockRenderType<D>` + Strategy               | 自定义机器方块渲染类型               | 9 `registerMachineFoundation` | [MachineRender](../machine/machine-render.md)                   |
+| `PartRole` / `PropertyDisplay`                       | 多方块部件角色、状态显示             | 9 `registerMachineFoundation` | [Multiblock Abilities](../machine/multiblock-ability.md)        |
+| `MachineComponent` / `MachineTicker`                 | 机器行为 trait、tick、数据字段       | 10 `registerMachines`          | [MachineComponent](../machine/machine-component.md)             |
+| `ResourcePort<S, R>`                                 | 资源端口组件                         | 10 `registerMachines`          | [Machine Resource Ports](../machine/machine-resource.md)        |
+| `PipeDistributionStrategy`                           | 管道分发策略                         | 11 `registerMachineFollowUps`  | [PipeStrategy](../pipe/pipe-strategy.md)                        |
+| `OreVeinShape` / `OreVeinMode` / 两个 Policy         | 矿脉几何、生成通道、暴露/冲突规则    | 12 `registerOreFoundation`     | [Ore Strategies](../ore/ore-strategies.md)                      |
+| `OreVeinDisplay.Strategy`                            | 矿脉 JEI 预览                        | 13 `registerOreDisplays`       | [Ore Display](../ore/ore-display.md)                            |
 
 横向主题页（不属于某个注册钩子）：
 
