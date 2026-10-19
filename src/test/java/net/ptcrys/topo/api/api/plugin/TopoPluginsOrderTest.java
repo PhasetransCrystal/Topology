@@ -3,6 +3,7 @@ package net.ptcrys.topo.api.api.plugin;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -10,26 +11,13 @@ class TopoPluginsOrderTest {
 
     @Test
     void executionOrderIsStableAndDoesNotRequireDependencyMetadata() {
-        var z = new TopoPlugins.BoundPlugin(new ZPlugin());
-        var a = new TopoPlugins.BoundPlugin(new APlugin());
-
-        assertEquals(List.of(a, z), TopoPlugins.executionOrder(List.of(z, a)));
-        assertEquals(List.of(a, z), TopoPlugins.executionOrder(List.of(a, z)));
+        var z = new ZPlugin();
+        var a = new APlugin();
+        assertEquals(List.of(a, z), new TopoPlugins.Snapshot(List.of(z, a), Map.of()).plugins());
+        assertEquals(List.of(a, z), new TopoPlugins.Snapshot(List.of(a, z), Map.of()).plugins());
     }
 
-    private static final class APlugin extends TestPlugin {
+    private static final class APlugin extends TestPlugin {}
 
-        @Override
-        public String modId() {
-            return "test";
-        }
-    }
-
-    private static final class ZPlugin extends TestPlugin {
-
-        @Override
-        public String modId() {
-            return "test";
-        }
-    }
+    private static final class ZPlugin extends TestPlugin {}
 }

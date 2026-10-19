@@ -9,8 +9,6 @@ import net.ptcrys.topo.api.pipe.PipeDistributionStrategy
 import net.ptcrys.topo.api.pipe.Pipes
 
 import net.minecraft.network.chat.Component
-import net.neoforged.bus.api.IEventBus
-import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent
 
 import com.lowdragmc.lowdraglib2.gui.ui.UIElement
 
@@ -24,26 +22,13 @@ import com.lowdragmc.lowdraglib2.gui.ui.UIElement
  */
 object PipeSpecTooltips {
 
-    private var providersRegistered = false
-
-    /** 旧嵌入入口。使用引擎接线的宿主无需再单独调用本方法。 */
-    @JvmStatic
-    @Deprecated("Use TopoPluginEngine.register; the host engine registers providers")
-    fun register(modEventBus: IEventBus) {
-        modEventBus.addListener { event: FMLCommonSetupEvent ->
-            event.enqueueWork { registerProviders() }
-        }
-    }
-
     /** 物品注册完成后调用;冻结权属于引擎。 */
     @JvmStatic
     fun registerProviders() {
-        if (providersRegistered) return
         for (definition in Pipes.registered()) {
             val item = definition.registeredBlock().get().asItem()
             ItemTooltipUis.register(item) { createSpecPanel(definition) }
         }
-        providersRegistered = true
     }
 
     /**

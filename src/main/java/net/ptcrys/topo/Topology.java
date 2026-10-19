@@ -7,7 +7,6 @@ import net.ptcrys.topo.api.api.plugin.TopoPluginEngine;
 import net.ptcrys.topo.api.api.plugin.TopoPlugins;
 import net.ptcrys.topo.api.api.tick.TickHeartbeat;
 import net.ptcrys.topo.api.api.visual.CtmClientInit;
-import net.ptcrys.topo.api.machine.Machines;
 import net.ptcrys.topo.api.machine.data.MachineDataSyncBatcher;
 import net.ptcrys.topo.api.machine.data.network.MachineDataNetworking;
 import net.ptcrys.topo.api.machine.multiblock.MultiblockChangeWatcher;
@@ -40,7 +39,6 @@ public class Topology {
         // Defer engine until all @Mod constructors have had a chance to register.
         TopoPluginEngine.register(modEventBus);
 
-        Machines.registerResourceCapabilities(modEventBus);
         CtmClientInit.register(modEventBus);
         MachineDataNetworking.register(modEventBus);
         MachineDataSyncBatcher.register(modEventBus);

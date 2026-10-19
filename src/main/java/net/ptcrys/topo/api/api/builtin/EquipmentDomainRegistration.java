@@ -2,6 +2,8 @@ package net.ptcrys.topo.api.api.builtin;
 
 import net.ptcrys.registrylib.RegistryCore;
 import net.ptcrys.topo.api.api.plugin.PluginIds;
+import net.ptcrys.topo.api.api.plugin.RegistrationDomain;
+import net.ptcrys.topo.api.api.plugin.RegistrationPoint;
 import net.ptcrys.topo.api.api.plugin.TopoPlugin;
 import net.ptcrys.topo.api.equipment.Equipment;
 import net.ptcrys.topo.api.equipment.EquipmentRegistry;
@@ -17,6 +19,9 @@ import java.util.Objects;
  */
 public final class EquipmentDomainRegistration {
 
+    public static final RegistrationDomain<EquipmentDomainRegistration> DOMAIN = RegistrationDomain.of(EquipmentDomainRegistration::of);
+    public static final RegistrationPoint<EquipmentDomainRegistration> KINDS = RegistrationPoint.of("topo:equipment/kinds", DOMAIN);
+
     private final TopoPlugin plugin;
     private final RegistryCore registry;
 
@@ -25,7 +30,7 @@ public final class EquipmentDomainRegistration {
         this.registry = Objects.requireNonNull(registry, "registry");
     }
 
-    public static EquipmentDomainRegistration of(TopoPlugin plugin) {
+    private static EquipmentDomainRegistration of(TopoPlugin plugin) {
         return new EquipmentDomainRegistration(plugin, plugin.registry());
     }
 

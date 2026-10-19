@@ -1,8 +1,10 @@
 package net.ptcrys.topo.api.api.plugin;
 
 import net.ptcrys.topo.api.OfficialTopoAPIPlugin;
+import net.ptcrys.topo.api.equipment.EquipmentRegistry;
 import net.ptcrys.topo.api.machine.MachineItemBehaviors;
 import net.ptcrys.topo.api.machine.ui.tooltip.ItemTooltipUis;
+import net.ptcrys.topo.api.recipe.productionline.ProductionLines;
 
 import net.minecraft.world.item.Items;
 
@@ -14,6 +16,17 @@ import static net.ptcrys.topo.api.api.plugin.LifecycleTestEntrypoint.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class TopoPluginEngineIntegrationTest {
+
+    @Test
+    void recipesCanConsumeOtherDomainsAndOtherPluginsBeforeProductionLinesFreeze() {
+        assertSame(EquipmentRegistry.require(a.equipment().id("lifecycle_tool")), recipeEquipment);
+        assertSame(ProductionLines.require(b.recipe().id("machine_line")), recipeLine);
+        assertTrue(recipesSawFrozenContent);
+        assertTrue(ProductionLines.isFrozen());
+        assertNotNull(ProductionLines.require(a.recipe().id("final_line")));
+        TopoPluginEngine.bootstrapContent();
+        assertEquals(1, recipeCalls);
+    }
 
     @Test
     void hostRunsAllPluginsAndLegacyCommonSetupBeforeFreezingSharedRegistries() {

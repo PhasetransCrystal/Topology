@@ -4,12 +4,9 @@ package net.ptcrys.topo.api.api.plugin;
 final class PluginLifecycle {
 
     enum Phase {
-        RECIPE,
-        MATERIAL,
-        EQUIPMENT,
-        MACHINE,
-        ORE,
-        LANG,
+        CONTENT,
+        DERIVED,
+        LANGUAGE,
         RUNTIME,
         READY
     }

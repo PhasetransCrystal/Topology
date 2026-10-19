@@ -3,6 +3,8 @@ package net.ptcrys.topo.api.api.builtin;
 import net.ptcrys.registrylib.RegistryCore;
 import net.ptcrys.topo.api.api.lang.LangKey;
 import net.ptcrys.topo.api.api.plugin.PluginIds;
+import net.ptcrys.topo.api.api.plugin.RegistrationDomain;
+import net.ptcrys.topo.api.api.plugin.RegistrationPoint;
 import net.ptcrys.topo.api.api.plugin.TopoPlugin;
 import net.ptcrys.topo.api.machine.Machines;
 import net.ptcrys.topo.api.machine.component.Attachment;
@@ -44,6 +46,11 @@ import java.util.Objects;
  */
 public final class MachineDomainRegistration {
 
+    public static final RegistrationDomain<MachineDomainRegistration> DOMAIN = RegistrationDomain.of(MachineDomainRegistration::of);
+    public static final RegistrationPoint<MachineDomainRegistration> FOUNDATION = RegistrationPoint.of("topo:machine/foundation", DOMAIN);
+    public static final RegistrationPoint<MachineDomainRegistration> MACHINES = RegistrationPoint.of("topo:machine/machines", DOMAIN);
+    public static final RegistrationPoint<MachineDomainRegistration> FOLLOW_UPS = RegistrationPoint.of("topo:machine/follow_ups", DOMAIN);
+
     private final TopoPlugin plugin;
     private final RegistryCore registry;
 
@@ -52,7 +59,7 @@ public final class MachineDomainRegistration {
         this.registry = Objects.requireNonNull(registry, "registry");
     }
 
-    public static MachineDomainRegistration of(TopoPlugin plugin) {
+    private static MachineDomainRegistration of(TopoPlugin plugin) {
         return new MachineDomainRegistration(plugin, plugin.registry());
     }
 

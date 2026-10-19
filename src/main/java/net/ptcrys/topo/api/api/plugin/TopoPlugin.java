@@ -3,90 +3,71 @@ package net.ptcrys.topo.api.api.plugin;
 import net.ptcrys.registrylib.RegistryCore;
 import net.ptcrys.topo.api.api.builtin.*;
 
+import java.util.IdentityHashMap;
+import java.util.Map;
+import java.util.Objects;
+
 /**
- * Fat content/API plugin contract. Domain registration only through {@link #material()},
- * {@link #equipment()}, {@link #recipe()}, {@link #machine()}, {@link #ore()}, {@link #lang()}.
- * Namespace is fixed by {@link #modId()}.
+ * One namespace owner and its typed contributions. Subclasses only configure the registration
+ * points they use; the host owns event wiring, ordering, content generation and freeze fences.
  */
-public interface TopoPlugin {
+public abstract class TopoPlugin {
 
-    String modId();
+    private final RegistryCore registry;
+    private final Map<RegistrationDomain<?>, Object> domains = new IdentityHashMap<>();
 
-    RegistryCore registry();
+    protected TopoPlugin(RegistryCore registry) {
+        this.registry = Objects.requireNonNull(registry, "plugin registry");
+    }
 
-    MaterialDomainRegistration material();
+    public final String modId() {
+        return registry.getModid();
+    }
 
-    EquipmentDomainRegistration equipment();
+    public final RegistryCore registry() {
+        return registry;
+    }
 
-    RecipeDomainRegistration recipe();
+    /** Only describe contributions here; content writes belong inside the registered callbacks. */
+    protected abstract void configure(PluginRegistration registration);
 
-    MachineDomainRegistration machine();
+    /** Additional domains use this same entry, without adding methods to the plugin contract. */
+    @SuppressWarnings("unchecked")
+    public final synchronized <A> A domain(RegistrationDomain<A> domain) {
+        Objects.requireNonNull(domain, "domain");
+        Object api = domains.get(domain);
+        if (api == null) {
+            api = domain.create(this);
+            domains.put(domain, api);
+        }
+        return (A) api;
+    }
 
-    OreDomainRegistration ore();
+    public final MaterialDomainRegistration material() {
+        return domain(MaterialDomainRegistration.DOMAIN);
+    }
 
-    LangDomainRegistration lang();
+    public final EquipmentDomainRegistration equipment() {
+        return domain(EquipmentDomainRegistration.DOMAIN);
+    }
 
-    // ── recipe (must run before material post-processors that emit recipes) ──
+    public final RecipeDomainRegistration recipe() {
+        return domain(RecipeDomainRegistration.DOMAIN);
+    }
 
-    /**
-     * Resource integrations that own recipe capabilities (and paired machine resource types),
-     * before {@code RecipeCapabilities.freeze()}.
-     */
-    default void registerRecipeFoundation(RecipeDomainRegistration recipe) {}
+    public final MachineDomainRegistration machine() {
+        return domain(MachineDomainRegistration.DOMAIN);
+    }
 
-    /** Recipe types and static production lines before {@code TopoRecipeTypes.freeze()}. */
-    default void registerRecipeTypes(RecipeDomainRegistration recipe) {}
+    public final OreDomainRegistration ore() {
+        return domain(OreDomainRegistration.DOMAIN);
+    }
 
-    /**
-     * Hand-written recipes that depend on materials/forms already minted (production-line tables,
-     * gametest recipes). Invoked from {@code bootstrapMaterial} after post-processors and material
-     * follow-ups, still before {@code ProductionLines.freeze()} — not from {@code bootstrapRecipe}.
-     */
-    default void registerRecipes(RecipeDomainRegistration recipe) {}
+    public final LangDomainRegistration lang() {
+        return domain(LangDomainRegistration.DOMAIN);
+    }
 
-    // ── material ─────────────────────────────────────────────────────────────
-
-    default void registerMaterialFoundation(MaterialDomainRegistration material) {}
-
-    default void registerMaterials(MaterialDomainRegistration material) {}
-
-    default void registerMaterialCreativeTabs(MaterialDomainRegistration material) {}
-
-    default void registerMaterialFollowUps(MaterialDomainRegistration material) {}
-
-    // ── equipment ────────────────────────────────────────────────────────────
-
-    default void registerEquipmentKinds(EquipmentDomainRegistration equipment) {}
-
-    // ── machine ──────────────────────────────────────────────────────────────
-
-    /**
-     * Resource types, UI icons, render types, multiblock element tables, attachment metadata —
-     * freeze points are applied by the engine between foundation and machine declaration.
-     */
-    default void registerMachineFoundation(MachineDomainRegistration machine) {}
-
-    /** Machine catalogs (parts, controllers, single-block, …) before {@code Machines.freeze()}. */
-    default void registerMachines(MachineDomainRegistration machine) {}
-
-    /**
-     * After machines freeze + block/BE mint: preview plans, pipe catalogs still hosted here until a
-     * dedicated pipe domain exists, etc.
-     */
-    default void registerMachineFollowUps(MachineDomainRegistration machine) {}
-
-    // ── ore ──────────────────────────────────────────────────────────────────
-
-    default void registerOreFoundation(OreDomainRegistration ore) {}
-
-    default void registerOreDisplays(OreDomainRegistration ore) {}
-
-    default void registerOreVeins(OreDomainRegistration ore) {}
-
-    default void registerOreDatagen(OreDomainRegistration ore) {}
-
-    // ── lang ─────────────────────────────────────────────────────────────────
-
-    /** Declare plugin-owned translation keys (before global lang freeze). */
-    default void registerLang(LangDomainRegistration lang) {}
+    final String identity() {
+        return modId() + ":" + getClass().getName();
+    }
 }

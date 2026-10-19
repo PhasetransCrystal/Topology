@@ -1,151 +1,62 @@
 package net.ptcrys.topo.api.api.plugin;
 
-import net.ptcrys.topo.api.api.builtin.*;
+import net.ptcrys.registrylib.RegistryCore;
 
-import lombok.Getter;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.TreeMap;
 
-/**
- * Explicit registry for content plugins. Mods register one plugin instance from their {@code @Mod}
- * constructor; the host locks the list before the first content phase.
- *
- * <p>
- * Plugins have no ordering dependencies. Each lifecycle phase visits every plugin before the
- * engine freezes that phase's registries, so one plugin must not rely on another plugin's hook
- * having run first. A stable internal sort makes diagnostics and independent contributions
- * reproducible regardless of mod-constructor arrival order.
- */
+/** Constructor-time plugin collection. Arrival order never determines execution order. */
 public final class TopoPlugins {
 
-    private static final Logger LOGGER = LogManager.getLogger();
-    private static final List<BoundPlugin> PLUGINS = new ArrayList<>();
-    @Getter
-    private static volatile boolean locked;
+    private static final Map<String, TopoPlugin> PLUGINS = new TreeMap<>();
+    private static final Map<String, RegistryCore> OWNERS = new HashMap<>();
+    private static boolean locked;
 
     private TopoPlugins() {}
 
-    /** Registers a plugin instance. Registering the same instance twice is a no-op. */
+    /** Same instance is idempotent; a second instance of the same plugin class is a conflict. */
     public static synchronized void register(TopoPlugin plugin) {
         Objects.requireNonNull(plugin, "plugin");
-        for (BoundPlugin existing : PLUGINS) {
-            if (existing.plugin() == plugin) return;
+        TopoPlugin existing = PLUGINS.get(plugin.identity());
+        if (existing == plugin) return;
+        if (locked) throw new IllegalStateException("Topo plugin registration is closed");
+        if (existing != null) throw new IllegalStateException("Duplicate plugin identity: " + plugin.identity());
+        RegistryCore owner = OWNERS.get(plugin.modId());
+        if (owner != null && owner != plugin.registry()) {
+            throw new IllegalStateException("Different RegistryCore instances for namespace '" + plugin.modId() + "'");
         }
-        if (locked) {
-            throw new IllegalStateException("TopoPlugins: cannot register after engine lock (bootstrap already ran)");
-        }
-
-        String modId = Objects.requireNonNull(plugin.modId(), "plugin.modId()");
-        Objects.requireNonNull(plugin.registry(), "plugin.registry()");
-        if (!modId.equals(plugin.registry().getModid())) {
-            throw new IllegalStateException("TopoPlugins: RegistryCore namespace must match plugin.modId() for '" + modId + "'");
-        }
-        Objects.requireNonNull(plugin.material(), "plugin.material()");
-        Objects.requireNonNull(plugin.equipment(), "plugin.equipment()");
-        Objects.requireNonNull(plugin.recipe(), "plugin.recipe()");
-        Objects.requireNonNull(plugin.machine(), "plugin.machine()");
-        Objects.requireNonNull(plugin.ore(), "plugin.ore()");
-        Objects.requireNonNull(plugin.lang(), "plugin.lang()");
-        if (!modId.equals(plugin.material().modId()) || !modId.equals(plugin.equipment().modId()) || !modId.equals(plugin.recipe().modId()) || !modId.equals(plugin.machine().modId()) || !modId.equals(plugin.ore().modId()) || !modId.equals(plugin.lang().modId())) {
-            throw new IllegalStateException(
-                    "TopoPlugins: domain API modId must match plugin.modId() for '" + modId + "'");
-        }
-        if (plugin.material().registry() != plugin.registry() || plugin.equipment().registry() != plugin.registry() || plugin.recipe().registry() != plugin.registry() || plugin.machine().registry() != plugin.registry() || plugin.ore().registry() != plugin.registry() || plugin.lang().registry() != plugin.registry()) {
-            throw new IllegalStateException(
-                    "TopoPlugins: domain API RegistryCore must be plugin.registry() for '" + modId + "'");
-        }
-        for (BoundPlugin existing : PLUGINS) {
-            if (existing.plugin().modId().equals(modId) && existing.plugin().registry() != plugin.registry()) {
-                throw new IllegalStateException(
-                        "TopoPlugins: modId '" + modId + "' already bound to a different RegistryCore");
-            }
-        }
-
-        PLUGINS.add(new BoundPlugin(plugin));
-        LOGGER.info("TopoPlugins: registered {} ({})", plugin.getClass().getName(), modId);
+        PLUGINS.put(plugin.identity(), plugin);
+        OWNERS.putIfAbsent(plugin.modId(), plugin.registry());
     }
 
     public static synchronized List<TopoPlugin> view() {
-        List<TopoPlugin> plugins = new ArrayList<>(PLUGINS.size());
-        for (BoundPlugin bound : PLUGINS) {
-            plugins.add(bound.plugin());
-        }
-        return Collections.unmodifiableList(plugins);
+        return List.copyOf(PLUGINS.values());
     }
 
-    static BoundPlugin findByModId(String modId) {
-        for (BoundPlugin bound : PLUGINS) {
-            if (bound.plugin().modId().equals(modId)) {
-                return bound;
-            }
-        }
-        return null;
+    public static synchronized boolean isLocked() {
+        return locked;
     }
 
-    static List<BoundPlugin> boundView() {
-        return List.copyOf(PLUGINS);
-    }
-
-    static synchronized void lock() {
-        if (locked) return;
-        List<BoundPlugin> ordered = executionOrder(PLUGINS);
-        PLUGINS.clear();
-        PLUGINS.addAll(ordered);
+    static synchronized Snapshot lock() {
+        if (PLUGINS.isEmpty()) throw new IllegalStateException("No Topo plugins registered in mod constructors");
         locked = true;
-        LOGGER.info("TopoPlugins: locked {} plugins", PLUGINS.size());
+        return new Snapshot(List.copyOf(PLUGINS.values()), Map.copyOf(OWNERS));
     }
 
-    static List<BoundPlugin> executionOrder(List<BoundPlugin> plugins) {
-        return plugins.stream()
-                .sorted(Comparator.comparing((BoundPlugin bound) -> bound.plugin().modId())
-                        .thenComparing(bound -> bound.plugin().getClass().getName()))
-                .toList();
-    }
+    record Snapshot(List<TopoPlugin> plugins, Map<String, RegistryCore> owners) {
 
-    static final class BoundPlugin {
-
-        private final TopoPlugin plugin;
-
-        BoundPlugin(TopoPlugin plugin) {
-            this.plugin = Objects.requireNonNull(plugin, "plugin");
+        Snapshot {
+            plugins = plugins.stream().sorted(java.util.Comparator.comparing(TopoPlugin::identity)).toList();
+            owners = Map.copyOf(owners);
         }
 
-        String label() {
-            return plugin.getClass().getName() + " (" + plugin.modId() + ")";
-        }
-
-        TopoPlugin plugin() {
-            return plugin;
-        }
-
-        MaterialDomainRegistration material() {
-            return plugin.material();
-        }
-
-        EquipmentDomainRegistration equipment() {
-            return plugin.equipment();
-        }
-
-        RecipeDomainRegistration recipe() {
-            return plugin.recipe();
-        }
-
-        MachineDomainRegistration machine() {
-            return plugin.machine();
-        }
-
-        OreDomainRegistration ore() {
-            return plugin.ore();
-        }
-
-        LangDomainRegistration lang() {
-            return plugin.lang();
+        RegistryCore registry(String namespace) {
+            RegistryCore registry = owners.get(namespace);
+            if (registry == null) throw new IllegalStateException("No Topo plugin owns namespace '" + namespace + "'");
+            return registry;
         }
     }
 }

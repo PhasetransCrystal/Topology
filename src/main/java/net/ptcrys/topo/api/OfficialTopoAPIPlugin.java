@@ -1,90 +1,33 @@
 package net.ptcrys.topo.api;
 
-import net.ptcrys.registrylib.RegistryCore;
 import net.ptcrys.topo.Topology;
-import net.ptcrys.topo.api.api.builtin.EquipmentDomainRegistration;
 import net.ptcrys.topo.api.api.builtin.LangDomainRegistration;
 import net.ptcrys.topo.api.api.builtin.MachineDomainRegistration;
-import net.ptcrys.topo.api.api.builtin.MaterialDomainRegistration;
-import net.ptcrys.topo.api.api.builtin.OreDomainRegistration;
-import net.ptcrys.topo.api.api.builtin.RecipeDomainRegistration;
 import net.ptcrys.topo.api.api.lang.TopoApiLang;
+import net.ptcrys.topo.api.api.plugin.PluginRegistration;
 import net.ptcrys.topo.api.api.plugin.TopoPlugin;
 import net.ptcrys.topo.api.machine.component.RecipeLogicMetadata;
 import net.ptcrys.topo.api.machine.component.RecipeModifierDisplay;
 import net.ptcrys.topo.api.machine.multiblock.MultiblockControllerMetadata;
 import net.ptcrys.topo.api.machine.multiblock.ability.PartRoleAttachment;
 
-/**
- * Official API plugin: activates framework attachment types, language keys and pipe tooltip
- * providers. The engine orders this plugin before all content plugins, regardless of constructor
- * arrival order. Owns the host namespace and RegistryCore; contributes no product catalogs.
- */
-public final class OfficialTopoAPIPlugin implements TopoPlugin {
+/** Official framework contributions. Uses the same typed points as dependent content plugins. */
+public final class OfficialTopoAPIPlugin extends TopoPlugin {
 
     public static final OfficialTopoAPIPlugin INSTANCE = new OfficialTopoAPIPlugin();
 
-    private final MaterialDomainRegistration materials = MaterialDomainRegistration.of(this);
-    private final EquipmentDomainRegistration equipments = EquipmentDomainRegistration.of(this);
-    private final RecipeDomainRegistration recipes = RecipeDomainRegistration.of(this);
-    private final MachineDomainRegistration machines = MachineDomainRegistration.of(this);
-    private final OreDomainRegistration ores = OreDomainRegistration.of(this);
-    private final LangDomainRegistration langs = LangDomainRegistration.of(this);
-
-    private OfficialTopoAPIPlugin() {}
-
-    @Override
-    public String modId() {
-        return Topology.MODID;
+    private OfficialTopoAPIPlugin() {
+        super(Topology.REGISTRY);
     }
 
     @Override
-    public RegistryCore registry() {
-        return Topology.REGISTRY;
-    }
-
-    @Override
-    public MaterialDomainRegistration material() {
-        return materials;
-    }
-
-    @Override
-    public EquipmentDomainRegistration equipment() {
-        return equipments;
-    }
-
-    @Override
-    public RecipeDomainRegistration recipe() {
-        return recipes;
-    }
-
-    @Override
-    public MachineDomainRegistration machine() {
-        return machines;
-    }
-
-    @Override
-    public OreDomainRegistration ore() {
-        return ores;
-    }
-
-    @Override
-    public LangDomainRegistration lang() {
-        return langs;
-    }
-
-    @Override
-    public void registerMachineFoundation(MachineDomainRegistration machine) {
-        // Trait-mount metadata types register in static initializers; activate here in explicit
-        // order so AttachmentTypes.freeze never sees a late first touch.
-        RecipeLogicMetadata.init();
-        RecipeModifierDisplay.init();
-        MultiblockControllerMetadata.init();
-        PartRoleAttachment.init();
-    }
-
-    @Override
-    public void registerLang(LangDomainRegistration lang) {
-        TopoApiLang.init();
+    protected void configure(PluginRegistration registration) {
+        registration.on(MachineDomainRegistration.FOUNDATION, machine -> {
+            RecipeLogicMetadata.init();
+            RecipeModifierDisplay.init();
+            MultiblockControllerMetadata.init();
+            PartRoleAttachment.init();
+        });
+        registration.on(LangDomainRegistration.KEYS, lang -> TopoApiLang.init());
     }
 }

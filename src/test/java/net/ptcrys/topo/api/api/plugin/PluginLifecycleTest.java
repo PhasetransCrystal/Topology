@@ -16,9 +16,9 @@ class PluginLifecycleTest {
     void rejectsSkippedPhasesWithoutExecutingTheirWork() {
         PluginLifecycle lifecycle = new PluginLifecycle();
         IllegalStateException error = assertThrows(IllegalStateException.class,
-                () -> lifecycle.run(Phase.MACHINE, () -> fail("out-of-order work ran")));
-        assertTrue(error.getMessage().contains("RECIPE must run before MACHINE"));
-        lifecycle.run(Phase.RECIPE, () -> {});
+                () -> lifecycle.run(Phase.RUNTIME, () -> fail("out-of-order work ran")));
+        assertTrue(error.getMessage().contains("CONTENT must run before RUNTIME"));
+        lifecycle.run(Phase.CONTENT, () -> {});
     }
 
     @Test
@@ -39,12 +39,12 @@ class PluginLifecycleTest {
         PluginLifecycle lifecycle = new PluginLifecycle();
         IllegalArgumentException cause = new IllegalArgumentException("broken plugin");
         assertSame(cause, assertThrows(IllegalArgumentException.class,
-                () -> lifecycle.run(Phase.RECIPE, () -> { throw cause; })));
-        for (Phase phase : List.of(Phase.RECIPE, Phase.MATERIAL)) {
+                () -> lifecycle.run(Phase.CONTENT, () -> { throw cause; })));
+        for (Phase phase : List.of(Phase.CONTENT, Phase.DERIVED)) {
             IllegalStateException error = assertThrows(IllegalStateException.class,
                     () -> lifecycle.run(phase, () -> fail("failed startup continued")));
             assertSame(cause, error.getCause());
-            assertTrue(error.getMessage().contains("RECIPE"));
+            assertTrue(error.getMessage().contains("CONTENT"));
         }
     }
 
@@ -52,8 +52,8 @@ class PluginLifecycleTest {
     void rejectsReentrantStartup() {
         PluginLifecycle lifecycle = new PluginLifecycle();
         IllegalStateException error = assertThrows(IllegalStateException.class,
-                () -> lifecycle.run(Phase.RECIPE, () -> lifecycle.run(Phase.RECIPE, () -> {})));
-        assertTrue(error.getMessage().contains("while running RECIPE"));
+                () -> lifecycle.run(Phase.CONTENT, () -> lifecycle.run(Phase.CONTENT, () -> {})));
+        assertTrue(error.getMessage().contains("while running CONTENT"));
     }
 
     @Test
