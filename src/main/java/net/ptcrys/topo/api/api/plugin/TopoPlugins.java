@@ -1,6 +1,10 @@
 package net.ptcrys.topo.api.api.plugin;
 
 import net.ptcrys.registrylib.RegistryCore;
+import net.ptcrys.topo.api.api.plugin.internal.PluginSnapshot;
+import net.ptcrys.topo.api.api.plugin.internal.TopoPluginEngine;
+
+import net.neoforged.bus.api.IEventBus;
 
 import java.util.HashMap;
 import java.util.List;
@@ -16,6 +20,11 @@ public final class TopoPlugins {
     private static boolean locked;
 
     private TopoPlugins() {}
+
+    /** Attach the single Topo host during its mod constructor. */
+    public static void attachHost(IEventBus bus) {
+        TopoPluginEngine.register(bus, TopoPlugins::lock);
+    }
 
     /** Same instance is idempotent; a second instance of the same plugin class is a conflict. */
     public static synchronized void register(TopoPlugin plugin) {
@@ -40,23 +49,9 @@ public final class TopoPlugins {
         return locked;
     }
 
-    static synchronized Snapshot lock() {
+    private static synchronized PluginSnapshot lock() {
         if (PLUGINS.isEmpty()) throw new IllegalStateException("No Topo plugins registered in mod constructors");
         locked = true;
-        return new Snapshot(List.copyOf(PLUGINS.values()), Map.copyOf(OWNERS));
-    }
-
-    record Snapshot(List<TopoPlugin> plugins, Map<String, RegistryCore> owners) {
-
-        Snapshot {
-            plugins = plugins.stream().sorted(java.util.Comparator.comparing(TopoPlugin::identity)).toList();
-            owners = Map.copyOf(owners);
-        }
-
-        RegistryCore registry(String namespace) {
-            RegistryCore registry = owners.get(namespace);
-            if (registry == null) throw new IllegalStateException("No Topo plugin owns namespace '" + namespace + "'");
-            return registry;
-        }
+        return new PluginSnapshot(List.copyOf(PLUGINS.values()), Map.copyOf(OWNERS));
     }
 }

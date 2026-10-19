@@ -1,7 +1,7 @@
-package net.ptcrys.topo.api.api.plugin;
+package net.ptcrys.topo.api.api.plugin.internal;
 
 import net.ptcrys.topo.api.api.infrastructure.FreezableStrategyRegistry;
-import net.ptcrys.topo.api.api.plugin.PluginLifecycle.Phase;
+import net.ptcrys.topo.api.api.plugin.internal.PluginLifecycle.Phase;
 
 import org.junit.jupiter.api.Test;
 

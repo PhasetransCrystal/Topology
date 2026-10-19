@@ -1,7 +1,6 @@
 package net.ptcrys.topodemo.api;
 
 import net.ptcrys.topo.api.api.builtin.MaterialDomainRegistration;
-import net.ptcrys.topo.api.api.plugin.PluginRegistration;
 import net.ptcrys.topo.api.api.plugin.TopoPlugin;
 import net.ptcrys.topodemo.TopoDemo;
 import net.ptcrys.topodemo.api.material.BuiltinDemoMaterialDataTypes;
@@ -17,10 +16,8 @@ public final class TopoDemoApiPlugin extends TopoPlugin {
     }
 
     @Override
-    protected void configure(PluginRegistration registration) {
-        registration.on(MaterialDomainRegistration.FOUNDATION, material -> {
-            BuiltinDemoMaterialDataTypes.init();
-            BuiltinDemoMaterialForms.init();
-        });
+    public void registerMaterialFoundation(MaterialDomainRegistration material) {
+        BuiltinDemoMaterialDataTypes.init();
+        BuiltinDemoMaterialForms.init();
     }
 }

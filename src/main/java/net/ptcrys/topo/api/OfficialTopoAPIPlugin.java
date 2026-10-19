@@ -4,7 +4,6 @@ import net.ptcrys.topo.Topology;
 import net.ptcrys.topo.api.api.builtin.LangDomainRegistration;
 import net.ptcrys.topo.api.api.builtin.MachineDomainRegistration;
 import net.ptcrys.topo.api.api.lang.TopoApiLang;
-import net.ptcrys.topo.api.api.plugin.PluginRegistration;
 import net.ptcrys.topo.api.api.plugin.TopoPlugin;
 import net.ptcrys.topo.api.machine.component.RecipeLogicMetadata;
 import net.ptcrys.topo.api.machine.component.RecipeModifierDisplay;
@@ -21,13 +20,15 @@ public final class OfficialTopoAPIPlugin extends TopoPlugin {
     }
 
     @Override
-    protected void configure(PluginRegistration registration) {
-        registration.on(MachineDomainRegistration.FOUNDATION, machine -> {
-            RecipeLogicMetadata.init();
-            RecipeModifierDisplay.init();
-            MultiblockControllerMetadata.init();
-            PartRoleAttachment.init();
-        });
-        registration.on(LangDomainRegistration.KEYS, lang -> TopoApiLang.init());
+    public void registerMachineFoundation(MachineDomainRegistration machine) {
+        RecipeLogicMetadata.init();
+        RecipeModifierDisplay.init();
+        MultiblockControllerMetadata.init();
+        PartRoleAttachment.init();
+    }
+
+    @Override
+    public void registerLang(LangDomainRegistration lang) {
+        TopoApiLang.init();
     }
 }

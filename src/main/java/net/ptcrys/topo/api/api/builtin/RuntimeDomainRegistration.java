@@ -1,7 +1,6 @@
 package net.ptcrys.topo.api.api.builtin;
 
 import net.ptcrys.topo.api.api.plugin.RegistrationDomain;
-import net.ptcrys.topo.api.api.plugin.RegistrationPoint;
 import net.ptcrys.topo.api.api.plugin.TopoPlugin;
 import net.ptcrys.topo.api.machine.MachineItemBehavior;
 import net.ptcrys.topo.api.machine.MachineItemBehaviors;
@@ -14,7 +13,6 @@ import net.minecraft.world.item.Item;
 public final class RuntimeDomainRegistration {
 
     public static final RegistrationDomain<RuntimeDomainRegistration> DOMAIN = RegistrationDomain.of(RuntimeDomainRegistration::new);
-    public static final RegistrationPoint<RuntimeDomainRegistration> BINDINGS = RegistrationPoint.of("topo:runtime/plugins", DOMAIN);
 
     private final TopoPlugin plugin;
 

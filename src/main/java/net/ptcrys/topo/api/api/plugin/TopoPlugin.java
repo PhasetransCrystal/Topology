@@ -2,16 +2,23 @@ package net.ptcrys.topo.api.api.plugin;
 
 import net.ptcrys.registrylib.RegistryCore;
 import net.ptcrys.topo.api.api.builtin.*;
+import net.ptcrys.topo.api.api.plugin.hook.EquipmentPlugin;
+import net.ptcrys.topo.api.api.plugin.hook.LangPlugin;
+import net.ptcrys.topo.api.api.plugin.hook.MachinePlugin;
+import net.ptcrys.topo.api.api.plugin.hook.MaterialPlugin;
+import net.ptcrys.topo.api.api.plugin.hook.OrePlugin;
+import net.ptcrys.topo.api.api.plugin.hook.RecipePlugin;
+import net.ptcrys.topo.api.api.plugin.hook.RuntimePlugin;
 
 import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Objects;
 
 /**
- * One namespace owner and its typed contributions. Subclasses only configure the registration
- * points they use; the host owns event wiring, ordering, content generation and freeze fences.
+ * One namespace owner and its typed contributions. Subclasses override the named domain
+ * hooks they use; the host owns event wiring, ordering, content generation and freeze fences.
  */
-public abstract class TopoPlugin {
+public abstract class TopoPlugin implements RecipePlugin, MaterialPlugin, EquipmentPlugin, MachinePlugin, OrePlugin, LangPlugin, RuntimePlugin {
 
     private final RegistryCore registry;
     private final Map<RegistrationDomain<?>, Object> domains = new IdentityHashMap<>();
@@ -27,9 +34,6 @@ public abstract class TopoPlugin {
     public final RegistryCore registry() {
         return registry;
     }
-
-    /** Only describe contributions here; content writes belong inside the registered callbacks. */
-    protected abstract void configure(PluginRegistration registration);
 
     /** Additional domains use this same entry, without adding methods to the plugin contract. */
     @SuppressWarnings("unchecked")
@@ -67,7 +71,7 @@ public abstract class TopoPlugin {
         return domain(LangDomainRegistration.DOMAIN);
     }
 
-    final String identity() {
+    public final String identity() {
         return modId() + ":" + getClass().getName();
     }
 }

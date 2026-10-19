@@ -1,9 +1,9 @@
-package net.ptcrys.topo.api.api.plugin;
+package net.ptcrys.topo.api.api.plugin.internal;
 
 /** Ordered, non-reentrant startup; failed mutations cannot safely be retried. */
-final class PluginLifecycle {
+public final class PluginLifecycle {
 
-    enum Phase {
+    public enum Phase {
         CONTENT,
         DERIVED,
         LANGUAGE,

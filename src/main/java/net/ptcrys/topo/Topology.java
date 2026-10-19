@@ -3,7 +3,6 @@ package net.ptcrys.topo;
 import net.ptcrys.registrylib.RegistryCore;
 import net.ptcrys.topo.api.OfficialTopoAPIPlugin;
 import net.ptcrys.topo.api.api.async.TopoAsyncExecutors;
-import net.ptcrys.topo.api.api.plugin.TopoPluginEngine;
 import net.ptcrys.topo.api.api.plugin.TopoPlugins;
 import net.ptcrys.topo.api.api.tick.TickHeartbeat;
 import net.ptcrys.topo.api.api.visual.CtmClientInit;
@@ -37,7 +36,7 @@ public class Topology {
         TopoPlugins.register(OfficialTopoAPIPlugin.INSTANCE);
 
         // Defer engine until all @Mod constructors have had a chance to register.
-        TopoPluginEngine.register(modEventBus);
+        TopoPlugins.attachHost(modEventBus);
 
         CtmClientInit.register(modEventBus);
         MachineDataNetworking.register(modEventBus);

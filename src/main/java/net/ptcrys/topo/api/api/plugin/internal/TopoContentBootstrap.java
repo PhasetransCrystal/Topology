@@ -1,4 +1,12 @@
-package net.ptcrys.topo.api.api.plugin;
+package net.ptcrys.topo.api.api.plugin.internal;
+
+import net.ptcrys.topo.api.api.plugin.internal.module.EquipmentRegistrationModule;
+import net.ptcrys.topo.api.api.plugin.internal.module.LangRegistrationModule;
+import net.ptcrys.topo.api.api.plugin.internal.module.MachineRegistrationModule;
+import net.ptcrys.topo.api.api.plugin.internal.module.MaterialRegistrationModule;
+import net.ptcrys.topo.api.api.plugin.internal.module.OreRegistrationModule;
+import net.ptcrys.topo.api.api.plugin.internal.module.RecipeRegistrationModule;
+import net.ptcrys.topo.api.api.plugin.internal.module.RuntimeRegistrationModule;
 
 import java.util.List;
 
@@ -12,12 +20,12 @@ final class TopoContentBootstrap {
 
     private TopoContentBootstrap() {}
 
-    static RegistrationPlan compile(TopoPlugins.Snapshot plugins, List<RegistrationModule> modules) {
+    static RegistrationPlan compile(PluginSnapshot plugins, List<RegistrationModule> modules) {
         RegistrationContext context = new RegistrationContext(plugins);
         RegistrationPlan.Builder builder = new RegistrationPlan.Builder();
         for (RegistrationModule module : modules) module.define(builder, context);
         RegistrationPlan plan = builder.compile();
-        context.configure(builder.points());
+        context.validate(builder.points());
         return plan;
     }
 }

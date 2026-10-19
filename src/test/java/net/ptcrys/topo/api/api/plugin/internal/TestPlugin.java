@@ -1,7 +1,8 @@
-package net.ptcrys.topo.api.api.plugin;
+package net.ptcrys.topo.api.api.plugin.internal;
 
 import net.ptcrys.registrylib.RegistryCore;
 import net.ptcrys.topo.Topology;
+import net.ptcrys.topo.api.api.plugin.TopoPlugin;
 
 /** Fixtures use the same canonical domain creation as dependent plugins. */
 class TestPlugin extends TopoPlugin {
@@ -13,7 +14,4 @@ class TestPlugin extends TopoPlugin {
     TestPlugin(RegistryCore core) {
         super(core);
     }
-
-    @Override
-    protected void configure(PluginRegistration registration) {}
 }

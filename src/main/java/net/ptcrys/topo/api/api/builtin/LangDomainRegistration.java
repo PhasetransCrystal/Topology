@@ -5,7 +5,6 @@ import net.ptcrys.topo.api.api.lang.LangKey;
 import net.ptcrys.topo.api.api.lang.LangRegistry;
 import net.ptcrys.topo.api.api.plugin.PluginIds;
 import net.ptcrys.topo.api.api.plugin.RegistrationDomain;
-import net.ptcrys.topo.api.api.plugin.RegistrationPoint;
 import net.ptcrys.topo.api.api.plugin.TopoPlugin;
 
 import net.minecraft.resources.Identifier;
@@ -21,7 +20,6 @@ import java.util.Objects;
 public final class LangDomainRegistration {
 
     public static final RegistrationDomain<LangDomainRegistration> DOMAIN = RegistrationDomain.of(LangDomainRegistration::of);
-    public static final RegistrationPoint<LangDomainRegistration> KEYS = RegistrationPoint.of("topo:lang/keys", DOMAIN);
 
     private final TopoPlugin plugin;
     private final RegistryCore registry;

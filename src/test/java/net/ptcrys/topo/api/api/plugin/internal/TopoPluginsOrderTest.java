@@ -1,4 +1,4 @@
-package net.ptcrys.topo.api.api.plugin;
+package net.ptcrys.topo.api.api.plugin.internal;
 
 import org.junit.jupiter.api.Test;
 
@@ -13,8 +13,8 @@ class TopoPluginsOrderTest {
     void executionOrderIsStableAndDoesNotRequireDependencyMetadata() {
         var z = new ZPlugin();
         var a = new APlugin();
-        assertEquals(List.of(a, z), new TopoPlugins.Snapshot(List.of(z, a), Map.of()).plugins());
-        assertEquals(List.of(a, z), new TopoPlugins.Snapshot(List.of(a, z), Map.of()).plugins());
+        assertEquals(List.of(a, z), new PluginSnapshot(List.of(z, a), Map.of()).plugins());
+        assertEquals(List.of(a, z), new PluginSnapshot(List.of(a, z), Map.of()).plugins());
     }
 
     private static final class APlugin extends TestPlugin {}

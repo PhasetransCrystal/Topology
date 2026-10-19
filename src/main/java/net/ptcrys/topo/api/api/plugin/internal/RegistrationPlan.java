@@ -1,6 +1,7 @@
-package net.ptcrys.topo.api.api.plugin;
+package net.ptcrys.topo.api.api.plugin.internal;
 
-import net.ptcrys.topo.api.api.plugin.PluginLifecycle.Phase;
+import net.ptcrys.topo.api.api.plugin.TopoContribution;
+import net.ptcrys.topo.api.api.plugin.internal.PluginLifecycle.Phase;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -14,7 +15,7 @@ import java.util.Set;
 import java.util.TreeMap;
 
 /** Compiles a validated, deterministic dependency order before any registration action runs. */
-final class RegistrationPlan {
+public final class RegistrationPlan {
 
     record Step(String id, Phase phase, Set<String> after, Runnable action) {
 
@@ -48,19 +49,19 @@ final class RegistrationPlan {
         }
     }
 
-    static final class Builder {
+    public static final class Builder {
 
         private final Map<String, Step> steps = new TreeMap<>();
-        private final Set<RegistrationPoint<?>> points = new HashSet<>();
+        private final Set<RegistrationPoint<?, ?>> points = new HashSet<>();
 
-        Builder step(Phase phase, String id, Collection<String> after, Runnable action) {
+        public Builder step(Phase phase, String id, Collection<String> after, Runnable action) {
             Step step = new Step(id, phase, Set.copyOf(after), action);
             if (steps.putIfAbsent(id, step) != null) throw new IllegalStateException("Duplicate registration step '" + id + "'");
             return this;
         }
 
-        <A> Builder point(Phase phase, RegistrationPoint<A> point, Collection<String> after,
-                          RegistrationContext context, Runnable finish) {
+        public <P extends TopoContribution, A> Builder point(Phase phase, RegistrationPoint<P, A> point, Collection<String> after,
+                                                             RegistrationContext context, Runnable finish) {
             step(phase, point.id(), after, () -> {
                 context.contribute(point);
                 finish.run();
@@ -69,7 +70,7 @@ final class RegistrationPlan {
             return this;
         }
 
-        Set<RegistrationPoint<?>> points() {
+        Set<RegistrationPoint<?, ?>> points() {
             return Set.copyOf(points);
         }
 
