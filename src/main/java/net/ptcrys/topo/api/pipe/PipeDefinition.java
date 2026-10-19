@@ -24,6 +24,7 @@ import java.util.Objects;
 public final class PipeDefinition {
 
     private final Identifier id;
+    private final @Nullable RegistryCore registry;
     private final PipeResourceProfile profile;
     private final PipeBlockTemplate blockTemplate;
     private final String displayName;
@@ -40,6 +41,7 @@ public final class PipeDefinition {
 
     PipeDefinition(
                    Identifier id,
+                   @Nullable RegistryCore registry,
                    PipeResourceProfile profile,
                    PipeBlockTemplate blockTemplate,
                    String displayName,
@@ -49,6 +51,7 @@ public final class PipeDefinition {
                    List<PipeStrategyOffer> strategies,
                    PipeFilterSettings filterSettings) {
         this.id = id;
+        this.registry = registry;
         this.profile = profile;
         this.blockTemplate = blockTemplate;
         this.displayName = displayName;
@@ -66,6 +69,12 @@ public final class PipeDefinition {
 
     public Identifier id() {
         return id;
+    }
+
+    /** Null only for legacy declarations owned by the host passed to Pipes.registerBlocks. */
+    @Nullable
+    RegistryCore registry() {
+        return registry;
     }
 
     public PipeResourceProfile profile() {

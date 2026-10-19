@@ -63,7 +63,9 @@ public final class RecipeCapabilities {
     }
 
     public static void freeze() {
-        REGISTRY.freeze();
+        if (REGISTRY.isFrozen()) {
+            return;
+        }
         List<RecipeCapability<?, ?>> capabilities = REGISTRY.handlesView();
         int indexingCount = 0;
         for (RecipeCapability<?, ?> capability : capabilities) {
@@ -85,8 +87,10 @@ public final class RecipeCapabilities {
                 }
             }
         }
+        Map<MachineResourceType<?>, SlottedRecipeCapability<?, ?, ?>> slottedSnapshot = Map.copyOf(slotted);
         indexingSnapshot = indexing;
-        slottedByResourceType = Map.copyOf(slotted);
+        slottedByResourceType = slottedSnapshot;
+        REGISTRY.freeze();
     }
 
     /**

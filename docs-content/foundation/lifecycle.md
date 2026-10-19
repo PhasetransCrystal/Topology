@@ -28,33 +28,85 @@ sidebar_position: 1
 | 16 | `registerOreDatagen(ore)`                | —                                                                                        | 全部矿脉                                                       |
 | 17 | `registerLang(lang)`                     | `LangRegistry`                                                                           | 全部                                                           |
 
-## 引擎顺序
+## 加载与事件顺序
 
-宿主 `@Mod` 构造器注册插件后，在首个 `RegisterEvent`（HIGHEST 优先级）上调用：
+默认依赖模式下，只有 Topo 宿主接线 `TopoPluginEngine.register(modEventBus)`：
+
+| 时机 | 执行内容 | 边界 |
+|------|----------|------|
+| 所有 Mod 构造期 | `TopoPlugins.register(plugin)` | 只登记插件；不要手工提前启动引擎 |
+| 首个 `RegisterEvent`，`HIGHEST` | 锁定并排序插件，执行上表钩子 1–17 | 完成所有游戏内容的 RegistryLib 排队 |
+| `RegisterEvent`，RegistryLib `LOW` | 将排队条目注册到游戏注册表 | 此前只能传递 Entry / Supplier，不能提前 `.get()` |
+| `FMLCommonSetupEvent.enqueueWork` | 宿主绑定管道面板；依赖方在自己的事件任务中绑定 provider / behavior | 主线程，游戏条目可用；不同 Mod 任务间无先后承诺 |
+| sided setup 的 deferred work | 完成客户端专用绑定 | 同样必须在 load complete 前完成 |
+| `RegisterCapabilitiesEvent` | 为共享机器 BE 安装已声明资源类型的能力 | 由宿主接线，资源类型表已经冻结 |
+| `FMLLoadCompleteEvent.enqueueWork` | 引擎冻结 `ItemTooltipUis`、`MachineItemBehaviors` | 此后不能再注册 provider / behavior |
+
+NeoForge 的 `RegisterEvent` 按优先级跨 Mod 派发，因此 `HIGHEST` 的内容排队先于
+RegistryLib 的 `LOW`。common setup 属于并行生命周期事件，不能靠另一个 Mod 的监听器
+优先级保证其 deferred work 先执行；共享运行时表必须在后续生命周期事件中冻结。
+
+上表的能力注册事件位置按项目当前 NeoForge 26.1.2.107 的 `CommonModLoader.load` /
+`RegistrationEvents.init` 实现核对：发生在 common / sided setup 之后、IMC 和 load complete 之前。
+
+每个钩子先遍历**全部插件**，再冻结对应表，随后进入下一个钩子。
+运行时与 datagen 共用内容管线；datagen 不依赖 common setup 或 load complete 才完成资源声明。
+语言键通过声明它的 `LangDomainRegistration` 所属 RegistryCore 导出。
+仅运行 `--mod mymod` 会生成 mymod 拥有的键；Topo 自身 API 文案由 Topo 的资源包提供。
+
+## 插件顺序
+
+- `TopoPlugins.register(plugin)` 默认使用完整类名作为 ID。
+- 有调度需求时使用 `register(id, plugin, after...)`，在注册处指定稳定 ID 和必需前置插件。
+- 排序元数据不属于 `TopoPlugin` 接口；依赖只决定内容钩子内的顺序，不能跨越冻结点，也不控制 NeoForge 事件任务。
+- 官方 API 插件 ID 为 `topo:api`，存在时自动成为其他插件的前置插件。
+- 其余按依赖拓扑排序；同样可执行的插件按 ID 字典序选择，与 Mod 构造线程的到达顺序无关。
+- 重复 ID、缺少必需插件和依赖环在任何内容钩子执行前报错；最终顺序写入日志。
 
 ```java
-TopoPluginEngine.prepare();          // 钩子 1–9（内部锁定 TopoPlugins）
-TopoPluginEngine.bootstrapMachine(); // 钩子 10–12
-TopoPluginEngine.bootstrapOre();     // 钩子 13–16
-TopoPluginEngine.bootstrapLang();    // 钩子 17
+TopoPlugins.register("mymod:api", new MyApiPlugin());
+TopoPlugins.register("mymod:content", new MyContentPlugin(), "mymod:api");
 ```
 
-:::caution
-`prepare()` 会锁定插件表——此后 `TopoPlugins.register(...)` 直接抛异常。所有插件必须在 `@Mod` 构造器里注册完毕。
-:::
+插件的领域 API 通过 `XDomainRegistration.of(this)` 创建一次并保存在字段中。
+Plugin 的 `modId()`、RegistryCore 的 namespace 和所有领域 API 的归属必须一致。
+材质没有所属 Plugin 时直接报错，不能退回任意其他 Plugin 的 RegistryCore。
+在 `registerMachineFollowUps(machine)` 中使用 `machine.pipe("copper_pipe")`，管道及共享资源生成
+使用该 Plugin 的 RegistryCore。旧 `Pipes.register("...")` 保留 `topo` 命名空间和宿主归属，
+新插件应迁移到领域入口。
 
-:::caution
-冻结点后写入抛异常。例如自定义 `MaterialForm` 必须放 `registerMaterialFoundation`（钩子 3），
-`registerMaterials`（钩子 4）里只能引用。
-:::
+## 阶段状态与失败
 
-## API 速查
+引擎严格按 recipe → material → equipment → machine → ore → lang → runtime → ready 执行。
+已完成的阶段可重复调用，不重复生成内容；越序和重入会报错。
+阶段执行异常后保留原始原因并终止后续启动，不能重试已经部分修改的注册表。
+插件钩子的异常包含插件 ID 和钩子名称；修正后必须重启进程。
 
-| 类/方法                                | 用途                            |
-|----------------------------------------|---------------------------------|
-| `TopoPlugins.register(plugin)`         | 注册插件（引擎启动前）          |
-| `TopoPlugins.view()` / `isLocked()`    | 插件列表 / 锁状态               |
-| `TopoPluginEngine.prepare()`           | 钩子 1–9（锁定插件表）          |
-| `TopoPluginEngine.bootstrapMachine()`  | 钩子 10–12                      |
-| `TopoPluginEngine.bootstrapOre()`      | 钩子 13–16                      |
-| `TopoPluginEngine.bootstrapLang()`     | 钩子 17                         |
+冻结点后写入会抛异常。例如 `MaterialForm` 必须在 `registerMaterialFoundation` 声明，
+`registerMaterials` 只能引用已经声明的形态。静态字段不会因锁定插件表而自动初始化，
+每个声明类都应在所属钩子内显式触发 `init()`。
+
+## 接入与迁移
+
+依赖方只在构造期注册插件，移除重复的引擎事件接线。
+旧的 `prepare()`、`bootstrapMachine()`、`bootstrapOre()`、`bootstrapLang()` 保留，
+供兼容代码按上述顺序调用；推荐宿主统一使用 `register(modEventBus)`。
+
+tooltip 和物品行为继续在依赖方自己的 `FMLCommonSetupEvent.enqueueWork` 中注册，
+移除各内容模块的 `freeze()`。客户端专用绑定也可使用 client setup 的 deferred work。
+不再单独调用 `PipeSpecTooltips.register`；宿主引擎负责注册管道面板。
+所有运行时注册最迟在 common / sided setup 完成，禁止延迟到 load complete 才开始贡献。
+跨 Mod 的运行时绑定应独立完成；存在依赖的任务应由参与方明确协调，不能靠 Plugin 排序或监听器到达顺序推断。
+
+## 引擎职责与扩展边界
+
+- `TopoPlugins`：登记内容插件、校验归属、锁定排序。排序信息在注册时提供，不增加 Plugin 方法。
+- `PluginLifecycle`：阶段成功后才标记完成，拒绝越序、重入和失败后续跑，不处理领域内容。
+- `TopoPluginEngine`：把 NeoForge 事件映射到阶段；保留既有显式 bootstrap 入口并统一管理运行时冻结。
+- `TopoContentBootstrap`：执行各领域的声明、校验、内容生成和冻结，不监听事件。
+
+新增领域时，领域实现与冻结点放在内容编排层，由引擎接入明确阶段；冻结必须跟在所有插件贡献之后。
+只有新的内容声明语义才需要考虑增加 Plugin 钩子；排序、宿主事件和冻结职责不再加入 Plugin 接口。
+当前仍采用固定领域管线，不开放第三方任意插入冻结步骤：注册表之间存在真实依赖，开放任意步骤会削弱加载契约。
+若将来需要第三方领域模块，应先定义它依赖的阶段、允许写入的表和冻结责任，再设计模块扩展协议。
+现有共享机器 BE 仍由 Topo 宿主持有，当前拆分不等于已经支持多宿主、热重载或移除 Topo Mod 的完全嵌入。

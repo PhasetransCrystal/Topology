@@ -16,14 +16,9 @@ import net.ptcrys.topo.api.machine.multiblock.MultiblockControllerMetadata;
 import net.ptcrys.topo.api.machine.multiblock.ability.PartRoleAttachment;
 
 /**
- * Official API plugin: runtime API lang and machine attachment-type activation for code under
- * {@code net.ptcrys.topo.api} / {@code apiv2}. Shares {@link Topology#MODID} and
- * {@link Topology#REGISTRY} with the content plugin (registered by the content mod that hosts
- * product tables, e.g. {@code breakdown}).
- *
- * <p>
- * Does not contribute product materials / equipment / machine / ore / recipe tables — those live
- * on the content plugin. Register this plugin before the content plugin.
+ * Official API plugin: activates framework attachment types, language keys and pipe tooltip
+ * providers. The engine orders this plugin before all content plugins, regardless of constructor
+ * arrival order. Owns the host namespace and RegistryCore; contributes no product catalogs.
  */
 public final class OfficialTopoAPIPlugin implements TopoPlugin {
 

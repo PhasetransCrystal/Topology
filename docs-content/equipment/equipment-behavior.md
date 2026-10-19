@@ -58,7 +58,7 @@ public final class RegulatorBehavior implements MachineItemBehavior {
 
 ## 注册
 
-行为**不会自动注册**——物品绑定后（`FMLCommonSetup.enqueueWork`）遍历设备物品表：
+行为**不会自动注册**——在 Mod 的 `FMLCommonSetupEvent.enqueueWork` 中遍历设备物品表：
 
 ```java
 for (EquipmentRegistry.EquipmentItemRecord record : EquipmentRegistry.itemRecords()) {
@@ -67,11 +67,10 @@ for (EquipmentRegistry.EquipmentItemRecord record : EquipmentRegistry.itemRecord
         MachineItemBehaviors.register(record.entry().get(), behavior);
     }
 }
-MachineItemBehaviors.freeze();
 ```
 
 :::caution
-`MachineItemBehaviors.freeze()` 后不可再注册——查找路径每次右键都走一次冻结表读取，必须零开销。
+共享表由引擎在 load complete 冻结，插件不能自行调用 `MachineItemBehaviors.freeze()`。冻结后不可再注册。
 :::
 
 ## 反馈语言键
@@ -91,4 +90,4 @@ RESUMED_KEY = lang.key("equipment", "regulator.resumed", "Machine resumed", "机
 | `MachineItemBehavior.useOnMachine(...)`         | 右键机器行为（双端分派）       |
 | `MachineItemBehaviors.register(item, behavior)` | 注册物品行为                   |
 | `MachineItemBehaviors.find(item)`               | 查询（每次右键一次冻结表读取） |
-| `MachineItemBehaviors.freeze()`                 | 冻结（注册后调用）             |
+| `MachineItemBehaviors.freeze()`                 | 冻结（引擎在 load complete 调用）             |

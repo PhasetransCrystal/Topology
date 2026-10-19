@@ -11,8 +11,10 @@ import net.minecraft.world.item.CreativeModeTab;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -32,7 +34,17 @@ public final class Pipes {
 
     /** Begin declaring a pipe. The path is the identity definition point in the Topo namespace. */
     public static Builder register(String path) {
-        return new Builder(IdHelper.id(Objects.requireNonNull(path, "pipe path")));
+        return new Builder(IdHelper.id(Objects.requireNonNull(path, "pipe path")), null);
+    }
+
+    /** Plugin-owned declaration entry; legacy register(String) retains the Topo namespace. */
+    public static Builder begin(Identifier id, RegistryCore registry) {
+        Objects.requireNonNull(id, "pipe id");
+        Objects.requireNonNull(registry, "registry core");
+        if (!id.getNamespace().equals(registry.getModid())) {
+            throw new IllegalArgumentException("Pipe namespace must match its RegistryCore: " + id);
+        }
+        return new Builder(id, registry);
     }
 
     public static PipeDefinition require(Identifier id) {
@@ -66,12 +78,13 @@ public final class Pipes {
         }
         blocksRegistered = true;
         for (PipeDefinition definition : registered()) {
-            definition.registerBlockEntry(core);
+            definition.registerBlockEntry(definition.registry() == null ? core : definition.registry());
         }
-        Set<Object> sharedGroups = new LinkedHashSet<>();
+        Map<RegistryCore, Set<Object>> sharedGroups = new IdentityHashMap<>();
         for (PipeDefinition definition : registered()) {
-            if (sharedGroups.add(definition.blockTemplate().sharedGroup())) {
-                definition.blockTemplate().contributeShared(core);
+            RegistryCore owner = definition.registry() == null ? core : definition.registry();
+            if (sharedGroups.computeIfAbsent(owner, unused -> new LinkedHashSet<>()).add(definition.blockTemplate().sharedGroup())) {
+                definition.blockTemplate().contributeShared(owner);
             }
         }
     }
@@ -80,6 +93,7 @@ public final class Pipes {
     public static final class Builder {
 
         private final Identifier id;
+        private final @Nullable RegistryCore registry;
         private final List<PipeStrategyOffer> strategies = new ArrayList<>();
         private final Set<Identifier> strategyIds = new LinkedHashSet<>();
         private @Nullable PipeResourceProfile profile;
@@ -90,8 +104,9 @@ public final class Pipes {
         private int maxExtractRate;
         private int nodeThroughput;
 
-        private Builder(Identifier id) {
+        private Builder(Identifier id, @Nullable RegistryCore registry) {
             this.id = id;
+            this.registry = registry;
         }
 
         public Builder resource(PipeResourceProfile profile) {
@@ -169,6 +184,7 @@ public final class Pipes {
             }
             PipeDefinition definition = new PipeDefinition(
                     id,
+                    registry,
                     builtProfile,
                     builtTemplate,
                     builtDisplayName,

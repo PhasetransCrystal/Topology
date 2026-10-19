@@ -29,7 +29,7 @@ equipment.kind("wrench",
 ## 面板构建 — ItemTooltipUis 注册
 
 面板是 LCD 结构：耐久行（可损耗才有）+ 功能区（父行 `Function | 行数` + 每条说明一行缩进子项）。
-物品绑定后（`FMLCommonSetup.enqueueWork`）为每个装备物品注册：
+在 Mod 的 `FMLCommonSetupEvent.enqueueWork` 中为每个装备物品注册（此时物品已经绑定）：
 
 ```java
 for (EquipmentRegistry.EquipmentItemRecord record : EquipmentRegistry.itemRecords()) {
@@ -60,9 +60,9 @@ TOOLTIP_EQUIPMENT_RANGE_BLOCKS = lang.key("tooltip", "equipment.range_blocks", "
 ```
 
 :::caution
-面板注册必须**先于** `PipeSpecTooltips.register(...)`——它的 setup 任务会 freeze `ItemTooltipUis`，
-而 `enqueueWork` 任务按提交序执行。面板框架细节见
-[Tooltip Panels](../foundation/tooltip-panels.md)。
+面板在 common setup 的主线程任务中注册，`ItemTooltipUis` 在 load complete 冻结。
+插件不能自行冻结共享表，也不能把声明语言键推迟到运行时绑定。
+面板框架细节见 [Tooltip Panels](../foundation/tooltip-panels.md)。
 :::
 
 ## API 速查

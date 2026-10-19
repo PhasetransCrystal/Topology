@@ -37,6 +37,13 @@ net.ptcrys.topo.api.* → 库本体（全部继承扩展点都在这里）
 ```java
 public final class MyModPlugin implements TopoPlugin {
 
+    private final MaterialDomainRegistration materials = MaterialDomainRegistration.of(this);
+    private final EquipmentDomainRegistration equipments = EquipmentDomainRegistration.of(this);
+    private final RecipeDomainRegistration recipes = RecipeDomainRegistration.of(this);
+    private final MachineDomainRegistration machines = MachineDomainRegistration.of(this);
+    private final OreDomainRegistration ores = OreDomainRegistration.of(this);
+    private final LangDomainRegistration langs = LangDomainRegistration.of(this);
+
     @Override
     public String modId() {
         return "mymod";
@@ -96,42 +103,53 @@ public final class MyModPlugin implements TopoPlugin {
 }
 ```
 
-## 接线：注册插件 + 启动引擎
+## 接线：依赖方只注册插件
 
 ```java
 @Mod("mymod")
 public class MyMod {
-
-    public static final RegistryCore REGISTRY = /* ... */;
+    public static final RegistryCore REGISTRY = RegistryCore.create("mymod");
 
     public MyMod(IEventBus modEventBus) {
-        // 1. 注册内容插件（引擎启动前，@Mod 构造器里）
         TopoPlugins.register(new MyModPlugin());
-
-        // 2. 首个 RegisterEvent 上启动引擎——HIGHEST 优先级，保证
-        //    所有 @Mod 构造器都已注册完毕，RegistryLib(LOW) 仍能看到队列条目。
-        modEventBus.addListener(EventPriority.HIGHEST, this::bootstrap);
-
-        // 3. 运行时绑定（你的内容专属，注册顺序注意见下）
-    }
-
-    private void bootstrap(RegisterEvent event) {
-        TopoPluginEngine.prepare();            // recipe → material → equipment
-        TopoPluginEngine.bootstrapMachine();   // machine foundation → machines → pipes
-        TopoPluginEngine.bootstrapOre();       // ore foundation → veins
-        TopoPluginEngine.bootstrapLang();      // lang 收集 + 冻结
     }
 }
 ```
 
-:::info
-**库已经帮你做了什么** — Topology 的宿主 `@Mod("topo")` 已注册 API 插件、资源能力、管道引擎、网络、渲染、
-tick 心跳等全部框架运行时。你的 Mod 只需要走上面三步——注册自己的插件、启动引擎、接上自己的运行时绑定。
-:::
+在你的 `neoforge.mods.toml` 声明对 `topo` 的必需依赖，并设置 `ordering="AFTER"`。
+Topo 宿主负责接线 `TopoPluginEngine.register(modEventBus)`，依赖方无需重复接线，也无需手工监听
+`RegisterEvent` 或调用各个 bootstrap 方法。
 
-:::caution
-**运行时绑定顺序** — 如果你的内容提供设备/材质/机器的物品悬浮面板（tooltip），其注册必须**先于**
-`PipeSpecTooltips.register(...)`：后者的 setup 任务会 freeze `ItemTooltipUis`，而 `enqueueWork` 任务按提交序执行。
+物品实例可用后才能执行的绑定，使用 NeoForge 已有的事件任务：
+
+```java
+// 在你的 Mod 构造器内接线：
+modEventBus.addListener((FMLCommonSetupEvent event) -> event.enqueueWork(() -> {
+    // ItemTooltipUis.register(myItem.get(), myPanelProvider);
+    // MachineItemBehaviors.register(myTool.get(), myBehavior);
+}));
+```
+
+共享表由引擎在 `FMLLoadCompleteEvent` 的主线程任务中统一冻结。插件不能自行调用
+`ItemTooltipUis.freeze()` 或 `MachineItemBehaviors.freeze()`。
+common setup / client setup 的 `enqueueWork` 均在冻结点之前；不同 Mod 的任务间不保证顺序。
+Plugin 的内容排序不影响这些事件任务。
+
+同一 Mod 可以提供多个 Plugin，但必须共用其 RegistryCore，且注册 ID 唯一。
+默认 ID 是类的完整名称。需要稳定 ID 或同阶段依赖时，在注册处提供可选调度参数：
+
+```java
+TopoPlugins.register("mymod:api", new MyApiPlugin());
+TopoPlugins.register("mymod:content", new MyContentPlugin(), "mymod:api");
+```
+
+未声明依赖的插件按 ID 字典序执行，不采用构造器到达顺序。官方 API 插件始终优先。
+缺少依赖、重复 ID、循环依赖都会在内容钩子执行前明确报错。
+这些元数据不需要在 `TopoPlugin` 中实现额外方法。
+
+:::info
+Topo 宿主还负责资源能力、管道引擎、网络、渲染、tick 心跳等框架运行时。
+Plugin 的各领域 API 应创建一次并保存在字段中，不能在 getter 里每次重新创建。
 :::
 
 ## 生命周期与冻结点
@@ -160,7 +178,9 @@ graph LR
 | machine foundation  | 冻结 resource type / UI / render       | resource type 表         |
 | machines            | 声明机器 + 注册 block / block entity   | machine 表               |
 | ore                 | 声明矿脉 + 数据生成                    | shape / mode / policy 表 |
-| lang                | 收集所有翻译键                         | lang 表                  |
+| lang                | 收集所有翻译键，按所属 Plugin 导出     | lang 表                  |
+| common setup        | 各 Mod 的运行时绑定               | 暂不冻结                 |
+| load complete       | 结束共享运行时表的注册窗口             | tooltip / item behavior  |
 
 :::caution
 **冻结点规则** — 冻结点后不能再添加新条目。例如在 `registerMaterials()` 中不能再注册新的 `MaterialForm`——
@@ -170,6 +190,6 @@ graph LR
 
 ## 关键约定
 
-- **ID 必须带命名空间**（如 `mymod:copper`）
+- **领域 API 传裸路径**（如 `material("copper")`）；生成的 ID 带 Plugin 命名空间 `mymod:copper`
 - **双语名称**：每个有显示名称的条目必须提供 `en` 和 `cn`
 - **Topology 只提供基建**：不在创造模式物品栏、JEI 中添加内容
