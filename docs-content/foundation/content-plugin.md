@@ -43,6 +43,10 @@ title: 内容插件实作
 `() -> BuiltinCreativeTabs.KEY.getKey()`，生成内容时读取 key；机器阶段可以直接读取 key。
 需要游戏实例的 `.get()` 只出现在延迟的数据生成、图标或运行时回调内。
 
+材料后处理的标签使用 `itemTags().addIds(tag, MaterialHelper.itemId(material, form))`。
+RegistryLib 的 `addSuppliers` 会立即调用 Supplier，此阶段不能传入依赖游戏注册表的材料物品 Supplier；
+熔炼配方则在 `addRecipeData` 回调内取物品。
+
 普通物品、创造栏、模型、标签和熔炼使用 RegistryLib 原生能力；领域内容通过 Plugin 的领域 API 声明。
 管道使用 `plugin.machine().pipe(path)`，让注册项归属下游命名空间及其 RegistryCore。
 
