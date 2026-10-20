@@ -2,6 +2,7 @@ package net.ptcrys.topo.api.pipe;
 
 import net.ptcrys.registrylib.RegistryCore;
 import net.ptcrys.topo.api.api.infrastructure.FreezableStrategyRegistry;
+import net.ptcrys.topo.api.lang.DisplayNames;
 import net.ptcrys.topo.helper.IdHelper;
 
 import net.minecraft.resources.Identifier;
@@ -99,6 +100,7 @@ public final class Pipes {
         private @Nullable PipeResourceProfile profile;
         private @Nullable PipeBlockTemplate blockTemplate;
         private @Nullable String displayName;
+        private @Nullable String displayNameCn;
         private @Nullable ResourceKey<CreativeModeTab> creativeTab;
         private @Nullable PipeFilterSettings filterSettings;
         private int maxExtractRate;
@@ -122,6 +124,15 @@ public final class Pipes {
 
         public Builder displayName(String displayName) {
             this.displayName = Objects.requireNonNull(displayName, "display name");
+            this.displayNameCn = null;
+            return this;
+        }
+
+        /** Declare both locales on the pipe whose block builder owns the generated name. */
+        public Builder displayName(String en, String cn) {
+            var name = DisplayNames.fixed(en, cn);
+            this.displayName = name.en();
+            this.displayNameCn = name.cn();
             return this;
         }
 
@@ -188,6 +199,7 @@ public final class Pipes {
                     builtProfile,
                     builtTemplate,
                     builtDisplayName,
+                    displayNameCn,
                     creativeTab,
                     maxExtractRate,
                     nodeThroughput,

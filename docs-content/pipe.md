@@ -29,7 +29,7 @@ PipeDefinition       ← 一种管道（资源类型 × 等级）
 plugin.machine().pipe("item_pipe_t1")
     .resource(myItemProfile)                            // PipeResourceProfile 实例
     .blockTemplate(new MyPipeBlockTemplate())            // 外观/模型模板
-    .displayName("Item Pipe Tier 1")
+    .displayName("Item Pipe Tier 1", "一级物品管道")
     .maxExtractRate(64)                                  // 每 tick 最大提取
     .nodeThroughput(128)                                 // 每节点每 tick 吞吐
     .filter(PipeFilterSettings.NONE)                     // 无需过滤
@@ -38,6 +38,8 @@ plugin.machine().pipe("item_pipe_t1")
 ```
 
 使用领域入口会让管道及其方块/物品归属插件的命名空间和 RegistryCore。
+`displayName(en, cn)` 的各语言数据随方块 Builder 一起提交；不要再用 `plugin.lang()` 注册该方块名称。
+原有单参数 `displayName(en)` 保留为仅英文入口。
 
 ### 参数说明
 

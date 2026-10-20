@@ -25,7 +25,9 @@ Item required = MaterialHelper.requireItem(material, form); // 找不到就抛�
 ```
 
 :::caution
-`item()` 在物品未绑定时返回空（例如后处理器 validate 阶段）。要拿到必须存在的物品用 `requireItem()`。
+`item()` 在物品未绑定时返回空，`requireItem()` 会抛异常。后处理器和 FollowUps 仍属于声明阶段：
+标签使用 `itemId()`，需要物品实例的数据生成或运行时回调可保存 `materialItemSupplier()`，
+但不能在当前阶段调用它的 `get()`。传递 Supplier 本身不保证接收方延迟求值。
 :::
 
 ## ResourceFilterHelper

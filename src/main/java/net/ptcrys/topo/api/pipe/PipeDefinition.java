@@ -3,6 +3,9 @@ package net.ptcrys.topo.api.pipe;
 import net.ptcrys.registrylib.RegistryCore;
 import net.ptcrys.registrylib.builders.BlockBuilder;
 import net.ptcrys.registrylib.util.entry.BlockEntry;
+import net.ptcrys.topo.api.api.lang.LangRegistry;
+import net.ptcrys.topo.api.lang.DisplayNames;
+import net.ptcrys.topo.api.lang.RegistryDisplayLang;
 import net.ptcrys.topo.api.machine.resource.MachineResourceType;
 
 import net.minecraft.resources.Identifier;
@@ -28,6 +31,7 @@ public final class PipeDefinition {
     private final PipeResourceProfile profile;
     private final PipeBlockTemplate blockTemplate;
     private final String displayName;
+    private final @Nullable String displayNameCn;
     private final @Nullable ResourceKey<CreativeModeTab> creativeTab;
     private final int maxExtractRate;
     private final int nodeThroughput;
@@ -45,6 +49,7 @@ public final class PipeDefinition {
                    PipeResourceProfile profile,
                    PipeBlockTemplate blockTemplate,
                    String displayName,
+                   @Nullable String displayNameCn,
                    @Nullable ResourceKey<CreativeModeTab> creativeTab,
                    int maxExtractRate,
                    int nodeThroughput,
@@ -55,6 +60,7 @@ public final class PipeDefinition {
         this.profile = profile;
         this.blockTemplate = blockTemplate;
         this.displayName = displayName;
+        this.displayNameCn = displayNameCn;
         this.creativeTab = creativeTab;
         this.maxExtractRate = maxExtractRate;
         this.nodeThroughput = nodeThroughput;
@@ -169,7 +175,12 @@ public final class PipeDefinition {
         builder.properties(props -> blockTemplate.styleBlockProperties(props)
                 .noOcclusion()
                 .pushReaction(PushReaction.BLOCK));
-        builder.lang(displayName);
+        if (displayNameCn == null) {
+            LangRegistry.claimEntryName(id.toLanguageKey("block"));
+            builder.lang(displayName);
+        } else {
+            RegistryDisplayLang.applyBlock(builder, core, id.getPath(), DisplayNames.fixed(displayName, displayNameCn));
+        }
         builder.item(item -> {
             if (creativeTab != null) {
                 item.addTab(creativeTab);

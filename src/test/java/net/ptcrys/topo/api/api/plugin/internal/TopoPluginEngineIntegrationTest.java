@@ -1,6 +1,7 @@
 package net.ptcrys.topo.api.api.plugin.internal;
 
 import net.ptcrys.topo.api.OfficialTopoAPIPlugin;
+import net.ptcrys.topo.api.api.lang.LangRegistry;
 import net.ptcrys.topo.api.api.plugin.TopoPlugins;
 import net.ptcrys.topo.api.equipment.EquipmentRegistry;
 import net.ptcrys.topo.api.machine.MachineItemBehaviors;
@@ -17,6 +18,18 @@ import static net.ptcrys.topo.api.api.plugin.internal.LifecycleTestEntrypoint.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class TopoPluginEngineIntegrationTest {
+
+    @Test
+    void entryNamesAndIndependentKeysRejectConflictsInEitherDeclarationOrder() {
+        assertNotNull(entryThenKeyFailure);
+        assertTrue(entryThenKeyFailure.getMessage().contains("item.topo_test_a.lifecycle_tool"));
+        assertTrue(entryThenKeyFailure.getMessage().contains("RegistryLib entry"));
+        assertNotNull(keyThenEntryFailure);
+        assertTrue(keyThenEntryFailure.getMessage().contains("ui.topo_test_a.owned_a"));
+        assertTrue(keyThenEntryFailure.getMessage().contains("Topo LangKey"));
+        assertFalse(coreA.languages.containsKey("item.topo_test_a.lifecycle_tool"));
+        assertThrows(IllegalStateException.class, () -> LangRegistry.claimEntryName("item.topo_test_a.late"));
+    }
 
     @Test
     void constructorCollectionRejectsDuplicateIdentityButAcceptsTheSameInstance() {

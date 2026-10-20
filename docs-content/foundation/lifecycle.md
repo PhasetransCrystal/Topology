@@ -31,6 +31,10 @@ sidebar_position: 1
 表中索引用于查找，不是跨领域的依赖声明。矿石基础只依赖材质内容生成，机器与矿石可以独立编排；
 全部 CONTENT 步骤完成后才进入具体配方和语言阶段。不要依赖无依赖边步骤之间的偶然次序。
 
+条目显示名由生成它的 RegistryLib Builder 统一持有，通过 `lang(Map)` 提交各语言数据；
+LANGUAGE 阶段只导出独立的 Topo `LangKey`。Topo 生成条目名称与 `LangKey` 的冲突在声明时拒绝，
+与先后顺序及是否运行 datagen 无关。直接绕过 Topo 使用 RegistryLib 的链仍由 RegistryLib 校验。
+
 ## 加载与事件顺序
 
 默认依赖模式下，只有 Topo 宿主接线 `TopoPlugins.attachHost(modEventBus)`：

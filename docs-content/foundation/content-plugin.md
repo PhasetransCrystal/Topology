@@ -37,6 +37,8 @@ title: 内容插件实作
 
 形态与装备遵循对应教程的 `builder().registryPath(...).displayName(en, cn)...build()` 结构。
 策略将双语字符串铸造成 `TemplateDisplayName`，注册时通过 `RegistryDisplayLang` 桥接 RegistryLib。
+桥接使用 Builder 原生的 `lang(Map)`，条目名称不再经独立语言表二次导出。
+管道同样在 `displayName(en, cn)` 一处声明名称，不额外拼接方块语言键。
 矿石方块使用 `.item(item -> item.addTab(...)).register()` 一次完成方块及物品注册。
 
 创造栏只保留 `BuiltinCreativeTabs.KEY` 这个 `RegistryEntry`。形态在前置阶段保存

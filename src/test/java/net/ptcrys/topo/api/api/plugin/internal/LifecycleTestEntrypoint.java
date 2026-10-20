@@ -10,10 +10,13 @@ import net.ptcrys.topo.api.api.builtin.MachineDomainRegistration;
 import net.ptcrys.topo.api.api.builtin.MaterialDomainRegistration;
 import net.ptcrys.topo.api.api.builtin.RecipeDomainRegistration;
 import net.ptcrys.topo.api.api.builtin.RuntimeDomainRegistration;
+import net.ptcrys.topo.api.api.lang.LangRegistry;
 import net.ptcrys.topo.api.api.plugin.TopoPlugins;
 import net.ptcrys.topo.api.equipment.Equipment;
 import net.ptcrys.topo.api.equipment.EquipmentRegistry;
 import net.ptcrys.topo.api.equipment.EquipmentStrategy;
+import net.ptcrys.topo.api.lang.DisplayNames;
+import net.ptcrys.topo.api.lang.RegistryDisplayLang;
 import net.ptcrys.topo.api.machine.MachineItemBehavior;
 import net.ptcrys.topo.api.machine.MachineItemBehaviors;
 import net.ptcrys.topo.api.machine.ui.tooltip.ItemTooltipUis;
@@ -59,6 +62,8 @@ public class LifecycleTestEntrypoint {
     static TestPlugin duplicateProbe;
     static ItemEntry<Item> generatedEquipment;
     static boolean runtimeSawEquipmentBehavior;
+    static IllegalStateException entryThenKeyFailure;
+    static IllegalStateException keyThenEntryFailure;
 
     public LifecycleTestEntrypoint(IEventBus bus) {
         a = new TestPlugin(coreA) {
@@ -79,7 +84,14 @@ public class LifecycleTestEntrypoint {
 
                     @Override
                     public void register(MaterialContentContext context, Equipment self) {
-                        generatedEquipment = context.core().item("lifecycle_tool").register();
+                        var builder = context.core().item("lifecycle_tool");
+                        RegistryDisplayLang.applyItem(builder, context.core(), "lifecycle_tool", DisplayNames.fixed("Tool", "工具"));
+                        generatedEquipment = builder.register();
+                        try {
+                            lang().absolute("item." + modId() + ".lifecycle_tool", "Tool", "工具");
+                        } catch (IllegalStateException error) {
+                            entryThenKeyFailure = error;
+                        }
                         EquipmentRegistry.recordItem(self, context.material(), generatedEquipment);
                     }
 
@@ -102,6 +114,11 @@ public class LifecycleTestEntrypoint {
             @Override
             public void registerLang(LangDomainRegistration lang) {
                 lang.key("ui", "owned_a", "A", "甲");
+                try {
+                    LangRegistry.claimEntryName("ui." + modId() + ".owned_a");
+                } catch (IllegalStateException error) {
+                    keyThenEntryFailure = error;
+                }
             }
 
             @Override

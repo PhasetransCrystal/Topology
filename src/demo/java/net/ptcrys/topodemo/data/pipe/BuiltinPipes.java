@@ -1,8 +1,6 @@
 package net.ptcrys.topodemo.data.pipe;
 
-import net.ptcrys.topo.api.api.lang.ChineseConvert;
 import net.ptcrys.topo.api.pipe.*;
-import net.ptcrys.topodemo.TopoDemo;
 import net.ptcrys.topodemo.api.pipe.common.*;
 import net.ptcrys.topodemo.api.recipe.BuiltinResources;
 import net.ptcrys.topodemo.data.BuiltinCreativeTabs;
@@ -10,15 +8,13 @@ import net.ptcrys.topodemo.data.TopoDemoPlugin;
 
 import net.minecraft.resources.Identifier;
 
-import java.util.Map;
-
 public final class BuiltinPipes {
 
     public static final PipeDistributionStrategy ROUND_ROBIN = registerStrategy();
     public static final PipeDefinition ITEM_PIPE = TopoDemoPlugin.INSTANCE.machine().pipe("item_pipe")
             .resource(new PipeResourceProfile(BuiltinResources.ITEMS, Long::toString, new ItemFilter()))
             .blockTemplate(new MetalPipeTemplate(Identifier.withDefaultNamespace("block/copper_block")))
-            .displayName("Copper Item Pipe")
+            .displayName("Copper Item Pipe", "铜制物品管道")
             .creativeTab(BuiltinCreativeTabs.KEY.getKey())
             .maxExtractRate(8).nodeThroughput(32)
             .filter(new PipeFilterSettings(8, true))
@@ -38,12 +34,5 @@ public final class BuiltinPipes {
 
     private BuiltinPipes() {}
 
-    public static void init() {
-        // PipeDefinition supplies en_us through its block builder.
-        if (TopoDemo.REGISTRY.doDatagen()) {
-            TopoDemo.REGISTRY.lang(ITEM_PIPE.id().toLanguageKey("block"), Map.of(
-                    "zh_cn", "铜制物品管道",
-                    "zh_tw", ChineseConvert.s2t("铜制物品管道")));
-        }
-    }
+    public static void init() {}
 }
