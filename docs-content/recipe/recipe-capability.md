@@ -117,7 +117,7 @@ ManaRecipeCapability capability = recipe.capability(new ManaRecipeCapability(
 
 ```java
 // 构建配方：
-new TopoRecipe.Builder<>(type, "mymod:spell")
+type.recipe("spell")
         .input(manaCapability.in(100L))          // 启动消耗
         .tickInput(manaCapability.in(25L))       // 每 tick 消耗
         .output(itemCapability.out(RESULT, 1))

@@ -35,7 +35,7 @@ public final class GrindingProcessor extends MaterialPostProcessor {
     @Override
     public void process(Material material) {
         if (notDeclaredOn(material)) return;
-        recipeType.recipe(material.id() + "_ingot_to_dust")
+        recipeType.recipe(material.id().getNamespace() + "/" + material.id().getPath() + "_ingot_to_dust")
                 .input(items.in(MaterialHelper.materialItemSupplier(material, input), 1))
                 .output(items.out(MaterialHelper.materialItemSupplier(material, output), 1))
                 .duration(40).productionLine(line).save();

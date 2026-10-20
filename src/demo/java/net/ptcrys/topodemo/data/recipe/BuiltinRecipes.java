@@ -16,13 +16,13 @@ public final class BuiltinRecipes {
         var item = BuiltinResources.ITEM;
         for (var material : List.of(BuiltinMaterials.COPPER, BuiltinMaterials.TIN)) {
             for (var form : List.of(BuiltinMaterialForms.ORE, BuiltinMaterialForms.DEEPSLATE_ORE)) {
-                BuiltinRecipeTypes.GRINDING.recipe(material.id() + "_" + form.id().getPath() + "_to_dust")
+                BuiltinRecipeTypes.GRINDING.recipe(material.id().getPath() + "_" + form.id().getPath() + "_to_dust")
                         .input(item.in(MaterialHelper.materialItemSupplier(material, form), 1))
                         .output(item.out(MaterialHelper.materialItemSupplier(material, BuiltinMaterialForms.DUST), 2))
                         .duration(80).productionLine(BuiltinRecipeTypes.METALLURGY).save();
             }
         }
-        BuiltinRecipeTypes.ALLOYING.recipe("topodemo:bronze_alloy")
+        BuiltinRecipeTypes.ALLOYING.recipe("bronze_alloy")
                 .input(item.in(MaterialHelper.materialItemSupplier(BuiltinMaterials.COPPER, BuiltinMaterialForms.DUST), 3))
                 .input(item.in(MaterialHelper.materialItemSupplier(BuiltinMaterials.TIN, BuiltinMaterialForms.DUST), 1))
                 .output(item.out(MaterialHelper.materialItemSupplier(BuiltinMaterials.BRONZE, BuiltinMaterialForms.INGOT), 4))

@@ -60,8 +60,12 @@ recipe.recipeType("spell_crafting", new SpellRecipeType(plugin.recipe().id("spel
 
 ## TopoRecipe.Builder — 完整链
 
+`recipe(name)` 和 `addRecipe(name, ...)` 接受该类型下的路径，不能含 `modid:`。
+RegistryLib 自动加上配方类型路径与所属命名空间：类型 `mymod:grinding` 的 `copper/to_dust`
+会输出为 `data/mymod/recipe/grinding/copper/to_dust.json`。非法路径在声明时拒绝。
+
 ```java
-type.recipe("mymod:path")
+type.recipe("path")
         .input(use) / .output(use)          // 启动 I/O（RecipeInputUse/RecipeOutputUse）
         .tickInput(use) / .tickOutput(use)  // 每 tick I/O
         .duration(ticks)                    // 默认 100
@@ -78,7 +82,7 @@ type.recipe("mymod:path")
 ProductionLine macerating = recipe.productionLine("macerating");
 
 // 配方引用：
-type.recipe("mymod:iron_dust")
+type.recipe("iron_dust")
         .productionLine(macerating)
         ...
         .save();

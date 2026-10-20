@@ -54,7 +54,7 @@ public void registerRecipeTypes(RecipeDomainRegistration recipe) {
 ```java
 // 在 registerRecipes 阶段。itemCapability / energyCapability 是你的 RecipeCapability 子类，
 // 公开铸造包装（基类 inputUse/outputUse 是 protected）：
-TopoRecipe recipe = new TopoRecipe.Builder<>(maceratingType, "mymod:iron_dust")
+TopoRecipe recipe = maceratingType.recipe("iron_dust")
                 .input(itemCapability.in(Items.IRON_ORE, 1))      // 启动消耗：1 铁矿石
                 .output(itemCapability.out(IRON_DUST, 2))         // 启动产出：2 铁粉
                 .tickInput(energyCapability.in(128))              // 每 tick 消耗 128 EU
@@ -68,7 +68,7 @@ TopoRecipe recipe = new TopoRecipe.Builder<>(maceratingType, "mymod:iron_dust")
 ## Builder 方法一览
 
 ```java
-new TopoRecipe.Builder<>(recipeType, "modid:path")
+recipeType.recipe("path")
     .input(capability.in(...))            // 启动消耗
     .output(capability.out(...))          // 启动产出
     .tickInput(capability.in(...))        // 每 tick 消耗

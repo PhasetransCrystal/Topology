@@ -1009,7 +1009,8 @@ public class TopoRecipe implements Recipe<TopoRecipeInput> {
 
         protected Builder(TopoRecipeType<R> recipeType, String recipeName) {
             this.recipeType = Objects.requireNonNull(recipeType, "recipe type");
-            this.recipeName = Objects.requireNonNull(recipeName, "recipe name");
+            recipeType.validateRecipeName(recipeName);
+            this.recipeName = recipeName;
         }
 
         /**

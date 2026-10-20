@@ -359,8 +359,18 @@ public class TopoRecipeType<R extends TopoRecipe> {
         this.previewPlan = plan;
     }
 
+    /** A path under this recipe type; RegistryLib supplies the namespace and type prefix. */
     public TopoRecipe.Builder<R> recipe(String recipeName) {
+        validateRecipeName(recipeName);
         return createRecipeBuilder(recipeName);
+    }
+
+    final void validateRecipeName(String recipeName) {
+        if (recipeName == null || recipeName.isBlank() || recipeName.indexOf(':') >= 0) {
+            throw new IllegalArgumentException("Recipe name for type '" + id + "' must be a nonblank path without namespace: " + recipeName);
+        }
+        // Validate the final location now, before any factory or datagen callback is queued.
+        Identifier.fromNamespaceAndPath(id.getNamespace(), id.getPath() + "/" + recipeName);
     }
 
     protected TopoRecipe.Builder<R> createRecipeBuilder(String recipeName) {
@@ -681,7 +691,7 @@ public class TopoRecipeType<R extends TopoRecipe> {
     }
 
     private DuplicateAwareRecipeFactory<R> duplicateAwareRecipe(String recipeName) {
-        Objects.requireNonNull(recipeName, "recipe name");
+        validateRecipeName(recipeName);
         DuplicateAwareRecipeFactory<R> duplicateAware = recipesByName.get(recipeName);
         if (duplicateAware == null) {
             duplicateAware = new DuplicateAwareRecipeFactory<>(this, recipeName);
