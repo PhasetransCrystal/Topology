@@ -14,7 +14,7 @@ public final class BuiltinEquipment {
             RegulatorEquipment.builder()
                     .registryPath("%s_regulator").displayName("%s Regulator", "%s调节器")
                     .texture(TextureRef.mc("item/compass_16"))
-                    .creativeTab(() -> BuiltinCreativeTabs.KEY.getKey())
+                    .creativeTab(() -> BuiltinCreativeTabs.EQUIPMENT.getKey())
                     .machineBehavior(new RegulatorBehavior(ContentLang.TOGGLED))
                     .build());
 

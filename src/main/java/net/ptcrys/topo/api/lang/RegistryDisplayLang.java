@@ -22,7 +22,7 @@ public final class RegistryDisplayLang {
     private RegistryDisplayLang() {}
 
     public static void applyItem(
-                                 ItemBuilder<? extends Item, RegistryCore> builder,
+                                 ItemBuilder<? extends Item, ?> builder,
                                  RegistryCore core,
                                  String entryPath,
                                  FixedDisplayName name) {

@@ -16,6 +16,30 @@ public final class BuiltinProcessors {
                     BuiltinRecipeTypes.METALLURGY,
                     BuiltinResources.ITEM));
 
+    public static final GrindingProcessor FUEL_GRINDING = TopoDemoPlugin.INSTANCE.material()
+            .postProcessor("fuel_grinding", new GrindingProcessor(TopoDemoPlugin.INSTANCE.material().id("fuel_grinding"),
+                    BuiltinMaterialForms.FUEL,
+                    BuiltinMaterialForms.DUST,
+                    BuiltinRecipeTypes.GRINDING,
+                    BuiltinRecipeTypes.METALLURGY,
+                    BuiltinResources.ITEM));
+
+    public static final GrindingProcessor GEM_GRINDING = TopoDemoPlugin.INSTANCE.material()
+            .postProcessor("gem_grinding", new GrindingProcessor(TopoDemoPlugin.INSTANCE.material().id("gem_grinding"),
+                    BuiltinMaterialForms.GEM,
+                    BuiltinMaterialForms.DUST,
+                    BuiltinRecipeTypes.GRINDING,
+                    BuiltinRecipeTypes.METALLURGY,
+                    BuiltinResources.ITEM));
+
+    public static final GrindingProcessor SHARD_GRINDING = TopoDemoPlugin.INSTANCE.material()
+            .postProcessor("shard_grinding", new GrindingProcessor(TopoDemoPlugin.INSTANCE.material().id("shard_grinding"),
+                    BuiltinMaterialForms.SHARD,
+                    BuiltinMaterialForms.DUST,
+                    BuiltinRecipeTypes.GRINDING,
+                    BuiltinRecipeTypes.METALLURGY,
+                    BuiltinResources.ITEM));
+
     private BuiltinProcessors() {}
 
     public static void init() {}

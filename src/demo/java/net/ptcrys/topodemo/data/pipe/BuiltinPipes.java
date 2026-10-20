@@ -15,7 +15,7 @@ public final class BuiltinPipes {
             .resource(new PipeResourceProfile(BuiltinResources.ITEMS, Long::toString, new ItemFilter()))
             .blockTemplate(new MetalPipeTemplate(Identifier.withDefaultNamespace("block/copper_block")))
             .displayName("Copper Item Pipe", "铜制物品管道")
-            .creativeTab(BuiltinCreativeTabs.KEY.getKey())
+            .creativeTab(BuiltinCreativeTabs.MACHINES.getKey())
             .maxExtractRate(8).nodeThroughput(32)
             .filter(new PipeFilterSettings(8, true))
             .strategy(ROUND_ROBIN, new AggregationWindow(1, 20, 4, 1)).build();

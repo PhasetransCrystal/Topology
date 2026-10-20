@@ -11,6 +11,7 @@ import net.ptcrys.topo.api.machine.MachineItemBehavior;
 import net.ptcrys.topo.api.material.Material;
 import net.ptcrys.topo.api.material.MaterialContentContext;
 import net.ptcrys.topodemo.api.material.BuiltinMaterialDataTypes;
+import net.ptcrys.topodemo.api.material.BuiltinMaterialForms;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
@@ -50,7 +51,7 @@ public final class RegulatorEquipment implements EquipmentStrategy {
 
     @Override
     public boolean appliesTo(Material material) {
-        return material.strategy().data(BuiltinMaterialDataTypes.MASS).isPresent();
+        return material.strategy().data(BuiltinMaterialDataTypes.MASS).isPresent() && material.strategy().forms().contains(BuiltinMaterialForms.INGOT);
     }
 
     @Override

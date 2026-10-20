@@ -16,7 +16,7 @@ public final class BuiltinTools {
             .properties(properties -> properties.stacksTo(1))
             .lang(Map.of("en_us", "Pipe Surveyor", "zh_cn", "管网勘测仪"))
             .modelTexture(TextureRef.mc("item/spyglass"))
-            .addTab(BuiltinCreativeTabs.KEY.getKey()).register();
+            .addTab(BuiltinCreativeTabs.EQUIPMENT.getKey()).register();
 
     private BuiltinTools() {}
 

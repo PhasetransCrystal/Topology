@@ -13,7 +13,7 @@ import net.minecraft.resources.Identifier;
 
 import java.util.Objects;
 
-/** A reusable ingot-to-dust process. Products supply all registration handles at declaration. */
+/** A reusable form-to-form process. Products supply all registration handles at declaration. */
 public final class GrindingProcessor extends MaterialPostProcessor {
 
     private final MaterialForm input;
@@ -35,7 +35,7 @@ public final class GrindingProcessor extends MaterialPostProcessor {
     @Override
     public void process(Material material) {
         if (notDeclaredOn(material)) return;
-        recipeType.recipe(material.id().getNamespace() + "/" + material.id().getPath() + "_ingot_to_dust")
+        recipeType.recipe(material.id().getNamespace() + "/" + material.id().getPath() + "_" + input.id().getPath() + "_to_" + output.id().getPath())
                 .input(items.in(MaterialHelper.materialItemSupplier(material, input), 1))
                 .output(items.out(MaterialHelper.materialItemSupplier(material, output), 1))
                 .duration(40).productionLine(line).save();

@@ -27,19 +27,19 @@ public final class BuiltinMachines {
     private static final ComponentKey<MultiblockUi> STRUCTURE_UI = ComponentKey.of(MACHINE.id("structure_ui"), MultiblockUi.class);
     public static final MachineDefinition GRINDER = MACHINE.machine("grinder").displayName("Grinder", "粉碎机")
             .block(OrientedActiveMachineBlock::new)
-            .creativeTab(BuiltinCreativeTabs.KEY.getKey()).render(BuiltinMachineTypes.CUBE.cube("block/stonecutter_side"))
+            .creativeTab(BuiltinCreativeTabs.MACHINES.getKey()).render(BuiltinMachineTypes.CUBE.cube("block/stonecutter_side"))
             .component(ItemPort.mount(ItemPort.INPUT, 2, PortAccess.input()))
             .component(ItemPort.mount(ItemPort.OUTPUT, 2, PortAccess.output()))
             .component(RecipeLogic.mount(LOGIC, BuiltinRecipeTypes.GRINDING))
             .component(RecipeUi.mount(RECIPE_UI, LOGIC)).build();
     public static final MachineDefinition BUFFER = MACHINE.machine("buffer").displayName("Item Buffer", "物品缓存")
-            .creativeTab(BuiltinCreativeTabs.KEY.getKey()).render(BuiltinMachineTypes.CUBE.cube("block/barrel_side"))
+            .creativeTab(BuiltinCreativeTabs.MACHINES.getKey()).render(BuiltinMachineTypes.CUBE.cube("block/barrel_side"))
             .component(ItemPort.mount(ItemPort.STORAGE, 9, PortAccess.storage())).build();
     public static final MachineDefinition INPUT_BUS = MACHINE.machine("input_bus").displayName("Item Input Bus", "物品输入总线")
-            .creativeTab(BuiltinCreativeTabs.KEY.getKey()).render(BuiltinMachineTypes.CUBE.cube("block/hopper_outside"))
+            .creativeTab(BuiltinCreativeTabs.MACHINES.getKey()).render(BuiltinMachineTypes.CUBE.cube("block/hopper_outside"))
             .component(ItemPort.mount(ItemPort.INPUT, 3, PortAccess.input()).role(BuiltinMachineTypes.INPUT)).build();
     public static final MachineDefinition OUTPUT_BUS = MACHINE.machine("output_bus").displayName("Item Output Bus", "物品输出总线")
-            .creativeTab(BuiltinCreativeTabs.KEY.getKey()).render(BuiltinMachineTypes.CUBE.cube("block/dropper_front"))
+            .creativeTab(BuiltinCreativeTabs.MACHINES.getKey()).render(BuiltinMachineTypes.CUBE.cube("block/dropper_front"))
             .component(ItemPort.mount(ItemPort.OUTPUT, 3, PortAccess.output()).role(BuiltinMachineTypes.OUTPUT)).build();
     // Three-wide, two-high, one-deep. @ is the controller; input/output buses supply recipe IO.
     public static final Blueprint ALLOY_BLUEPRINT = Blueprint.of().aisle("I@O").aisle("CCC")
@@ -48,7 +48,7 @@ public final class BuiltinMachines {
             .where('O', CellPredicates.role(BuiltinMachineTypes.OUTPUT))
             .where('C', CellPredicates.block(Blocks.IRON_BLOCK)).build();
     public static final MachineDefinition ALLOYER = MACHINE.machine("alloyer").displayName("Alloy Mixer", "合金混合器")
-            .creativeTab(BuiltinCreativeTabs.KEY.getKey()).render(BuiltinMachineTypes.CUBE.cube("block/blast_furnace_front"))
+            .creativeTab(BuiltinCreativeTabs.MACHINES.getKey()).render(BuiltinMachineTypes.CUBE.cube("block/blast_furnace_front"))
             .block(FormedMachineBlock::new)
             .component(MultiblockController.mount(CONTROLLER, ALLOY_BLUEPRINT))
             .component(MultiblockUi.mount(STRUCTURE_UI, CONTROLLER))

@@ -14,8 +14,9 @@ public final class BuiltinRecipes {
 
     public static void init() {
         var item = BuiltinResources.ITEM;
-        for (var material : List.of(BuiltinMaterials.COPPER, BuiltinMaterials.TIN)) {
+        for (var material : BuiltinMaterials.ORE_PROCESSING) {
             for (var form : List.of(BuiltinMaterialForms.ORE, BuiltinMaterialForms.DEEPSLATE_ORE)) {
+                if (!material.strategy().forms().contains(form)) continue;
                 BuiltinRecipeTypes.GRINDING.recipe(material.id().getPath() + "_" + form.id().getPath() + "_to_dust")
                         .input(item.in(MaterialHelper.materialItemSupplier(material, form), 1))
                         .output(item.out(MaterialHelper.materialItemSupplier(material, BuiltinMaterialForms.DUST), 2))
