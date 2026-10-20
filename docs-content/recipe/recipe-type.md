@@ -21,6 +21,7 @@ public class TopoRecipeType<R extends TopoRecipe> {
     public TopoRecipeType<R> importRecipesFrom(Function<..., ImportedRecipeAdapter<R>>, RecipeType<?>... types);
     public TopoRecipeType<R> exportRecipesTo(..., RecipeType<?> foreignType);
     public TopoRecipe.Builder<R> recipe(String recipeName);
+    public ResourceKey<Recipe<?>> recipeKey(String recipeName);
     public TopoRecipeType<R> addRecipe(String recipeName, R recipe);
     public @Nullable RecipeHolder<R> findRecipe(MachineBlockEntity machine);
 
@@ -63,6 +64,8 @@ recipe.recipeType("spell_crafting", new SpellRecipeType(plugin.recipe().id("spel
 `recipe(name)` 和 `addRecipe(name, ...)` 接受该类型下的路径，不能含 `modid:`。
 RegistryLib 自动加上配方类型路径与所属命名空间：类型 `mymod:grinding` 的 `copper/to_dust`
 会输出为 `data/mymod/recipe/grinding/copper/to_dust.json`。非法路径在声明时拒绝。
+`type.recipeKey("copper/to_dust")` 返回完整的配方注册表键；声明去重、导入替换和运行时引用使用这个键，
+不会再从已加载配方的键拆出局部 path 来判断身份。
 
 ```java
 type.recipe("path")
