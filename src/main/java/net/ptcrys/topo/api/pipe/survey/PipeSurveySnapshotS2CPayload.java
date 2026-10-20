@@ -1,6 +1,6 @@
 package net.ptcrys.topo.api.pipe.survey;
 
-import net.ptcrys.topo.Topology;
+import net.ptcrys.topo.helper.IdHelper;
 
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -11,7 +11,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 /** S2C 勘测快照:客户端缓存最新一帧供世界渲染,空帧清屏。主线程处理。 */
 public record PipeSurveySnapshotS2CPayload(PipeSurveySnapshot snapshot) implements CustomPacketPayload {
 
-    public static final Identifier ID = Identifier.fromNamespaceAndPath(Topology.MODID, "pipe_survey_snapshot");
+    public static final Identifier ID = IdHelper.id("pipe_survey_snapshot");
     public static final Type<PipeSurveySnapshotS2CPayload> TYPE = new Type<>(ID);
     public static final StreamCodec<RegistryFriendlyByteBuf, PipeSurveySnapshotS2CPayload> CODEC = StreamCodec.ofMember(PipeSurveySnapshotS2CPayload::write, PipeSurveySnapshotS2CPayload::decode);
 

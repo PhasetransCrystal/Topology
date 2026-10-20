@@ -1,6 +1,7 @@
 package net.ptcrys.topo.api.api.visual;
 
 import net.ptcrys.topo.api.machine.OrientedMachineBlock;
+import net.ptcrys.topo.helper.IdHelper;
 
 import net.minecraft.client.renderer.block.BlockAndTintGetter;
 import net.minecraft.client.renderer.block.dispatch.BlockStateModel;
@@ -39,7 +40,7 @@ public record ConnectedTextureHatchModel(
                                          Identifier family)
         implements CustomUnbakedBlockStateModel {
 
-    public static final Identifier LOADER = Identifier.parse("topo:ctm_hatch");
+    public static final Identifier LOADER = IdHelper.id("ctm_hatch");
     private static final ModelDebugName DEBUG_NAME = () -> "ConnectedTextureHatchModel";
 
     public static final MapCodec<ConnectedTextureHatchModel> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(

@@ -8,6 +8,8 @@ import net.ptcrys.topo.api.material.Material;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Item;
 
+import org.jetbrains.annotations.ApiStatus;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -26,6 +28,7 @@ public final class EquipmentRegistry {
     private EquipmentRegistry() {}
 
     /** Single write entry for the equipment domain plugin API. */
+    @ApiStatus.Internal
     public static Equipment begin(Identifier id, EquipmentStrategy strategy) {
         Equipment equipment = new Equipment(Objects.requireNonNull(id, "id"), strategy);
         return REGISTRY.register(id, equipment, strategy);
@@ -43,6 +46,7 @@ public final class EquipmentRegistry {
         return REGISTRY.isFrozen();
     }
 
+    @ApiStatus.Internal
     public static void freeze() {
         REGISTRY.freeze();
     }

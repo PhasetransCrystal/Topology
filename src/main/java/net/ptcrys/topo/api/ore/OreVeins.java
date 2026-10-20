@@ -13,6 +13,8 @@ import net.ptcrys.topo.api.ore.shape.OreVeinShape;
 
 import net.minecraft.resources.Identifier;
 
+import org.jetbrains.annotations.ApiStatus;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -38,6 +40,7 @@ public final class OreVeins {
     private OreVeins() {}
 
     /** Single write entry for {@link OreDomainRegistration#vein}. */
+    @ApiStatus.Internal
     public static Builder begin(Identifier id, LangDomainRegistration lang) {
         return new Builder(Objects.requireNonNull(id, "id"), Objects.requireNonNull(lang, "lang"));
     }
@@ -58,6 +61,7 @@ public final class OreVeins {
         return REGISTRY.isFrozen();
     }
 
+    @ApiStatus.Internal
     public static void freeze() {
         if (!REGISTRY.isFrozen()) {
             for (OreVein vein : REGISTRY.handlesView()) {

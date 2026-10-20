@@ -7,6 +7,8 @@ import net.ptcrys.topo.api.api.lang.LangKey;
 
 import net.minecraft.resources.Identifier;
 
+import org.jetbrains.annotations.ApiStatus;
+
 import java.util.List;
 import java.util.Objects;
 
@@ -21,6 +23,7 @@ public final class MaterialFormRegistry {
     private MaterialFormRegistry() {}
 
     /** Single write entry for the material domain plugin API. */
+    @ApiStatus.Internal
     public static Builder begin(Identifier id, LangDomainRegistration lang) {
         return new Builder(Objects.requireNonNull(id, "id"), Objects.requireNonNull(lang, "lang"));
     }
@@ -37,6 +40,7 @@ public final class MaterialFormRegistry {
         return REGISTRY.isFrozen();
     }
 
+    @ApiStatus.Internal
     public static void freeze() {
         REGISTRY.freeze();
     }

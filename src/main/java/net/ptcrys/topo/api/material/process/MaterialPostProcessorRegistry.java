@@ -6,6 +6,8 @@ import net.ptcrys.topo.api.material.data.MaterialDataRegistry;
 
 import net.minecraft.resources.Identifier;
 
+import org.jetbrains.annotations.ApiStatus;
+
 import java.util.List;
 
 /**
@@ -21,6 +23,7 @@ public final class MaterialPostProcessorRegistry {
     /**
      * Single write entry: registers the processor and its activation {@link ProcessorDataType}.
      */
+    @ApiStatus.Internal
     public static <P extends MaterialPostProcessor> P begin(Identifier id, P processor) {
         if (!id.equals(processor.id())) {
             throw new IllegalArgumentException(
@@ -45,6 +48,7 @@ public final class MaterialPostProcessorRegistry {
         return REGISTRY.isFrozen();
     }
 
+    @ApiStatus.Internal
     public static void freeze() {
         REGISTRY.freeze();
     }

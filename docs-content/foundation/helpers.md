@@ -26,8 +26,14 @@ sidebar_position: 6
 
 ```java
 // 库命名空间（topo）下的 id 铸造。你的内容 id 用自己插件的 machine().id(path)：
-Identifier id = IdHelper.oi("by_distance");
+Identifier id = IdHelper.id("by_distance");
 ```
+
+插件所属 ID 使用领域入口的 `id(path)`，或 `PluginIds.id(plugin, path)`；原版资源使用
+`Identifier.withDefaultNamespace(path)`。派生已有 ID 时用 `withPath`、`withPrefix`、`withSuffix`
+保留所属命名空间。已有 RegistryLib Entry 时直接取 `identifier()`（资源标识）或 `getKey()`
+（带注册表类型的键），无需重建身份。`IdHelper.id` 固定使用 `topo`，不能用于其他插件内容。
+只有解析外部完整 ID 时使用 `parse`／`tryParse`；翻译键、管线步骤 ID 和随机盐值仍保留 `String`。
 
 ## MaterialHelper
 
@@ -59,11 +65,11 @@ Predicate<Resource> any = ResourceFilterHelper.any();                     // 放
 
 ## TagHelper
 
-常用标签 key 铸造：
+已有的原版／NeoForge 标签优先使用 `ItemTags`／`Tags.Items` 常量，例如 `Tags.Items.DUSTS`、`Tags.Items.INGOTS`、`Tags.Items.TOOLS_WRENCH`。自定义通用分组和材料子标签使用 `TagHelper`：
 
 ```java
-TagKey<Item> dusts = TagHelper.item("dusts");                       // c:dusts
-TagKey<Item> copperDusts = TagHelper.itemMaterial("dusts", "copper"); // c:copper_dusts
+TagKey<Item> dusts = Tags.Items.DUSTS;                              // c:dusts
+TagKey<Item> copperDusts = TagHelper.itemMaterial("dusts", "copper"); // c:dusts/copper
 TagKey<Block> ores = TagHelper.block("ores");                       // c:ores
 TagKey<Fluid> acids = TagHelper.fluid("acids");                     // c:acids
 ```
@@ -91,6 +97,6 @@ String mb = TopoCompactNumber.formatCompactBuckets(amountMb);     // 流体桶�
 | `ResourceFilterHelper.itemExact(resource)`                  | 精确物品过滤                   |
 | `ResourceFilterHelper.any()`                                | 放行一切                       |
 | `TagHelper.item(group)` / `.block(group)` / `.fluid(group)` | c: 标签 key                    |
-| `TagHelper.itemMaterial(group, material)`                   | 材质标签 key（c:copper_dusts） |
+| `TagHelper.itemMaterial(group, material)`                   | 材质标签 key（c:dusts/copper） |
 | `TopoCompactNumber.formatCompact(value)`                    | 大数字缩写                     |
 | `TopoCompactNumber.formatCompactBuckets(mb)`                | 流体桶格式化                   |

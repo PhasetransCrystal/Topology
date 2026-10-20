@@ -9,6 +9,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.CreativeModeTab;
 
+import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -39,6 +40,7 @@ public final class Pipes {
     }
 
     /** Plugin-owned declaration entry; legacy register(String) retains the Topo namespace. */
+    @ApiStatus.Internal
     public static Builder begin(Identifier id, RegistryCore registry) {
         Objects.requireNonNull(id, "pipe id");
         Objects.requireNonNull(registry, "registry core");
@@ -61,6 +63,7 @@ public final class Pipes {
         return REGISTRY.handlesView();
     }
 
+    @ApiStatus.Internal
     public static void freeze() {
         REGISTRY.freeze();
     }

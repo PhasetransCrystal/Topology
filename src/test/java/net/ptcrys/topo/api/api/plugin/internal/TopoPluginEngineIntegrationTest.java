@@ -46,13 +46,13 @@ class TopoPluginEngineIntegrationTest {
         assertTrue(recipesSawFrozenContent);
         assertTrue(ProductionLines.isFrozen());
         assertNotNull(ProductionLines.require(a.recipe().id("final_line")));
-        TopoPluginEngine.bootstrapContent();
+        TopoPluginEngine.host().bootstrapContent();
         assertEquals(1, recipeCalls);
     }
 
     @Test
     void hostRunsAllPluginsAndLegacyCommonSetupBeforeFreezingSharedRegistries() {
-        TopoPluginEngine.bootstrapContent();
+        TopoPluginEngine.host().bootstrapContent();
         assertTrue(TopoPlugins.view().contains(OfficialTopoAPIPlugin.INSTANCE));
         assertEquals(2, a.lang().registeredKeys().size());
         assertEquals(2, b.lang().registeredKeys().size());
@@ -63,7 +63,7 @@ class TopoPluginEngineIntegrationTest {
         assertEquals("A", coreA.languages.get("ui.topo_test_a.owned_a").get("en_us"));
         assertEquals("甲", coreA.languages.get("ui.topo_test_a.owned_a").get("zh_cn"));
         assertEquals(Set.of("en_us", "zh_cn", "zh_tw"), coreA.languages.get("ui.topo_test_a.owned_a").keySet());
-        TopoPluginEngine.bootstrapRuntime();
+        TopoPluginEngine.host().bootstrapRuntime();
         assertEquals(Set.of("a", "b"), Set.copyOf(bindings));
         assertTrue(runtimeSawEquipmentBehavior);
         assertSame(behavior, MachineItemBehaviors.find(generatedEquipment.get()));
@@ -74,9 +74,9 @@ class TopoPluginEngineIntegrationTest {
         assertThrows(IllegalStateException.class, () -> ItemTooltipUis.register(Items.DIAMOND, panelA));
         assertThrows(IllegalStateException.class, () -> MachineItemBehaviors.register(Items.DIAMOND, behavior));
         // Repeated registry events must not rerun contributions or mint content.
-        TopoPluginEngine.bootstrapContent();
-        TopoPluginEngine.bootstrapRuntime();
-        TopoPluginEngine.freezeRuntime();
+        TopoPluginEngine.host().bootstrapContent();
+        TopoPluginEngine.host().bootstrapRuntime();
+        TopoPluginEngine.host().freezeRuntime();
         TopoPlugins.register(a); // registering the same instance remains idempotent after lock
         assertEquals(Set.of("a", "b"), Set.copyOf(bindings));
         assertEquals(2, bindings.size());

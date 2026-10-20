@@ -157,6 +157,74 @@ class RegistrationPlanTest {
         assertEquals(List.of(a), created);
     }
 
+    @Test
+    void inheritedAndComposedContractsDispatchInstalledHooks() {
+        List<String> calls = new ArrayList<>();
+        class CombinedPlugin extends ProbePlugin implements CombinedFuturePlugin {
+
+            CombinedPlugin() {
+                super(api -> calls.add("content"), api -> calls.add("derived"));
+            }
+
+            @Override
+            public void registerOther(FutureDomain api) {
+                calls.add("other");
+            }
+        }
+        var other = RegistrationPoint.of("future:other", OtherPlugin.class, DOMAIN, OtherPlugin::registerOther);
+        RegistrationModule module = (builder, context) -> {
+            builder.point(Phase.CONTENT, CONTENT, List.of(), context, () -> {});
+            builder.point(Phase.CONTENT, other, List.of(CONTENT.id()), context, () -> {});
+            builder.point(Phase.DERIVED, DERIVED, List.of(other.id()), context, () -> {});
+        };
+        var plan = TopoContentBootstrap.compile(new PluginSnapshot(List.of(new CombinedPlugin()), Map.of()), List.of(module));
+        plan.execute(Phase.CONTENT);
+        plan.execute(Phase.DERIVED);
+        assertEquals(List.of("content", "other", "derived"), calls);
+    }
+
+    @Test
+    void installingADerivedContractAlsoCoversItsParentDeclarations() {
+        List<String> calls = new ArrayList<>();
+        class InheritedPlugin extends ProbePlugin implements InheritedFuturePlugin {
+
+            InheritedPlugin() {
+                super(api -> calls.add("content"), api -> calls.add("derived"));
+            }
+        }
+        var point = RegistrationPoint.of("future:inherited", InheritedFuturePlugin.class, DOMAIN, InheritedFuturePlugin::registerFuture);
+        RegistrationModule module = (builder, context) -> builder.point(Phase.CONTENT, point, List.of(), context, () -> {});
+        var plan = TopoContentBootstrap.compile(new PluginSnapshot(List.of(new InheritedPlugin()), Map.of()), List.of(module));
+        plan.execute(Phase.CONTENT);
+        assertEquals(List.of("content"), calls);
+    }
+
+    @Test
+    void inheritingAnInstalledDomainDoesNotHideUninstalledNewHooks() {
+        List<String> calls = new ArrayList<>();
+        class UnsupportedPlugin extends ProbePlugin implements UninstalledFuturePlugin {
+
+            UnsupportedPlugin() {
+                super(api -> calls.add("content"), api -> {});
+            }
+        }
+        RegistrationModule module = (builder, context) -> builder.point(Phase.CONTENT, CONTENT, List.of(), context, () -> {});
+        var error = assertThrows(IllegalStateException.class,
+                () -> TopoContentBootstrap.compile(new PluginSnapshot(List.of(new UnsupportedPlugin()), Map.of()), List.of(module)));
+        assertTrue(error.getMessage().contains(UninstalledFuturePlugin.class.getName()));
+        assertTrue(calls.isEmpty());
+    }
+
+    @Test
+    void missingDependencyDiagnosticsUseCanonicalOrder() {
+        for (List<String> dependencies : List.of(List.of("z:missing", "a:missing"), List.of("a:missing", "z:missing"))) {
+            RegistrationPlan.Builder builder = new RegistrationPlan.Builder();
+            builder.step(Phase.CONTENT, "test:one", dependencies, () -> fail("invalid plan ran"));
+            var error = assertThrows(IllegalStateException.class, builder::compile);
+            assertEquals("Step 'test:one' requires missing step 'a:missing'", error.getMessage());
+        }
+    }
+
     private record FutureDomain(TopoPlugin owner) {}
 
     private interface FuturePlugin extends TopoContribution {
@@ -164,6 +232,24 @@ class RegistrationPlanTest {
         void registerFuture(FutureDomain api);
 
         default void registerDerived(FutureDomain api) {}
+    }
+
+    private interface InheritedFuturePlugin extends FuturePlugin {
+
+        @Override
+        default void registerDerived(FutureDomain api) {}
+    }
+
+    private interface OtherPlugin extends TopoContribution {
+
+        void registerOther(FutureDomain api);
+    }
+
+    private interface CombinedFuturePlugin extends InheritedFuturePlugin, OtherPlugin {}
+
+    private interface UninstalledFuturePlugin extends FuturePlugin {
+
+        default void registerAdditional(FutureDomain api) {}
     }
 
     private static final RegistrationDomain<FutureDomain> DOMAIN = RegistrationDomain.of(FutureDomain::new);

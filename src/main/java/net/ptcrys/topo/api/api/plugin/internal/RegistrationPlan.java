@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 /** Compiles a validated, deterministic dependency order before any registration action runs. */
 public final class RegistrationPlan {
@@ -23,7 +24,7 @@ public final class RegistrationPlan {
             Objects.requireNonNull(id, "step id");
             if (id.isBlank()) throw new IllegalArgumentException("step id must not be blank");
             Objects.requireNonNull(phase, "step phase");
-            after = Set.copyOf(after);
+            after = java.util.Collections.unmodifiableSet(new TreeSet<>(after));
             Objects.requireNonNull(action, "step action");
         }
     }

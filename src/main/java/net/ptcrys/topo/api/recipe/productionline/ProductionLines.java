@@ -10,6 +10,8 @@ import net.ptcrys.topo.api.recipe.TopoRecipeTypes;
 
 import net.minecraft.resources.Identifier;
 
+import org.jetbrains.annotations.ApiStatus;
+
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -30,6 +32,7 @@ public final class ProductionLines {
      * Internal write entry for {@link RecipeDomainRegistration}. {@code id}
      * namespace must match the owning plugin.
      */
+    @ApiStatus.Internal
     public static ProductionLine begin(Identifier id) {
         ProductionLine line = new ProductionLine(Objects.requireNonNull(id, "id"));
         REGISTRY.register(id, line, new View(line));
@@ -49,6 +52,7 @@ public final class ProductionLines {
         return Objects.requireNonNull(REGISTRY.strategy(id), "production line view " + id);
     }
 
+    @ApiStatus.Internal
     public static void freeze() {
         REGISTRY.freeze();
     }

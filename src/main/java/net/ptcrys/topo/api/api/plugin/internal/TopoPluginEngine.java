@@ -9,55 +9,66 @@ import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
 import net.neoforged.neoforge.registries.RegisterEvent;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
 
 /** Host-only NeoForge adapter. Dependent mods only call {@link TopoPlugins#register}. */
-public final class TopoPluginEngine {
+final class TopoPluginEngine {
 
-    private static final PluginLifecycle LIFECYCLE = new PluginLifecycle();
-    private static RegistrationPlan plan;
-    private static Supplier<PluginSnapshot> snapshot;
+    private static TopoPluginEngine host;
 
-    private TopoPluginEngine() {}
+    private final PluginLifecycle lifecycle = new PluginLifecycle();
+    private final Supplier<PluginSnapshot> snapshot;
+    private final List<RegistrationModule> modules;
+    private RegistrationPlan plan;
 
-    public static synchronized void register(IEventBus bus, Supplier<PluginSnapshot> snapshotFactory) {
-        Objects.requireNonNull(bus, "host event bus");
-        if (snapshot != null) throw new IllegalStateException("Topo plugin engine already attached to a host");
-        snapshot = Objects.requireNonNull(snapshotFactory, "plugin snapshot factory");
-        bus.addListener(EventPriority.HIGHEST, TopoPluginEngine::onRegister);
-        bus.addListener(TopoPluginEngine::onCommonSetup);
-        bus.addListener(TopoPluginEngine::onLoadComplete);
-        for (RegistrationModule module : TopoContentBootstrap.MODULES) module.attach(bus);
+    TopoPluginEngine(Supplier<PluginSnapshot> snapshot, List<RegistrationModule> modules) {
+        this.snapshot = Objects.requireNonNull(snapshot, "plugin snapshot factory");
+        this.modules = List.copyOf(modules);
     }
 
-    private static void onRegister(RegisterEvent event) {
+    static synchronized void register(IEventBus bus, Supplier<PluginSnapshot> snapshotFactory) {
+        Objects.requireNonNull(bus, "host event bus");
+        if (host != null) throw new IllegalStateException("Topo plugin engine already attached to a host");
+        host = new TopoPluginEngine(snapshotFactory, TopoContentBootstrap.MODULES);
+        bus.addListener(EventPriority.HIGHEST, host::onRegister);
+        bus.addListener(host::onCommonSetup);
+        bus.addListener(host::onLoadComplete);
+        for (RegistrationModule module : host.modules) module.attach(bus);
+    }
+
+    static synchronized TopoPluginEngine host() {
+        return Objects.requireNonNull(host, "Topo plugin engine has no host");
+    }
+
+    private void onRegister(RegisterEvent event) {
         bootstrapContent();
     }
 
-    private static void onCommonSetup(FMLCommonSetupEvent event) {
-        event.enqueueWork(TopoPluginEngine::bootstrapRuntime);
+    private void onCommonSetup(FMLCommonSetupEvent event) {
+        event.enqueueWork(this::bootstrapRuntime);
     }
 
-    private static void onLoadComplete(FMLLoadCompleteEvent event) {
-        event.enqueueWork(TopoPluginEngine::freezeRuntime);
+    private void onLoadComplete(FMLLoadCompleteEvent event) {
+        event.enqueueWork(this::freezeRuntime);
     }
 
     // Package-private so external callers cannot start global registration in a mod constructor.
-    static synchronized void bootstrapContent() {
-        LIFECYCLE.run(Phase.CONTENT, () -> {
-            plan = TopoContentBootstrap.compile(snapshot.get(), TopoContentBootstrap.MODULES);
+    synchronized void bootstrapContent() {
+        lifecycle.run(Phase.CONTENT, () -> {
+            plan = TopoContentBootstrap.compile(snapshot.get(), modules);
             plan.execute(Phase.CONTENT);
         });
-        LIFECYCLE.run(Phase.DERIVED, () -> plan.execute(Phase.DERIVED));
-        LIFECYCLE.run(Phase.LANGUAGE, () -> plan.execute(Phase.LANGUAGE));
+        lifecycle.run(Phase.DERIVED, () -> plan.execute(Phase.DERIVED));
+        lifecycle.run(Phase.LANGUAGE, () -> plan.execute(Phase.LANGUAGE));
     }
 
-    static synchronized void bootstrapRuntime() {
-        LIFECYCLE.run(Phase.RUNTIME, () -> plan.execute(Phase.RUNTIME));
+    synchronized void bootstrapRuntime() {
+        lifecycle.run(Phase.RUNTIME, () -> plan.execute(Phase.RUNTIME));
     }
 
-    static synchronized void freezeRuntime() {
-        LIFECYCLE.run(Phase.READY, () -> plan.execute(Phase.READY));
+    synchronized void freezeRuntime() {
+        lifecycle.run(Phase.READY, () -> plan.execute(Phase.READY));
     }
 }

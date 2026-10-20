@@ -2,7 +2,6 @@ package net.ptcrys.topo.api.recipe;
 
 import net.ptcrys.registrylib.RegistryCore;
 import net.ptcrys.registrylib.util.entry.RecipeTypeEntry;
-import net.ptcrys.topo.Topology;
 import net.ptcrys.topo.api.api.builtin.LangDomainRegistration;
 import net.ptcrys.topo.api.api.lang.LangKey;
 import net.ptcrys.topo.api.recipe.content.TopoFluidIngredient;
@@ -10,6 +9,7 @@ import net.ptcrys.topo.api.recipe.content.TopoItemInput;
 import net.ptcrys.topo.api.recipe.content.TopoItemOutput;
 import net.ptcrys.topo.api.recipe.productionline.ProductionLine;
 import net.ptcrys.topo.api.recipe.search.TopoRecipeSearchIndex;
+import net.ptcrys.topo.helper.IdHelper;
 
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.Registries;
@@ -87,8 +87,7 @@ public class TopoRecipeType<R extends TopoRecipe> {
     protected TopoRecipeType(Identifier id, RecipeFactory<R> recipeFactory) {
         this.id = Objects.requireNonNull(id, "recipe type id");
         this.recipeFactory = Objects.requireNonNull(recipeFactory, "recipe factory");
-        this.progressBarTexture = Identifier.fromNamespaceAndPath(
-                Topology.MODID, "textures/gui/progress_bar/arrow.png");
+        this.progressBarTexture = IdHelper.id("textures/gui/progress_bar/arrow.png");
     }
 
     /** Package write entry used by {@link TopoRecipeTypes#begin}. */
@@ -380,7 +379,7 @@ public class TopoRecipeType<R extends TopoRecipe> {
         }
         // Validate the final location now, before any factory or datagen callback is queued.
         return ResourceKey.create(Registries.RECIPE,
-                Identifier.fromNamespaceAndPath(id.getNamespace(), id.getPath() + "/" + recipeName));
+                id.withSuffix("/" + recipeName));
     }
 
     protected TopoRecipe.Builder<R> createRecipeBuilder(String recipeName) {
@@ -610,7 +609,7 @@ public class TopoRecipeType<R extends TopoRecipe> {
         Identifier source = sourceId.identifier();
         String prefixedPath = "imports/" + id.getPath().length() + "/" + id.getPath() + "/" + source.getNamespace() + "/" + source.getPath();
         return ResourceKey.create(
-                Registries.RECIPE, Identifier.fromNamespaceAndPath(id.getNamespace(), prefixedPath));
+                Registries.RECIPE, id.withPath(prefixedPath));
     }
 
     /**

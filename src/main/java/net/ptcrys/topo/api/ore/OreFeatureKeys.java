@@ -31,6 +31,6 @@ public final class OreFeatureKeys {
         // namespace is a single segment, followed by the unchanged biome path.
         String path = PREFIX + vein.getPath().length() + "/" + vein.getPath() + "/" + biome.getNamespace() + "/" + biome.getPath();
         return ResourceKey.create(NeoForgeRegistries.Keys.BIOME_MODIFIERS,
-                Identifier.fromNamespaceAndPath(vein.getNamespace(), path));
+                vein.withPath(path));
     }
 }

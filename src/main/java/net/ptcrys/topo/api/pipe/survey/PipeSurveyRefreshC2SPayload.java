@@ -1,6 +1,6 @@
 package net.ptcrys.topo.api.pipe.survey;
 
-import net.ptcrys.topo.Topology;
+import net.ptcrys.topo.helper.IdHelper;
 
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -13,7 +13,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 /** C2S 勘测刷新空包:客户端激活期间每 20t 一发;服务端限频重建快照,不持仪即清。 */
 public record PipeSurveyRefreshC2SPayload() implements CustomPacketPayload {
 
-    public static final Identifier ID = Identifier.fromNamespaceAndPath(Topology.MODID, "pipe_survey_refresh");
+    public static final Identifier ID = IdHelper.id("pipe_survey_refresh");
     public static final Type<PipeSurveyRefreshC2SPayload> TYPE = new Type<>(ID);
     public static final StreamCodec<RegistryFriendlyByteBuf, PipeSurveyRefreshC2SPayload> CODEC = StreamCodec.unit(new PipeSurveyRefreshC2SPayload());
 

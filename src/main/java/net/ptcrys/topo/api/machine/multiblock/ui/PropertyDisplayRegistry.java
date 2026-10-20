@@ -9,6 +9,8 @@ import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 
+import org.jetbrains.annotations.ApiStatus;
+
 import java.util.List;
 import java.util.Map;
 
@@ -57,6 +59,7 @@ public final class PropertyDisplayRegistry {
         return REGISTRY.handlesView();
     }
 
+    @ApiStatus.Internal
     public static synchronized void freeze() {
         REGISTRY.freeze();
     }

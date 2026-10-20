@@ -13,15 +13,13 @@ import net.ptcrys.topo.api.material.MaterialContentContext;
 import net.ptcrys.topodemo.api.material.BuiltinMaterialDataTypes;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.LevelReader;
+import net.neoforged.neoforge.common.Tags;
 
 import java.util.Objects;
 import java.util.function.Supplier;
@@ -61,7 +59,7 @@ public final class RegulatorEquipment implements EquipmentStrategy {
         var builder = context.core().<Item>item(path, RegulatorItem::new)
                 .properties(properties -> properties.stacksTo(1))
                 .modelTexture(texture)
-                .addTag(TagKey.create(Registries.ITEM, Identifier.parse("c:tools/wrench")))
+                .addTag(Tags.Items.TOOLS_WRENCH)
                 .addTab(creativeTab.get());
         RegistryDisplayLang.applyItem(builder, context.core(), path, displayName.resolve(context.material()));
         EquipmentRegistry.recordItem(self, context.material(), builder.register());

@@ -40,10 +40,14 @@ JUnit Platform 启动监听器，不能直接替代现有集成测试。需要�
 
 测试覆盖：
 
-- `RegistrationPlanTest`：乱序模块的确定性结果、缺失/环/跨阶段依赖、编译快照、未来领域的命名钩子、失败归因和未安装领域拒绝。
+- `RegistrationPlanTest`：乱序模块的确定性结果、缺失/环/跨阶段依赖、编译快照、未来领域的命名钩子、接口继承与组合、失败归因和未安装领域拒绝。
 - `PluginLifecycleTest`：成功幂等、越序与重入拒绝、失败后终止、运行时冻结边界。
-- `TopoPluginsOrderTest`：插件快照排序不依赖构造期到达顺序。
+- `TopoPluginsOrderTest`：实际收集器的登记排列、重复身份拒绝、快照锁定及不可变性、跨命名空间排序与归属。
+- `TopoPluginEngineOrderTest`：全部 5040 种内置模块排列的计划一致性，插件与领域模块交叉排列的完整阶段结果、冻结表及索引、失败结果、重复调用和引擎实例隔离。
 - `TopoPluginEngineIntegrationTest`：真实宿主事件接线、重复身份校验、跨领域配方、翻译按归属导出、装备自动行为、插件运行时绑定与冻结。
+
+ID 与资源引用的回归由 `OreFeatureKeysTest`、`RecipeNameTest`、`RecipeUiResourcesTest` 覆盖：
+矿脉派生键与导入配方 ID 不发生路径碰撞，配方键保留注册表及所属命名空间，默认 UI 资源仍属于 Topo。
 
 `LifecycleTestEntrypoint` 只位于测试源码集，提供测试插件及捕获 datagen 输出的 RegistryCore。
 它与生产宿主一起走 NeoForge 生命周期；测试不靠手动调用引擎来代替首次加载。

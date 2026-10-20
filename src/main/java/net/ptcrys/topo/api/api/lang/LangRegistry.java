@@ -3,6 +3,8 @@ package net.ptcrys.topo.api.api.lang;
 import net.ptcrys.topo.api.api.builtin.LangDomainRegistration;
 import net.ptcrys.topo.api.api.infrastructure.FreezableStrategyRegistry;
 
+import org.jetbrains.annotations.ApiStatus;
+
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -22,6 +24,7 @@ public final class LangRegistry {
     private LangRegistry() {}
 
     /** Single write entry for {@link LangDomainRegistration}. */
+    @ApiStatus.Internal
     public static LangKey begin(String key, String en, String cn) {
         requireText(key, "key");
         requireText(en, "en");
@@ -41,6 +44,7 @@ public final class LangRegistry {
         return REGISTRY.handlesView();
     }
 
+    @ApiStatus.Internal
     public static void freeze() {
         REGISTRY.freeze();
         ENTRY_NAMES.clear();

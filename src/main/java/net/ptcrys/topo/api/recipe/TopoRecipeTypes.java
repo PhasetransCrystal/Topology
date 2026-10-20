@@ -8,6 +8,8 @@ import net.ptcrys.topo.api.api.infrastructure.FreezableStrategyRegistry;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 
+import org.jetbrains.annotations.ApiStatus;
+
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
@@ -26,6 +28,7 @@ public final class TopoRecipeTypes {
      * Internal write entry for {@link RecipeDomainRegistration}. Binds the
      * type to RegistryLib on the given core and records it in the freezable table.
      */
+    @ApiStatus.Internal
     public static TopoRecipeType<TopoRecipe> begin(
                                                    RegistryCore core, Identifier id, LangDomainRegistration lang) {
         return begin(core, new TopoRecipeType<>(id, TopoRecipe::new), lang);
@@ -36,6 +39,7 @@ public final class TopoRecipeTypes {
      * {@code lang} may be null only for detached unit-test types that never call
      * {@link TopoRecipeType#displayName(String, String)}.
      */
+    @ApiStatus.Internal
     public static <R extends TopoRecipe, T extends TopoRecipeType<R>> T begin(
                                                                               RegistryCore core, T recipeType, @org.jspecify.annotations.Nullable LangDomainRegistration lang) {
         TopoRecipeType.bind(core, recipeType, lang);
@@ -55,6 +59,7 @@ public final class TopoRecipeTypes {
         return REGISTRY.isFrozen();
     }
 
+    @ApiStatus.Internal
     public static void freeze() {
         REGISTRY.freeze();
     }

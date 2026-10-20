@@ -26,6 +26,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 
+import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -55,6 +56,7 @@ public final class Machines {
      * namespace must match the plugin; {@code registry} is the plugin's RegistryLib handle used to
      * mint the machine block.
      */
+    @ApiStatus.Internal
     public static Builder begin(Identifier id, RegistryCore registry) {
         return new Builder(
                 Objects.requireNonNull(id, "machine id"),
@@ -70,6 +72,7 @@ public final class Machines {
         return REGISTRY.handlesView();
     }
 
+    @ApiStatus.Internal
     public static void freeze() {
         REGISTRY.freeze();
     }

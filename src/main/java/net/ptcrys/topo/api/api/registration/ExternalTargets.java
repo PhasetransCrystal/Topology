@@ -7,10 +7,10 @@ public final class ExternalTargets {
     private ExternalTargets() {}
 
     public static ExternalItemTarget mcItem(String path) {
-        return new ExternalItemTarget(Identifier.fromNamespaceAndPath("minecraft", path));
+        return new ExternalItemTarget(Identifier.withDefaultNamespace(path));
     }
 
     public static ExternalBlockTarget mcBlock(String path) {
-        return new ExternalBlockTarget(Identifier.fromNamespaceAndPath("minecraft", path));
+        return new ExternalBlockTarget(Identifier.withDefaultNamespace(path));
     }
 }

@@ -1,12 +1,13 @@
 package net.ptcrys.topodemo.integration.jei;
 
+import net.ptcrys.topo.api.api.plugin.PluginIds;
 import net.ptcrys.topo.api.machine.MachineDefinition;
 import net.ptcrys.topo.api.machine.ui.recipe.XeiRecipeLookup;
 import net.ptcrys.topo.api.ore.OreVein;
 import net.ptcrys.topo.api.recipe.TopoRecipe;
 import net.ptcrys.topo.api.recipe.TopoRecipeType;
-import net.ptcrys.topodemo.TopoDemo;
 import net.ptcrys.topodemo.data.ContentLang;
+import net.ptcrys.topodemo.data.TopoDemoPlugin;
 import net.ptcrys.topodemo.data.machine.BuiltinMachines;
 import net.ptcrys.topodemo.data.ore.BuiltinVeins;
 import net.ptcrys.topodemo.data.recipe.BuiltinRecipeTypes;
@@ -32,7 +33,7 @@ import java.util.List;
 public final class ContentJeiPlugin implements IModPlugin {
 
     private static final IRecipeType<OreVein> ORE = IRecipeType.create(
-            Identifier.fromNamespaceAndPath(TopoDemo.MOD_ID, "ore_deposits"), OreVein.class);
+            PluginIds.id(TopoDemoPlugin.INSTANCE, "ore_deposits"), OreVein.class);
     private List<RecipeCategory> recipes = List.of();
 
     private record RecipeCategory(TopoRecipeType<TopoRecipe> topo, IRecipeType<TopoRecipe> jei, MachineDefinition station) {
@@ -44,7 +45,7 @@ public final class ContentJeiPlugin implements IModPlugin {
 
     @Override
     public Identifier getPluginUid() {
-        return Identifier.fromNamespaceAndPath(TopoDemo.MOD_ID, "content");
+        return PluginIds.id(TopoDemoPlugin.INSTANCE, "content");
     }
 
     @Override
