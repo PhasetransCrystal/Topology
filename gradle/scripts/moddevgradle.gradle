@@ -11,6 +11,8 @@ sourceSets {
     demo {
         compileClasspath += sourceSets.main.output
         runtimeClasspath += sourceSets.main.output
+        resources.srcDirs('src/generated/topodemo/client', 'src/generated/topodemo/server')
+        resources.exclude('**/.cache/**')
     }
 }
 
@@ -67,7 +69,7 @@ neoForge {
             gameDirectory.set(file('run/serverData'))
             programArguments.addAll('--mod', project.mod_id)
             programArguments.addAll('--all')
-            programArguments.addAll('--output', file('src/generated/resources/').getAbsolutePath())
+            programArguments.addAll('--output', file('src/generated/serverResources/').getAbsolutePath())
             programArguments.addAll('--existing', file('src/main/resources/').getAbsolutePath())
         }
 
@@ -76,7 +78,7 @@ neoForge {
             ideName = "contentClientData"
             gameDirectory.set(file('run/contentClientData'))
             programArguments.addAll('--mod', 'topodemo', '--all')
-            programArguments.addAll('--output', file('src/demo/resources/').getAbsolutePath())
+            programArguments.addAll('--output', file('src/generated/topodemo/client/').getAbsolutePath())
             programArguments.addAll('--existing', file('src/main/resources/').getAbsolutePath())
             programArguments.addAll('--existing', file('src/demo/resources/').getAbsolutePath())
         }
@@ -85,7 +87,7 @@ neoForge {
             ideName = "contentServerData"
             gameDirectory.set(file('run/contentServerData'))
             programArguments.addAll('--mod', 'topodemo', '--all')
-            programArguments.addAll('--output', file('src/demo/resources/').getAbsolutePath())
+            programArguments.addAll('--output', file('src/generated/topodemo/server/').getAbsolutePath())
             programArguments.addAll('--existing', file('src/main/resources/').getAbsolutePath())
             programArguments.addAll('--existing', file('src/demo/resources/').getAbsolutePath())
         }

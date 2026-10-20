@@ -78,7 +78,10 @@ RegistryLib 的 `addSuppliers` 会立即调用 Supplier，此阶段不能传入�
 ```
 
 普通数据生成入口会先执行对应的 `runContentClientData` / `runContentServerData`，
-为 `topodemo` 输出至 `src/demo/resources`，再为 `topo` 输出至 `src/generated/resources`。
+为 `topodemo` 输出至 `src/generated/topodemo/client` 或 `src/generated/topodemo/server`，
+再为 `topo` 输出至 `src/generated/resources` 或 `src/generated/serverResources`。
+这些生成目录分别加入对应 source set 的资源目录；`src/demo/resources` 仅保留手写资源与模组元数据。
+生成目录必须与手写资源隔离，客户端和服务端也使用独立目录，避免数据生成缓存清理其他文件。
 也可以单独执行两个 `runContent*Data` 任务。RegistryLib 当前监听 `GatherDataEvent.Client`，
 其模型、语言、标签与配方均须执行 `runClientData` 才会生成；`runServerData` 不能替代它。
 生成前启动游戏尚无这些内容的模型、语言、标签和原版配方。
