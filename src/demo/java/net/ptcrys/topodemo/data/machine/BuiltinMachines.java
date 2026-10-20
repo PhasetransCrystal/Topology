@@ -4,12 +4,14 @@ import net.ptcrys.topo.api.api.builtin.MachineDomainRegistration;
 import net.ptcrys.topo.api.machine.*;
 import net.ptcrys.topo.api.machine.component.*;
 import net.ptcrys.topo.api.machine.multiblock.MultiblockController;
+import net.ptcrys.topo.api.machine.multiblock.MultiblockUi;
 import net.ptcrys.topo.api.machine.multiblock.pattern.Blueprint;
 import net.ptcrys.topo.api.machine.multiblock.pattern.CellPredicates;
 import net.ptcrys.topo.api.machine.resource.PortAccess;
 import net.ptcrys.topodemo.api.machine.BuiltinMachineTypes;
 import net.ptcrys.topodemo.api.machine.common.ItemPort;
 import net.ptcrys.topodemo.data.BuiltinCreativeTabs;
+import net.ptcrys.topodemo.data.ContentLang;
 import net.ptcrys.topodemo.data.TopoDemoPlugin;
 import net.ptcrys.topodemo.data.recipe.BuiltinRecipeTypes;
 
@@ -20,12 +22,16 @@ public final class BuiltinMachines {
 
     private static final MachineDomainRegistration MACHINE = TopoDemoPlugin.INSTANCE.machine();
     private static final ComponentKey<RecipeLogic> LOGIC = ComponentKey.of(MACHINE.id("recipe_logic"), RecipeLogic.class);
+    private static final ComponentKey<RecipeUi> RECIPE_UI = ComponentKey.of(MACHINE.id("recipe_ui"), RecipeUi.class);
+    private static final ComponentKey<MultiblockController> CONTROLLER = ComponentKey.of(MACHINE.id("multiblock_controller"), MultiblockController.class);
+    private static final ComponentKey<MultiblockUi> STRUCTURE_UI = ComponentKey.of(MACHINE.id("structure_ui"), MultiblockUi.class);
     public static final MachineDefinition GRINDER = MACHINE.machine("grinder").displayName("Grinder", "粉碎机")
             .block(OrientedActiveMachineBlock::new)
             .creativeTab(BuiltinCreativeTabs.KEY.getKey()).render(BuiltinMachineTypes.CUBE.cube("block/stonecutter_side"))
             .component(ItemPort.mount(ItemPort.INPUT, 2, PortAccess.input()))
             .component(ItemPort.mount(ItemPort.OUTPUT, 2, PortAccess.output()))
-            .component(RecipeLogic.mount(LOGIC, BuiltinRecipeTypes.GRINDING)).build();
+            .component(RecipeLogic.mount(LOGIC, BuiltinRecipeTypes.GRINDING))
+            .component(RecipeUi.mount(RECIPE_UI, LOGIC)).build();
     public static final MachineDefinition BUFFER = MACHINE.machine("buffer").displayName("Item Buffer", "物品缓存")
             .creativeTab(BuiltinCreativeTabs.KEY.getKey()).render(BuiltinMachineTypes.CUBE.cube("block/barrel_side"))
             .component(ItemPort.mount(ItemPort.STORAGE, 9, PortAccess.storage())).build();
@@ -37,14 +43,20 @@ public final class BuiltinMachines {
             .component(ItemPort.mount(ItemPort.OUTPUT, 3, PortAccess.output()).role(BuiltinMachineTypes.OUTPUT)).build();
     // Three-wide, two-high, one-deep. @ is the controller; input/output buses supply recipe IO.
     public static final Blueprint ALLOY_BLUEPRINT = Blueprint.of().aisle("I@O").aisle("CCC")
+            .where('@', CellPredicates.controller())
             .where('I', CellPredicates.role(BuiltinMachineTypes.INPUT))
             .where('O', CellPredicates.role(BuiltinMachineTypes.OUTPUT))
             .where('C', CellPredicates.block(Blocks.IRON_BLOCK)).build();
     public static final MachineDefinition ALLOYER = MACHINE.machine("alloyer").displayName("Alloy Mixer", "合金混合器")
             .creativeTab(BuiltinCreativeTabs.KEY.getKey()).render(BuiltinMachineTypes.CUBE.cube("block/blast_furnace_front"))
             .block(FormedMachineBlock::new)
-            .component(MultiblockController.mount(ALLOY_BLUEPRINT))
-            .component(RecipeLogic.mount(LOGIC, BuiltinRecipeTypes.ALLOYING)).build();
+            .component(MultiblockController.mount(CONTROLLER, ALLOY_BLUEPRINT))
+            .component(MultiblockUi.mount(STRUCTURE_UI, CONTROLLER))
+            .component(RecipeLogic.mount(LOGIC, BuiltinRecipeTypes.ALLOYING))
+            .component(RecipeUi.mount(RECIPE_UI, LOGIC, RecipeUi.RecipePageGate.of(
+                    traits -> traits.require(CONTROLLER)::formed,
+                    ContentLang.STRUCTURE_REQUIRED.getComponent())))
+            .build();
 
     private BuiltinMachines() {}
 

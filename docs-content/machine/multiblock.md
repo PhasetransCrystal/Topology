@@ -28,8 +28,9 @@ Blueprint blueprint = Blueprint.of()
         "C@C",
         "CAC"
     )
+    .where('@', CellPredicates.controller())                 // 控制器匹配定义仍须显式声明
     .where('C', CellPredicates.block(MyBlocks.CASING))    // 外壳方块
-    .where('A', state -> state.isAir())                    // 空气
+    .where('A', (state, expected) -> state != null && state.isAir())                    // 空气
     .build();
 
 // 2. 注册为机器
@@ -42,7 +43,8 @@ Machines.begin(Identifier.fromNamespaceAndPath("mymod", "my_multiblock"),registr
 ```
 
 :::info
-蓝图中的 `@` 字符标记控制器位置，框架自动扫描定位。
+蓝图必须恰好有一个 `@`，框架用它定位控制器原点；与其他非空字符一样，
+仍须显式声明 `.where('@', CellPredicates.controller())`。定位原点不会自动补充匹配定义。
 :::
 
 ## CellPredicate — 方块匹配规则
@@ -72,7 +74,8 @@ CellPredicate custom = (state, expected) -> state.is(BlockTags.MINEABLE_WITH_PIC
 
 ```java
 Blueprint.of()
-    .aisle("C C")
+    .aisle("C@C")
+    .where('@', CellPredicates.controller())
     .where('C', CellPredicates.block(casingBlock),
         casingBlock.defaultBlockState(),                       // expectedState（预旋转）
         PropertyRules.direction(BlockDirectionProperties.FACING))   // FACING 随结构旋转协变
