@@ -5,8 +5,6 @@ import net.ptcrys.topo.api.pipe.ui.PipePortConfigUi;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.InteractionHand;
@@ -27,6 +25,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.neoforged.neoforge.common.Tags;
 
 import com.lowdragmc.lowdraglib2.gui.factory.BlockUIMenuType;
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI;
@@ -55,7 +54,7 @@ public class PipeBlock extends Block implements BlockUIMenuType.BlockUI {
      * shift-click side cycling below stays reachable; foreign tag-only wrenches keep the vanilla
      * sneak behavior and therefore only support the non-sneak interactions.
      */
-    private static final TagKey<Item> WRENCH_TAG = TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath("c", "tools/wrench"));
+    private static final TagKey<Item> WRENCH_TAG = Tags.Items.TOOLS_WRENCH;
 
     /** Indexed by {@link Direction#ordinal()}: DOWN, UP, NORTH, SOUTH, WEST, EAST. */
     private static final EnumProperty<PipeSideVisual>[] BY_DIRECTION = buildPropertyTable();

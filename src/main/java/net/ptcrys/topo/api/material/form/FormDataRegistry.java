@@ -5,6 +5,8 @@ import net.ptcrys.topo.api.api.infrastructure.FreezableStrategyRegistry;
 
 import net.minecraft.resources.Identifier;
 
+import org.jetbrains.annotations.ApiStatus;
+
 /**
  * Form payload-type table (query + freeze). Product writes only via
  * {@link MaterialDomainRegistration#formDataType}.
@@ -16,6 +18,7 @@ public final class FormDataRegistry {
     private FormDataRegistry() {}
 
     /** Single write entry for the material domain plugin API. */
+    @ApiStatus.Internal
     public static <D, H extends FormDataType<D>> H begin(Identifier id, H handle) {
         if (!id.equals(handle.id())) {
             throw new IllegalArgumentException(
@@ -33,6 +36,7 @@ public final class FormDataRegistry {
         return REGISTRY.isFrozen();
     }
 
+    @ApiStatus.Internal
     public static void freeze() {
         REGISTRY.freeze();
     }

@@ -90,7 +90,7 @@ ore.conflict("replace_lower", (candidate, existing) -> candidate >= existing);
 
 | 类/方法                                                        | 用途                    |
 |----------------------------------------------------------------|-------------------------|
-| `ore.shape(path, strategy)`                                    | 注册矿脉形状（钩子 13） |
+| `ore.shape(path, strategy)`                                    | 注册矿脉形状（钩子 12） |
 | `ore.mode(path, strategy)`                                     | 注册生成通道            |
 | `ore.airExposure(path, strategy)`                              | 注册空气暴露策略        |
 | `ore.conflict(path, strategy)`                                 | 注册冲突策略            |

@@ -4,6 +4,8 @@ sidebar_position: 2
 
 # Getting Started
 
+可直接参照仓库中的[内容插件实作](foundation/content-plugin.md)，追踪各注册阶段到可运行的内容。
+
 ## 添加依赖
 
 ```gradle
@@ -32,144 +34,94 @@ net.ptcrys.topo.api.* → 库本体（全部继承扩展点都在这里）
 
 ## TopoPlugin — 内容注册入口
 
-所有内容（材料、机器、配方、矿石……）通过实现 `TopoPlugin` 接口注册：
+继承 `TopoPlugin`，在构造器中传入你的 `RegistryCore`，只覆写需要的钩子。领域 API 由基类按插件持有，无需声明字段或实现 getter。
 
 ```java
-public final class MyModPlugin implements TopoPlugin {
-
-    @Override
-    public String modId() {
-        return "mymod";
+public final class MyModPlugin extends TopoPlugin {
+    public MyModPlugin() {
+        super(MyMod.REGISTRY);
     }
 
     @Override
-    public RegistryCore registry() {
-        return MyMod.REGISTRY; // 你 Mod 的 RegistryCore
+    public void registerMaterials(MaterialDomainRegistration material) {
+        // ingotForm 在 registerMaterialFoundation 中声明
+        material.material("copper").lang("Copper", "铜").form(ingotForm).build();
     }
 
     @Override
-    public MaterialDomainRegistration material() { return materials; }
-    @Override
-    public EquipmentDomainRegistration equipment() { return equipments; }
-    @Override
-    public RecipeDomainRegistration recipe() { return recipes; }
-    @Override
-    public MachineDomainRegistration machine() { return machines; }
-    @Override
-    public OreDomainRegistration ore() { return ores; }
-    @Override
-    public LangDomainRegistration lang() { return langs; }
-
-    // 六个领域注册 API 通过 XDomainRegistration.of(this) 创建，
-    // 框架校验它们与 modId()/registry() 一致。
-
-    @Override
-    public void registerMaterials(MaterialDomainRegistration m) {
-        // ingotForm 是你在 registerMaterialFoundation 里注册的自定义形态（见 Material 文档）
-        m.material("copper").lang("Copper", "铜").form(ingotForm).build();
+    public void registerRecipeTypes(RecipeDomainRegistration recipe) {
+        recipe.recipeType("macerating").displayName("Macerating", "粉碎");
     }
 
     @Override
-    public void registerRecipeTypes(RecipeDomainRegistration r) {
-        r.recipeType("macerating").displayName("Macerating", "粉碎");
+    public void registerRecipes(RecipeDomainRegistration recipe) {
+        // 各内容领域的声明与生成完成后，在此组装具体配方
     }
 
     @Override
-    public void registerMachines(MachineDomainRegistration m) {
-        // 声明机器
-    }
-
-    @Override
-    public void registerRecipes(RecipeDomainRegistration r) {
-        // 添加配方
-    }
-
-    @Override
-    public void registerOreVeins(OreDomainRegistration o) {
-        // 声明矿脉
-    }
-
-    @Override
-    public void registerLang(LangDomainRegistration lang) {
-        // 收集翻译
+    public void registerRuntime(RuntimeDomainRegistration runtime) {
+        // 此时 RegistryLib Entry 已绑定，可以取游戏对象
+        // runtime.tooltip(myItem.get(), myPanelProvider);
+        // runtime.itemBehavior(myTool.get(), myBehavior);
     }
 }
 ```
 
-## 接线：注册插件 + 启动引擎
+`TopoPlugin` 位于 `api.api.plugin`，钩子接口按领域分组在 `plugin.hook`。
+下游继承基类即可，不需要直接组合这些接口或使用 `plugin.internal` 下的实现。
+
+## 接线：依赖方只注册插件
 
 ```java
 @Mod("mymod")
 public class MyMod {
-
-    public static final RegistryCore REGISTRY = /* ... */;
+    public static final RegistryCore REGISTRY = RegistryCore.create("mymod");
 
     public MyMod(IEventBus modEventBus) {
-        // 1. 注册内容插件（引擎启动前，@Mod 构造器里）
         TopoPlugins.register(new MyModPlugin());
-
-        // 2. 首个 RegisterEvent 上启动引擎——HIGHEST 优先级，保证
-        //    所有 @Mod 构造器都已注册完毕，RegistryLib(LOW) 仍能看到队列条目。
-        modEventBus.addListener(EventPriority.HIGHEST, this::bootstrap);
-
-        // 3. 运行时绑定（你的内容专属，注册顺序注意见下）
-    }
-
-    private void bootstrap(RegisterEvent event) {
-        TopoPluginEngine.prepare();            // recipe → material → equipment
-        TopoPluginEngine.bootstrapMachine();   // machine foundation → machines → pipes
-        TopoPluginEngine.bootstrapOre();       // ore foundation → veins
-        TopoPluginEngine.bootstrapLang();      // lang 收集 + 冻结
     }
 }
 ```
 
-:::info
-**库已经帮你做了什么** — Topology 的宿主 `@Mod("topo")` 已注册 API 插件、资源能力、管道引擎、网络、渲染、
-tick 心跳等全部框架运行时。你的 Mod 只需要走上面三步——注册自己的插件、启动引擎、接上自己的运行时绑定。
-:::
+在你的 `neoforge.mods.toml` 声明对 `topo` 的必需依赖，并设置 `ordering="AFTER"`。
+Topo 宿主负责接线 `TopoPlugins.attachHost(modEventBus)`，依赖方无需重复接线，也无需手工监听
+`RegisterEvent` 或调用各个 bootstrap 方法。
 
-:::caution
-**运行时绑定顺序** — 如果你的内容提供设备/材质/机器的物品悬浮面板（tooltip），其注册必须**先于**
-`PipeSpecTooltips.register(...)`：后者的 setup 任务会 freeze `ItemTooltipUis`，而 `enqueueWork` 任务按提交序执行。
+物品实例可用后才能执行的绑定放在 `registerRuntime(runtime)`，由宿主在 common setup 的主线程任务中调用。
+装备策略的 `machineBehavior()` 自动绑定到该策略生成并登记的装备物品，额外物品使用 `runtime.itemBehavior`。
+共享表在 load complete 的主线程任务中统一冻结，插件无需自行冻结或接线运行时事件。
+需要客户端专用事件的功能仍可在 client setup 中绑定；不同 Mod 的事件任务间没有先后承诺。
+
+同一 Mod 可以提供多个 Plugin，但必须共用其 RegistryCore。注册时无需提供 Plugin ID，
+也不声明 Plugin 之间的依赖：各阶段会遍历全部 Plugin，再统一冻结对应注册表。
+因此 API Plugin 应在 foundation 钩子声明数据类型、形态等基础内容，具体内容 Plugin
+在后续内容钩子使用这些声明。插件在相同钩子中的执行次序不是依赖契约；独立贡献才可安全组合。
+
+```java
+TopoPlugins.register(new MyApiPlugin());
+TopoPlugins.register(new MyContentPlugin());
+```
+
+引擎按 Mod ID 和类名稳定遍历插件，使结果不受模组构造器到达顺序影响；此排序只为可复现性，
+不应用于表达同一阶段内的先后依赖。
+
+:::info
+Topo 宿主还负责资源能力、管道引擎、网络、渲染、tick 心跳等框架运行时。
+Plugin 基类负责缓存领域 API，并从 RegistryCore 推导命名空间。
 :::
 
 ## 生命周期与冻结点
 
-TopoPluginEngine 按固定顺序调用各阶段。每个阶段结束后，对应注册表 **冻结**（只读）：
+每个钩子先执行全部插件，再由领域模块校验、生成内容并冻结对应表。
+全部内容领域结束后才执行 `registerRecipes`，随后导出翻译；游戏对象绑定由 RegistryLib 随后完成。
+需要游戏对象的操作放在 `registerRuntime`。
 
-```mermaid
-graph LR
-    A[recipe foundation] --> B[recipe types]
-    B --> C[material foundation]
-    C --> D[materials]
-    D --> E[equipment]
-    E --> F[machine foundation]
-    F --> G[machines]
-    G --> H[ore]
-    H --> I[lang]
-```
-
-| 阶段                | 做什么                                 | 冻结的注册表             |
-|---------------------|----------------------------------------|--------------------------|
-| recipe foundation   | 注册自定义 RecipeCapability            | capability 表            |
-| recipe types        | 注册配方类型                           | recipe type 表           |
-| material foundation | 注册自定义 MaterialData / MaterialForm | data / form 表           |
-| materials           | 声明材料 + 注册 form 内容 + 后处理器   | material 表              |
-| equipment           | 为 (kind, material) 生成物品           | —                        |
-| machine foundation  | 冻结 resource type / UI / render       | resource type 表         |
-| machines            | 声明机器 + 注册 block / block entity   | machine 表               |
-| ore                 | 声明矿脉 + 数据生成                    | shape / mode / policy 表 |
-| lang                | 收集所有翻译键                         | lang 表                  |
-
-:::caution
-**冻结点规则** — 冻结点后不能再添加新条目。例如在 `registerMaterials()` 中不能再注册新的 `MaterialForm`——
-它必须放在 `registerMaterialFoundation()` 里。完整生命周期表见
+冻结后不能再添加条目。例如 `MaterialForm` 必须在 `registerMaterialFoundation` 声明，
+不能放在 `registerMaterials`。完整钩子、事件时序与内部模块扩展方式见
 [Plugin Lifecycle](foundation/lifecycle.md)。
-:::
 
 ## 关键约定
 
-- **ID 必须带命名空间**（如 `mymod:copper`）
+- **领域 API 传裸路径**（如 `material("copper")`）；生成的 ID 带 Plugin 命名空间 `mymod:copper`
 - **双语名称**：每个有显示名称的条目必须提供 `en` 和 `cn`
 - **Topology 只提供基建**：不在创造模式物品栏、JEI 中添加内容

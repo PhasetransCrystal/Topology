@@ -6,6 +6,8 @@ import net.ptcrys.topo.api.material.Material;
 
 import net.minecraft.resources.Identifier;
 
+import org.jetbrains.annotations.ApiStatus;
+
 /**
  * Material data-type table (query + freeze). Product writes only via
  * {@link MaterialDomainRegistration#dataType}.
@@ -29,6 +31,7 @@ public final class MaterialDataRegistry {
      * post-processor pairing. Pass {@link #noValidation()} when no value checks are needed.
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
+    @ApiStatus.Internal
     public static <D, H extends MaterialDataType<D>> H begin(
                                                              Identifier id, H handle, MaterialDataStrategy<D> strategy) {
         if (!id.equals(handle.id())) {
@@ -51,6 +54,7 @@ public final class MaterialDataRegistry {
         return REGISTRY.isFrozen();
     }
 
+    @ApiStatus.Internal
     public static void freeze() {
         REGISTRY.freeze();
     }

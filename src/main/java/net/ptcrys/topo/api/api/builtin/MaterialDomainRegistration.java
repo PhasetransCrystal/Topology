@@ -2,6 +2,7 @@ package net.ptcrys.topo.api.api.builtin;
 
 import net.ptcrys.registrylib.RegistryCore;
 import net.ptcrys.topo.api.api.plugin.PluginIds;
+import net.ptcrys.topo.api.api.plugin.RegistrationDomain;
 import net.ptcrys.topo.api.api.plugin.TopoPlugin;
 import net.ptcrys.topo.api.material.MaterialRegistry;
 import net.ptcrys.topo.api.material.data.MaterialDataRegistry;
@@ -22,6 +23,8 @@ import java.util.Objects;
  */
 public final class MaterialDomainRegistration {
 
+    public static final RegistrationDomain<MaterialDomainRegistration> DOMAIN = RegistrationDomain.of(MaterialDomainRegistration::of);
+
     private final TopoPlugin plugin;
     private final RegistryCore registry;
 
@@ -30,7 +33,7 @@ public final class MaterialDomainRegistration {
         this.registry = Objects.requireNonNull(registry, "registry");
     }
 
-    public static MaterialDomainRegistration of(TopoPlugin plugin) {
+    private static MaterialDomainRegistration of(TopoPlugin plugin) {
         return new MaterialDomainRegistration(plugin, plugin.registry());
     }
 

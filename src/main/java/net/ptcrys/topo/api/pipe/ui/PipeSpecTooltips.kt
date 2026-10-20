@@ -9,8 +9,6 @@ import net.ptcrys.topo.api.pipe.PipeDistributionStrategy
 import net.ptcrys.topo.api.pipe.Pipes
 
 import net.minecraft.network.chat.Component
-import net.neoforged.bus.api.IEventBus
-import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent
 
 import com.lowdragmc.lowdraglib2.gui.ui.UIElement
 
@@ -19,22 +17,17 @@ import com.lowdragmc.lowdraglib2.gui.ui.UIElement
  * 性能规格(抽取速率、节点吞吐、策略集、过滤包络)。数据全部来自 [PipeDefinition]——
  * 纯注册期事实,无运行期数据、无任何物品持久化(物品 tooltip 不挂数据组件)。
  *
- * 注册时机:管道物品是延迟注册条目,mod 构造期拿不到 Item 实例,所以 provider 注册与
- * [ItemTooltipUis.freeze] 都发生在 FMLCommonSetup 的 enqueueWork 里(物品注册已完成)。
+ * 注册时机:管道物品是延迟注册条目,mod 构造期拿不到 Item 实例。
+ * provider 由宿主引擎在 common setup 任务中注册,共享表在 load complete 由引擎统一冻结。
  */
 object PipeSpecTooltips {
 
-    /** mod 构造期接线;真正的 provider 注册延迟到物品实例可用之后。 */
+    /** 物品注册完成后调用;冻结权属于引擎。 */
     @JvmStatic
-    fun register(modEventBus: IEventBus) {
-        modEventBus.addListener { event: FMLCommonSetupEvent ->
-            event.enqueueWork {
-                for (definition in Pipes.registered()) {
-                    val item = definition.registeredBlock().get().asItem()
-                    ItemTooltipUis.register(item) { createSpecPanel(definition) }
-                }
-                ItemTooltipUis.freeze()
-            }
+    fun registerProviders() {
+        for (definition in Pipes.registered()) {
+            val item = definition.registeredBlock().get().asItem()
+            ItemTooltipUis.register(item) { createSpecPanel(definition) }
         }
     }
 

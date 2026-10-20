@@ -4,10 +4,13 @@ import net.ptcrys.registrylib.RegistryCore;
 import net.ptcrys.topo.api.api.lang.LangKey;
 import net.ptcrys.topo.api.api.lang.LangRegistry;
 import net.ptcrys.topo.api.api.plugin.PluginIds;
+import net.ptcrys.topo.api.api.plugin.RegistrationDomain;
 import net.ptcrys.topo.api.api.plugin.TopoPlugin;
 
 import net.minecraft.resources.Identifier;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -16,15 +19,18 @@ import java.util.Objects;
  */
 public final class LangDomainRegistration {
 
+    public static final RegistrationDomain<LangDomainRegistration> DOMAIN = RegistrationDomain.of(LangDomainRegistration::of);
+
     private final TopoPlugin plugin;
     private final RegistryCore registry;
+    private final List<LangKey> keys = new ArrayList<>();
 
     private LangDomainRegistration(TopoPlugin plugin, RegistryCore registry) {
         this.plugin = Objects.requireNonNull(plugin, "plugin");
         this.registry = Objects.requireNonNull(registry, "registry");
     }
 
-    public static LangDomainRegistration of(TopoPlugin plugin) {
+    private static LangDomainRegistration of(TopoPlugin plugin) {
         return new LangDomainRegistration(plugin, plugin.registry());
     }
 
@@ -48,7 +54,7 @@ public final class LangDomainRegistration {
         requireCategory(category);
         PluginIds.requireBarePath(path);
         String fullKey = category + "." + modId() + "." + path;
-        return LangRegistry.begin(fullKey, en, cn);
+        return register(fullKey, en, cn);
     }
 
     /**
@@ -65,7 +71,7 @@ public final class LangDomainRegistration {
             throw new IllegalArgumentException(
                     "lang resource id namespace must match plugin modId: " + id + " vs " + modId());
         }
-        return LangRegistry.begin(id.toLanguageKey(category), en, cn);
+        return register(id.toLanguageKey(category), en, cn);
     }
 
     /**
@@ -78,7 +84,18 @@ public final class LangDomainRegistration {
             throw new IllegalArgumentException(
                     "absolute lang key must include plugin modId '" + modId() + "': " + fullKey);
         }
-        return LangRegistry.begin(fullKey, en, cn);
+        return register(fullKey, en, cn);
+    }
+
+    /** Keys owned by this domain; datagen exports through this plugin's RegistryCore. */
+    public List<LangKey> registeredKeys() {
+        return List.copyOf(keys);
+    }
+
+    private LangKey register(String fullKey, String en, String cn) {
+        LangKey key = LangRegistry.begin(fullKey, en, cn);
+        keys.add(key);
+        return key;
     }
 
     private static void requireCategory(String category) {

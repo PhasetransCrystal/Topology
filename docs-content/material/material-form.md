@@ -29,6 +29,8 @@ public abstract class MaterialFormStrategy {
 
 `MaterialContentContext` 是 `record(RegistryCore core, Material material)`——`register` 里用
 `context.core().item(...)` / `context.core().block(...)` 铸造注册项。
+流体形式同样由策略在这里调用 `context.core().fluid(...)`，再按需要配置方块和桶；
+框架不把流体形式自动转成物品形式，查询源流体使用 `MaterialHelper.fluid`／`requireFluid`。
 
 ## 生产级结构：Builder 模式
 
@@ -106,6 +108,9 @@ m.material("moonstone").lang("Moonstone", "月长石").form(orbForm).build();
 **覆盖外部物品** — 形态可以挂到既有物品上（如原版钻石），通过 `core.existingItem` 附加标签而不重复注册。
 注册时用 `form(form, options -> options.overrideItem(target))` 附加覆盖目标，目标用
 `ExternalTargets.mcItem("diamond")` / `ExternalTargets.mcBlock("diamond_block")` 构造。
+覆盖选项由具体策略读取并执行；仅在材料上声明选项不会自动跳过该策略的注册逻辑。
+覆盖分支复用既有条目，不应重复注册或改写外部条目的名称。参见
+[内容插件实作](../foundation/content-plugin.md) 中从 BK 迁入的 `ItemForm` 与 `BlockForm`。
 :::
 
 ## API 速查

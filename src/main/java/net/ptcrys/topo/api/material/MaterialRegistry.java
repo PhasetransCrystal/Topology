@@ -12,6 +12,8 @@ import net.ptcrys.topo.api.material.form.MaterialForm;
 
 import net.minecraft.resources.Identifier;
 
+import org.jetbrains.annotations.ApiStatus;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -28,6 +30,7 @@ public final class MaterialRegistry {
      * Internal write entry used only by {@link MaterialDomainRegistration}.
      * Product code must use {@code plugin.material().material(path)}.
      */
+    @ApiStatus.Internal
     public static Builder begin(Identifier id, LangDomainRegistration lang) {
         return new Builder(Objects.requireNonNull(id, "id"), Objects.requireNonNull(lang, "lang"));
     }
@@ -44,6 +47,7 @@ public final class MaterialRegistry {
         return REGISTRY.isFrozen();
     }
 
+    @ApiStatus.Internal
     public static void freeze() {
         if (!REGISTRY.isFrozen()) {
             for (Material material : PENDING_VALIDATION) {

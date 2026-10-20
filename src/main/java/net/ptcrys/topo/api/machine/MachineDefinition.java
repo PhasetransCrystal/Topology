@@ -3,7 +3,8 @@ package net.ptcrys.topo.api.machine;
 import net.ptcrys.registrylib.RegistryCore;
 import net.ptcrys.registrylib.builders.BlockBuilder;
 import net.ptcrys.registrylib.util.entry.BlockEntry;
-import net.ptcrys.topo.api.api.lang.ChineseConvert;
+import net.ptcrys.topo.api.lang.DisplayNames;
+import net.ptcrys.topo.api.lang.RegistryDisplayLang;
 import net.ptcrys.topo.api.machine.component.Attachment;
 import net.ptcrys.topo.api.machine.component.AttachmentType;
 import net.ptcrys.topo.api.machine.component.ComponentMount;
@@ -26,7 +27,6 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiFunction;
 
@@ -166,14 +166,7 @@ public final class MachineDefinition {
         // differ — they keep pickaxe + wrench (see PipeBlockTemplates).
         blockBuilder.addTag(MachineBlock.MINEABLE_WITH_WRENCH);
         // en + cn are mandatory at Machines.Builder#displayName(en, cn).
-        blockBuilder.lang(Objects.requireNonNull(displayName, "displayName"));
-        if (core.doDatagen()) {
-            core.lang(
-                    id.toLanguageKey("block"),
-                    Map.of(
-                            "zh_cn", Objects.requireNonNull(displayNameCn, "displayNameCn"),
-                            "zh_tw", ChineseConvert.s2t(displayNameCn)));
-        }
+        RegistryDisplayLang.applyBlock(blockBuilder, core, id.getPath(), DisplayNames.fixed(displayName, displayNameCn));
         configureBlockItem(blockBuilder);
         if (render != null) {
             MachineRenderRegistry.validate(render);

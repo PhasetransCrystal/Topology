@@ -4,7 +4,9 @@ import net.ptcrys.registrylib.RegistryCore;
 import net.ptcrys.registrylib.builders.BlockBuilder;
 import net.ptcrys.registrylib.builders.ItemBuilder;
 import net.ptcrys.topo.api.api.lang.ChineseConvert;
+import net.ptcrys.topo.api.api.lang.LangRegistry;
 
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 
@@ -20,7 +22,7 @@ public final class RegistryDisplayLang {
     private RegistryDisplayLang() {}
 
     public static void applyItem(
-                                 ItemBuilder<? extends Item, RegistryCore> builder,
+                                 ItemBuilder<? extends Item, ?> builder,
                                  RegistryCore core,
                                  String entryPath,
                                  FixedDisplayName name) {
@@ -28,13 +30,12 @@ public final class RegistryDisplayLang {
         Objects.requireNonNull(core, "core");
         Objects.requireNonNull(entryPath, "entryPath");
         Objects.requireNonNull(name, "name");
-        builder.lang(name.en());
+        LangRegistry.claimEntryName(Identifier.fromNamespaceAndPath(core.getModid(), entryPath).toLanguageKey("item"));
         if (core.doDatagen()) {
-            core.lang(
-                    "item." + core.getModid() + "." + entryPath,
-                    Map.of(
-                            "zh_cn", name.cn(),
-                            "zh_tw", ChineseConvert.s2t(name.cn())));
+            builder.lang(Map.of(
+                    "en_us", name.en(),
+                    "zh_cn", name.cn(),
+                    "zh_tw", ChineseConvert.s2t(name.cn())));
         }
     }
 
@@ -47,13 +48,12 @@ public final class RegistryDisplayLang {
         Objects.requireNonNull(core, "core");
         Objects.requireNonNull(entryPath, "entryPath");
         Objects.requireNonNull(name, "name");
-        builder.lang(name.en());
+        LangRegistry.claimEntryName(Identifier.fromNamespaceAndPath(core.getModid(), entryPath).toLanguageKey("block"));
         if (core.doDatagen()) {
-            core.lang(
-                    "block." + core.getModid() + "." + entryPath,
-                    Map.of(
-                            "zh_cn", name.cn(),
-                            "zh_tw", ChineseConvert.s2t(name.cn())));
+            builder.lang(Map.of(
+                    "en_us", name.en(),
+                    "zh_cn", name.cn(),
+                    "zh_tw", ChineseConvert.s2t(name.cn())));
         }
     }
 }

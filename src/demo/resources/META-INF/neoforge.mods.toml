@@ -1,0 +1,27 @@
+license="Apache-2.0"
+
+[[mods]]
+modId="topodemo"
+version="0.0.0-dev"
+displayName="TopoDemo"
+description='''Local development mod for Topo. Not included in published artifacts.'''
+
+[[dependencies.topodemo]]
+modId="topo"
+type="required"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.topodemo]]
+modId="neoforge"
+type="required"
+versionRange="[${neo_version},)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.topodemo]]
+modId="minecraft"
+type="required"
+versionRange="${minecraft_version_range}"
+ordering="NONE"
+side="BOTH"

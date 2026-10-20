@@ -45,6 +45,20 @@ Topology 由 **PhasetransCrystal** 基于 Odyssey Industrial 重构为纯 API �
 ./gradlew runClientData  # 数据生成
 ```
 
+`runClient` 和 `runServer` 额外加载本地开发 Mod **TopoDemo**（ID：`topodemo`）。
+其 Java / Kotlin 代码放在 `src/demo/java/` / `src/demo/kotlin/`，资源放在 `src/demo/resources/`。
+该源码集可访问 Topo API；后续内容插件在 TopoDemo 构造期通过 `TopoPlugins.register` 登记。
+Topo 的数据生成和单元测试不加载它，发布的 jar、sources jar 和 Maven 产物也不包含它。
+可用 `./gradlew demoClasses` 单独检查开发 Mod 的编译与资源处理。
+
+### 测试
+
+```bash
+./gradlew compileJava compileTestJava demoClasses spotlessCheck
+```
+
+运行测试需通过 NeoForge 启动；手动测试命令、覆盖范围与日志位置见[测试与验证](docs-content/foundation/testing.md)。
+
 ## 集成
 
 ```gradle
@@ -60,7 +74,7 @@ dependencies {
 ```
 
 ```java
-TopoPlugins.register(new MyModPlugin()); // 实现 TopoPlugin，注册你的全部内容
+TopoPlugins.register(new MyModPlugin()); // 继承 TopoPlugin，覆写所需的领域钩子
 ```
 
 详见 [Getting Started](docs-content/getting-started.md)。

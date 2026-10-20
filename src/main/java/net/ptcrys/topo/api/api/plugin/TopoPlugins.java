@@ -1,136 +1,36 @@
 package net.ptcrys.topo.api.api.plugin;
 
-import net.ptcrys.topo.api.api.builtin.*;
+import net.ptcrys.topo.api.api.plugin.internal.PluginCollection;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import net.neoforged.bus.api.IEventBus;
 
-import java.util.ArrayList;
-import java.util.Collections;
+import org.jetbrains.annotations.ApiStatus;
+
 import java.util.List;
-import java.util.Objects;
 
-/**
- * Explicit plugin registry (GTCEu {@code AddonFinder.add} style). Official and third-party use the
- * <strong>same</strong> path: call {@link #register(TopoPlugin)} from the mod {@code @Mod}
- * constructor before the first {@code RegisterEvent}.
- *
- * <p>
- * No SPI / annotation scan. Runtime and datagen share this list via {@link TopoPluginEngine#prepare()}.
- * Multiple plugins may share one {@code modId} only when they share the same {@link
- * net.ptcrys.registrylib.RegistryCore}.
- */
+/** Constructor-time plugin collection. Arrival order never determines execution order. */
 public final class TopoPlugins {
 
-    private static final Logger LOGGER = LogManager.getLogger();
-
-    private static final List<BoundPlugin> ORDER = new ArrayList<>();
-    private static boolean locked;
+    private static final PluginCollection PLUGINS = new PluginCollection();
 
     private TopoPlugins() {}
 
-    /**
-     * Registers a plugin instance. Safe to call from any mod constructor (before engine lock).
-     * Same instance twice is a no-op.
-     */
-    public static synchronized void register(TopoPlugin plugin) {
-        Objects.requireNonNull(plugin, "plugin");
-        if (locked) {
-            throw new IllegalStateException(
-                    "TopoPlugins: cannot register after engine lock (bootstrap already ran)");
-        }
-        String modId = Objects.requireNonNull(plugin.modId(), "plugin.modId()");
-        Objects.requireNonNull(plugin.registry(), "plugin.registry()");
-        Objects.requireNonNull(plugin.material(), "plugin.material()");
-        Objects.requireNonNull(plugin.equipment(), "plugin.equipment()");
-        Objects.requireNonNull(plugin.recipe(), "plugin.recipe()");
-        Objects.requireNonNull(plugin.machine(), "plugin.machine()");
-        Objects.requireNonNull(plugin.ore(), "plugin.ore()");
-        Objects.requireNonNull(plugin.lang(), "plugin.lang()");
-        if (!modId.equals(plugin.material().modId()) || !modId.equals(plugin.equipment().modId()) || !modId.equals(plugin.recipe().modId()) || !modId.equals(plugin.machine().modId()) || !modId.equals(plugin.ore().modId()) || !modId.equals(plugin.lang().modId())) {
-            throw new IllegalStateException(
-                    "TopoPlugins: domain API modId must match plugin.modId() for '" + modId + "'");
-        }
-        if (plugin.material().registry() != plugin.registry() || plugin.equipment().registry() != plugin.registry() || plugin.recipe().registry() != plugin.registry() || plugin.machine().registry() != plugin.registry() || plugin.ore().registry() != plugin.registry() || plugin.lang().registry() != plugin.registry()) {
-            throw new IllegalStateException(
-                    "TopoPlugins: domain API RegistryCore must be plugin.registry() for '" + modId + "'");
-        }
-        for (BoundPlugin existing : ORDER) {
-            if (existing.plugin() == plugin) {
-                return;
-            }
-            if (existing.plugin().modId().equals(modId) && existing.plugin().registry() != plugin.registry()) {
-                throw new IllegalStateException(
-                        "TopoPlugins: modId '" + modId + "' already bound to a different RegistryCore");
-            }
-        }
-        ORDER.add(new BoundPlugin(plugin));
-        LOGGER.info("TopoPlugins: registered {} ({})", plugin.getClass().getName(), modId);
+    /** Attach the single Topo host during its mod constructor. */
+    @ApiStatus.Internal
+    public static void attachHost(IEventBus bus) {
+        PLUGINS.attachHost(bus);
+    }
+
+    /** Same instance is idempotent; a second instance of the same plugin class is a conflict. */
+    public static void register(TopoPlugin plugin) {
+        PLUGINS.register(plugin);
     }
 
     public static List<TopoPlugin> view() {
-        List<TopoPlugin> plugins = new ArrayList<>(ORDER.size());
-        for (BoundPlugin bound : ORDER) {
-            plugins.add(bound.plugin());
-        }
-        return Collections.unmodifiableList(plugins);
-    }
-
-    static BoundPlugin findByModId(String modId) {
-        for (BoundPlugin bound : ORDER) {
-            if (bound.plugin().modId().equals(modId)) {
-                return bound;
-            }
-        }
-        return null;
-    }
-
-    static List<BoundPlugin> boundView() {
-        return Collections.unmodifiableList(ORDER);
-    }
-
-    static synchronized void lock() {
-        locked = true;
+        return PLUGINS.view();
     }
 
     public static boolean isLocked() {
-        return locked;
-    }
-
-    static final class BoundPlugin {
-
-        private final TopoPlugin plugin;
-
-        BoundPlugin(TopoPlugin plugin) {
-            this.plugin = plugin;
-        }
-
-        TopoPlugin plugin() {
-            return plugin;
-        }
-
-        MaterialDomainRegistration material() {
-            return plugin.material();
-        }
-
-        EquipmentDomainRegistration equipment() {
-            return plugin.equipment();
-        }
-
-        RecipeDomainRegistration recipe() {
-            return plugin.recipe();
-        }
-
-        MachineDomainRegistration machine() {
-            return plugin.machine();
-        }
-
-        OreDomainRegistration ore() {
-            return plugin.ore();
-        }
-
-        LangDomainRegistration lang() {
-            return plugin.lang();
-        }
+        return PLUGINS.isLocked();
     }
 }

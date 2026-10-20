@@ -9,6 +9,7 @@ import net.ptcrys.topo.api.recipe.content.TopoItemInput;
 import net.ptcrys.topo.api.recipe.content.TopoItemOutput;
 import net.ptcrys.topo.api.recipe.productionline.ProductionLine;
 import net.ptcrys.topo.api.recipe.search.TopoRecipeSearchIndex;
+import net.ptcrys.topo.helper.IdHelper;
 
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.Registries;
@@ -65,12 +66,12 @@ public class TopoRecipeType<R extends TopoRecipe> {
     private volatile @Nullable TopoRecipeSearchIndex<R> searchIndex;
     private volatile @Nullable RecipePreviewPlan previewPlan;
     private final AtomicLong searchRevision = new AtomicLong();
-    private final Map<String, DuplicateAwareRecipeFactory<R>> recipesByName = new LinkedHashMap<>();
+    private final Map<ResourceKey<Recipe<?>>, DuplicateAwareRecipeFactory<R>> recipesByKey = new LinkedHashMap<>();
     /** 导入来源表（GTCEu {@code proxyRecipes}）；按声明序投影。 */
     private final List<RecipeType<?>> importedRecipeTypes = new ArrayList<>();
     private @Nullable ImportedRecipeAdapter<R> importedRecipeAdapter;
-    /** 手写配方名 → 声明 replacesImported，索引期剔除冲突的导入项。 */
-    private final Set<String> recipesReplacingImported = new LinkedHashSet<>();
+    /** 手写配方的完整键 → 声明 replacesImported，索引期剔除冲突的导入项。 */
+    private final Set<ResourceKey<Recipe<?>>> recipesReplacingImported = new LinkedHashSet<>();
     private @Nullable LangKey displayName;
     /** Owning plugin lang; set by {@link TopoRecipeTypes#begin} before displayName is called. */
     @Nullable
@@ -86,8 +87,7 @@ public class TopoRecipeType<R extends TopoRecipe> {
     protected TopoRecipeType(Identifier id, RecipeFactory<R> recipeFactory) {
         this.id = Objects.requireNonNull(id, "recipe type id");
         this.recipeFactory = Objects.requireNonNull(recipeFactory, "recipe factory");
-        this.progressBarTexture = Identifier.fromNamespaceAndPath(
-                id.getNamespace(), "textures/gui/progress_bar/arrow.png");
+        this.progressBarTexture = IdHelper.id("textures/gui/progress_bar/arrow.png");
     }
 
     /** Package write entry used by {@link TopoRecipeTypes#begin}. */
@@ -336,7 +336,11 @@ public class TopoRecipeType<R extends TopoRecipe> {
     }
 
     final void markReplacesImported(String recipeName) {
-        recipesReplacingImported.add(Objects.requireNonNull(recipeName, "recipe name"));
+        recipesReplacingImported.add(recipeKey(recipeName));
+    }
+
+    final boolean replacesImported(ResourceKey<Recipe<?>> recipeKey) {
+        return recipesReplacingImported.contains(recipeKey);
     }
 
     /**
@@ -359,8 +363,23 @@ public class TopoRecipeType<R extends TopoRecipe> {
         this.previewPlan = plan;
     }
 
+    /** A path under this recipe type; RegistryLib supplies the namespace and type prefix. */
     public TopoRecipe.Builder<R> recipe(String recipeName) {
+        recipeKey(recipeName);
         return createRecipeBuilder(recipeName);
+    }
+
+    /**
+     * Resolves a local declaration path to its complete recipe identity without registry lookup.
+     * The resulting key does not imply that its recipe has been loaded or registered.
+     */
+    public final ResourceKey<Recipe<?>> recipeKey(String recipeName) {
+        if (recipeName == null || recipeName.isBlank() || recipeName.indexOf(':') >= 0) {
+            throw new IllegalArgumentException("Recipe name for type '" + id + "' must be a nonblank path without namespace: " + recipeName);
+        }
+        // Validate the final location now, before any factory or datagen callback is queued.
+        return ResourceKey.create(Registries.RECIPE,
+                id.withSuffix("/" + recipeName));
     }
 
     protected TopoRecipe.Builder<R> createRecipeBuilder(String recipeName) {
@@ -397,8 +416,8 @@ public class TopoRecipeType<R extends TopoRecipe> {
     }
 
     public List<R> registeredRecipes() {
-        List<R> recipes = new ArrayList<>(recipesByName.size());
-        for (DuplicateAwareRecipeFactory<R> factory : recipesByName.values()) {
+        List<R> recipes = new ArrayList<>(recipesByKey.size());
+        for (DuplicateAwareRecipeFactory<R> factory : recipesByKey.values()) {
             R recipe = factory.registeredRecipe();
             if (recipe != null) {
                 recipes.add(recipe);
@@ -508,7 +527,7 @@ public class TopoRecipeType<R extends TopoRecipe> {
         Set<Object> replacedImportKeys = new HashSet<>();
         for (RecipeHolder<R> holder : own) {
             Set<Object> keys = itemConflictKeys(holder.value());
-            if (recipesReplacingImported.contains(ownRecipeName(holder))) {
+            if (replacesImported(holder.id())) {
                 replacedImportKeys.addAll(keys);
             } else {
                 ownKeys.addAll(keys);
@@ -543,7 +562,7 @@ public class TopoRecipeType<R extends TopoRecipe> {
                 }
                 ResourceKey<Recipe<?>> importedId = importedHolderId(source.id());
                 if (!seenIds.add(importedId)) {
-                    continue;
+                    throw new IllegalStateException("Recipe type " + id + ": imported " + source.id().identifier() + " collides with an existing recipe id " + importedId.identifier());
                 }
                 merged.add(new RecipeHolder<>(importedId, adapted));
             }
@@ -565,15 +584,12 @@ public class TopoRecipeType<R extends TopoRecipe> {
         for (RecipeHolder<R> holder : recipes) {
             seenIds.add(holder.id());
         }
-        for (Map.Entry<String, DuplicateAwareRecipeFactory<R>> entry : recipesByName.entrySet()) {
+        for (Map.Entry<ResourceKey<Recipe<?>>, DuplicateAwareRecipeFactory<R>> entry : recipesByKey.entrySet()) {
             R declared = entry.getValue().registeredRecipe();
             if (declared == null) {
                 continue;
             }
-            ResourceKey<Recipe<?>> recipeId = ResourceKey.create(
-                    Registries.RECIPE,
-                    Identifier.fromNamespaceAndPath(
-                            id.getNamespace(), id.getPath() + "/" + entry.getKey()));
+            ResourceKey<Recipe<?>> recipeId = entry.getKey();
             if (seenIds.add(recipeId)) {
                 recipes.add(new RecipeHolder<>(recipeId, declared));
             }
@@ -586,36 +602,14 @@ public class TopoRecipeType<R extends TopoRecipe> {
     }
 
     /**
-     * 导入配方合成 id：{@code <本类型>/<来源前缀><原 path>}（path 一律小写；大写仅用于 Java 句柄常量名）。
-     * <ul>
-     * <li>原版（{@code minecraft}）→ {@code vanilla_}，如 {@code electric_furnace/vanilla_iron_ingot}</li>
-     * <li>其它模组 → {@code <modid>_}，如 {@code electric_furnace/create_crushed_iron}</li>
-     * </ul>
+     * 导入配方合成 id：{@code imports/<类型路径长度>/<类型路径>/<来源 namespace>/<原 path>}。
+     * 类型路径与来源路径均可嵌套；长度字段和独立 namespace 段保留各自边界。
      */
-    private ResourceKey<Recipe<?>> importedHolderId(ResourceKey<Recipe<?>> sourceId) {
+    ResourceKey<Recipe<?>> importedHolderId(ResourceKey<Recipe<?>> sourceId) {
         Identifier source = sourceId.identifier();
-        String prefixedPath = id.getPath() + "/" + importSourcePrefix(source.getNamespace()) + source.getPath();
+        String prefixedPath = "imports/" + id.getPath().length() + "/" + id.getPath() + "/" + source.getNamespace() + "/" + source.getPath();
         return ResourceKey.create(
-                Registries.RECIPE, Identifier.fromNamespaceAndPath(id.getNamespace(), prefixedPath));
-    }
-
-    /**
-     * 导入来源前缀（小写）：原版固定 {@code vanilla_}，其它模组用其 namespace + {@code _}。
-     */
-    static String importSourcePrefix(String namespace) {
-        if ("minecraft".equals(namespace)) {
-            return "vanilla_";
-        }
-        return namespace + "_";
-    }
-
-    private String ownRecipeName(RecipeHolder<R> holder) {
-        String path = holder.id().identifier().getPath();
-        String prefix = id.getPath() + "/";
-        if (path.startsWith(prefix)) {
-            return path.substring(prefix.length());
-        }
-        return path;
+                Registries.RECIPE, id.withPath(prefixedPath));
     }
 
     /**
@@ -681,11 +675,11 @@ public class TopoRecipeType<R extends TopoRecipe> {
     }
 
     private DuplicateAwareRecipeFactory<R> duplicateAwareRecipe(String recipeName) {
-        Objects.requireNonNull(recipeName, "recipe name");
-        DuplicateAwareRecipeFactory<R> duplicateAware = recipesByName.get(recipeName);
+        ResourceKey<Recipe<?>> key = recipeKey(recipeName);
+        DuplicateAwareRecipeFactory<R> duplicateAware = recipesByKey.get(key);
         if (duplicateAware == null) {
-            duplicateAware = new DuplicateAwareRecipeFactory<>(this, recipeName);
-            recipesByName.put(recipeName, duplicateAware);
+            duplicateAware = new DuplicateAwareRecipeFactory<>(this, key);
+            recipesByKey.put(key, duplicateAware);
             entry().addRecipe(recipeName, duplicateAware::createAndValidate);
         }
         return duplicateAware;
@@ -701,13 +695,13 @@ public class TopoRecipeType<R extends TopoRecipe> {
     private static final class DuplicateAwareRecipeFactory<R extends TopoRecipe> {
 
         private final TopoRecipeType<R> recipeType;
-        private final String recipeName;
+        private final ResourceKey<Recipe<?>> recipeKey;
         private final List<Function<HolderLookup.Provider, R>> factories = new ArrayList<>();
         private @Nullable R registeredRecipe;
 
-        private DuplicateAwareRecipeFactory(TopoRecipeType<R> recipeType, String recipeName) {
+        private DuplicateAwareRecipeFactory(TopoRecipeType<R> recipeType, ResourceKey<Recipe<?>> recipeKey) {
             this.recipeType = recipeType;
-            this.recipeName = recipeName;
+            this.recipeKey = recipeKey;
         }
 
         private void add(Function<HolderLookup.Provider, R> factory) {
@@ -728,7 +722,7 @@ public class TopoRecipeType<R extends TopoRecipe> {
                 productionLines.addAll(duplicate.productionLines());
                 if (!sameRecipeContents(primary, duplicate)) {
                     throw new IllegalStateException(
-                            "Duplicate recipe " + recipeType.id() + "/" + recipeName + " has conflicting contents: first=" + recipeType.recipeJson(primary) + ", duplicate=" + recipeType.recipeJson(duplicate));
+                            "Duplicate recipe " + recipeKey.identifier() + " has conflicting contents: first=" + recipeType.recipeJson(primary) + ", duplicate=" + recipeType.recipeJson(duplicate));
                 }
             }
             R resolved = recipeType.createRecipe(
@@ -752,7 +746,7 @@ public class TopoRecipeType<R extends TopoRecipe> {
             }
             if (!sameRecipeContents(current, incoming)) {
                 throw new IllegalStateException(
-                        "Duplicate recipe " + recipeType.id() + "/" + recipeName + " has conflicting contents: first=" + recipeType.recipeJson(current) + ", duplicate=" + recipeType.recipeJson(incoming));
+                        "Duplicate recipe " + recipeKey.identifier() + " has conflicting contents: first=" + recipeType.recipeJson(current) + ", duplicate=" + recipeType.recipeJson(incoming));
             }
             LinkedHashSet<ProductionLine> productionLines = new LinkedHashSet<>(current.productionLines());
             productionLines.addAll(incoming.productionLines());

@@ -5,6 +5,7 @@ import net.ptcrys.topo.api.api.infrastructure.FreezableStrategyRegistry;
 import net.minecraft.resources.Identifier;
 
 import com.mojang.serialization.Codec;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.util.List;
 import java.util.Objects;
@@ -45,6 +46,7 @@ public final class PipeDistributionStrategies {
         return REGISTRY.handlesView();
     }
 
+    @ApiStatus.Internal
     public static void freeze() {
         REGISTRY.freeze();
     }

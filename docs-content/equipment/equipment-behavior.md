@@ -58,20 +58,21 @@ public final class RegulatorBehavior implements MachineItemBehavior {
 
 ## 注册
 
-行为**不会自动注册**——物品绑定后（`FMLCommonSetup.enqueueWork`）遍历设备物品表：
+装备策略的 `machineBehavior()` 返回非空行为时，引擎会在 common setup 自动为
+`EquipmentRegistry.recordItem` 登记的生成物品绑定行为，早于插件的 `registerRuntime`。
+自定义装备策略生成物品后也应记录归属，才能参与此流程。
+
+额外物品在插件运行时钩子中绑定：
 
 ```java
-for (EquipmentRegistry.EquipmentItemRecord record : EquipmentRegistry.itemRecords()) {
-    MachineItemBehavior behavior = record.equipment().strategy().machineBehavior();
-    if (behavior != null) {
-        MachineItemBehaviors.register(record.entry().get(), behavior);
-    }
+@Override
+public void registerRuntime(RuntimeDomainRegistration runtime) {
+    runtime.itemBehavior(MY_EXTRA_TOOL.get(), RegulatorBehavior.INSTANCE);
 }
-MachineItemBehaviors.freeze();
 ```
 
 :::caution
-`MachineItemBehaviors.freeze()` 后不可再注册——查找路径每次右键都走一次冻结表读取，必须零开销。
+共享表由引擎在 load complete 冻结，插件不能自行调用 `MachineItemBehaviors.freeze()`。冻结后不可再注册。
 :::
 
 ## 反馈语言键
@@ -89,6 +90,6 @@ RESUMED_KEY = lang.key("equipment", "regulator.resumed", "Machine resumed", "机
 | 类/方法                                         | 用途                           |
 |-------------------------------------------------|--------------------------------|
 | `MachineItemBehavior.useOnMachine(...)`         | 右键机器行为（双端分派）       |
-| `MachineItemBehaviors.register(item, behavior)` | 注册物品行为                   |
+| `runtime.itemBehavior(item, behavior)` | 在运行时钩子注册额外物品行为                   |
 | `MachineItemBehaviors.find(item)`               | 查询（每次右键一次冻结表读取） |
-| `MachineItemBehaviors.freeze()`                 | 冻结（注册后调用）             |
+| `MachineItemBehaviors.freeze()`                 | 冻结（引擎在 load complete 调用）             |

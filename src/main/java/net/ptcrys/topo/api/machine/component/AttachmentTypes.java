@@ -5,6 +5,8 @@ import net.ptcrys.topo.api.api.infrastructure.FreezableStrategyRegistry;
 
 import net.minecraft.resources.Identifier;
 
+import org.jetbrains.annotations.ApiStatus;
+
 import java.util.List;
 
 /** Registry for trait mount metadata types. H == S: the metadata type object is its strategy. */
@@ -18,6 +20,7 @@ public final class AttachmentTypes {
      * Single write entry for {@link MachineDomainRegistration#attachmentType}.
      * Product code must not call this.
      */
+    @ApiStatus.Internal
     public static <M extends Attachment> AttachmentType<M> begin(Identifier id, Class<M> metadataClass) {
         AttachmentType<M> type = new AttachmentType<>(id, metadataClass);
         REGISTRY.register(id, type, type);
@@ -36,6 +39,7 @@ public final class AttachmentTypes {
         return REGISTRY.isFrozen();
     }
 
+    @ApiStatus.Internal
     public static void freeze() {
         REGISTRY.freeze();
     }

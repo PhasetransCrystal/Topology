@@ -6,6 +6,8 @@ import net.ptcrys.topo.api.machine.resource.MachineResourceType;
 
 import net.minecraft.resources.Identifier;
 
+import org.jetbrains.annotations.ApiStatus;
+
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +24,7 @@ public final class RecipeCapabilities {
      * Internal write entry for {@link RecipeDomainRegistration#capability}.
      * Product code must not call this directly.
      */
+    @ApiStatus.Internal
     public static <C extends RecipeCapability<?, ?>> C begin(C capability) {
         REGISTRY.register(capability.id(), capability, capability);
         return capability;
@@ -62,8 +65,11 @@ public final class RecipeCapabilities {
         REGISTRY.verifyOwnedHandle(id, capability);
     }
 
+    @ApiStatus.Internal
     public static void freeze() {
-        REGISTRY.freeze();
+        if (REGISTRY.isFrozen()) {
+            return;
+        }
         List<RecipeCapability<?, ?>> capabilities = REGISTRY.handlesView();
         int indexingCount = 0;
         for (RecipeCapability<?, ?> capability : capabilities) {
@@ -85,8 +91,10 @@ public final class RecipeCapabilities {
                 }
             }
         }
+        Map<MachineResourceType<?>, SlottedRecipeCapability<?, ?, ?>> slottedSnapshot = Map.copyOf(slotted);
         indexingSnapshot = indexing;
-        slottedByResourceType = Map.copyOf(slotted);
+        slottedByResourceType = slottedSnapshot;
+        REGISTRY.freeze();
     }
 
     /**

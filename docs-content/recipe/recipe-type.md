@@ -21,6 +21,7 @@ public class TopoRecipeType<R extends TopoRecipe> {
     public TopoRecipeType<R> importRecipesFrom(Function<..., ImportedRecipeAdapter<R>>, RecipeType<?>... types);
     public TopoRecipeType<R> exportRecipesTo(..., RecipeType<?> foreignType);
     public TopoRecipe.Builder<R> recipe(String recipeName);
+    public ResourceKey<Recipe<?>> recipeKey(String recipeName);
     public TopoRecipeType<R> addRecipe(String recipeName, R recipe);
     public @Nullable RecipeHolder<R> findRecipe(MachineBlockEntity machine);
 
@@ -60,8 +61,20 @@ recipe.recipeType("spell_crafting", new SpellRecipeType(plugin.recipe().id("spel
 
 ## TopoRecipe.Builder — 完整链
 
+`recipe(name)` 和 `addRecipe(name, ...)` 接受该类型下的路径，不能含 `modid:`。
+RegistryLib 自动加上配方类型路径与所属命名空间：类型 `mymod:grinding` 的 `copper/to_dust`
+会输出为 `data/mymod/recipe/grinding/copper/to_dust.json`。非法路径在声明时拒绝。
+`type.recipeKey("copper/to_dust")` 返回完整的配方注册表键；声明去重、导入替换和运行时引用使用这个键，
+不会再从已加载配方的键拆出局部 path 来判断身份。
+
+导入配方的运行时键使用 `imports/<类型路径长度>/<类型路径>/<来源 namespace>/<来源完整 path>`，
+例如 `mymod:imports/8/grinding/minecraft/iron_ingot`。类型路径可嵌套，长度字段明确其边界；来源 namespace 与 path 保留独立边界；
+与已有配方键碰撞时直接报错。旧版下划线编码无法可靠还原来源，不做猜测迁移；旧版活动导入配方
+进入既有的缺失配方状态并保留输入和进度，旧引用需显式迁移。默认进度条由框架提供，指向 `topo:textures/gui/progress_bar/arrow.png`；
+下游仅在需要自定义外观时覆盖纹理。
+
 ```java
-new TopoRecipe.Builder<>(type, "mymod:path")
+type.recipe("path")
         .input(use) / .output(use)          // 启动 I/O（RecipeInputUse/RecipeOutputUse）
         .tickInput(use) / .tickOutput(use)  // 每 tick I/O
         .duration(ticks)                    // 默认 100
@@ -74,11 +87,11 @@ new TopoRecipe.Builder<>(type, "mymod:path")
 ## ProductionLine — 生产线
 
 ```java
-// registerRecipeTypes（最晚 registerRecipes；ProductionLines.freeze() 在钩子 8 末）：
+// registerRecipeTypes（最晚 registerRecipes；ProductionLines.freeze() 在钩子 16 末）：
 ProductionLine macerating = recipe.productionLine("macerating");
 
 // 配方引用：
-new TopoRecipe.Builder<>(type, "mymod:iron_dust")
+type.recipe("iron_dust")
         .productionLine(macerating)
         ...
         .save();
@@ -96,5 +109,5 @@ new TopoRecipe.Builder<>(type, "mymod:iron_dust")
 | `recipeType.recipe(name)` / `.addRecipe(name, recipe)`                                                                                  | 配方写入                           |
 | `recipeType.findRecipe(machine)`                                                                                                        | 机器侧查找                         |
 | `recipe.recipeType(path[, customType])`                                                                                                 | 领域注册（钩子 2）                 |
-| `recipe.productionLine(path)`                                                                                                           | 生产线（钩子 2/8，freeze 在 8 末） |
-| `TopoRecipe.Builder(type, id)` + `.input/.output/.tickInput/.tickOutput/.duration/.productionLine/.replacesImported/.buildRecipe/.save` | 配方构建                           |
+| `recipe.productionLine(path)`                                                                                                           | 生产线（钩子 2/16，freeze 在 16 末） |
+| `type.recipe(id)` + `.input/.output/.tickInput/.tickOutput/.duration/.productionLine/.replacesImported/.buildRecipe/.save` | 配方构建                           |

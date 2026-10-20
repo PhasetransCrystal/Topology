@@ -8,6 +8,7 @@ import com.lowdragmc.lowdraglib2.gui.texture.GuiTexture
 import com.lowdragmc.lowdraglib2.gui.texture.GuiTextureGroup
 import com.lowdragmc.lowdraglib2.gui.texture.IGuiTexture
 import com.lowdragmc.lowdraglib2.gui.util.DrawerHelperClient
+import org.jetbrains.annotations.ApiStatus
 
 import java.util.function.Supplier
 
@@ -208,6 +209,7 @@ object MachineUiIcons {
     @JvmStatic
     fun iconOr(resourceType: MachineResourceType<*>, fallback: IGuiTexture): IGuiTexture = icon(resourceType) ?: fallback
 
+    @ApiStatus.Internal
     @JvmStatic
     fun freeze() = REGISTRY.freeze()
 

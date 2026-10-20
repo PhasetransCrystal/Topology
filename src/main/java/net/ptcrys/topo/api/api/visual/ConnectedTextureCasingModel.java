@@ -1,5 +1,7 @@
 package net.ptcrys.topo.api.api.visual;
 
+import net.ptcrys.topo.helper.IdHelper;
+
 import net.minecraft.client.renderer.block.BlockAndTintGetter;
 import net.minecraft.client.renderer.block.dispatch.BlockStateModel;
 import net.minecraft.client.renderer.block.dispatch.BlockStateModelPart;
@@ -26,7 +28,7 @@ import java.util.List;
 public record ConnectedTextureCasingModel(Identifier base, Identifier ctm, Identifier family)
         implements CustomUnbakedBlockStateModel {
 
-    public static final Identifier LOADER = Identifier.parse("topo:ctm_casing");
+    public static final Identifier LOADER = IdHelper.id("ctm_casing");
     private static final ModelDebugName DEBUG_NAME = () -> "ConnectedTextureCasingModel";
 
     public static final MapCodec<ConnectedTextureCasingModel> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(

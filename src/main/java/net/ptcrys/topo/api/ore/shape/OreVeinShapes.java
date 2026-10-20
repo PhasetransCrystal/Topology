@@ -5,6 +5,8 @@ import net.ptcrys.topo.api.api.infrastructure.FreezableStrategyRegistry;
 
 import net.minecraft.resources.Identifier;
 
+import org.jetbrains.annotations.ApiStatus;
+
 import java.util.List;
 import java.util.Objects;
 
@@ -16,6 +18,7 @@ public final class OreVeinShapes {
     private OreVeinShapes() {}
 
     /** Single write entry for {@link OreDomainRegistration#shape}. */
+    @ApiStatus.Internal
     public static OreVeinShape begin(Identifier id, OreVeinShape.Strategy strategy) {
         Objects.requireNonNull(id, "id");
         Objects.requireNonNull(strategy, "strategy");
@@ -34,6 +37,7 @@ public final class OreVeinShapes {
         return REGISTRY.isFrozen();
     }
 
+    @ApiStatus.Internal
     public static void freeze() {
         REGISTRY.freeze();
     }

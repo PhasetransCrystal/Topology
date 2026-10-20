@@ -5,18 +5,18 @@ sidebar_position: 3
 # Embedding（无 topo 宿主）
 
 默认集成依赖库的宿主 Mod `@Mod("topo")`——它注册 API 插件并接线全部框架运行时。
-如果你的 Mod 想**完全内嵌库**（不出现在依赖列表的 `topo` mod），需要自己复制这份接线清单。
+当前仅保证保留 `topo` 宿主的依赖库模式。下列清单说明宿主承担的职责；
+完全内嵌还需要迁移共享条目及自动事件订阅，不能通过复制接线完成。
 
 ## 完整接线清单
 
-以下每一项都在宿主 `Topology` 构造器里执行（`Topology.java:46-62`），嵌入时逐条复制：
+以下列出宿主 `Topology` 构造器及其内部模块承担的接线：
 
 | 调用                                                   | 用途                                        |
 |--------------------------------------------------------|---------------------------------------------|
 | `TopoPlugins.register(OfficialTopoAPIPlugin.INSTANCE)` | API 插件（附件类型 + API 语言键）           |
 | `TopoPlugins.register(你的插件)`                       | 你自己的内容插件                            |
-| `Machines.registerResourceCapabilities(modEventBus)`   | 机器资源能力的原版 capability 注册          |
-| `PipeSpecTooltips.register(modEventBus)`               | 管道规格悬浮面板（freeze `ItemTooltipUis`） |
+| `TopoPlugins.attachHost(modEventBus)`              | 内容管线、资源能力、运行时钩子及统一冻结点 |
 | `CtmClientInit.register(modEventBus)`                  | CTM blockstate-model codec 客户端注册       |
 | `MachineDataNetworking.register(modEventBus)`          | 机器数据同步网络通道                        |
 | `MachineDataSyncBatcher.register(modEventBus)`         | 同步批量器                                  |
@@ -30,31 +30,24 @@ sidebar_position: 3
 
 ## 启动管线
 
-首个 `RegisterEvent` 上以 `HIGHEST` 优先级注册（保证所有 `@Mod` 构造器已跑完，RegistryLib 的
-`LOW` 监听器仍能看到队列条目）：
+宿主只接线一次：
 
 ```java
-private static void bootstrap(RegisterEvent event) {
-    if (bootstrapped) return;
-    bootstrapped = true;
-    TopoPluginEngine.prepare();          // recipe → material → equipment
-    TopoPluginEngine.bootstrapMachine();
-    TopoPluginEngine.bootstrapOre();
-    TopoPluginEngine.bootstrapLang();
-}
+TopoPlugins.attachHost(modEventBus);
 ```
 
-:::caution
-`prepare()` 锁定插件表——管线启动后 `TopoPlugins.register` 抛异常。所有插件（含 API 插件）必须在
-`@Mod` 构造器里注册完。
-:::
+引擎负责首个 `RegisterEvent` 的 HIGHEST 内容阶段、common setup 的 Plugin 运行时绑定，
+以及 load complete 的共享表冻结。不要另外注册 bootstrap 监听器或管道 tooltip 监听器。
+所有 Plugin 必须在 Mod 构造期登记完毕。完整顺序见 [Plugin Lifecycle](foundation/lifecycle.md)。
 
 ## 共享注册表
 
-引擎把机器的共享 BlockEntity 类型与管道方块注册到 `Topology.REGISTRY`（`topo` 命名空间）——
-嵌入时你的 Mod 需要提供该 RegistryCore，或改用默认 topo 宿主。机器方块本体注册在你的插件
-RegistryCore 上，不受影响。
+当前共享机器 BlockEntity 类型和旧 `Pipes.register` 管道仍归 `Topology.REGISTRY`（`topo` 命名空间）。
+`machine.pipe(...)` 和机器方块本体则归各自 Plugin 的 RegistryCore。
+
+**完全移除 topo Mod 仍不是受支持的一步式接入方式。** 仅复制接线清单无法迁移这些共享条目的 namespace，
+也无法迁移绑定 `topo` 的自动事件订阅。需要额外适配共享资源和客户端接线；推荐保留默认 topo 宿主。
 
 :::info
-保持默认集成（依赖 `topo` mod）时无需读本节——[Getting Started](getting-started.md) 的三步就够。
+保持默认集成（依赖 `topo` mod）时无需读本节——[Getting Started](getting-started.md) 的插件登记即可。
 :::
