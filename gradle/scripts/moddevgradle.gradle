@@ -11,8 +11,6 @@ sourceSets {
     demo {
         compileClasspath += sourceSets.main.output
         runtimeClasspath += sourceSets.main.output
-        resources.srcDirs('src/generated/topodemo/client', 'src/generated/topodemo/server')
-        resources.exclude('**/.cache/**')
     }
 }
 
@@ -58,36 +56,19 @@ neoForge {
             clientData()
             ideName = "clientData"
             gameDirectory.set(file('run/clientData'))
-            programArguments.addAll('--mod', project.mod_id)
+            programArguments.addAll('--mod', project.mod_id, '--mod', 'topodemo')
             programArguments.addAll('--all')
             programArguments.addAll('--output', file('src/generated/resources/').getAbsolutePath())
             programArguments.addAll('--existing', file('src/main/resources/').getAbsolutePath())
+            programArguments.addAll('--existing', file('src/demo/resources/').getAbsolutePath())
         }
         serverData {
             serverData()
             ideName = "serverData"
             gameDirectory.set(file('run/serverData'))
-            programArguments.addAll('--mod', project.mod_id)
+            programArguments.addAll('--mod', project.mod_id, '--mod', 'topodemo')
             programArguments.addAll('--all')
             programArguments.addAll('--output', file('src/generated/serverResources/').getAbsolutePath())
-            programArguments.addAll('--existing', file('src/main/resources/').getAbsolutePath())
-        }
-
-        contentClientData {
-            clientData()
-            ideName = "contentClientData"
-            gameDirectory.set(file('run/contentClientData'))
-            programArguments.addAll('--mod', 'topodemo', '--all')
-            programArguments.addAll('--output', file('src/generated/topodemo/client/').getAbsolutePath())
-            programArguments.addAll('--existing', file('src/main/resources/').getAbsolutePath())
-            programArguments.addAll('--existing', file('src/demo/resources/').getAbsolutePath())
-        }
-        contentServerData {
-            serverData()
-            ideName = "contentServerData"
-            gameDirectory.set(file('run/contentServerData'))
-            programArguments.addAll('--mod', 'topodemo', '--all')
-            programArguments.addAll('--output', file('src/generated/topodemo/server/').getAbsolutePath())
             programArguments.addAll('--existing', file('src/main/resources/').getAbsolutePath())
             programArguments.addAll('--existing', file('src/demo/resources/').getAbsolutePath())
         }
@@ -95,7 +76,7 @@ neoForge {
         configureEach {
             // ModDevGradle otherwise loads every declared source mod, including in datagen.
             loadedMods = [project.neoForge.mods.getByName(project.mod_id)]
-            if (name in ['client', 'server', 'contentClientData', 'contentServerData']) {
+            if (name in ['client', 'server', 'clientData', 'serverData']) {
                 loadedMods.add(project.neoForge.mods.getByName('topodemo'))
             }
             // 用户开发环境推荐的日志数据
@@ -113,12 +94,4 @@ neoForge {
         testedMod = mods.getByName(mod_id)
         loadedMods = [mods.getByName(mod_id)]
     }
-}
-
-// Keep the normal datagen entry points complete while preserving separate output roots.
-tasks.named('runClientData') {
-    dependsOn 'runContentClientData'
-}
-tasks.named('runServerData') {
-    dependsOn 'runContentServerData'
 }

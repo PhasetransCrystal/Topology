@@ -2,6 +2,7 @@ package net.ptcrys.topo.api.recipe;
 
 import net.ptcrys.registrylib.RegistryCore;
 import net.ptcrys.registrylib.util.entry.RecipeTypeEntry;
+import net.ptcrys.topo.Topology;
 import net.ptcrys.topo.api.api.builtin.LangDomainRegistration;
 import net.ptcrys.topo.api.api.lang.LangKey;
 import net.ptcrys.topo.api.recipe.content.TopoFluidIngredient;
@@ -87,7 +88,7 @@ public class TopoRecipeType<R extends TopoRecipe> {
         this.id = Objects.requireNonNull(id, "recipe type id");
         this.recipeFactory = Objects.requireNonNull(recipeFactory, "recipe factory");
         this.progressBarTexture = Identifier.fromNamespaceAndPath(
-                id.getNamespace(), "textures/gui/progress_bar/arrow.png");
+                Topology.MODID, "textures/gui/progress_bar/arrow.png");
     }
 
     /** Package write entry used by {@link TopoRecipeTypes#begin}. */
@@ -562,7 +563,7 @@ public class TopoRecipeType<R extends TopoRecipe> {
                 }
                 ResourceKey<Recipe<?>> importedId = importedHolderId(source.id());
                 if (!seenIds.add(importedId)) {
-                    continue;
+                    throw new IllegalStateException("Recipe type " + id + ": imported " + source.id().identifier() + " collides with an existing recipe id " + importedId.identifier());
                 }
                 merged.add(new RecipeHolder<>(importedId, adapted));
             }
@@ -602,27 +603,14 @@ public class TopoRecipeType<R extends TopoRecipe> {
     }
 
     /**
-     * 导入配方合成 id：{@code <本类型>/<来源前缀><原 path>}（path 一律小写；大写仅用于 Java 句柄常量名）。
-     * <ul>
-     * <li>原版（{@code minecraft}）→ {@code vanilla_}，如 {@code electric_furnace/vanilla_iron_ingot}</li>
-     * <li>其它模组 → {@code <modid>_}，如 {@code electric_furnace/create_crushed_iron}</li>
-     * </ul>
+     * 导入配方合成 id：{@code imports/<类型路径长度>/<类型路径>/<来源 namespace>/<原 path>}。
+     * 类型路径与来源路径均可嵌套；长度字段和独立 namespace 段保留各自边界。
      */
-    private ResourceKey<Recipe<?>> importedHolderId(ResourceKey<Recipe<?>> sourceId) {
+    ResourceKey<Recipe<?>> importedHolderId(ResourceKey<Recipe<?>> sourceId) {
         Identifier source = sourceId.identifier();
-        String prefixedPath = id.getPath() + "/" + importSourcePrefix(source.getNamespace()) + source.getPath();
+        String prefixedPath = "imports/" + id.getPath().length() + "/" + id.getPath() + "/" + source.getNamespace() + "/" + source.getPath();
         return ResourceKey.create(
                 Registries.RECIPE, Identifier.fromNamespaceAndPath(id.getNamespace(), prefixedPath));
-    }
-
-    /**
-     * 导入来源前缀（小写）：原版固定 {@code vanilla_}，其它模组用其 namespace + {@code _}。
-     */
-    static String importSourcePrefix(String namespace) {
-        if ("minecraft".equals(namespace)) {
-            return "vanilla_";
-        }
-        return namespace + "_";
     }
 
     /**

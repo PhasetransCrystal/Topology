@@ -13,7 +13,7 @@ public final class BuiltinEquipment {
     public static final Equipment REGULATOR = TopoDemoPlugin.INSTANCE.equipment().kind("regulator",
             RegulatorEquipment.builder()
                     .registryPath("%s_regulator").displayName("%s Regulator", "%s调节器")
-                    .texture(TextureRef.mc("item/compass"))
+                    .texture(TextureRef.mc("item/compass_16"))
                     .creativeTab(() -> BuiltinCreativeTabs.KEY.getKey())
                     .machineBehavior(new RegulatorBehavior(ContentLang.TOGGLED))
                     .build());

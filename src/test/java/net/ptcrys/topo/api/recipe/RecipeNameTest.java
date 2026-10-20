@@ -39,6 +39,31 @@ class RecipeNameTest {
     }
 
     @Test
+    void importedIdsPreserveNamespaceAndPathBoundaries() {
+        for (String[] pair : new String[][] {
+                { "a:b_c", "a_b:c" },
+                { "minecraft:x", "vanilla:x" },
+                { "a:b/c", "a:b_c" }
+        }) {
+            assertNotEquals(type.importedHolderId(source(pair[0])), type.importedHolderId(source(pair[1])));
+        }
+        assertEquals(source("topo_test:imports/8/grinding/a/b/c"), type.importedHolderId(source("a:b/c")));
+        var nestedType = new TopoRecipeType<>(Identifier.parse("topo_test:grinding/imports/a/b"), TopoRecipe::new);
+        assertNotEquals(type.importedHolderId(source("a:b/imports/c/d")), nestedType.importedHolderId(source("c:d")));
+    }
+
+    @Test
+    void defaultProgressTextureBelongsToTheFramework() {
+        assertEquals(Identifier.parse("topo:textures/gui/progress_bar/arrow.png"), type.progressBarTexture());
+        assertEquals(20, type.progressBarTextureWidth());
+        assertEquals(20, type.progressBarTextureFrameHeight());
+    }
+
+    private static ResourceKey<net.minecraft.world.item.crafting.Recipe<?>> source(String id) {
+        return ResourceKey.create(Registries.RECIPE, Identifier.parse(id));
+    }
+
+    @Test
     void invalidNamesFailBeforeQueuingRecipesOrInvokingFactories() {
         for (String name : new String[] { "topodemo:copper_ingot_to_dust", "", " ", "Uppercase", "has space", null }) {
             assertInvalidPath(() -> type.recipe(name));

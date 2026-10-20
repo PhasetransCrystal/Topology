@@ -24,6 +24,22 @@ var generateModMetadata = tasks.register("generateModMetadata", ProcessResources
 // Include the output of "generateModMetadata" as an input directory for the build
 // this works with both building through Gradle and the IDE.
 sourceSets.main.resources.srcDir generateModMetadata
+
+// Multi-mod datagen creates one resource root per mod id.
+sourceSets.main.resources {
+    srcDir("src/generated/resources/${mod_id}")
+    srcDir("src/generated/serverResources/${mod_id}")
+    exclude('**/*.bbmodel')
+    exclude('**/.cache/**')
+}
+
+sourceSets.demo.resources {
+    srcDir('src/generated/resources/topodemo')
+    srcDir('src/generated/serverResources/topodemo')
+    exclude('**/*.bbmodel')
+    exclude('**/.cache/**')
+}
+
 // To avoid having to run "generateModMetadata" manually, make it run on every project reload
 neoForge.ideSyncTask generateModMetadata
 

@@ -3,6 +3,7 @@ package net.ptcrys.topodemo.api.ore.common;
 import net.ptcrys.registrylib.RegistryCore;
 import net.ptcrys.topo.api.material.Material;
 import net.ptcrys.topo.api.ore.OreEnvironment;
+import net.ptcrys.topo.api.ore.OreFeatureKeys;
 import net.ptcrys.topo.api.ore.OreHostRule;
 import net.ptcrys.topo.api.ore.OrePlacement;
 import net.ptcrys.topo.api.ore.OreVein;
@@ -35,6 +36,7 @@ import net.neoforged.neoforge.common.world.BiomeModifiers;
 import net.neoforged.neoforge.registries.NeoForgeRegistries;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 
 /**
@@ -44,7 +46,6 @@ import java.util.List;
  */
 public final class VanillaOreFeatureBridge {
 
-    private static final String PREFIX = "ore/single/";
     private static final OreBlockResolver RESOLVER = OreBlockResolver.materialHelper();
 
     private final String namespace;
@@ -152,29 +153,23 @@ public final class VanillaOreFeatureBridge {
     }
 
     private static List<TagKey<Biome>> biomeTags(OreEnvironment environment) {
-        List<TagKey<Biome>> tags = new ArrayList<>();
+        var tags = new LinkedHashSet<TagKey<Biome>>();
         for (var dimension : environment.dimensions()) {
             tags.add(dimension.biomeTag());
         }
-        return tags;
+        return List.copyOf(tags);
     }
 
     private static ResourceKey<ConfiguredFeature<?, ?>> configuredKey(OreVein vein) {
-        return ResourceKey.create(Registries.CONFIGURED_FEATURE, veinFeatureId(vein, PREFIX + vein.id().getPath()));
+        return OreFeatureKeys.configured(vein.id());
     }
 
     private static ResourceKey<PlacedFeature> placedKey(OreVein vein) {
-        return ResourceKey.create(Registries.PLACED_FEATURE, veinFeatureId(vein, PREFIX + vein.id().getPath()));
+        return OreFeatureKeys.placed(vein.id());
     }
 
     private static ResourceKey<BiomeModifier> biomeModifierKey(OreVein vein, TagKey<Biome> biomeTag) {
-        String path = PREFIX + vein.id().getPath() + "/" + biomeTag.location().toString().replace(':', '_').replace('/', '_');
-        return ResourceKey.create(NeoForgeRegistries.Keys.BIOME_MODIFIERS, veinFeatureId(vein, path));
-    }
-
-    /** Feature keys inherit the vein owner's namespace (not a hard-coded host mod id). */
-    private static net.minecraft.resources.Identifier veinFeatureId(OreVein vein, String path) {
-        return net.minecraft.resources.Identifier.fromNamespaceAndPath(vein.id().getNamespace(), path);
+        return OreFeatureKeys.biomeModifier(vein.id(), biomeTag);
     }
 
     private record FeatureVein(OreVein vein, OrePlacement.Feature feature) {}

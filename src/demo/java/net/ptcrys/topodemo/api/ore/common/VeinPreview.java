@@ -28,7 +28,7 @@ public record VeinPreview(MaterialForm iconForm, LangKey height, LangKey composi
             ItemStack stack = new ItemStack(MaterialHelper.requireItem(entry.material(), iconForm));
             ItemSlot slot = MachineUiComponentTemplate.INSTANCE.createItemSlot().setItem(stack);
             ItemSlot.JEISupport.recipeIngredient(slot, IngredientIO.OUTPUT, () -> Stream.of(stack));
-            ItemSlot.JEISupport.recipeSlot(slot, () -> Stream.of(stack));
+            ItemSlot.JEISupport.recipeSlot(slot, IngredientIO.OUTPUT, () -> Stream.of(stack));
             root.addChild(slot);
             root.addChild(new Label().setText(composition.getComponent(
                     entry.material().displayName(), entry.weight())));

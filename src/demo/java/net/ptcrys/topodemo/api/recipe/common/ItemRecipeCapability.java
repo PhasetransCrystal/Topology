@@ -169,7 +169,7 @@ public final class ItemRecipeCapability extends SlottedRecipeCapability<TopoItem
         if (content != null) {
             slot.setItem(content.displayStacks().getFirst());
             ItemSlot.JEISupport.recipeIngredient(slot, IngredientIO.INPUT, () -> content.displayStacks().stream());
-            ItemSlot.JEISupport.recipeSlot(slot, () -> content.displayStacks().stream());
+            ItemSlot.JEISupport.recipeSlot(slot, IngredientIO.INPUT, () -> content.displayStacks().stream());
         }
         return slot;
     }
@@ -185,7 +185,7 @@ public final class ItemRecipeCapability extends SlottedRecipeCapability<TopoItem
             ItemStack stack = content.stack();
             slot.setItem(stack);
             ItemSlot.JEISupport.recipeIngredient(slot, io, () -> Stream.of(stack));
-            ItemSlot.JEISupport.recipeSlot(slot, () -> Stream.of(stack));
+            ItemSlot.JEISupport.recipeSlot(slot, io, () -> Stream.of(stack));
         }
         return slot;
     }

@@ -67,6 +67,12 @@ RegistryLib 自动加上配方类型路径与所属命名空间：类型 `mymod:
 `type.recipeKey("copper/to_dust")` 返回完整的配方注册表键；声明去重、导入替换和运行时引用使用这个键，
 不会再从已加载配方的键拆出局部 path 来判断身份。
 
+导入配方的运行时键使用 `imports/<类型路径长度>/<类型路径>/<来源 namespace>/<来源完整 path>`，
+例如 `mymod:imports/8/grinding/minecraft/iron_ingot`。类型路径可嵌套，长度字段明确其边界；来源 namespace 与 path 保留独立边界；
+与已有配方键碰撞时直接报错。旧版下划线编码无法可靠还原来源，不做猜测迁移；旧版活动导入配方
+进入既有的缺失配方状态并保留输入和进度，旧引用需显式迁移。默认进度条由框架提供，指向 `topo:textures/gui/progress_bar/arrow.png`；
+下游仅在需要自定义外观时覆盖纹理。
+
 ```java
 type.recipe("path")
         .input(use) / .output(use)          // 启动 I/O（RecipeInputUse/RecipeOutputUse）

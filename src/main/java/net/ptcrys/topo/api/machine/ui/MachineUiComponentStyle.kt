@@ -168,8 +168,8 @@ object MachineUiComponentStyle {
 
     /**
      * 纯标量输入配方(无物品/流体输入槽)的进度条左侧装饰:旋转风扇动画。
-     * 素材源自 GTCEU HPCA 主动散热器(16x64 四帧竖条),已重打包为 2x2 雪碧格;
-     * 帧间隔沿用原 mcmeta 的 9 tick。每次调用新建实例(AnimationTexture 自带帧状态)。
+     * Topo 自带 2x2 雪碧格，每帧 16x16，帧间隔为 9 tick。
+     * 每次调用新建实例(AnimationTexture 自带帧状态)。
      */
     fun scalarConversionFanTexture(): AnimationTexture = AnimationTexture("topo:textures/gui/recipe/scalar_conversion_fan.png")
         .setCellSize(2)

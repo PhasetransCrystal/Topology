@@ -72,19 +72,28 @@ RegistryLib 的 `addSuppliers` 会立即调用 Supplier，此阶段不能传入�
 
 ```bash
 ./gradlew demoClasses compileTestJava spotlessCheck
+./gradlew test
 ./gradlew runClientData
+python3 tools/verify_datagen.py
 ./gradlew runServerData
 ./gradlew runClient
 ```
 
-普通数据生成入口会先执行对应的 `runContentClientData` / `runContentServerData`，
-为 `topodemo` 输出至 `src/generated/topodemo/client` 或 `src/generated/topodemo/server`，
-再为 `topo` 输出至 `src/generated/resources` 或 `src/generated/serverResources`。
-这些生成目录分别加入对应 source set 的资源目录；`src/demo/resources` 仅保留手写资源与模组元数据。
-生成目录必须与手写资源隔离，客户端和服务端也使用独立目录，避免数据生成缓存清理其他文件。
-也可以单独执行两个 `runContent*Data` 任务。RegistryLib 当前监听 `GatherDataEvent.Client`，
+`runClientData` / `runServerData` 均通过两个 `--mod` 参数生成 `topo` 和 `topodemo` 的资源。
+客户端仍输出至 `src/generated/resources`，NeoForge 自动按 modid 分为 `topo/`、`topodemo/`；
+服务端使用 `src/generated/serverResources`，避免独立生成器的缓存清理客户端输出。
+`resources.gradle` 将各 modid 的目录接入对应 source set；手写资源与模组元数据仍留在原资源目录。
+RegistryLib 当前监听 `GatherDataEvent.Client`，
 其模型、语言、标签与配方均须执行 `runClientData` 才会生成；`runServerData` 不能替代它。
 生成前启动游戏尚无这些内容的模型、语言、标签和原版配方。
+
+当前开发依赖为包含多 Core locale 身份修复的 RegistryLib `26.43-SNAPSHOT`，本地修改库后需先在
+RegistryLib 仓库执行 `./gradlew publishToMavenLocal`。核验脚本直接读取真实生成目录及语言文件的
+CachedOutput 记录，检查两个模组的三种语言、独立文本、条目名称、创造栏及各领域代表资源；
+仅显式声明 en/cn 的勘测仪名称和创造栏标题不要求 zh_tw。它不会补写缺失输出。
+脚本还检查生成模型引用的纹理是否真实存在于模组资源或原版客户端包。
+默认读取 Gradle 缓存中的 Minecraft 客户端 JAR；缓存位置不同时可用 `--minecraft-client <jar路径>` 指定。
+当前 LDLib2 使用 `26.1.2.42`，与现有 JEI 的 typed ingredient 工厂对接；预览槽须显式传入 INPUT/OUTPUT。
 
 创造栏「材料与机器」应有 20 项：6 个锭/粉、4 个矿石、3 个调节器、5 台机器、1 根管道、1 个勘测仪。
 
