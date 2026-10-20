@@ -112,3 +112,11 @@ neoForge {
         loadedMods = [mods.getByName(mod_id)]
     }
 }
+
+// Keep the normal datagen entry points complete while preserving separate output roots.
+tasks.named('runClientData') {
+    dependsOn 'runContentClientData'
+}
+tasks.named('runServerData') {
+    dependsOn 'runContentServerData'
+}

@@ -70,12 +70,15 @@ RegistryLib 的 `addSuppliers` 会立即调用 Supplier，此阶段不能传入�
 
 ```bash
 ./gradlew demoClasses compileTestJava spotlessCheck
-./gradlew runContentClientData
-./gradlew runContentServerData
+./gradlew runClientData
+./gradlew runServerData
 ./gradlew runClient
 ```
 
-两个数据生成任务只为 `topodemo` 输出数据至 `src/demo/resources`。
+普通数据生成入口会先执行对应的 `runContentClientData` / `runContentServerData`，
+为 `topodemo` 输出至 `src/demo/resources`，再为 `topo` 输出至 `src/generated/resources`。
+也可以单独执行两个 `runContent*Data` 任务。RegistryLib 当前监听 `GatherDataEvent.Client`，
+其模型、语言、标签与配方均须执行 `runClientData` 才会生成；`runServerData` 不能替代它。
 生成前启动游戏尚无这些内容的模型、语言、标签和原版配方。
 
 创造栏「材料与机器」应有 20 项：6 个锭/粉、4 个矿石、3 个调节器、5 台机器、1 根管道、1 个勘测仪。
