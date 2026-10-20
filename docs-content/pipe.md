@@ -21,12 +21,12 @@ PipeDefinition       ← 一种管道（资源类型 × 等级）
 |---------------------------------------|----------------------------------------------------------|-----------------------------|
 | [PipeStrategy](pipe/pipe-strategy.md) | 继承 `PipeDistributionStrategy` 自定义分发逻辑 + 配置 UI | 需要轮询/均分之外的分发行为 |
 | [Pipe Surveyor](pipe/pipe-survey.md)  | `PipeSurveyTool` 标记接口 + 勘测行为                     | 需要网络勘测工具            |
-| **Pipe（本页）**                      | `Pipes.register` 声明管道、交互规则                      | 添加传输管道                |
+| **Pipe（本页）**                      | `machine.pipe` 声明管道、交互规则                      | 添加传输管道                |
 
 ## 注册管道
 
 ```java
-Pipes.register("item_pipe_t1")
+plugin.machine().pipe("item_pipe_t1")
     .resource(myItemProfile)                            // PipeResourceProfile 实例
     .blockTemplate(new MyPipeBlockTemplate())            // 外观/模型模板
     .displayName("Item Pipe Tier 1")
@@ -36,6 +36,8 @@ Pipes.register("item_pipe_t1")
     .strategy(myRoundRobin, new AggregationWindow(1, 16, 4, 4))  // 你的分发策略 + 聚合窗口
     .build();
 ```
+
+使用领域入口会让管道及其方块/物品归属插件的命名空间和 RegistryCore。
 
 ### 参数说明
 
@@ -91,7 +93,7 @@ public class MyPipeBlockTemplate implements PipeBlockTemplate {
 
 | 类/方法                                     | 用途                                  |
 |---------------------------------------------|---------------------------------------|
-| `Pipes.register(path)`                      | 开始管道注册                          |
+| `plugin.machine().pipe(path)`                      | 开始管道注册                          |
 | `.resource(profile)`                        | 设置资源类型（必填）                  |
 | `.blockTemplate(template)`                  | 设置外观模板（必填）                  |
 | `.maxExtractRate(n)` / `.nodeThroughput(n)` | 吞吐配置（必填）                      |

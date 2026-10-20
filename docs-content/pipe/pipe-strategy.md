@@ -120,7 +120,7 @@ PipeDistributionStrategies.register(new GreedyStrategy());
 ## 挂到管道
 
 ```java
-Pipes.register("item_pipe_t1")
+plugin.machine().pipe("item_pipe_t1")
         ...
         .strategy(GREEDY, new AggregationWindow(1, 16, 4, 4))   // minInterval, maxInterval, initialInterval, coarseStep
         .build();

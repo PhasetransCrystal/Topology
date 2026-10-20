@@ -71,10 +71,29 @@ neoForge {
             programArguments.addAll('--existing', file('src/main/resources/').getAbsolutePath())
         }
 
+        contentClientData {
+            clientData()
+            ideName = "contentClientData"
+            gameDirectory.set(file('run/contentClientData'))
+            programArguments.addAll('--mod', 'topodemo', '--all')
+            programArguments.addAll('--output', file('src/demo/resources/').getAbsolutePath())
+            programArguments.addAll('--existing', file('src/main/resources/').getAbsolutePath())
+            programArguments.addAll('--existing', file('src/demo/resources/').getAbsolutePath())
+        }
+        contentServerData {
+            serverData()
+            ideName = "contentServerData"
+            gameDirectory.set(file('run/contentServerData'))
+            programArguments.addAll('--mod', 'topodemo', '--all')
+            programArguments.addAll('--output', file('src/demo/resources/').getAbsolutePath())
+            programArguments.addAll('--existing', file('src/main/resources/').getAbsolutePath())
+            programArguments.addAll('--existing', file('src/demo/resources/').getAbsolutePath())
+        }
+
         configureEach {
             // ModDevGradle otherwise loads every declared source mod, including in datagen.
             loadedMods = [project.neoForge.mods.getByName(project.mod_id)]
-            if (name in ['client', 'server']) {
+            if (name in ['client', 'server', 'contentClientData', 'contentServerData']) {
                 loadedMods.add(project.neoForge.mods.getByName('topodemo'))
             }
             // 用户开发环境推荐的日志数据

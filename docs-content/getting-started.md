@@ -4,6 +4,8 @@ sidebar_position: 2
 
 # Getting Started
 
+可直接参照仓库中的[内容插件实作](foundation/content-plugin.md)，追踪各注册阶段到可运行的内容。
+
 ## 添加依赖
 
 ```gradle

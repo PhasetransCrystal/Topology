@@ -61,7 +61,7 @@ recipe.recipeType("spell_crafting", new SpellRecipeType(plugin.recipe().id("spel
 ## TopoRecipe.Builder — 完整链
 
 ```java
-new TopoRecipe.Builder<>(type, "mymod:path")
+type.recipe("mymod:path")
         .input(use) / .output(use)          // 启动 I/O（RecipeInputUse/RecipeOutputUse）
         .tickInput(use) / .tickOutput(use)  // 每 tick I/O
         .duration(ticks)                    // 默认 100
@@ -78,7 +78,7 @@ new TopoRecipe.Builder<>(type, "mymod:path")
 ProductionLine macerating = recipe.productionLine("macerating");
 
 // 配方引用：
-new TopoRecipe.Builder<>(type, "mymod:iron_dust")
+type.recipe("mymod:iron_dust")
         .productionLine(macerating)
         ...
         .save();
@@ -97,4 +97,4 @@ new TopoRecipe.Builder<>(type, "mymod:iron_dust")
 | `recipeType.findRecipe(machine)`                                                                                                        | 机器侧查找                         |
 | `recipe.recipeType(path[, customType])`                                                                                                 | 领域注册（钩子 2）                 |
 | `recipe.productionLine(path)`                                                                                                           | 生产线（钩子 2/16，freeze 在 16 末） |
-| `TopoRecipe.Builder(type, id)` + `.input/.output/.tickInput/.tickOutput/.duration/.productionLine/.replacesImported/.buildRecipe/.save` | 配方构建                           |
+| `type.recipe(id)` + `.input/.output/.tickInput/.tickOutput/.duration/.productionLine/.replacesImported/.buildRecipe/.save` | 配方构建                           |
