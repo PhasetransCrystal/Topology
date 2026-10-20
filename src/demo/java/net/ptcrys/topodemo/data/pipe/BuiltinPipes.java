@@ -1,12 +1,16 @@
 package net.ptcrys.topodemo.data.pipe;
 
+import net.ptcrys.topo.api.api.lang.ChineseConvert;
 import net.ptcrys.topo.api.pipe.*;
+import net.ptcrys.topodemo.TopoDemo;
 import net.ptcrys.topodemo.api.pipe.common.*;
 import net.ptcrys.topodemo.api.recipe.BuiltinResources;
 import net.ptcrys.topodemo.data.BuiltinCreativeTabs;
 import net.ptcrys.topodemo.data.TopoDemoPlugin;
 
 import net.minecraft.resources.Identifier;
+
+import java.util.Map;
 
 public final class BuiltinPipes {
 
@@ -29,11 +33,17 @@ public final class BuiltinPipes {
                 plugin.lang().absolute(baseKey + ".desc", "Targets take turns", "目标轮流接收"),
                 plugin.lang().absolute(baseKey + ".short", "RR", "轮询"));
         PipeDistributionStrategies.register(strategy);
-        plugin.lang().absolute("block." + plugin.modId() + ".item_pipe", "Copper Item Pipe", "铜制物品管道");
         return strategy;
     }
 
     private BuiltinPipes() {}
 
-    public static void init() {}
+    public static void init() {
+        // PipeDefinition supplies en_us through its block builder.
+        if (TopoDemo.REGISTRY.doDatagen()) {
+            TopoDemo.REGISTRY.lang(ITEM_PIPE.id().toLanguageKey("block"), Map.of(
+                    "zh_cn", "铜制物品管道",
+                    "zh_tw", ChineseConvert.s2t("铜制物品管道")));
+        }
+    }
 }
