@@ -2,6 +2,7 @@ package net.ptcrys.topo.api.material;
 
 import net.ptcrys.topo.api.api.lang.LangKey;
 import net.ptcrys.topo.api.lang.DisplayNameSource;
+import net.ptcrys.topo.api.material.data.MaterialDataUse;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -35,6 +36,11 @@ public final class Material implements DisplayNameSource {
 
     public MaterialStrategy strategy() {
         return strategy;
+    }
+
+    public Material data(MaterialDataUse<?> data) {
+        strategy.addData(data);
+        return this;
     }
 
     @Override

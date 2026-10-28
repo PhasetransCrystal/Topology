@@ -111,7 +111,7 @@ HolographicRenderType holo = machine.renderType("holographic",
         new HolographicRenderType.Strategy());
 
 // registerMachines：
-Machines.begin(id, registry)
+machine.machine("my_machine")
         .render(holo.holographic(/* 参数 */))
         .build();
 ```

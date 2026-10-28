@@ -13,11 +13,13 @@ sidebar_position: 4
 
 ## 资源类型 — MachineResourceTypes
 
-一种资源类型定义「机器能存取什么资源 + 如何持久化」。在 `registerRecipeFoundation`（或 `registerMachineFoundation`）声明：
+一种资源类型定义「机器能存取什么资源 + 如何持久化」。通过插件的机器领域入口声明。如果配方能力依赖它，在 `registerRecipeFoundation` 中使用 `machine()` 入口提前声明；否则可放在 `registerMachineFoundation`：
 
 ```java
-MachineResourceType<R> type = MachineResourceTypes.begin(
-        id,                       // 资源类型 id（与配方能力 1:1）
+// registerRecipeFoundation 内先取得 var machine = machine()；
+// registerMachineFoundation 内直接使用钩子参数 machine。
+MachineResourceType<R> type = machine.resourceTypeWithDataField(
+        "my_resource",            // 当前插件命名空间下的局部路径
         R.class,                  // Resource 类型 token
         /* @Nullable */ blockCapability,   // 原版方块能力（无则 null）
         dataFieldFactory);        // ResourceDataFieldFactory<R>：如何为该资源建存储字段
@@ -79,7 +81,8 @@ public record MyPortMetadata(
 public final class MyPort extends ResourcePort<MyStack, MyResource> {
 
     // 预置 key 按槽位编号（复用同一 key 挂到不同机器不冲突）：
-    public static final ComponentKey<MyPort> INPUT_1 = ComponentKey.id("my_input_1", MyPort.class);
+    public static final ComponentKey<MyPort> INPUT_1 = ComponentKey.of(
+            MyModPlugin.INSTANCE.machine().id("my_input_1"), MyPort.class);
 
     private MyPort(ComponentContext<MyPort> context, MyPortMetadata metadata) {
         super(context, MyResources.MY.resourceType(), /* handler */, metadata);
@@ -122,7 +125,7 @@ public final class Ports {
 机器声明侧的用法：
 
 ```java
-Machines.begin(id, registry)
+machine.machine("my_machine")
         .component(Ports.myIn(MyPort.INPUT_1, 2))
         .build();
 ```
@@ -162,7 +165,7 @@ machine.bindResourceName(myType, "My Resource", "我的资源");
 MachineUiIcons.register(myType, /* icon */);
 
 // registerMachines：挂载自定义端口
-Machines.begin(id, registry)
+machine.machine("my_machine")
         .component(MyPort.mount(MyPort.INPUT_1, 2, PortAccess.input()))
         .build();
 ```
@@ -173,7 +176,6 @@ Machines.begin(id, registry)
 
 | 类/方法                                                                        | 用途                     |
 |--------------------------------------------------------------------------------|--------------------------|
-| `MachineResourceTypes.begin(id, type, capability, factory)`                    | 注册资源类型             |
 | `MachineResourceTypes.valueIoDataFieldFactory()`                               | 标量型存储工厂           |
 | `machine.resourceType(path, type, capability)`                                 | 领域入口（valueIo 默认） |
 | `machine.resourceTypeWithDataField(path, type, capability, factory)`           | 自定义工厂               |

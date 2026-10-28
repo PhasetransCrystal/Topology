@@ -33,8 +33,8 @@ Blueprint blueprint = Blueprint.of()
     .where('A', (state, expected) -> state != null && state.isAir())                    // 空气
     .build();
 
-// 2. 注册为机器
-Machines.begin(Identifier.fromNamespaceAndPath("mymod", "my_multiblock"),registry)
+// 2. 在 registerMachines(machine) 中注册为机器
+machine.machine("my_multiblock")
     .displayName("My Multiblock","大型多方块机器")
     .component(MultiblockController.mount(blueprint))
     .component(MyItemPort.mount(MyItemPort.KEY, 2))          // 你的自定义端口组件

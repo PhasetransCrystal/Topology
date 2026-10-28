@@ -36,7 +36,7 @@ public interface ConnectedTextureHost {
 
 库提供两个现成基类：`ConnectedTextureOrientedMachineBlock`（朝向机器方块）与
 `ConnectedTextureFormedMachineBlock`（成型多方块方块），均实现该接口，可直接在
-`Machines.begin(...).block(...)` 覆盖时继承。
+`machine.machine(...).block(...)` 覆盖时继承。
 
 ## 运行期激活状态
 

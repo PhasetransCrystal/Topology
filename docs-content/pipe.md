@@ -73,6 +73,12 @@ public class MyPipeBlockTemplate implements PipeBlockTemplate {
 }
 ```
 
+## 接入其他模组的容器
+
+管道通过资源类型声明的 block capability 查询相邻容器，不要求容器来自 Topo。
+复用同一个公开资源类型和兼容的 handler；目标没有对应能力时，需要额外的产品适配。
+具体边界见[兼容其他模组](compatibility/other-mods.md#5-兼容配方和容器能力)。
+
 ## 管道交互
 
 - **Shift + 右键** → 循环端口意图（INPUT / OUTPUT / NONE）

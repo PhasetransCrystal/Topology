@@ -22,7 +22,7 @@ PartRole itemInput = machine.partRole("item_input", "Item Input", "物品输入"
 
 ```java
 // registerMachines：端口挂载 + 附加角色（PartRoleMount 是 ComponentContribution）
-Machines.begin(id, registry)
+machine.machine("my_machine")
         .component(ItemPort.input(ItemPort.KEY, 2).role(itemInput))   // 链式附加
         .build();
 ```

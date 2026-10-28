@@ -38,7 +38,7 @@ LangKey           ← 一个翻译键句柄（key + en + cn），注册后不可
 m.material("copper").lang("Copper", "铜").build();          // → material.mymod.copper
 
 // Machine（方块名经 RegistryLib 铸造为 block.*）
-Machines.begin(id, registry).displayName("Furnace", "电炉").build(); // → block.mymod.furnace
+machine.machine("furnace").displayName("Furnace", "电炉").build(); // → block.mymod.furnace
 
 // Ore
 ore.vein("copper").lang("Copper Vein", "铜矿脉").build();    // → ore_vein.mymod.copper

@@ -18,9 +18,9 @@ public abstract class MaterialPostProcessor {
     public final MaterialDataUse<MaterialPostProcessor> activation();   // 材质通过 .data(PROCESSOR.activation()) 激活
 
     public void validate(Material material);   // 结构性快速失败；基类已检查 requiredForms，覆写加自己的规则
-    public abstract void process(Material material);   // 为单个材质发射配方；先 guard：
+    public abstract void process(Material material);   // 框架只传入声明激活的材质
 
-    protected final boolean notDeclaredOn(Material material);   // 未激活时 true → process 里直接 return
+    protected final boolean notDeclaredOn(Material material);   // 直接调用处理器时可作防御检查
     protected final void require(Material material, MaterialForm form);
 }
 ```
@@ -58,8 +58,15 @@ m.material("copper").data(processor.activation()).build();
 
 ## 执行顺序
 
-引擎先对**全部材质**跑完 `validate`，再对**全部材质**跑 `process`——
+材料冻结时，激活数据的校验器先调用一次 `validate`，提前检查必需形态。
+全部形态内容生成后，引擎先对**所有已激活的材料／处理器组合**跑完 `validate`，
+再对这些组合跑 `process`。因此校验器必须无副作用且允许重复执行；
+不能要求冻结阶段已有生成物品，也不能在 `validate` 内生成配方。
 `process` 里可以安全引用其他材质的表单物品（跨材质配方链可行）。
+
+未激活的处理器不会收到框架的 `validate` 或 `process` 调用，产品无需自行过滤未激活材质。
+引擎复用冻结时构建的激活列表，单个材料的处理器按完整 ID 排序，
+不依赖处理器注册或激活数据的声明顺序。处理器之间不应依赖彼此生成的结果。
 
 ## API 速查
 

@@ -59,12 +59,12 @@ public final class MaterialRegistrationModule implements RegistrationModule {
 
     private static void runMaterialPostProcessors() {
         for (Material material : MaterialRegistry.registered()) {
-            for (MaterialPostProcessor processor : MaterialPostProcessorRegistry.registered()) {
+            for (MaterialPostProcessor processor : material.strategy().postProcessors()) {
                 processor.validate(material);
             }
         }
         for (Material material : MaterialRegistry.registered()) {
-            for (MaterialPostProcessor processor : MaterialPostProcessorRegistry.registered()) {
+            for (MaterialPostProcessor processor : material.strategy().postProcessors()) {
                 processor.process(material);
             }
         }

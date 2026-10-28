@@ -71,7 +71,7 @@ public abstract class MaterialPostProcessor {
 
     /** Throws if {@code material} does not declare {@code form}. */
     protected final void require(Material material, MaterialForm form) {
-        if (!material.strategy().forms().contains(form)) {
+        if (!material.strategy().hasForm(form)) {
             throw new IllegalStateException(
                     getClass().getSimpleName() + ": material " + material.id() + " is missing required form " + form.id());
         }

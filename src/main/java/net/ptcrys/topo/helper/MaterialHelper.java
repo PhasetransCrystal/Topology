@@ -27,7 +27,7 @@ public final class MaterialHelper {
      * (RegisterEvent HIGHEST) prefer {@link #materialItemSupplier} and {@link #itemId}.
      */
     public static Optional<Item> item(Material material, MaterialForm form) {
-        if (!material.strategy().forms().contains(form)) {
+        if (!material.strategy().hasForm(form)) {
             return Optional.empty();
         }
 
@@ -86,7 +86,7 @@ public final class MaterialHelper {
 
     /** Resolves the registered source fluid backing a material fluid form. */
     public static Optional<Fluid> fluid(Material material, MaterialForm form) {
-        if (!material.strategy().forms().contains(form)) {
+        if (!material.strategy().hasForm(form)) {
             return Optional.empty();
         }
 

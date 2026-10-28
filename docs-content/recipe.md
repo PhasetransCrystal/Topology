@@ -79,6 +79,13 @@ recipeType.recipe("path")
     .save();
 ```
 
+## 兼容外部配方与其他插件
+
+原版／模组配方表通过类型的 `importRecipesFrom` 与自定义适配器接入，做法见
+[兼容其他模组](compatibility/other-mods.md#5-兼容配方和容器能力)。
+为其他 TopoPlugin 的配方类型增加配方时，复用对方公开类型，并注意配方 ID 与资源输出仍归类型拥有者，见
+[跨插件配方贡献](compatibility/topo-plugins.md#6-为共享内容添加配方)。
+
 ## 运行时执行流程
 
 RecipeLogic 在机器中按以下顺序执行配方：

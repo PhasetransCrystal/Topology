@@ -12,6 +12,7 @@ import net.ptcrys.topo.api.api.builtin.RecipeDomainRegistration;
 import net.ptcrys.topo.api.api.builtin.RuntimeDomainRegistration;
 import net.ptcrys.topo.api.api.lang.LangRegistry;
 import net.ptcrys.topo.api.api.plugin.TopoPlugins;
+import net.ptcrys.topo.api.api.registration.ExternalTargets;
 import net.ptcrys.topo.api.equipment.Equipment;
 import net.ptcrys.topo.api.equipment.EquipmentRegistry;
 import net.ptcrys.topo.api.equipment.EquipmentStrategy;
@@ -23,6 +24,14 @@ import net.ptcrys.topo.api.machine.ui.tooltip.ItemTooltipUis;
 import net.ptcrys.topo.api.machine.ui.tooltip.TopoTooltipUiProvider;
 import net.ptcrys.topo.api.material.Material;
 import net.ptcrys.topo.api.material.MaterialContentContext;
+import net.ptcrys.topo.api.material.MaterialFormOptions;
+import net.ptcrys.topo.api.material.MaterialRegistry;
+import net.ptcrys.topo.api.material.data.MaterialDataRegistry;
+import net.ptcrys.topo.api.material.data.MaterialDataType;
+import net.ptcrys.topo.api.material.data.MaterialDataUse;
+import net.ptcrys.topo.api.material.form.MaterialForm;
+import net.ptcrys.topo.api.material.form.MaterialFormStrategy;
+import net.ptcrys.topo.api.material.process.MaterialPostProcessor;
 import net.ptcrys.topo.api.ore.OreVeins;
 import net.ptcrys.topo.api.recipe.productionline.ProductionLine;
 import net.ptcrys.topo.api.recipe.productionline.ProductionLines;
@@ -64,13 +73,93 @@ public class LifecycleTestEntrypoint {
     static boolean runtimeSawEquipmentBehavior;
     static IllegalStateException entryThenKeyFailure;
     static IllegalStateException keyThenEntryFailure;
+    static ProbeDataType materialMarker;
+    static MaterialForm baseForm;
+    static MaterialForm extensionForm;
+    static final Map<Material, List<MaterialForm>> generatedForms = new LinkedHashMap<>();
+    static final Map<Material, RegistryCore> generatedFormOwners = new LinkedHashMap<>();
+    static boolean formValidationSawResolvedForms = true;
+    static MaterialForm nonMatchingForm;
+    static boolean injectionSawAllMaterials;
+    static boolean dataWriteReturnedTarget;
+    static boolean builderDataSharedAfterBuild;
+    static IllegalStateException duplicateDataFailure;
+    static IllegalStateException selectionTimeDataFailure;
+    static IllegalStateException builderDuplicateDataFailure;
+    static MaterialRegistry.Builder lateMaterialBuilder;
+    static MaterialRegistry.Builder builtMaterialBuilder;
+    static MaterialFormOptions retainedFormOptions;
+    static ProbeDataType scopedMarker;
+    static int scopedValidations;
+    static int ruleCalls;
+    static boolean rulesSawEmptyForms = true;
+    static boolean rulesReusedMaterialSnapshot = true;
+    static MaterialPostProcessor alphaProcessor;
+    static MaterialPostProcessor zetaProcessor;
+    static final List<String> processorEvents = new ArrayList<>();
+    static IllegalArgumentException foreignFormFailure;
+    static IllegalStateException duplicateBuildFailure;
 
     public LifecycleTestEntrypoint(IEventBus bus) {
         a = new TestPlugin(coreA) {
 
             @Override
+            public void registerMaterialFoundation(MaterialDomainRegistration material) {
+                materialMarker = material.dataType("form_probe", new ProbeDataType(material.id("form_probe")));
+                scopedMarker = MaterialDataRegistry.begin(material.id("scoped_probe"), new ProbeDataType(material.id("scoped_probe")),
+                        (target, enabled) -> {
+                            if (!enabled) throw new IllegalStateException("unmatched form data must not be validated");
+                            scopedValidations++;
+                        });
+                baseForm = material.form("base_form").lang("Base", "基础形态")
+                        .appliesTo(value -> {
+                            ruleCalls++;
+                            var snapshot = MaterialRegistry.registered();
+                            rulesReusedMaterialSnapshot &= snapshot == MaterialRegistry.registered();
+                            rulesSawEmptyForms &= snapshot.stream().allMatch(target -> target.strategy().forms().isEmpty());
+                            try {
+                                value.data(materialMarker.enabled());
+                            } catch (IllegalStateException error) {
+                                selectionTimeDataFailure = error;
+                            }
+                            return value.strategy().data(materialMarker).orElse(false);
+                        })
+                        .strategy(probeFormStrategy()).build();
+                nonMatchingForm = material.form("non_matching_form").lang("Non-matching", "不匹配形态")
+                        .strategy(probeFormStrategy()).build();
+                // Register and activate in reverse order: execution must still use full IDs.
+                zetaProcessor = material.postProcessor("zeta", probeProcessor(material, "zeta"));
+                alphaProcessor = material.postProcessor("alpha", probeProcessor(material, "alpha"));
+                material.postProcessor("inactive", probeProcessor(material, "inactive"));
+            }
+
+            @Override
             public void registerMaterials(MaterialDomainRegistration material) {
-                material.material("lifecycle_material").lang("Probe", "探针材料").build();
+                lateMaterialBuilder = material.material("late_material").lang("Late", "晚到材料");
+                lateMaterialBuilder.data(materialMarker.enabled());
+                try {
+                    lateMaterialBuilder.data(materialMarker.enabled());
+                } catch (IllegalStateException error) {
+                    builderDuplicateDataFailure = error;
+                }
+                builtMaterialBuilder = material.material("lifecycle_material").lang("Probe", "探针材料");
+                builtMaterialBuilder
+                        .form(nonMatchingForm, options -> options.overrideItem(ExternalTargets.mcItem("stick")).data(scopedMarker.disabled()))
+                        .build();
+                builtMaterialBuilder.form(baseForm, options -> {
+                    retainedFormOptions = options;
+                    options.data(scopedMarker.enabled());
+                });
+                try {
+                    builtMaterialBuilder.form(new MaterialForm(baseForm.id(), probeFormStrategy(), null), options -> {});
+                } catch (IllegalArgumentException error) {
+                    foreignFormFailure = error;
+                }
+                try {
+                    builtMaterialBuilder.build();
+                } catch (IllegalStateException error) {
+                    duplicateBuildFailure = error;
+                }
             }
 
             @Override
@@ -132,6 +221,30 @@ public class LifecycleTestEntrypoint {
         b = new TestPlugin(coreB) {
 
             @Override
+            public void registerMaterialFoundation(MaterialDomainRegistration material) {
+                extensionForm = material.form("extension_form").lang("Extension", "扩展形态")
+                        .appliesToAll()
+                        .strategy(probeFormStrategy()).build();
+            }
+
+            @Override
+            public void registerMaterials(MaterialDomainRegistration material) {
+                var builder = material.material("extension_material").lang("Extension", "扩展材料");
+                var built = builder.build();
+                injectionSawAllMaterials = MaterialRegistry.registered().size() == 2 && !MaterialRegistry.isFrozen();
+                builder.data(materialMarker.enabled());
+                builderDataSharedAfterBuild = built.strategy().data(materialMarker).orElse(false);
+                var target = MaterialRegistry.require(a.material().id("lifecycle_material"));
+                dataWriteReturnedTarget = target.data(materialMarker.enabled()) == target;
+                target.data(zetaProcessor.activation()).data(alphaProcessor.activation());
+                try {
+                    target.data(materialMarker.enabled());
+                } catch (IllegalStateException error) {
+                    duplicateDataFailure = error;
+                }
+            }
+
+            @Override
             public void registerMachineFollowUps(MachineDomainRegistration machine) {
                 recipe().productionLine("machine_line");
             }
@@ -170,6 +283,64 @@ public class LifecycleTestEntrypoint {
 
     private static TestPlugin duplicateCandidate() {
         return new TestPlugin(coreA) {};
+    }
+
+    private static MaterialPostProcessor probeProcessor(MaterialDomainRegistration material, String path) {
+        return new MaterialPostProcessor(material.id(path), baseForm) {
+
+            @Override
+            public void validate(Material target) {
+                super.validate(target);
+                processorEvents.add("validate:" + path);
+            }
+
+            @Override
+            public void process(Material target) {
+                if (generatedForms.size() != 2) throw new IllegalStateException("processor ran before all material content");
+                // Deliberately no activation guard: dispatch belongs to the framework.
+                processorEvents.add("process:" + path);
+            }
+        };
+    }
+
+    private static MaterialFormStrategy probeFormStrategy() {
+        return new MaterialFormStrategy(List.of()) {
+
+            @Override
+            public String registryPath() {
+                return "%s_probe";
+            }
+
+            @Override
+            public void validateMaterial(Material material, MaterialForm form) {
+                for (Material declared : MaterialRegistry.registered()) {
+                    formValidationSawResolvedForms &= declared.strategy().forms().containsAll(List.of(baseForm, extensionForm));
+                }
+            }
+
+            @Override
+            public void register(MaterialContentContext context, MaterialForm form) {
+                if (!MaterialRegistry.isFrozen()) throw new IllegalStateException("content before material freeze");
+                generatedForms.computeIfAbsent(context.material(), ignored -> new ArrayList<>()).add(form);
+                generatedFormOwners.put(context.material(), context.core());
+                context.core().item(context.material().id().getPath() + "_" + form.id().getPath()).register();
+            }
+        };
+    }
+
+    static final class ProbeDataType extends MaterialDataType<Boolean> {
+
+        ProbeDataType(net.minecraft.resources.Identifier id) {
+            super(id);
+        }
+
+        MaterialDataUse<Boolean> enabled() {
+            return use(true);
+        }
+
+        MaterialDataUse<Boolean> disabled() {
+            return use(false);
+        }
     }
 
     /** Capture the actual engine-to-RegistryLib datagen bridge without writing resource files. */

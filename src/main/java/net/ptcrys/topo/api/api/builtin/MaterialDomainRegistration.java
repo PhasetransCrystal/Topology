@@ -19,7 +19,8 @@ import java.util.Objects;
 
 /**
  * Sole material-domain registration entry for one {@link TopoPlugin}. Paths are bare; namespace is
- * fixed by the plugin. No overloads — one method per concern.
+ * fixed by the plugin. Built materials accept additional data through their own public API.
+ * No overloads — one method per concern.
  */
 public final class MaterialDomainRegistration {
 

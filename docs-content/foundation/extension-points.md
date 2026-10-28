@@ -13,10 +13,11 @@ Topology 的每个领域都遵循同一个扩展模式：**框架提供基类/�
   `Identifier` 身份，行为全部委托给策略实例。
 - **冻结注册表** — 每个注册表都有冻结点（`freeze()`）。冻结由引擎在阶段之间自动执行，冻结后写入抛异常。
   **在错误的生命周期阶段注册 = 启动崩溃**。完整钩子顺序见 [Plugin Lifecycle](lifecycle.md)。
-- **领域注册 API 是唯一写入入口** — 不直接调用 `*Registry.begin`，而是通过插件持有的
+- **新领域条目通过领域 API 注册** — 不直接调用 `*Registry.begin`，而是通过插件持有的
   `MaterialDomainRegistration` / `MachineDomainRegistration` 等，框架负责校验 modId 与 RegistryCore 一致。
+  普通游戏条目使用同一 RegistryCore；已构建材料在共享窗口内通过 `Material.data(use)` 补数据。
 - **en + cn 双语文案必填** — 所有用户可见名称必须同时提供英文与中文。
-- **库只分发 API，不分发内容** — 不存在可引用的内置材料/机器/端口类；一切从继承开始。
+- **先复用公开类型，再按需实现策略** — 库不分发玩法材料和机器；产品也可直接复用依赖模组公开的形态、组件与类型。
 
 ## 扩展点索引（按钩子域）
 
@@ -50,7 +51,7 @@ Topology 的每个领域都遵循同一个扩展模式：**框架提供基类/�
 
 第一次集成按这个顺序读：
 
-1. [Plugin Lifecycle](lifecycle.md) —— 知道什么钩子里能注册什么
-2. [MachineComponent](../machine/machine-component.md) —— 最核心的扩展点
-3. [RecipeCapability](../recipe/recipe-capability.md) + [RecipeType](../recipe/recipe-type.md) —— 配方回路
-4. 其余按需
+1. [快速开始](../getting-started.md) —— 完成一个最小内容插件
+2. [内容注册实作](content-plugin.md) —— 按材料、机器与配方组织声明
+3. [兼容其他模组](../compatibility/other-mods.md) / [兼容其他 TopoPlugin](../compatibility/topo-plugins.md) —— 按目标接入外部内容
+4. 按本页索引阅读所需策略；注册窗口查 [Plugin Lifecycle](lifecycle.md)

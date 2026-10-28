@@ -117,7 +117,12 @@ equipment.kind("axe",
 
 引擎随后冻结种类表，并对每个 (材料 × 种类) 调用 `appliesTo` → `register`。
 
+生成策略应使用材料的 `context.core()`，这样扩展其他插件材料时保留其归属。跨插件用法见
+[兼容其他 TopoPlugin](compatibility/topo-plugins.md)。
+
 ## 查询
+
+下列代码中 `.get()` 需要等待物品绑定，适合放在 `registerRuntime`；此前保留 `record.entry()`：
 
 ```java
 Equipment pickaxe = EquipmentRegistry.require(Identifier.fromNamespaceAndPath("mymod", "pickaxe"));

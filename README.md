@@ -83,6 +83,14 @@ TopoPlugins.register(new MyModPlugin()); // 继承 TopoPlugin，覆写所需的�
 
 完整文档（中文）见 [`docs-content/`](docs-content/)，在线文档见 [Topology Wiki](https://topology.ptcrys.net)。
 
+| 目标 | 使用指南 |
+|---|---|
+| 注册自定义内容 | [快速开始](docs-content/getting-started.md)、[内容注册实作](docs-content/foundation/content-plugin.md) |
+| 使用其他模组的物品、配方与容器 | [兼容其他模组](docs-content/compatibility/other-mods.md) |
+| 共享其他 TopoPlugin 的类型与内容 | [兼容其他 TopoPlugin](docs-content/compatibility/topo-plugins.md) |
+
+跨 TopoPlugin 依赖由模组依赖隐式确认；依赖存在不代表被引用内容已经初始化，使用时仍须遵守注册阶段。
+
 ## 相关链接
 
 - [Ptcrys](https://ptcrys.net)

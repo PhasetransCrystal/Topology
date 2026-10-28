@@ -68,10 +68,41 @@ Optional<ToolStatsData> stats = material.strategy().data(toolStats);   // Materi
 m.material("copper").data(toolStats.stats(200, 4.5f, 1.5f, 14, ItemTags.INCORRECT_FOR_IRON_TOOL)).build();
 ```
 
+## build 后跨插件注入
+
+`build()` 发布材料句柄，不会立刻冻结材料数据。所有插件共享 `registerMaterials` 的注册窗口，
+在该窗口内可直接给其他插件已构建的材料补充已注册的数据：
+
+```java
+@Override
+public void registerMaterials(MaterialDomainRegistration material) {
+    OtherMaterials.COPPER.data(
+            toolStats.stats(200, 4.5f, 1.5f, 14, ItemTags.INCORRECT_FOR_IRON_TOOL));
+}
+```
+
+上例假设目标已经完成 `build()`。模组依赖隐式确认跨插件依赖关系，但不能保证对方同一钩子内的内容已经初始化；
+应按提供方的初始化或回调约定取得就绪句柄，不能靠插件登记顺序。完整边界见
+[跨插件补数据](../compatibility/topo-plugins.md#5-给已经构建的材料补数据)。
+
+直接操作目标插件公开的真实 `Material` 对象，无需通过当前插件的领域入口转交。
+`Material.data(use)` 返回材料自身，可连续补充不同类型的数据。
+Builder 从创建起便持有该策略；构建前后使用同一份数据存储与重复校验，不在 `build()` 时复制出第二份。
+`Material.data(use)` 直接写入内部策略，不经过注册表转发；策略的写方法不对开发者开放。
+数据类型仍须在 `registerMaterialFoundation` 注册；注入只补充数据值，不改变目标材料归属。
+
+- 所有插件完成 `registerMaterials` 后才执行 `appliesTo`，注入数据也参与形态匹配、策略校验、装备与后处理。
+- 对同一材料重复写入同一数据类型会报错，包括覆盖其构建时声明的数据；不采用后写覆盖。
+- 不同数据类型可以分别由多个插件补充，材料句柄及命名空间保持不变。
+- 形态匹配开始前关闭写入；匹配 Lambda、校验、内容生成及运行时均不能注入。
+- 注入目标必须已经 `build()`，通过目标插件公开的材料句柄访问；此接口不会提前构建或创建材料。
+
 ## 校验
 
-领域入口 `material.dataType(path, handle)` 使用默认无校验策略；需要校验时，把校验器传给注册表入口
-（材质每次声明数据时执行）。领域注册 API 是唯一写入入口，产品代码不要直接调用 `*Registry.begin`。
+领域入口 `material.dataType(path, handle)` 使用默认无校验策略。产品的数据值约束应放在 payload record 的构造器或
+类型公开的工厂方法中；与某个形态有关的数据依赖在 `MaterialFormStrategy.validateMaterial` 中检查。
+底层 `MaterialDataRegistry.begin` 支持框架内部校验器，但不是产品接入入口。
+材料冻结时仍会统一执行已安装的校验策略，包含补充的数据。
 
 :::info
 数据类型与表单一样有冻结点：在 `registerMaterialFoundation` 注册，`registerMaterials` 只能引用。
@@ -86,3 +117,4 @@ m.material("copper").data(toolStats.stats(200, 4.5f, 1.5f, 14, ItemTags.INCORREC
 | `material.dataType(path, handle)`      | 领域注册入口（钩子 3）          |
 | `MaterialStrategy.data(type)`          | 消费侧读取 → `Optional<D>`      |
 | `m.material(...).data(use)`            | 材料声明侧附加                  |
+| `targetMaterial.data(use)`            | 直接向已构建材料补充数据        |

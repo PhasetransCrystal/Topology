@@ -1,20 +1,20 @@
 package net.ptcrys.topo.api.material;
 
-import net.ptcrys.topo.api.api.annotation.SyntaxSugar;
 import net.ptcrys.topo.api.api.builtin.LangDomainRegistration;
 import net.ptcrys.topo.api.api.builtin.MaterialDomainRegistration;
 import net.ptcrys.topo.api.api.infrastructure.FreezableStrategyRegistry;
 import net.ptcrys.topo.api.api.lang.LangKey;
 import net.ptcrys.topo.api.material.data.MaterialDataRegistry;
-import net.ptcrys.topo.api.material.data.MaterialDataType;
 import net.ptcrys.topo.api.material.data.MaterialDataUse;
 import net.ptcrys.topo.api.material.form.MaterialForm;
+import net.ptcrys.topo.api.material.form.MaterialFormRegistry;
 
 import net.minecraft.resources.Identifier;
 
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -22,7 +22,8 @@ import java.util.function.Consumer;
 public final class MaterialRegistry {
 
     private static final FreezableStrategyRegistry<Identifier, Material, MaterialStrategy> REGISTRY = FreezableStrategyRegistry.create("materials");
-    private static final List<Material> PENDING_VALIDATION = new ArrayList<>();
+    private static boolean declarationsClosed;
+    private static List<Material> declarationSnapshot;
 
     private MaterialRegistry() {}
 
@@ -32,6 +33,7 @@ public final class MaterialRegistry {
      */
     @ApiStatus.Internal
     public static Builder begin(Identifier id, LangDomainRegistration lang) {
+        requireDeclarationsOpen(id);
         return new Builder(Objects.requireNonNull(id, "id"), Objects.requireNonNull(lang, "lang"));
     }
 
@@ -40,7 +42,8 @@ public final class MaterialRegistry {
     }
 
     public static List<Material> registered() {
-        return REGISTRY.handlesView();
+        List<Material> snapshot = declarationSnapshot;
+        return snapshot != null ? snapshot : REGISTRY.handlesView();
     }
 
     public static boolean isFrozen() {
@@ -49,13 +52,42 @@ public final class MaterialRegistry {
 
     @ApiStatus.Internal
     public static void freeze() {
-        if (!REGISTRY.isFrozen()) {
-            for (Material material : PENDING_VALIDATION) {
-                validate(material);
+        if (REGISTRY.isFrozen()) {
+            return;
+        }
+        if (declarationsClosed) {
+            throw new IllegalStateException("materials: freeze already started or failed");
+        }
+        // Close every write path before invoking product predicates or validators.
+        declarationsClosed = true;
+        declarationSnapshot = REGISTRY.handlesView();
+        List<MaterialForm> candidates = MaterialFormRegistry.registered().stream()
+                .sorted(Comparator.comparing(form -> form.id().toString())).toList();
+        List<List<MaterialForm>> resolved = new ArrayList<>(declarationSnapshot.size());
+        for (Material material : declarationSnapshot) {
+            List<MaterialForm> forms = new ArrayList<>();
+            for (MaterialForm form : candidates) {
+                if (form.appliesTo(material)) {
+                    forms.add(form);
+                }
             }
+            resolved.add(forms);
+        }
+        // No predicate can observe another material's partially resolved forms.
+        for (int index = 0; index < declarationSnapshot.size(); index++) {
+            declarationSnapshot.get(index).strategy().resolveForms(resolved.get(index));
+        }
+        for (Material material : declarationSnapshot) {
+            validate(material);
         }
         REGISTRY.freeze();
-        PENDING_VALIDATION.clear();
+        declarationSnapshot = null;
+    }
+
+    static void requireDeclarationsOpen(Identifier id) {
+        if (declarationsClosed) {
+            throw new IllegalStateException("material " + id + ": declarations are closed");
+        }
     }
 
     static void validate(Material material) {
@@ -63,12 +95,12 @@ public final class MaterialRegistry {
         for (MaterialDataUse<?> use : strategy.dataUses()) {
             MaterialDataRegistry.validate(material, use);
         }
-        for (MaterialFormOptions options : strategy.formOptions()) {
-            for (MaterialDataUse<?> use : options.dataUses()) {
-                MaterialDataRegistry.validate(material, use);
-            }
-        }
         for (MaterialForm form : strategy.forms()) {
+            strategy.optionsFor(form).ifPresent(options -> {
+                for (MaterialDataUse<?> use : options.dataUses()) {
+                    MaterialDataRegistry.validate(material, use);
+                }
+            });
             form.strategy().validateMaterial(material, form);
         }
     }
@@ -77,67 +109,51 @@ public final class MaterialRegistry {
 
         private final Identifier id;
         private final LangDomainRegistration langApi;
-        private final java.util.Map<MaterialDataType<?>, MaterialDataUse<?>> data = new java.util.LinkedHashMap<>();
-        private final java.util.List<MaterialForm> forms = new java.util.ArrayList<>();
-        private final java.util.Map<MaterialForm, MaterialFormOptions> options = new java.util.LinkedHashMap<>();
+        private final MaterialStrategy strategy;
+        private boolean built;
         private String langEn;
         private String langCn;
 
         private Builder(Identifier id, LangDomainRegistration langApi) {
             this.id = id;
             this.langApi = langApi;
+            this.strategy = new MaterialStrategy(id);
         }
 
         public Builder lang(String en, String cn) {
+            requireDeclarationsOpen(id);
+            if (built) {
+                throw new IllegalStateException("material " + id + " is already built");
+            }
             this.langEn = requireText(en, "en");
             this.langCn = requireText(cn, "cn");
             return this;
         }
 
-        @SyntaxSugar(
-                     forMethod = "form(MaterialForm form, Consumer<MaterialFormOptions> options)",
-                     reason = "Adds each MaterialForm in order with no scoped options.")
-        public Builder forms(MaterialForm... forms) {
-            for (MaterialForm form : forms) {
-                form(form);
-            }
-            return this;
-        }
-
-        @SyntaxSugar(
-                     forMethod = "form(MaterialForm form, Consumer<MaterialFormOptions> options)",
-                     reason = "Declares the form with no scoped Material+Form options.")
-        public Builder form(MaterialForm form) {
-            return form(form, options -> {});
-        }
-
+        /** Configures scoped data and external targets; does not select the form. */
         public Builder form(MaterialForm form, Consumer<MaterialFormOptions> options) {
-            if (!forms.contains(form)) {
-                forms.add(form);
-            }
-            MaterialFormOptions formOptions = this.options.computeIfAbsent(form, key -> new MaterialFormOptions());
-            options.accept(formOptions);
+            strategy.configureForm(form, options);
             return this;
         }
 
         public Builder data(MaterialDataUse<?> data) {
-            if (this.data.containsKey(data.type())) {
-                throw new IllegalStateException("duplicate material data type " + data.type().id() + " for " + id);
-            }
-            this.data.put(data.type(), data);
+            strategy.addData(data);
             return this;
         }
 
         public Material build() {
+            requireDeclarationsOpen(id);
+            if (built || REGISTRY.get(id) != null) {
+                throw new IllegalStateException("duplicate material " + id);
+            }
             if (langEn == null || langCn == null) {
                 throw new IllegalStateException(
                         "material " + id + " requires lang(en, cn); both languages are mandatory");
             }
-            MaterialStrategy strategy = new MaterialStrategy(data, forms, options);
             LangKey nameLang = langApi.resource(id, "material", langEn, langCn);
             Material material = new Material(id, strategy, langEn, langCn, nameLang);
             Material registered = REGISTRY.register(id, material, strategy);
-            PENDING_VALIDATION.add(registered);
+            built = true;
             return registered;
         }
 

@@ -12,7 +12,7 @@ dependencies {
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
     //https://maven.ptcrys.net/release/net/ptcrys/RegistryLib
-    jarJar(api("net.ptcrys:RegistryLib:${registry_lib_version}"))
+    implementation("net.ptcrys:RegistryLib:${registry_lib_version}")
 
     //https://maven.blamejared.com/mezz/jei/jei-26.1.2-neoforge
     compileOnly "mezz.jei:jei-${minecraft_version}-common-api:${jei_version}"

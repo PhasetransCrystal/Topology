@@ -17,7 +17,7 @@ sidebar_position: 2
 public static final ComponentKey<MyComponent> KEY =
         ComponentKey.of(MyModPlugin.INSTANCE.machine().id("my_component"), MyComponent.class);
 
-// 挂载入口（声明时挂在 Machines.begin(...).component(...) 上）：
+// 挂载入口（声明时挂在 machine.machine(...).component(...) 上）：
 public static ComponentMount<MyComponent> mount() {
     return KEY.mount(MyComponent::new);
 }
@@ -112,7 +112,7 @@ List<ServiceMatch<MyService>> matches = traits.services(MyService.KEY, null);
 ## 挂载到机器
 
 ```java
-Machines.begin(id, registry)
+machine.machine("my_machine")
         .displayName("My Machine", "我的机器")
         .component(MyComponent.mount())
         .build();
