@@ -42,7 +42,7 @@ public void registerRecipeTypes(RecipeDomainRegistration recipe) {
     recipe.recipeType("smelting")
             .displayName("Smelting", "冶炼");
 
-    // 生产线在同阶段声明（最晚 registerRecipes，见钩子 8）：
+    // 生产线在同阶段声明（最晚 registerRecipes，见钩子 16）：
     maceratingLine = recipe.productionLine("macerating");
 }
 ```
@@ -54,7 +54,7 @@ public void registerRecipeTypes(RecipeDomainRegistration recipe) {
 ```java
 // 在 registerRecipes 阶段。itemCapability / energyCapability 是你的 RecipeCapability 子类，
 // 公开铸造包装（基类 inputUse/outputUse 是 protected）：
-TopoRecipe recipe = new TopoRecipe.Builder<>(maceratingType, "mymod:iron_dust")
+TopoRecipe recipe = maceratingType.recipe("iron_dust")
                 .input(itemCapability.in(Items.IRON_ORE, 1))      // 启动消耗：1 铁矿石
                 .output(itemCapability.out(IRON_DUST, 2))         // 启动产出：2 铁粉
                 .tickInput(energyCapability.in(128))              // 每 tick 消耗 128 EU
@@ -68,7 +68,7 @@ TopoRecipe recipe = new TopoRecipe.Builder<>(maceratingType, "mymod:iron_dust")
 ## Builder 方法一览
 
 ```java
-new TopoRecipe.Builder<>(recipeType, "modid:path")
+recipeType.recipe("path")
     .input(capability.in(...))            // 启动消耗
     .output(capability.out(...))          // 启动产出
     .tickInput(capability.in(...))        // 每 tick 消耗
@@ -78,6 +78,13 @@ new TopoRecipe.Builder<>(recipeType, "modid:path")
     .replacesImported()                   // 手写配方覆盖 datapack/导入配方
     .save();
 ```
+
+## 兼容外部配方与其他插件
+
+原版／模组配方表通过类型的 `importRecipesFrom` 与自定义适配器接入，做法见
+[兼容其他模组](compatibility/other-mods.md#5-兼容配方和容器能力)。
+为其他 TopoPlugin 的配方类型增加配方时，复用对方公开类型，并注意配方 ID 与资源输出仍归类型拥有者，见
+[跨插件配方贡献](compatibility/topo-plugins.md#6-为共享内容添加配方)。
 
 ## 运行时执行流程
 

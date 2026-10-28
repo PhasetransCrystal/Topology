@@ -2,6 +2,7 @@ package net.ptcrys.topo.api.api.visual;
 
 import net.ptcrys.topo.api.machine.OrientedActiveMachineBlock;
 import net.ptcrys.topo.api.machine.OrientedMachineBlock;
+import net.ptcrys.topo.helper.IdHelper;
 
 import net.minecraft.client.renderer.block.BlockAndTintGetter;
 import net.minecraft.client.renderer.block.dispatch.BlockStateModel;
@@ -38,7 +39,7 @@ public record ConnectedTextureMachineModel(
                                            Identifier family)
         implements CustomUnbakedBlockStateModel {
 
-    public static final Identifier LOADER = Identifier.parse("topo:ctm_machine");
+    public static final Identifier LOADER = IdHelper.id("ctm_machine");
     private static final ModelDebugName DEBUG_NAME = () -> "ConnectedTextureMachineModel";
 
     public static final MapCodec<ConnectedTextureMachineModel> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(

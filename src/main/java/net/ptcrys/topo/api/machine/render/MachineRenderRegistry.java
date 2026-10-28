@@ -9,6 +9,8 @@ import net.ptcrys.topo.api.machine.MachineDefinition;
 
 import net.minecraft.resources.Identifier;
 
+import org.jetbrains.annotations.ApiStatus;
+
 public final class MachineRenderRegistry {
 
     private static final FreezableStrategyRegistry<Identifier, MachineBlockRenderType<?>, MachineBlockRenderStrategy<?>> BLOCK_REGISTRY = FreezableStrategyRegistry.create("machine block render types");
@@ -34,6 +36,7 @@ public final class MachineRenderRegistry {
         return BLOCK_REGISTRY.isFrozen();
     }
 
+    @ApiStatus.Internal
     public static void freeze() {
         BLOCK_REGISTRY.freeze();
     }

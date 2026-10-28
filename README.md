@@ -45,6 +45,20 @@ Topology 由 **PhasetransCrystal** 基于 Odyssey Industrial 重构为纯 API �
 ./gradlew runClientData  # 数据生成
 ```
 
+`runClient` 和 `runServer` 额外加载本地开发 Mod **TopoDemo**（ID：`topodemo`）。
+其 Java / Kotlin 代码放在 `src/demo/java/` / `src/demo/kotlin/`，资源放在 `src/demo/resources/`。
+该源码集可访问 Topo API；后续内容插件在 TopoDemo 构造期通过 `TopoPlugins.register` 登记。
+Topo 的数据生成和单元测试不加载它，发布的 jar、sources jar 和 Maven 产物也不包含它。
+可用 `./gradlew demoClasses` 单独检查开发 Mod 的编译与资源处理。
+
+### 测试
+
+```bash
+./gradlew compileJava compileTestJava demoClasses spotlessCheck
+```
+
+运行测试需通过 NeoForge 启动；手动测试命令、覆盖范围与日志位置见[测试与验证](docs-content/foundation/testing.md)。
+
 ## 集成
 
 ```gradle
@@ -60,7 +74,7 @@ dependencies {
 ```
 
 ```java
-TopoPlugins.register(new MyModPlugin()); // 实现 TopoPlugin，注册你的全部内容
+TopoPlugins.register(new MyModPlugin()); // 继承 TopoPlugin，覆写所需的领域钩子
 ```
 
 详见 [Getting Started](docs-content/getting-started.md)。
@@ -68,6 +82,14 @@ TopoPlugins.register(new MyModPlugin()); // 实现 TopoPlugin，注册你的全�
 ## 文档
 
 完整文档（中文）见 [`docs-content/`](docs-content/)，在线文档见 [Topology Wiki](https://topology.ptcrys.net)。
+
+| 目标 | 使用指南 |
+|---|---|
+| 注册自定义内容 | [快速开始](docs-content/getting-started.md)、[内容注册实作](docs-content/foundation/content-plugin.md) |
+| 使用其他模组的物品、配方与容器 | [兼容其他模组](docs-content/compatibility/other-mods.md) |
+| 共享其他 TopoPlugin 的类型与内容 | [兼容其他 TopoPlugin](docs-content/compatibility/topo-plugins.md) |
+
+跨 TopoPlugin 依赖由模组依赖隐式确认；依赖存在不代表被引用内容已经初始化，使用时仍须遵守注册阶段。
 
 ## 相关链接
 

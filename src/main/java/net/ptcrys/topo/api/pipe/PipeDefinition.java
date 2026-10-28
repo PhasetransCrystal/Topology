@@ -3,6 +3,9 @@ package net.ptcrys.topo.api.pipe;
 import net.ptcrys.registrylib.RegistryCore;
 import net.ptcrys.registrylib.builders.BlockBuilder;
 import net.ptcrys.registrylib.util.entry.BlockEntry;
+import net.ptcrys.topo.api.api.lang.LangRegistry;
+import net.ptcrys.topo.api.lang.DisplayNames;
+import net.ptcrys.topo.api.lang.RegistryDisplayLang;
 import net.ptcrys.topo.api.machine.resource.MachineResourceType;
 
 import net.minecraft.resources.Identifier;
@@ -24,9 +27,11 @@ import java.util.Objects;
 public final class PipeDefinition {
 
     private final Identifier id;
+    private final @Nullable RegistryCore registry;
     private final PipeResourceProfile profile;
     private final PipeBlockTemplate blockTemplate;
     private final String displayName;
+    private final @Nullable String displayNameCn;
     private final @Nullable ResourceKey<CreativeModeTab> creativeTab;
     private final int maxExtractRate;
     private final int nodeThroughput;
@@ -40,18 +45,22 @@ public final class PipeDefinition {
 
     PipeDefinition(
                    Identifier id,
+                   @Nullable RegistryCore registry,
                    PipeResourceProfile profile,
                    PipeBlockTemplate blockTemplate,
                    String displayName,
+                   @Nullable String displayNameCn,
                    @Nullable ResourceKey<CreativeModeTab> creativeTab,
                    int maxExtractRate,
                    int nodeThroughput,
                    List<PipeStrategyOffer> strategies,
                    PipeFilterSettings filterSettings) {
         this.id = id;
+        this.registry = registry;
         this.profile = profile;
         this.blockTemplate = blockTemplate;
         this.displayName = displayName;
+        this.displayNameCn = displayNameCn;
         this.creativeTab = creativeTab;
         this.maxExtractRate = maxExtractRate;
         this.nodeThroughput = nodeThroughput;
@@ -66,6 +75,12 @@ public final class PipeDefinition {
 
     public Identifier id() {
         return id;
+    }
+
+    /** Null only for legacy declarations owned by the host passed to Pipes.registerBlocks. */
+    @Nullable
+    RegistryCore registry() {
+        return registry;
     }
 
     public PipeResourceProfile profile() {
@@ -160,7 +175,12 @@ public final class PipeDefinition {
         builder.properties(props -> blockTemplate.styleBlockProperties(props)
                 .noOcclusion()
                 .pushReaction(PushReaction.BLOCK));
-        builder.lang(displayName);
+        if (displayNameCn == null) {
+            LangRegistry.claimEntryName(id.toLanguageKey("block"));
+            builder.lang(displayName);
+        } else {
+            RegistryDisplayLang.applyBlock(builder, core, id.getPath(), DisplayNames.fixed(displayName, displayNameCn));
+        }
         builder.item(item -> {
             if (creativeTab != null) {
                 item.addTab(creativeTab);

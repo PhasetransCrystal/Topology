@@ -3,6 +3,7 @@ package net.ptcrys.topo.api.api.builtin;
 import net.ptcrys.registrylib.RegistryCore;
 import net.ptcrys.topo.api.api.lang.LangKey;
 import net.ptcrys.topo.api.api.plugin.PluginIds;
+import net.ptcrys.topo.api.api.plugin.RegistrationDomain;
 import net.ptcrys.topo.api.api.plugin.TopoPlugin;
 import net.ptcrys.topo.api.machine.Machines;
 import net.ptcrys.topo.api.machine.component.Attachment;
@@ -19,6 +20,7 @@ import net.ptcrys.topo.api.machine.resource.MachineResourceType;
 import net.ptcrys.topo.api.machine.resource.MachineResourceTypes;
 import net.ptcrys.topo.api.machine.resource.RecipeRole;
 import net.ptcrys.topo.api.machine.resource.ResourceDataFieldFactory;
+import net.ptcrys.topo.api.pipe.Pipes;
 
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
@@ -43,6 +45,8 @@ import java.util.Objects;
  */
 public final class MachineDomainRegistration {
 
+    public static final RegistrationDomain<MachineDomainRegistration> DOMAIN = RegistrationDomain.of(MachineDomainRegistration::of);
+
     private final TopoPlugin plugin;
     private final RegistryCore registry;
 
@@ -51,7 +55,7 @@ public final class MachineDomainRegistration {
         this.registry = Objects.requireNonNull(registry, "registry");
     }
 
-    public static MachineDomainRegistration of(TopoPlugin plugin) {
+    private static MachineDomainRegistration of(TopoPlugin plugin) {
         return new MachineDomainRegistration(plugin, plugin.registry());
     }
 
@@ -75,6 +79,11 @@ public final class MachineDomainRegistration {
     /** Begin declaring one machine. Completes with {@link Machines.Builder#build()}. */
     public Machines.Builder machine(String path) {
         return Machines.begin(id(path), registry);
+    }
+
+    /** Declare a plugin-owned pipe in registerMachineFollowUps, before the pipe table freezes. */
+    public Pipes.Builder pipe(String path) {
+        return Pipes.begin(id(path), registry);
     }
 
     /** Register a trait-mount metadata type (recipe logic, resource port, …). */

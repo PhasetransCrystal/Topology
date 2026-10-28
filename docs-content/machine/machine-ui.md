@@ -37,6 +37,16 @@ override fun collectMachineUi(contribution: MachineUiContribution) {
 - `rightPanel` / `leftPanel` 有 build 重载与 element 重载（后者可带 `visibleWhen` 动态隐藏）
 - 框架自动包装侧栏卡片（`MachineUiContainerTemplate.createCard`）；底条不包
 
+`RecipeLogic` 负责执行配方，不会自动创建配方页。机器声明中需显式挂载对应 UI 组件：
+
+```java
+.component(RecipeLogic.mount(logicKey, recipeType))
+.component(RecipeUi.mount(uiKey, logicKey))
+```
+
+多方块的结构诊断页同样需要 `.component(MultiblockUi.mount(structureUiKey, controllerKey))`。
+`RecipeUi.mount` 的第三参数可传 `RecipeUi.RecipePageGate.of(...)`，按控制器成型状态控制页面可用性。
+
 ## 2. 配方页构建块 — RecipeUiLayout / LiveRecipeSlots
 
 自定义配方页组件可复用框架的布局工厂：

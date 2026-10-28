@@ -26,16 +26,15 @@ ItemTooltipUis.register(myItem) { stack ->
 ## 注册与冻结
 
 ```java
-// 物品是延迟注册条目——注册必须等物品绑定完成（FMLCommonSetup.enqueueWork）：
-modEventBus.addListener((FMLCommonSetupEvent event) -> event.enqueueWork(() -> {
-    ItemTooltipUis.register(MY_ITEM.get(), MyTooltipProvider.INSTANCE);
-}));
+@Override
+public void registerRuntime(RuntimeDomainRegistration runtime) {
+    runtime.tooltip(MY_ITEM.get(), MyTooltipProvider.INSTANCE);
+}
 ```
 
-:::caution
-`ItemTooltipUis.freeze()` 由库的 `PipeSpecTooltips` setup 任务执行（enqueueWork 按提交序）——
-**你的面板注册必须注册在该监听器之前**。顺序错了会直接抛冻结异常。
-:::
+共享表在 load complete 由 `TopoPluginEngine` 统一冻结，插件不要自行调用 `freeze()`。
+宿主在 common setup 调用运行时钩子；客户端专用绑定也可使用 client setup 的 deferred work。
+不同 Mod 的任务间无顺序承诺；语言键须在内容阶段提前声明。
 
 ## 缓存语义
 
@@ -49,6 +48,6 @@ modEventBus.addListener((FMLCommonSetupEvent event) -> event.enqueueWork(() -> {
 | 类/方法                                   | 用途                               |
 |-------------------------------------------|------------------------------------|
 | `ItemTooltipUis.register(item, provider)` | 按物品注册面板                     |
-| `ItemTooltipUis.freeze()`                 | 冻结（库的 PipeSpecTooltips 触发） |
+| `ItemTooltipUis.freeze()`                 | 冻结（引擎在 load complete 触发） |
 | `ItemTooltipUis.find(stack)`              | 按物品栈查找提供器                 |
 | `ItemTooltipUis.componentFor(stack)`      | 构建缓存组件（渲染线程专用）       |

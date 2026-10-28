@@ -6,12 +6,34 @@ sidebar_position: 6
 
 库附带的消费者工具类——各策略实现里的常用杂务。
 
+## 路径、资源标识与注册表键
+
+| 类型 | 所表达的信息 | 使用场景 |
+| --- | --- | --- |
+| `String` | 由入口限定含义的文本或局部路径 | `registry.item("copper_ingot")`、`type.recipe("copper/to_dust")`、翻译键和名称 |
+| `Identifier` | 完整的 `namespace:path`，不包含注册表身份 | 纹理位置、Topo 自有领域表 ID、进入已确定注册表的底层 API |
+| `ResourceKey<T>` | 注册表身份与其中条目的完整 `Identifier` | `ResourceKey<Item>`、`ResourceKey<CreativeModeTab>`、`ResourceKey<Recipe<?>>` 的引用和匹配 |
+
+配方声明路径由 `type.recipeKey(path)` 转成完整的 `ResourceKey<Recipe<?>>`；跨声明、加载与运行时匹配保留该键。
+同一个 `Identifier` 可分别命名方块与物品，其注册表键不同。`Registries.ITEM` 本身是
+`ResourceKey<Registry<Item>>`，标识注册表；具体物品用 `ResourceKey.create(Registries.ITEM, itemId)`。
+翻译键是普通字符串，不能按 `Identifier` 的路径规则解析。
+
+这些标识都不代表对象已存在或已绑定；取实例仍须通过已绑定的 Entry、注册表或当前世界的 lookup。
+只有需要底层 API 的局部路径时才取 `getPath()`，不能拿它替代完整身份作跨命名空间比较。
+
 ## IdHelper
 
 ```java
 // 库命名空间（topo）下的 id 铸造。你的内容 id 用自己插件的 machine().id(path)：
-Identifier id = IdHelper.oi("by_distance");
+Identifier id = IdHelper.id("by_distance");
 ```
+
+插件所属 ID 使用领域入口的 `id(path)`，或 `PluginIds.id(plugin, path)`；原版资源使用
+`Identifier.withDefaultNamespace(path)`。派生已有 ID 时用 `withPath`、`withPrefix`、`withSuffix`
+保留所属命名空间。已有 RegistryLib Entry 时直接取 `identifier()`（资源标识）或 `getKey()`
+（带注册表类型的键），无需重建身份。`IdHelper.id` 固定使用 `topo`，不能用于其他插件内容。
+只有解析外部完整 ID 时使用 `parse`／`tryParse`；翻译键、管线步骤 ID 和随机盐值仍保留 `String`。
 
 ## MaterialHelper
 
@@ -25,7 +47,9 @@ Item required = MaterialHelper.requireItem(material, form); // 找不到就抛�
 ```
 
 :::caution
-`item()` 在物品未绑定时返回空（例如后处理器 validate 阶段）。要拿到必须存在的物品用 `requireItem()`。
+`item()` 在物品未绑定时返回空，`requireItem()` 会抛异常。后处理器和 FollowUps 仍属于声明阶段：
+标签使用 `itemId()`，需要物品实例的数据生成或运行时回调可保存 `materialItemSupplier()`，
+但不能在当前阶段调用它的 `get()`。传递 Supplier 本身不保证接收方延迟求值。
 :::
 
 ## ResourceFilterHelper
@@ -41,11 +65,11 @@ Predicate<Resource> any = ResourceFilterHelper.any();                     // 放
 
 ## TagHelper
 
-常用标签 key 铸造：
+已有的原版／NeoForge 标签优先使用 `ItemTags`／`Tags.Items` 常量，例如 `Tags.Items.DUSTS`、`Tags.Items.INGOTS`、`Tags.Items.TOOLS_WRENCH`。自定义通用分组和材料子标签使用 `TagHelper`：
 
 ```java
-TagKey<Item> dusts = TagHelper.item("dusts");                       // c:dusts
-TagKey<Item> copperDusts = TagHelper.itemMaterial("dusts", "copper"); // c:copper_dusts
+TagKey<Item> dusts = Tags.Items.DUSTS;                              // c:dusts
+TagKey<Item> copperDusts = TagHelper.itemMaterial("dusts", "copper"); // c:dusts/copper
 TagKey<Block> ores = TagHelper.block("ores");                       // c:ores
 TagKey<Fluid> acids = TagHelper.fluid("acids");                     // c:acids
 ```
@@ -73,6 +97,6 @@ String mb = TopoCompactNumber.formatCompactBuckets(amountMb);     // 流体桶�
 | `ResourceFilterHelper.itemExact(resource)`                  | 精确物品过滤                   |
 | `ResourceFilterHelper.any()`                                | 放行一切                       |
 | `TagHelper.item(group)` / `.block(group)` / `.fluid(group)` | c: 标签 key                    |
-| `TagHelper.itemMaterial(group, material)`                   | 材质标签 key（c:copper_dusts） |
+| `TagHelper.itemMaterial(group, material)`                   | 材质标签 key（c:dusts/copper） |
 | `TopoCompactNumber.formatCompact(value)`                    | 大数字缩写                     |
 | `TopoCompactNumber.formatCompactBuckets(mb)`                | 流体桶格式化                   |

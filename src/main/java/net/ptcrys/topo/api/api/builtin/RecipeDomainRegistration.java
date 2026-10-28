@@ -2,6 +2,7 @@ package net.ptcrys.topo.api.api.builtin;
 
 import net.ptcrys.registrylib.RegistryCore;
 import net.ptcrys.topo.api.api.plugin.PluginIds;
+import net.ptcrys.topo.api.api.plugin.RegistrationDomain;
 import net.ptcrys.topo.api.api.plugin.TopoPlugin;
 import net.ptcrys.topo.api.recipe.TopoRecipe;
 import net.ptcrys.topo.api.recipe.TopoRecipeType;
@@ -22,6 +23,8 @@ import java.util.Objects;
  */
 public final class RecipeDomainRegistration {
 
+    public static final RegistrationDomain<RecipeDomainRegistration> DOMAIN = RegistrationDomain.of(RecipeDomainRegistration::of);
+
     private final TopoPlugin plugin;
     private final RegistryCore registry;
 
@@ -30,7 +33,7 @@ public final class RecipeDomainRegistration {
         this.registry = Objects.requireNonNull(registry, "registry");
     }
 
-    public static RecipeDomainRegistration of(TopoPlugin plugin) {
+    private static RecipeDomainRegistration of(TopoPlugin plugin) {
         return new RecipeDomainRegistration(plugin, plugin.registry());
     }
 

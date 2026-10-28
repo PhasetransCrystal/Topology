@@ -55,7 +55,7 @@ public final class RecipePreviewPlans {
                 .min(Comparator
                         .comparingInt((MachineDefinition definition) -> recipeTypeFootprint(definition, recipeType))
                         .thenComparingInt(RecipePreviewPlans::resourceFootprint)
-                        .thenComparing(definition -> definition.id().toString()))
+                        .thenComparing(MachineDefinition::id))
                 .orElse(null);
     }
 

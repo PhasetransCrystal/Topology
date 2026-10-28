@@ -4,6 +4,7 @@ import net.ptcrys.topo.api.api.infrastructure.FreezableStrategyRegistry;
 
 import net.minecraft.world.item.Item;
 
+import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
@@ -29,6 +30,7 @@ public final class MachineItemBehaviors {
         return REGISTRY.get(item);
     }
 
+    @ApiStatus.Internal
     public static void freeze() {
         REGISTRY.freeze();
     }

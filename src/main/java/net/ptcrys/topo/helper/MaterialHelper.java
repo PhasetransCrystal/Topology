@@ -27,7 +27,7 @@ public final class MaterialHelper {
      * (RegisterEvent HIGHEST) prefer {@link #materialItemSupplier} and {@link #itemId}.
      */
     public static Optional<Item> item(Material material, MaterialForm form) {
-        if (!material.strategy().forms().contains(form)) {
+        if (!material.strategy().hasForm(form)) {
             return Optional.empty();
         }
 
@@ -48,9 +48,7 @@ public final class MaterialHelper {
                 .or(() -> options
                         .flatMap(MaterialFormOptions::blockOverride)
                         .map(ExternalBlockTarget::id));
-        return overrideId.orElseGet(() -> Identifier.fromNamespaceAndPath(
-                material.id().getNamespace(),
-                String.format(form.strategy().registryPath(), material.id().getPath())));
+        return overrideId.orElseGet(() -> material.id().withPath(String.format(form.strategy().registryPath(), material.id().getPath())));
     }
 
     public static String itemPath(Material material, MaterialForm form) {
@@ -88,13 +86,11 @@ public final class MaterialHelper {
 
     /** Resolves the registered source fluid backing a material fluid form. */
     public static Optional<Fluid> fluid(Material material, MaterialForm form) {
-        if (!material.strategy().forms().contains(form)) {
+        if (!material.strategy().hasForm(form)) {
             return Optional.empty();
         }
 
-        Identifier fluidId = Identifier.fromNamespaceAndPath(
-                material.id().getNamespace(),
-                String.format(form.strategy().registryPath(), material.id().getPath()));
+        Identifier fluidId = material.id().withPath(String.format(form.strategy().registryPath(), material.id().getPath()));
         return BuiltInRegistries.FLUID.getOptional(fluidId);
     }
 

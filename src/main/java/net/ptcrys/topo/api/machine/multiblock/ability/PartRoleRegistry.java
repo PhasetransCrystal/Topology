@@ -8,6 +8,8 @@ import net.ptcrys.topo.api.machine.resource.RecipeRole;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 
+import org.jetbrains.annotations.ApiStatus;
+
 /**
  * Canonical registry owner for {@link PartRole}.
  *
@@ -27,6 +29,7 @@ public final class PartRoleRegistry {
      * Single write entry for {@link MachineDomainRegistration#partRole}.
      * Product code must not call this.
      */
+    @ApiStatus.Internal
     public static synchronized PartRole begin(
                                               Identifier id, Component displayName, MachineResourceType<?> resourceType, RecipeRole recipeIo) {
         PartRole capability = new PartRole(id, displayName, resourceType, recipeIo);
@@ -37,6 +40,7 @@ public final class PartRoleRegistry {
         return REGISTRY.require(id);
     }
 
+    @ApiStatus.Internal
     public static synchronized void freeze() {
         REGISTRY.freeze();
     }

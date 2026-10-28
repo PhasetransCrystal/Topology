@@ -21,16 +21,30 @@ export default function Home(): JSX.Element {
         </h1>
         <p style={{ fontSize: '1.15rem', color: 'var(--ifm-color-emphasis-600)', maxWidth: 540, marginBottom: '2.5rem', lineHeight: 1.7 }}>
           NeoForge 基础库 Mod — 提供机器、材料、管道、配方、矿石生成等基础设施。<br />
-          精简样板代码，你只需声明<strong>做什么</strong>，框架负责<strong>怎么做</strong>。
+          通过 TopoPlugin 注册自定义内容，复用其他模组条目，并扩展其他插件的公开类型。
         </p>
 
         <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', justifyContent: 'center' }}>
           <Link
             className="button button--primary button--lg"
-            to="/docs"
+            to="/docs/getting-started"
             style={{ borderRadius: '8px', fontSize: '1rem', padding: '0.65rem 1.8rem' }}
           >
-            Get Started →
+            注册第一项内容 →
+          </Link>
+          <Link
+            className="button button--secondary button--lg"
+            to="/docs/compatibility/other-mods"
+            style={{ borderRadius: '8px', fontSize: '1rem', padding: '0.65rem 1.8rem' }}
+          >
+            兼容其他模组
+          </Link>
+          <Link
+            className="button button--secondary button--lg"
+            to="/docs/compatibility/topo-plugins"
+            style={{ borderRadius: '8px', fontSize: '1rem', padding: '0.65rem 1.8rem' }}
+          >
+            扩展其他 TopoPlugin
           </Link>
           <Link
             className="button button--secondary button--lg"

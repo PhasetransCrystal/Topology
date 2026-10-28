@@ -3,8 +3,16 @@ import type {SidebarsConfig} from '@docusaurus/plugin-content-docs';
 const sidebars: SidebarsConfig = {
   docsSidebar: [
     'intro',
-    'getting-started',
-    'embedding',
+    {
+      type: 'category',
+      label: '注册与兼容',
+      items: [
+        'getting-started',
+        'foundation/content-plugin',
+        'compatibility/other-mods',
+        'compatibility/topo-plugins',
+      ],
+    },
     {
       type: 'category',
       label: 'Recipe',
@@ -88,6 +96,8 @@ const sidebars: SidebarsConfig = {
       items: [
         'foundation/lifecycle',
         'foundation/extension-points',
+        'foundation/testing',
+        'embedding',
         'foundation/tick-system',
         'foundation/tooltip-panels',
         'foundation/connected-textures',

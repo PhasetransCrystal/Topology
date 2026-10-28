@@ -21,21 +21,25 @@ PipeDefinition       ← 一种管道（资源类型 × 等级）
 |---------------------------------------|----------------------------------------------------------|-----------------------------|
 | [PipeStrategy](pipe/pipe-strategy.md) | 继承 `PipeDistributionStrategy` 自定义分发逻辑 + 配置 UI | 需要轮询/均分之外的分发行为 |
 | [Pipe Surveyor](pipe/pipe-survey.md)  | `PipeSurveyTool` 标记接口 + 勘测行为                     | 需要网络勘测工具            |
-| **Pipe（本页）**                      | `Pipes.register` 声明管道、交互规则                      | 添加传输管道                |
+| **Pipe（本页）**                      | `machine.pipe` 声明管道、交互规则                      | 添加传输管道                |
 
 ## 注册管道
 
 ```java
-Pipes.register("item_pipe_t1")
+plugin.machine().pipe("item_pipe_t1")
     .resource(myItemProfile)                            // PipeResourceProfile 实例
     .blockTemplate(new MyPipeBlockTemplate())            // 外观/模型模板
-    .displayName("Item Pipe Tier 1")
+    .displayName("Item Pipe Tier 1", "一级物品管道")
     .maxExtractRate(64)                                  // 每 tick 最大提取
     .nodeThroughput(128)                                 // 每节点每 tick 吞吐
     .filter(PipeFilterSettings.NONE)                     // 无需过滤
     .strategy(myRoundRobin, new AggregationWindow(1, 16, 4, 4))  // 你的分发策略 + 聚合窗口
     .build();
 ```
+
+使用领域入口会让管道及其方块/物品归属插件的命名空间和 RegistryCore。
+`displayName(en, cn)` 的各语言数据随方块 Builder 一起提交；不要再用 `plugin.lang()` 注册该方块名称。
+原有单参数 `displayName(en)` 保留为仅英文入口。
 
 ### 参数说明
 
@@ -69,6 +73,12 @@ public class MyPipeBlockTemplate implements PipeBlockTemplate {
 }
 ```
 
+## 接入其他模组的容器
+
+管道通过资源类型声明的 block capability 查询相邻容器，不要求容器来自 Topo。
+复用同一个公开资源类型和兼容的 handler；目标没有对应能力时，需要额外的产品适配。
+具体边界见[兼容其他模组](compatibility/other-mods.md#5-兼容配方和容器能力)。
+
 ## 管道交互
 
 - **Shift + 右键** → 循环端口意图（INPUT / OUTPUT / NONE）
@@ -91,7 +101,7 @@ public class MyPipeBlockTemplate implements PipeBlockTemplate {
 
 | 类/方法                                     | 用途                                  |
 |---------------------------------------------|---------------------------------------|
-| `Pipes.register(path)`                      | 开始管道注册                          |
+| `plugin.machine().pipe(path)`                      | 开始管道注册                          |
 | `.resource(profile)`                        | 设置资源类型（必填）                  |
 | `.blockTemplate(template)`                  | 设置外观模板（必填）                  |
 | `.maxExtractRate(n)` / `.nodeThroughput(n)` | 吞吐配置（必填）                      |

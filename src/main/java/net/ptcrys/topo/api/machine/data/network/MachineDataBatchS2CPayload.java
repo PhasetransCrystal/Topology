@@ -1,7 +1,7 @@
 package net.ptcrys.topo.api.machine.data.network;
 
-import net.ptcrys.topo.Topology;
 import net.ptcrys.topo.api.machine.MachineBlockEntity;
+import net.ptcrys.topo.helper.IdHelper;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
@@ -21,7 +21,7 @@ import java.util.List;
 
 public record MachineDataBatchS2CPayload(List<Entry> entries) implements CustomPacketPayload {
 
-    public static final Identifier ID = Identifier.fromNamespaceAndPath(Topology.MODID, "machine_data_batch_s2c");
+    public static final Identifier ID = IdHelper.id("machine_data_batch_s2c");
     public static final Type<MachineDataBatchS2CPayload> TYPE = new Type<>(ID);
     public static final StreamCodec<RegistryFriendlyByteBuf, MachineDataBatchS2CPayload> CODEC = StreamCodec.ofMember(MachineDataBatchS2CPayload::write, MachineDataBatchS2CPayload::decode);
 

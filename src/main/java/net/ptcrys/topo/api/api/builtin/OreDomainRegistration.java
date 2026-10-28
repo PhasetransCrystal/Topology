@@ -2,6 +2,7 @@ package net.ptcrys.topo.api.api.builtin;
 
 import net.ptcrys.registrylib.RegistryCore;
 import net.ptcrys.topo.api.api.plugin.PluginIds;
+import net.ptcrys.topo.api.api.plugin.RegistrationDomain;
 import net.ptcrys.topo.api.api.plugin.TopoPlugin;
 import net.ptcrys.topo.api.ore.OreVeins;
 import net.ptcrys.topo.api.ore.display.OreVeinDisplay;
@@ -25,6 +26,8 @@ import java.util.Objects;
  */
 public final class OreDomainRegistration {
 
+    public static final RegistrationDomain<OreDomainRegistration> DOMAIN = RegistrationDomain.of(OreDomainRegistration::of);
+
     private final TopoPlugin plugin;
     private final RegistryCore registry;
 
@@ -33,7 +36,7 @@ public final class OreDomainRegistration {
         this.registry = Objects.requireNonNull(registry, "registry");
     }
 
-    public static OreDomainRegistration of(TopoPlugin plugin) {
+    private static OreDomainRegistration of(TopoPlugin plugin) {
         return new OreDomainRegistration(plugin, plugin.registry());
     }
 

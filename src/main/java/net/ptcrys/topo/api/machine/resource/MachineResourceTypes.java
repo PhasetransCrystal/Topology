@@ -13,6 +13,7 @@ import net.neoforged.neoforge.common.util.ValueIOSerializable;
 import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.resource.Resource;
 
+import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
@@ -27,6 +28,7 @@ public final class MachineResourceTypes {
      * Single write entry for {@link MachineDomainRegistration} resource
      * methods. Product code must not call this.
      */
+    @ApiStatus.Internal
     public static <R extends Resource> MachineResourceType<R> begin(
                                                                     Identifier id,
                                                                     Class<R> resourceClass,
@@ -59,6 +61,7 @@ public final class MachineResourceTypes {
         return REGISTRY.isFrozen();
     }
 
+    @ApiStatus.Internal
     public static void freeze() {
         for (MachineResourceType<?> type : REGISTRY.handlesView()) {
             if (!type.hasNameLang()) {

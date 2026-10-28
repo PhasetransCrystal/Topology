@@ -1,175 +1,178 @@
 ---
 sidebar_position: 2
+title: 快速开始
 ---
 
-# Getting Started
+# 注册第一项自定义内容
 
-## 添加依赖
+本例注册材料 `mymod:tin`，通过自定义形态 `mymod:dust` 自动生成物品 `mymod:tin_dust`。
+数据类型、形态策略和材料声明都在自己的模组中实现，不依赖 TopoDemo。
+
+## 1. 添加依赖并登记插件
 
 ```gradle
-// build.gradle
-repositories { 
-    maven {
-        name = "ptcrysReleases"
-        url = uri("https://maven.ptcrys.net/releases")
-    }
+repositories {
+    maven { url = uri("https://maven.ptcrys.net/releases") }
 }
 dependencies {
     implementation "net.ptcrys:Topology:${topology_version}"
+    // 与所用 Topology 版本配套，供插件代码直接引用 RegistryCore：
+    implementation "net.ptcrys:RegistryLib:${registry_lib_version}"
 }
 ```
 
-## 架构：纯库 + 你的内容
+使用与你的 Minecraft / NeoForge 环境匹配的 Topology 版本，并将示例版本变量替换为项目使用的版本。
+示例直接引用 RegistryLib 的 `RegistryCore`，因此显式声明其编译依赖。再在模组元数据中声明对 `topo` 的依赖；
+下面是 `neoforge.mods.toml` 的依赖片段，`mymod` 应替换成自己的 Mod ID，版本范围按实际依赖填写。
 
-Topology 只分发框架 API，**不分发任何玩法内容**。你需要的全部功能通过继承框架基类实现：
-
+```toml
+[[dependencies.mymod]]
+modId="topo"
+type="required"
+ordering="AFTER"
+side="BOTH"
 ```
-net.ptcrys.topo.api.* → 库本体（全部继承扩展点都在这里）
-你的 Mod               → 继承基类 + TopoPlugin 注册，与库解耦
-```
 
-内容注册的唯一通道是 `TopoPlugin`——没有隐藏的特权通道。
-
-## TopoPlugin — 内容注册入口
-
-所有内容（材料、机器、配方、矿石……）通过实现 `TopoPlugin` 接口注册：
+模组入口只创建本模组共用的 RegistryCore 并登记插件：
 
 ```java
-public final class MyModPlugin implements TopoPlugin {
+import net.ptcrys.registrylib.RegistryCore;
+import net.ptcrys.topo.api.api.plugin.TopoPlugins;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.common.Mod;
 
-    @Override
-    public String modId() {
-        return "mymod";
-    }
-
-    @Override
-    public RegistryCore registry() {
-        return MyMod.REGISTRY; // 你 Mod 的 RegistryCore
-    }
-
-    @Override
-    public MaterialDomainRegistration material() { return materials; }
-    @Override
-    public EquipmentDomainRegistration equipment() { return equipments; }
-    @Override
-    public RecipeDomainRegistration recipe() { return recipes; }
-    @Override
-    public MachineDomainRegistration machine() { return machines; }
-    @Override
-    public OreDomainRegistration ore() { return ores; }
-    @Override
-    public LangDomainRegistration lang() { return langs; }
-
-    // 六个领域注册 API 通过 XDomainRegistration.of(this) 创建，
-    // 框架校验它们与 modId()/registry() 一致。
-
-    @Override
-    public void registerMaterials(MaterialDomainRegistration m) {
-        // ingotForm 是你在 registerMaterialFoundation 里注册的自定义形态（见 Material 文档）
-        m.material("copper").lang("Copper", "铜").form(ingotForm).build();
-    }
-
-    @Override
-    public void registerRecipeTypes(RecipeDomainRegistration r) {
-        r.recipeType("macerating").displayName("Macerating", "粉碎");
-    }
-
-    @Override
-    public void registerMachines(MachineDomainRegistration m) {
-        // 声明机器
-    }
-
-    @Override
-    public void registerRecipes(RecipeDomainRegistration r) {
-        // 添加配方
-    }
-
-    @Override
-    public void registerOreVeins(OreDomainRegistration o) {
-        // 声明矿脉
-    }
-
-    @Override
-    public void registerLang(LangDomainRegistration lang) {
-        // 收集翻译
-    }
-}
-```
-
-## 接线：注册插件 + 启动引擎
-
-```java
 @Mod("mymod")
-public class MyMod {
-
-    public static final RegistryCore REGISTRY = /* ... */;
+public final class MyMod {
+    public static final RegistryCore REGISTRY = RegistryCore.create("mymod");
 
     public MyMod(IEventBus modEventBus) {
-        // 1. 注册内容插件（引擎启动前，@Mod 构造器里）
-        TopoPlugins.register(new MyModPlugin());
-
-        // 2. 首个 RegisterEvent 上启动引擎——HIGHEST 优先级，保证
-        //    所有 @Mod 构造器都已注册完毕，RegistryLib(LOW) 仍能看到队列条目。
-        modEventBus.addListener(EventPriority.HIGHEST, this::bootstrap);
-
-        // 3. 运行时绑定（你的内容专属，注册顺序注意见下）
-    }
-
-    private void bootstrap(RegisterEvent event) {
-        TopoPluginEngine.prepare();            // recipe → material → equipment
-        TopoPluginEngine.bootstrapMachine();   // machine foundation → machines → pipes
-        TopoPluginEngine.bootstrapOre();       // ore foundation → veins
-        TopoPluginEngine.bootstrapLang();      // lang 收集 + 冻结
+        TopoPlugins.register(new MyContentPlugin(REGISTRY));
     }
 }
 ```
 
-:::info
-**库已经帮你做了什么** — Topology 的宿主 `@Mod("topo")` 已注册 API 插件、资源能力、管道引擎、网络、渲染、
-tick 心跳等全部框架运行时。你的 Mod 只需要走上面三步——注册自己的插件、启动引擎、接上自己的运行时绑定。
-:::
+Topo 宿主已经负责事件接线。内容模组无需调用 `attachHost`、引擎启动方法或各注册表的 `freeze`。
+同一模组的多个插件共用这个 RegistryCore。
 
-:::caution
-**运行时绑定顺序** — 如果你的内容提供设备/材质/机器的物品悬浮面板（tooltip），其注册必须**先于**
-`PipeSpecTooltips.register(...)`：后者的 setup 任务会 freeze `ItemTooltipUis`，而 `enqueueWork` 任务按提交序执行。
-:::
+## 2. 在基础钩子声明类型，在内容钩子声明材料
 
-## 生命周期与冻结点
+以下是完整的 `MyContentPlugin.java`。示例只展示注册与名称；模型、纹理和创造栏在下一节补齐。
 
-TopoPluginEngine 按固定顺序调用各阶段。每个阶段结束后，对应注册表 **冻结**（只读）：
+```java
+import net.ptcrys.registrylib.RegistryCore;
+import net.ptcrys.topo.api.api.builtin.MaterialDomainRegistration;
+import net.ptcrys.topo.api.api.plugin.TopoPlugin;
+import net.ptcrys.topo.api.lang.DisplayNames;
+import net.ptcrys.topo.api.lang.RegistryDisplayLang;
+import net.ptcrys.topo.api.material.Material;
+import net.ptcrys.topo.api.material.MaterialContentContext;
+import net.ptcrys.topo.api.material.data.MaterialDataType;
+import net.ptcrys.topo.api.material.data.MaterialDataUse;
+import net.ptcrys.topo.api.material.form.MaterialForm;
+import net.ptcrys.topo.api.material.form.MaterialFormStrategy;
+import net.minecraft.resources.Identifier;
 
-```mermaid
-graph LR
-    A[recipe foundation] --> B[recipe types]
-    B --> C[material foundation]
-    C --> D[materials]
-    D --> E[equipment]
-    E --> F[machine foundation]
-    F --> G[machines]
-    G --> H[ore]
-    H --> I[lang]
+import java.util.List;
+
+public final class MyContentPlugin extends TopoPlugin {
+    private MetalDataType metal;
+
+    public MyContentPlugin(RegistryCore registry) {
+        super(registry);
+    }
+
+    @Override
+    public void registerMaterialFoundation(MaterialDomainRegistration material) {
+        metal = material.dataType("metal", new MetalDataType(material.id("metal")));
+        material.form("dust")
+                .lang("Dust", "粉")
+                .appliesTo(value -> value.strategy().data(metal).orElse(false))
+                .strategy(new DustForm())
+                .build();
+    }
+
+    @Override
+    public void registerMaterials(MaterialDomainRegistration material) {
+        material.material("tin")
+                .lang("Tin", "锡")
+                .data(metal.enabled())
+                .build();
+    }
+
+    public static final class MetalDataType extends MaterialDataType<Boolean> {
+        public MetalDataType(Identifier id) {
+            super(id);
+        }
+
+        public MaterialDataUse<Boolean> enabled() {
+            return use(true);
+        }
+    }
+
+    public static final class DustForm extends MaterialFormStrategy {
+        public DustForm() {
+            super(List.of());
+        }
+
+        @Override
+        public String registryPath() {
+            return "%s_dust";
+        }
+
+        @Override
+        public void validateMaterial(Material material, MaterialForm form) {
+            // 此形态没有额外的数据依赖。
+        }
+
+        @Override
+        public void register(MaterialContentContext context, MaterialForm form) {
+            Material material = context.material();
+            String path = registryPath().formatted(material.id().getPath());
+            var builder = context.core().item(path);
+            RegistryDisplayLang.applyItem(builder, context.core(), path,
+                    DisplayNames.fixed(material.displayNameEn() + " Dust",
+                            material.displayNameCn() + "粉"));
+            builder.register();
+        }
+    }
+}
 ```
 
-| 阶段                | 做什么                                 | 冻结的注册表             |
-|---------------------|----------------------------------------|--------------------------|
-| recipe foundation   | 注册自定义 RecipeCapability            | capability 表            |
-| recipe types        | 注册配方类型                           | recipe type 表           |
-| material foundation | 注册自定义 MaterialData / MaterialForm | data / form 表           |
-| materials           | 声明材料 + 注册 form 内容 + 后处理器   | material 表              |
-| equipment           | 为 (kind, material) 生成物品           | —                        |
-| machine foundation  | 冻结 resource type / UI / render       | resource type 表         |
-| machines            | 声明机器 + 注册 block / block entity   | machine 表               |
-| ore                 | 声明矿脉 + 数据生成                    | shape / mode / policy 表 |
-| lang                | 收集所有翻译键                         | lang 表                  |
+这段代码包含三种声明：
 
-:::caution
-**冻结点规则** — 冻结点后不能再添加新条目。例如在 `registerMaterials()` 中不能再注册新的 `MaterialForm`——
-它必须放在 `registerMaterialFoundation()` 里。完整生命周期表见
-[Plugin Lifecycle](foundation/lifecycle.md)。
-:::
+| 声明 | 标识 | 用途 |
+|---|---|---|
+| 数据类型 | `mymod:metal` | 材料通过类型的公开工厂方法取得数据 use |
+| 形态 | `mymod:dust` | 在所有插件完成材料声明后，按数据匹配材料 |
+| 材料 | `mymod:tin` | 附加 metal 数据，因此匹配 dust 并生成 `mymod:tin_dust` |
 
-## 关键约定
+形态策略使用 `context.core()` 创建条目。这样同一形态匹配其他模组材料时，生成物仍归材料所属模组。
+`.form(form, options)` 用来配置局部数据或复用外部条目，形态是否生成始终由 `appliesTo` 决定。
 
-- **ID 必须带命名空间**（如 `mymod:copper`）
-- **双语名称**：每个有显示名称的条目必须提供 `en` 和 `cn`
-- **Topology 只提供基建**：不在创造模式物品栏、JEI 中添加内容
+## 3. 补齐资源并验证结果
+
+注册条目、生成资源和将条目加入创造栏是三个独立动作。
+上例没有提供模型或创造栏；补齐前可用 `/give @s mymod:tin_dust` 检查条目存在，但外观可能缺失。
+
+- 在自己的策略中配置模型、标签和创造栏，或维护对应资源文件；[内容注册实作](foundation/content-plugin.md) 展示可复用的产品策略。
+- 自有物品／方块名称通过 `RegistryDisplayLang` 提交给生成条目的 Builder；界面提示等独立文本使用 `lang.key`。
+- 在自己的 datagen 配置中选中 `mymod`，把生成目录接入资源源码集。仓库 Demo 的命令与检查项见[测试与验证](foundation/testing.md)。
+
+## 4. 继续注册其他领域
+
+| 目标 | 在哪里声明 | 接下来阅读 |
+|---|---|---|
+| 新配方能力、资源族 | `registerRecipeFoundation` | [配方能力](recipe/recipe-capability.md)、[机器资源](machine/machine-resource.md) |
+| 配方类型和生产线 | `registerRecipeTypes` | [配方类型](recipe/recipe-type.md) |
+| 装备种类 | `registerEquipmentKinds` | [装备](equipment.md) |
+| 机器基础类型、机器定义 | `registerMachineFoundation`、`registerMachines` | [机器](machine.md) |
+| 管道与分发策略 | `registerMachineFollowUps` | [管道](pipe.md) |
+| 矿脉基础类型、矿脉 | `registerOreFoundation`、`registerOreDisplays`、`registerOreVeins` | [矿脉](ore.md) |
+| 为上述内容添加配方 | `registerRecipes` | [配方](recipe.md) |
+| 对真实物品绑定面板或机器交互 | `registerRuntime` | [悬浮面板](foundation/tooltip-panels.md)、[装备行为](equipment/equipment-behavior.md) |
+
+在内容声明钩子中传递句柄、ID 或 Supplier，不提前调用尚未绑定的 Entry 的 `.get()`。
+必须取得游戏对象的绑定放到 `registerRuntime`；模型、配方的资源生成则在相应 provider 回调里取值。
+
+接入外部内容时继续阅读[兼容其他模组](compatibility/other-mods.md)；
+复用其他插件的材料、形态或配方类型时阅读[兼容其他 TopoPlugin](compatibility/topo-plugins.md)。

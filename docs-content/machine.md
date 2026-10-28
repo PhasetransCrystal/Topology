@@ -31,14 +31,14 @@ MachineDefinition  ← 注册后的不可变句柄
 | [Multiblock Abilities](machine/multiblock-ability.md) | PartRole 部件角色、PropertyDisplay 状态显示                   | 构建多方块舱口/诊断显示    |
 | [Multi-block Patterns](machine/multiblock.md)         | Blueprint 声明式结构匹配                                      | 构建多方块机器             |
 | [Machine UI](machine/machine-ui.md)                   | `collectMachineUi` 面板贡献、配方页构建块、XEI 集成           | 机器需要自定义界面         |
-| **Machine（本页）**                                   | `Machines.begin` 声明机器、挂载组件                           | 添加任何机器               |
+| **Machine（本页）**                                   | `machine.machine` 声明机器、挂载组件                           | 添加任何机器               |
 
 ## 完整示例：注册一台机器
 
 ```java
 @Override
 public void registerMachines(MachineDomainRegistration m) {
-    Machines.begin(Identifier.fromNamespaceAndPath("mymod", "electric_furnace"), registry)
+    m.machine("electric_furnace")
             .displayName("Electric Furnace", "电炉")
             .creativeTab(MY_CREATIVE_TAB)
             .render(myShellRender.shell(new MachineShellMaterial(
@@ -99,7 +99,8 @@ public class MyComponent extends MachineComponent {
 ## 覆盖 Block / BlockEntity 子类
 
 ```java
-Machines.begin(id, registry)
+// 在 registerMachines(machine) 中：
+machine.machine("custom_machine")
     .displayName("Custom", "自定义")
     .block(MyMachineBlock::new)
     .blockEntity(MyBlockEntity::new)
@@ -111,7 +112,7 @@ Machines.begin(id, registry)
 
 | 类/方法                                     | 用途                           |
 |---------------------------------------------|--------------------------------|
-| `Machines.begin(id, registry)`              | 开始机器注册                   |
+| `machine.machine(path)`                     | 在 registerMachines 中开始机器注册 |
 | `.displayName(en, cn)`                      | 双语机器名（必填）             |
 | `.component(ComponentMount)`                | 挂载行为组件                   |
 | `.block(factory)` / `.blockEntity(factory)` | 覆盖 Block/BE 子类             |

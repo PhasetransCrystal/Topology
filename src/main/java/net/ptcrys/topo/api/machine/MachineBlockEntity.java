@@ -419,7 +419,7 @@ public class MachineBlockEntity extends BlockEntity {
                         peakNanos));
             }
             samples.add(new MachinePerformanceSnapshot.ComponentSample(
-                    trait.id().toString(),
+                    trait.id(),
                     trait.getClass().getSimpleName(),
                     nanos,
                     avgNanos,

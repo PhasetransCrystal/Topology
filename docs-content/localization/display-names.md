@@ -46,7 +46,9 @@ zh_tw 由框架内部经 `ChineseConvert.s2t` 自动派生——桥使用者不�
 
 ```java
 // ① 产品表：只传裸字符串（MaterialDomainRegistration）
-m.material("copper").lang("Copper", "铜").form(ingotForm).build();
+m.material("copper").lang("Copper", "铜")
+        .data(toolStatsDataType.stats(200, 4.5f, 1.5f)).build();
+// ingotForm 的 appliesTo 根据该数据匹配材料。
 
 // ② 策略内部：形态注册时铸造模板名
 TemplateDisplayName name = DisplayNames.template("%s Ingot", "%s锭");
