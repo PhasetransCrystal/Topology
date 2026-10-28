@@ -62,7 +62,7 @@ public final class MaterialRegistry {
         declarationsClosed = true;
         declarationSnapshot = REGISTRY.handlesView();
         List<MaterialForm> candidates = MaterialFormRegistry.registered().stream()
-                .sorted(Comparator.comparing(form -> form.id().toString())).toList();
+                .sorted(Comparator.comparing(MaterialForm::id)).toList();
         List<List<MaterialForm>> resolved = new ArrayList<>(declarationSnapshot.size());
         for (Material material : declarationSnapshot) {
             List<MaterialForm> forms = new ArrayList<>();

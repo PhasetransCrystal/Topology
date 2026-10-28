@@ -1,5 +1,7 @@
 package net.ptcrys.topo.api.recipe;
 
+import net.ptcrys.topo.helper.IdHelper;
+
 import net.minecraft.IdentifierException;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.Registries;
@@ -54,7 +56,7 @@ class RecipeNameTest {
 
     @Test
     void defaultProgressTextureBelongsToTheFramework() {
-        assertEquals(Identifier.parse("topo:textures/gui/progress_bar/arrow.png"), type.progressBarTexture());
+        assertEquals(IdHelper.id("textures/gui/progress_bar/arrow.png"), type.progressBarTexture());
         assertEquals(20, type.progressBarTextureWidth());
         assertEquals(20, type.progressBarTextureFrameHeight());
     }

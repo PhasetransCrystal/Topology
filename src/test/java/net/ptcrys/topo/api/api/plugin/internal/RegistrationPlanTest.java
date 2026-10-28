@@ -7,6 +7,8 @@ import net.ptcrys.topo.api.api.plugin.TopoContribution;
 import net.ptcrys.topo.api.api.plugin.TopoPlugin;
 import net.ptcrys.topo.api.api.plugin.internal.PluginLifecycle.Phase;
 
+import net.minecraft.resources.Identifier;
+
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -24,14 +26,14 @@ class RegistrationPlanTest {
     @Test
     void dependencyAndPhaseOrderDoesNotDependOnModuleArrivalOrder() {
         List<RegistrationPlan.Step> steps = List.of(
-                new RegistrationPlan.Step("z:declare", Phase.CONTENT, Set.of(), () -> {}),
-                new RegistrationPlan.Step("a:generate", Phase.CONTENT, Set.of("z:declare"), () -> {}),
-                new RegistrationPlan.Step("b:independent", Phase.CONTENT, Set.of(), () -> {}),
-                new RegistrationPlan.Step("a:derived", Phase.DERIVED, Set.of(), () -> {}),
-                new RegistrationPlan.Step("a:language", Phase.LANGUAGE, Set.of(), () -> {}),
-                new RegistrationPlan.Step("a:runtime", Phase.RUNTIME, Set.of(), () -> {}),
-                new RegistrationPlan.Step("a:ready", Phase.READY, Set.of(), () -> {}));
-        List<String> expected = List.of("b:independent", "z:declare", "a:generate", "a:derived", "a:language", "a:runtime", "a:ready");
+                new RegistrationPlan.Step(Identifier.parse("z:declare"), Phase.CONTENT, Set.of(), () -> {}),
+                new RegistrationPlan.Step(Identifier.parse("a:generate"), Phase.CONTENT, Set.of(Identifier.parse("z:declare")), () -> {}),
+                new RegistrationPlan.Step(Identifier.parse("b:independent"), Phase.CONTENT, Set.of(), () -> {}),
+                new RegistrationPlan.Step(Identifier.parse("a:derived"), Phase.DERIVED, Set.of(), () -> {}),
+                new RegistrationPlan.Step(Identifier.parse("a:language"), Phase.LANGUAGE, Set.of(), () -> {}),
+                new RegistrationPlan.Step(Identifier.parse("a:runtime"), Phase.RUNTIME, Set.of(), () -> {}),
+                new RegistrationPlan.Step(Identifier.parse("a:ready"), Phase.READY, Set.of(), () -> {}));
+        List<Identifier> expected = List.of(Identifier.parse("b:independent"), Identifier.parse("z:declare"), Identifier.parse("a:generate"), Identifier.parse("a:derived"), Identifier.parse("a:language"), Identifier.parse("a:runtime"), Identifier.parse("a:ready"));
         for (int seed = 0; seed < 100; seed++) {
             List<RegistrationPlan.Step> shuffled = new ArrayList<>(steps);
             Collections.shuffle(shuffled, new Random(seed));
@@ -45,17 +47,17 @@ class RegistrationPlanTest {
     void rejectsInvalidPlansBeforeRunningAnyContent() {
         List<String> calls = new ArrayList<>();
         RegistrationPlan.Builder missing = new RegistrationPlan.Builder();
-        missing.step(Phase.CONTENT, "test:one", List.of("test:missing"), () -> calls.add("missing"));
+        missing.step(Phase.CONTENT, Identifier.parse("test:one"), List.of(Identifier.parse("test:missing")), () -> calls.add("missing"));
         assertTrue(assertThrows(IllegalStateException.class, missing::compile).getMessage().contains("test:missing"));
 
         RegistrationPlan.Builder cycle = new RegistrationPlan.Builder();
-        cycle.step(Phase.CONTENT, "test:one", List.of("test:two"), () -> calls.add("one"));
-        cycle.step(Phase.CONTENT, "test:two", List.of("test:one"), () -> calls.add("two"));
+        cycle.step(Phase.CONTENT, Identifier.parse("test:one"), List.of(Identifier.parse("test:two")), () -> calls.add("one"));
+        cycle.step(Phase.CONTENT, Identifier.parse("test:two"), List.of(Identifier.parse("test:one")), () -> calls.add("two"));
         assertTrue(assertThrows(IllegalStateException.class, cycle::compile).getMessage().contains("cycle"));
 
         RegistrationPlan.Builder later = new RegistrationPlan.Builder();
-        later.step(Phase.CONTENT, "test:content", List.of("test:runtime"), () -> calls.add("content"));
-        later.step(Phase.RUNTIME, "test:runtime", List.of(), () -> calls.add("runtime"));
+        later.step(Phase.CONTENT, Identifier.parse("test:content"), List.of(Identifier.parse("test:runtime")), () -> calls.add("content"));
+        later.step(Phase.RUNTIME, Identifier.parse("test:runtime"), List.of(), () -> calls.add("runtime"));
         assertTrue(assertThrows(IllegalStateException.class, later::compile).getMessage().contains("later phase"));
         assertTrue(calls.isEmpty());
     }
@@ -63,11 +65,24 @@ class RegistrationPlanTest {
     @Test
     void duplicateStepsAreRejectedAndCompiledPlansAreSnapshots() {
         RegistrationPlan.Builder builder = new RegistrationPlan.Builder();
-        builder.step(Phase.CONTENT, "test:one", List.of(), () -> {});
+        builder.step(Phase.CONTENT, Identifier.parse("test:one"), List.of(), () -> {});
         RegistrationPlan compiled = builder.compile();
-        assertThrows(IllegalStateException.class, () -> builder.step(Phase.CONTENT, "test:one", List.of(), () -> {}));
-        builder.step(Phase.CONTENT, "test:two", List.of(), () -> {});
-        assertEquals(List.of("test:one"), compiled.order());
+        assertThrows(IllegalStateException.class, () -> builder.step(Phase.CONTENT, Identifier.parse("test:one"), List.of(), () -> {}));
+        builder.step(Phase.CONTENT, Identifier.parse("test:two"), List.of(), () -> {});
+        assertEquals(List.of(Identifier.parse("test:one")), compiled.order());
+    }
+
+    @Test
+    void dependenciesDistinguishNamespacesAndMatchIdentifierValues() {
+        List<String> calls = new ArrayList<>();
+        RegistrationPlan.Builder builder = new RegistrationPlan.Builder();
+        builder.step(Phase.CONTENT, Identifier.parse("a:generate"), List.of(Identifier.parse("z:declare")), () -> calls.add("generated"));
+        builder.step(Phase.CONTENT, Identifier.parse("a:declare"), List.of(), () -> calls.add("a"));
+        builder.step(Phase.CONTENT, Identifier.fromNamespaceAndPath("z", "declare"), List.of(), () -> calls.add("z"));
+        RegistrationPlan plan = builder.compile();
+        assertEquals(List.of(Identifier.parse("a:declare"), Identifier.parse("z:declare"), Identifier.parse("a:generate")), plan.order());
+        plan.execute(Phase.CONTENT);
+        assertEquals(List.of("a", "z", "generated"), calls);
     }
 
     @Test
@@ -114,14 +129,14 @@ class RegistrationPlanTest {
         var z = new ZPlugin(api -> calls.add("z"));
         RegistrationModule module = (builder, context) -> {
             builder.point(Phase.CONTENT, CONTENT, List.of(), context, () -> calls.add("freeze"));
-            builder.step(Phase.DERIVED, "failure:derived", List.of(), () -> calls.add("derived"));
+            builder.step(Phase.DERIVED, Identifier.parse("failure:derived"), List.of(), () -> calls.add("derived"));
         };
         RegistrationPlan plan = TopoContentBootstrap.compile(
                 new PluginSnapshot(List.of(z, a), Map.of()), List.of(module));
         PluginLifecycle lifecycle = new PluginLifecycle();
         IllegalStateException failure = assertThrows(IllegalStateException.class,
                 () -> lifecycle.run(Phase.CONTENT, () -> plan.execute(Phase.CONTENT)));
-        assertTrue(failure.getMessage().contains(CONTENT.id()));
+        assertTrue(failure.getMessage().contains(CONTENT.id().toString()));
         assertTrue(failure.getCause().getMessage().contains(a.identity()));
         assertSame(cause, failure.getCause().getCause());
         assertSame(failure, assertThrows(IllegalStateException.class,
@@ -133,7 +148,7 @@ class RegistrationPlanTest {
     void uninstalledContributionDomainStopsBeforeEveryContentAction() {
         List<String> calls = new ArrayList<>();
         var a = new APlugin(api -> calls.add("a"), api -> {});
-        RegistrationModule module = (builder, context) -> builder.step(Phase.CONTENT, "test:action", List.of(), () -> calls.add("action"));
+        RegistrationModule module = (builder, context) -> builder.step(Phase.CONTENT, Identifier.parse("test:action"), List.of(), () -> calls.add("action"));
         IllegalStateException error = assertThrows(IllegalStateException.class,
                 () -> TopoContentBootstrap.compile(new PluginSnapshot(List.of(a), Map.of()), List.of(module)));
         assertTrue(error.getMessage().contains(a.identity()));
@@ -148,7 +163,7 @@ class RegistrationPlanTest {
             created.add(plugin);
             return new FutureDomain(plugin);
         });
-        var point = RegistrationPoint.of("future:optional", FuturePlugin.class, domain, FuturePlugin::registerFuture);
+        var point = RegistrationPoint.of(Identifier.parse("future:optional"), FuturePlugin.class, domain, FuturePlugin::registerFuture);
         var a = new APlugin(api -> {}, api -> {});
         var ordinary = new TestPlugin();
         RegistrationModule module = (builder, context) -> builder.point(Phase.CONTENT, point, List.of(), context, () -> {});
@@ -171,7 +186,7 @@ class RegistrationPlanTest {
                 calls.add("other");
             }
         }
-        var other = RegistrationPoint.of("future:other", OtherPlugin.class, DOMAIN, OtherPlugin::registerOther);
+        var other = RegistrationPoint.of(Identifier.parse("future:other"), OtherPlugin.class, DOMAIN, OtherPlugin::registerOther);
         RegistrationModule module = (builder, context) -> {
             builder.point(Phase.CONTENT, CONTENT, List.of(), context, () -> {});
             builder.point(Phase.CONTENT, other, List.of(CONTENT.id()), context, () -> {});
@@ -192,7 +207,7 @@ class RegistrationPlanTest {
                 super(api -> calls.add("content"), api -> calls.add("derived"));
             }
         }
-        var point = RegistrationPoint.of("future:inherited", InheritedFuturePlugin.class, DOMAIN, InheritedFuturePlugin::registerFuture);
+        var point = RegistrationPoint.of(Identifier.parse("future:inherited"), InheritedFuturePlugin.class, DOMAIN, InheritedFuturePlugin::registerFuture);
         RegistrationModule module = (builder, context) -> builder.point(Phase.CONTENT, point, List.of(), context, () -> {});
         var plan = TopoContentBootstrap.compile(new PluginSnapshot(List.of(new InheritedPlugin()), Map.of()), List.of(module));
         plan.execute(Phase.CONTENT);
@@ -217,9 +232,9 @@ class RegistrationPlanTest {
 
     @Test
     void missingDependencyDiagnosticsUseCanonicalOrder() {
-        for (List<String> dependencies : List.of(List.of("z:missing", "a:missing"), List.of("a:missing", "z:missing"))) {
+        for (List<Identifier> dependencies : List.of(List.of(Identifier.parse("z:missing"), Identifier.parse("a:missing")), List.of(Identifier.parse("a:missing"), Identifier.parse("z:missing")))) {
             RegistrationPlan.Builder builder = new RegistrationPlan.Builder();
-            builder.step(Phase.CONTENT, "test:one", dependencies, () -> fail("invalid plan ran"));
+            builder.step(Phase.CONTENT, Identifier.parse("test:one"), dependencies, () -> fail("invalid plan ran"));
             var error = assertThrows(IllegalStateException.class, builder::compile);
             assertEquals("Step 'test:one' requires missing step 'a:missing'", error.getMessage());
         }
@@ -254,9 +269,9 @@ class RegistrationPlanTest {
 
     private static final RegistrationDomain<FutureDomain> DOMAIN = RegistrationDomain.of(FutureDomain::new);
     private static final RegistrationPoint<FuturePlugin, FutureDomain> CONTENT = RegistrationPoint.of(
-            "future:content", FuturePlugin.class, DOMAIN, FuturePlugin::registerFuture);
+            Identifier.parse("future:content"), FuturePlugin.class, DOMAIN, FuturePlugin::registerFuture);
     private static final RegistrationPoint<FuturePlugin, FutureDomain> DERIVED = RegistrationPoint.of(
-            "future:derived", FuturePlugin.class, DOMAIN, FuturePlugin::registerDerived);
+            Identifier.parse("future:derived"), FuturePlugin.class, DOMAIN, FuturePlugin::registerDerived);
 
     private abstract static class ProbePlugin extends TopoPlugin implements FuturePlugin {
 

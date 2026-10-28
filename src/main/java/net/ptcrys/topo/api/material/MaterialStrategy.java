@@ -96,7 +96,7 @@ public final class MaterialStrategy {
                 .filter(ProcessorDataType.class::isInstance)
                 .map(ProcessorDataType.class::cast)
                 .map(ProcessorDataType::processor)
-                .sorted(Comparator.comparing(processor -> processor.id().toString()))
+                .sorted(Comparator.comparing(MaterialPostProcessor::id))
                 .toList();
     }
 }

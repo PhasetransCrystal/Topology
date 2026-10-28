@@ -17,18 +17,21 @@ import net.ptcrys.topo.api.material.form.MaterialForm;
 import net.ptcrys.topo.api.material.form.MaterialFormRegistry;
 import net.ptcrys.topo.api.material.process.MaterialPostProcessor;
 import net.ptcrys.topo.api.material.process.MaterialPostProcessorRegistry;
+import net.ptcrys.topo.helper.IdHelper;
+
+import net.minecraft.resources.Identifier;
 
 import java.util.List;
 
 /** Owns material registration steps and their freeze fences. */
 public final class MaterialRegistrationModule implements RegistrationModule {
 
-    static final RegistrationPoint<MaterialPlugin, MaterialDomainRegistration> FOUNDATION = RegistrationPoint.of("topo:material/foundation", MaterialPlugin.class, MaterialDomainRegistration.DOMAIN, MaterialPlugin::registerMaterialFoundation);
-    static final RegistrationPoint<MaterialPlugin, MaterialDomainRegistration> MATERIALS = RegistrationPoint.of("topo:material/materials", MaterialPlugin.class, MaterialDomainRegistration.DOMAIN, MaterialPlugin::registerMaterials);
-    static final RegistrationPoint<MaterialPlugin, MaterialDomainRegistration> CREATIVE_TABS = RegistrationPoint.of("topo:material/creative_tabs", MaterialPlugin.class, MaterialDomainRegistration.DOMAIN, MaterialPlugin::registerMaterialCreativeTabs);
-    static final RegistrationPoint<MaterialPlugin, MaterialDomainRegistration> FOLLOW_UPS = RegistrationPoint.of("topo:material/follow_ups", MaterialPlugin.class, MaterialDomainRegistration.DOMAIN, MaterialPlugin::registerMaterialFollowUps);
+    static final RegistrationPoint<MaterialPlugin, MaterialDomainRegistration> FOUNDATION = RegistrationPoint.of(IdHelper.id("material/foundation"), MaterialPlugin.class, MaterialDomainRegistration.DOMAIN, MaterialPlugin::registerMaterialFoundation);
+    static final RegistrationPoint<MaterialPlugin, MaterialDomainRegistration> MATERIALS = RegistrationPoint.of(IdHelper.id("material/materials"), MaterialPlugin.class, MaterialDomainRegistration.DOMAIN, MaterialPlugin::registerMaterials);
+    static final RegistrationPoint<MaterialPlugin, MaterialDomainRegistration> CREATIVE_TABS = RegistrationPoint.of(IdHelper.id("material/creative_tabs"), MaterialPlugin.class, MaterialDomainRegistration.DOMAIN, MaterialPlugin::registerMaterialCreativeTabs);
+    static final RegistrationPoint<MaterialPlugin, MaterialDomainRegistration> FOLLOW_UPS = RegistrationPoint.of(IdHelper.id("material/follow_ups"), MaterialPlugin.class, MaterialDomainRegistration.DOMAIN, MaterialPlugin::registerMaterialFollowUps);
 
-    static final String CONTENT = "topo:material/generate";
+    static final Identifier CONTENT = IdHelper.id("material/generate");
 
     @Override
     public void define(RegistrationPlan.Builder plan, RegistrationContext context) {

@@ -7,6 +7,8 @@ import net.ptcrys.topo.api.api.plugin.TopoContribution;
 import net.ptcrys.topo.api.api.plugin.TopoPlugin;
 import net.ptcrys.topo.api.api.plugin.internal.PluginLifecycle.Phase;
 
+import net.minecraft.resources.Identifier;
+
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -21,18 +23,18 @@ class TopoPluginEngineOrderTest {
 
     private static final RegistrationDomain<Domain> DOMAIN = RegistrationDomain.of(Domain::new);
     private static final RegistrationPoint<Contributions, Domain> DECLARE = RegistrationPoint.of(
-            "test:declare", Contributions.class, DOMAIN, Contributions::declare);
+            Identifier.parse("test:declare"), Contributions.class, DOMAIN, Contributions::declare);
     private static final RegistrationPoint<Contributions, Domain> DERIVE = RegistrationPoint.of(
-            "test:derive", Contributions.class, DOMAIN, Contributions::derive);
+            Identifier.parse("test:derive"), Contributions.class, DOMAIN, Contributions::derive);
     private static final RegistrationPoint<Contributions, Domain> LANG = RegistrationPoint.of(
-            "test:lang", Contributions.class, DOMAIN, Contributions::language);
+            Identifier.parse("test:lang"), Contributions.class, DOMAIN, Contributions::language);
     private static final RegistrationPoint<Contributions, Domain> RUNTIME = RegistrationPoint.of(
-            "test:runtime", Contributions.class, DOMAIN, Contributions::runtime);
+            Identifier.parse("test:runtime"), Contributions.class, DOMAIN, Contributions::runtime);
 
     @Test
     void allBuiltInModulePermutationsCompileToTheSamePlan() {
         var snapshot = new PluginSnapshot(List.of(new TestPlugin()), Map.of(Topology.MODID, Topology.REGISTRY));
-        List<String> expected = TopoContentBootstrap.compile(snapshot, TopoContentBootstrap.MODULES).order();
+        List<Identifier> expected = TopoContentBootstrap.compile(snapshot, TopoContentBootstrap.MODULES).order();
         for (List<RegistrationModule> modules : permutations(TopoContentBootstrap.MODULES)) {
             assertEquals(expected, TopoContentBootstrap.compile(snapshot, modules).order());
         }
@@ -109,7 +111,7 @@ class TopoPluginEngineOrderTest {
                 state.fail = true;
                 TopoPluginEngine engine = engine(state, plugins, modules);
                 var error = assertThrows(IllegalStateException.class, engine::bootstrapContent);
-                assertTrue(error.getMessage().contains(DECLARE.id()));
+                assertTrue(error.getMessage().contains(DECLARE.id().toString()));
                 assertTrue(error.getCause().getMessage().contains(BPlugin.class.getName()));
                 assertSame(state.failure, error.getCause().getCause());
                 assertSame(error, assertThrows(IllegalStateException.class, engine::bootstrapContent).getCause());
@@ -146,7 +148,7 @@ class TopoPluginEngineOrderTest {
                 },
                 (plan, context) -> {
                     plan.point(Phase.RUNTIME, RUNTIME, List.of(LANG.id()), context, () -> state.calls.add("finish:runtime"));
-                    plan.step(Phase.READY, "test:freeze_runtime", List.of(RUNTIME.id()), () -> {
+                    plan.step(Phase.READY, Identifier.parse("test:freeze_runtime"), List.of(RUNTIME.id()), () -> {
                         state.runtime.freeze();
                         state.calls.add("freeze:runtime");
                     });

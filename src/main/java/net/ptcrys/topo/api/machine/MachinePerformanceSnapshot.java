@@ -1,5 +1,7 @@
 package net.ptcrys.topo.api.machine;
 
+import net.minecraft.resources.Identifier;
+
 import java.util.List;
 import java.util.Objects;
 
@@ -55,18 +57,18 @@ public record MachinePerformanceSnapshot(
     }
 
     public record ComponentSample(
-                                  String id,
+                                  Identifier id,
                                   String className,
                                   long nanos,
                                   long avgNanos,
                                   long peakNanos,
                                   List<TimingSample> children) {
 
-        public ComponentSample(String id, String className, long nanos) {
+        public ComponentSample(Identifier id, String className, long nanos) {
             this(id, className, nanos, 0L, 0L, List.of());
         }
 
-        public ComponentSample(String id, String className, long nanos, List<TimingSample> children) {
+        public ComponentSample(Identifier id, String className, long nanos, List<TimingSample> children) {
             this(id, className, nanos, 0L, 0L, children);
         }
 

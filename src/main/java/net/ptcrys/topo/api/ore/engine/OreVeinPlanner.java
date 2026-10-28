@@ -6,8 +6,10 @@ import net.ptcrys.topo.api.ore.OrePlacement;
 import net.ptcrys.topo.api.ore.OreVein;
 import net.ptcrys.topo.api.ore.OreVeinCollector;
 import net.ptcrys.topo.api.ore.OreVeinEntry;
+import net.ptcrys.topo.helper.IdHelper;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
@@ -33,7 +35,7 @@ public final class OreVeinPlanner {
 
     private static final long MAX_BLOCK_SCANS_PER_CHUNK = 262_144L;
     private static final long EXPOSURE_SALT = 0x6A09E667F3BCC909L;
-    private static final String VEIN_SELECT_SALT = "topo:vein_select";
+    private static final Identifier VEIN_SELECT_SALT = IdHelper.id("vein_select");
 
     private final Map<ResourceKey<Level>, List<GridVein>> gridByDimension;
     private final Map<OreVein, WeightedEntries> entryTables;
@@ -93,7 +95,7 @@ public final class OreVeinPlanner {
         }
         result.sort(Comparator
                 .comparingInt((OreVeinPlacement placement) -> -placement.grid().priority())
-                .thenComparing(placement -> placement.vein().id().toString())
+                .thenComparing(placement -> placement.vein().id())
                 .thenComparingInt(placement -> placement.center().getX())
                 .thenComparingInt(placement -> placement.center().getY())
                 .thenComparingInt(placement -> placement.center().getZ()));
@@ -208,7 +210,7 @@ public final class OreVeinPlanner {
         if (totalWeight <= 0) {
             return null;
         }
-        long mixed = OreGridMath.seed(seed, dimension.identifier().toString(), VEIN_SELECT_SALT, cell.x(), cell.z());
+        long mixed = OreGridMath.seed(seed, dimension.identifier(), VEIN_SELECT_SALT, cell.x(), cell.z());
         int selected = OreGridMath.randomInt(mixed, 5, 0, totalWeight - 1);
         int cursor = 0;
         for (GridVein candidate : candidates) {
@@ -217,14 +219,14 @@ public final class OreVeinPlanner {
                 return candidate;
             }
         }
-        return candidates.get(candidates.size() - 1);
+        return candidates.getLast();
     }
 
     private OreVeinPlacement placementForCell(
                                               long seed, ResourceKey<Level> dimension, OriginCell cell, GridVein gridVein) {
         OreVein vein = gridVein.vein();
         OrePlacement.Grid grid = gridVein.grid();
-        long mixed = OreGridMath.seed(seed, dimension.identifier().toString(), vein.id().toString(), cell.x(), cell.z());
+        long mixed = OreGridMath.seed(seed, dimension.identifier(), vein.id(), cell.x(), cell.z());
         int baseX = cell.x() * 16 + grid.gridSizeChunks() * 8;
         int baseZ = cell.z() * 16 + grid.gridSizeChunks() * 8;
         int offsetX = OreGridMath.randomInt(mixed, 11, -grid.randomOffsetBlocks(), grid.randomOffsetBlocks());
@@ -236,7 +238,7 @@ public final class OreVeinPlanner {
 
     private static long blockSeed(OreVeinPlacement placement, OreVein vein, int x, int z) {
         return OreGridMath.seed(
-                placement.center().asLong(), placement.dimension().identifier().toString(), vein.id().toString(), x, z);
+                placement.center().asLong(), placement.dimension().identifier(), vein.id(), x, z);
     }
 
     private static long entrySeed(OreVeinPlacement placement, OreVein vein, BlockPos pos) {

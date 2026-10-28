@@ -14,16 +14,17 @@ import net.ptcrys.topo.api.ore.mode.OreVeinModes;
 import net.ptcrys.topo.api.ore.policy.OreAirExposurePolicies;
 import net.ptcrys.topo.api.ore.policy.OreConflictPolicies;
 import net.ptcrys.topo.api.ore.shape.OreVeinShapes;
+import net.ptcrys.topo.helper.IdHelper;
 
 import java.util.List;
 
 /** Owns ore registration steps and their freeze fences. */
 public final class OreRegistrationModule implements RegistrationModule {
 
-    static final RegistrationPoint<OrePlugin, OreDomainRegistration> FOUNDATION = RegistrationPoint.of("topo:ore/foundation", OrePlugin.class, OreDomainRegistration.DOMAIN, OrePlugin::registerOreFoundation);
-    static final RegistrationPoint<OrePlugin, OreDomainRegistration> DISPLAYS = RegistrationPoint.of("topo:ore/displays", OrePlugin.class, OreDomainRegistration.DOMAIN, OrePlugin::registerOreDisplays);
-    static final RegistrationPoint<OrePlugin, OreDomainRegistration> VEINS = RegistrationPoint.of("topo:ore/veins", OrePlugin.class, OreDomainRegistration.DOMAIN, OrePlugin::registerOreVeins);
-    static final RegistrationPoint<OrePlugin, OreDomainRegistration> DATAGEN = RegistrationPoint.of("topo:ore/datagen", OrePlugin.class, OreDomainRegistration.DOMAIN, OrePlugin::registerOreDatagen);
+    static final RegistrationPoint<OrePlugin, OreDomainRegistration> FOUNDATION = RegistrationPoint.of(IdHelper.id("ore/foundation"), OrePlugin.class, OreDomainRegistration.DOMAIN, OrePlugin::registerOreFoundation);
+    static final RegistrationPoint<OrePlugin, OreDomainRegistration> DISPLAYS = RegistrationPoint.of(IdHelper.id("ore/displays"), OrePlugin.class, OreDomainRegistration.DOMAIN, OrePlugin::registerOreDisplays);
+    static final RegistrationPoint<OrePlugin, OreDomainRegistration> VEINS = RegistrationPoint.of(IdHelper.id("ore/veins"), OrePlugin.class, OreDomainRegistration.DOMAIN, OrePlugin::registerOreVeins);
+    static final RegistrationPoint<OrePlugin, OreDomainRegistration> DATAGEN = RegistrationPoint.of(IdHelper.id("ore/datagen"), OrePlugin.class, OreDomainRegistration.DOMAIN, OrePlugin::registerOreDatagen);
 
     @Override
     public void define(RegistrationPlan.Builder plan, RegistrationContext context) {

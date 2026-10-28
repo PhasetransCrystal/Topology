@@ -3,6 +3,8 @@ package net.ptcrys.topo.api.api.plugin.internal;
 import net.ptcrys.topo.api.api.plugin.TopoContribution;
 import net.ptcrys.topo.api.api.plugin.internal.PluginLifecycle.Phase;
 
+import net.minecraft.resources.Identifier;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -18,16 +20,19 @@ import java.util.TreeSet;
 /** Compiles a validated, deterministic dependency order before any registration action runs. */
 public final class RegistrationPlan {
 
-    record Step(String id, Phase phase, Set<String> after, Runnable action) {
+    record Step(Identifier id, Phase phase, Set<Identifier> after, Runnable action) {
 
         Step {
             Objects.requireNonNull(id, "step id");
-            if (id.isBlank()) throw new IllegalArgumentException("step id must not be blank");
             Objects.requireNonNull(phase, "step phase");
-            after = java.util.Collections.unmodifiableSet(new TreeSet<>(after));
+            TreeSet<Identifier> dependencies = new TreeSet<>(ID_ORDER);
+            dependencies.addAll(after);
+            after = java.util.Collections.unmodifiableSet(dependencies);
             Objects.requireNonNull(action, "step action");
         }
     }
+
+    private static final Comparator<Identifier> ID_ORDER = Comparator.comparing(Identifier::toString);
 
     private final List<Step> steps;
 
@@ -35,7 +40,7 @@ public final class RegistrationPlan {
         this.steps = List.copyOf(steps);
     }
 
-    List<String> order() {
+    List<Identifier> order() {
         return steps.stream().map(Step::id).toList();
     }
 
@@ -52,16 +57,16 @@ public final class RegistrationPlan {
 
     public static final class Builder {
 
-        private final Map<String, Step> steps = new TreeMap<>();
+        private final Map<Identifier, Step> steps = new TreeMap<>(ID_ORDER);
         private final Set<RegistrationPoint<?, ?>> points = new HashSet<>();
 
-        public Builder step(Phase phase, String id, Collection<String> after, Runnable action) {
+        public Builder step(Phase phase, Identifier id, Collection<Identifier> after, Runnable action) {
             Step step = new Step(id, phase, Set.copyOf(after), action);
             if (steps.putIfAbsent(id, step) != null) throw new IllegalStateException("Duplicate registration step '" + id + "'");
             return this;
         }
 
-        public <P extends TopoContribution, A> Builder point(Phase phase, RegistrationPoint<P, A> point, Collection<String> after,
+        public <P extends TopoContribution, A> Builder point(Phase phase, RegistrationPoint<P, A> point, Collection<Identifier> after,
                                                              RegistrationContext context, Runnable finish) {
             step(phase, point.id(), after, () -> {
                 context.contribute(point);
@@ -77,7 +82,7 @@ public final class RegistrationPlan {
 
         RegistrationPlan compile() {
             for (Step step : steps.values()) {
-                for (String dependency : step.after()) {
+                for (Identifier dependency : step.after()) {
                     Step required = steps.get(dependency);
                     if (required == null) throw new IllegalStateException("Step '" + step.id() + "' requires missing step '" + dependency + "'");
                     if (required.phase().ordinal() > step.phase().ordinal()) {
@@ -85,14 +90,14 @@ public final class RegistrationPlan {
                     }
                 }
             }
-            Map<String, Step> pending = new LinkedHashMap<>(steps);
+            Map<Identifier, Step> pending = new LinkedHashMap<>(steps);
             List<Step> result = new ArrayList<>();
-            Set<String> completed = new HashSet<>();
+            Set<Identifier> completed = new HashSet<>();
             for (Phase phase : Phase.values()) {
                 while (pending.values().stream().anyMatch(step -> step.phase() == phase)) {
                     Step next = pending.values().stream()
                             .filter(step -> step.phase() == phase && completed.containsAll(step.after()))
-                            .min(Comparator.comparing(Step::id)).orElseThrow(() -> new IllegalStateException(
+                            .min(Comparator.comparing(Step::id, ID_ORDER)).orElseThrow(() -> new IllegalStateException(
                                     "Registration dependency cycle: " + pending.values().stream()
                                             .filter(step -> step.phase() == phase).map(Step::id).toList()));
                     result.add(next);

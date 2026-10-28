@@ -1,5 +1,7 @@
 package net.ptcrys.topo.api.ore.engine;
 
+import net.minecraft.resources.Identifier;
+
 /**
  * Deterministic grid/cell math for vein placement. Pure functions of the world seed and stable ids,
  * so a given world reproduces the same veins every time.
@@ -15,7 +17,7 @@ public final class OreGridMath {
         return Math.floorDiv(chunkCoordinate, gridSizeChunks) * gridSizeChunks;
     }
 
-    public static long seed(long worldSeed, String dimensionId, String id, int x, int z) {
+    public static long seed(long worldSeed, Identifier dimensionId, Identifier id, int x, int z) {
         long value = worldSeed;
         value ^= ((long) dimensionId.hashCode()) * 0x9E3779B97F4A7C15L;
         value ^= ((long) id.hashCode()) * 0xBF58476D1CE4E5B9L;

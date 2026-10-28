@@ -12,13 +12,14 @@ import net.ptcrys.topo.api.equipment.EquipmentRegistry;
 import net.ptcrys.topo.api.material.Material;
 import net.ptcrys.topo.api.material.MaterialContentContext;
 import net.ptcrys.topo.api.material.MaterialRegistry;
+import net.ptcrys.topo.helper.IdHelper;
 
 import java.util.List;
 
 /** Owns equipment registration steps and their freeze fences. */
 public final class EquipmentRegistrationModule implements RegistrationModule {
 
-    static final RegistrationPoint<EquipmentPlugin, EquipmentDomainRegistration> KINDS = RegistrationPoint.of("topo:equipment/kinds", EquipmentPlugin.class, EquipmentDomainRegistration.DOMAIN, EquipmentPlugin::registerEquipmentKinds);
+    static final RegistrationPoint<EquipmentPlugin, EquipmentDomainRegistration> KINDS = RegistrationPoint.of(IdHelper.id("equipment/kinds"), EquipmentPlugin.class, EquipmentDomainRegistration.DOMAIN, EquipmentPlugin::registerEquipmentKinds);
 
     @Override
     public void define(RegistrationPlan.Builder plan, RegistrationContext context) {

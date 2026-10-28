@@ -19,15 +19,16 @@ import net.ptcrys.topo.api.pipe.PipeDistributionStrategies;
 import net.ptcrys.topo.api.pipe.Pipes;
 import net.ptcrys.topo.api.recipe.TopoRecipeTypes;
 import net.ptcrys.topo.api.recipe.common.RecipePreviewPlans;
+import net.ptcrys.topo.helper.IdHelper;
 
 import java.util.List;
 
 /** Owns machine registration steps and their freeze fences. */
 public final class MachineRegistrationModule implements RegistrationModule {
 
-    static final RegistrationPoint<MachinePlugin, MachineDomainRegistration> FOUNDATION = RegistrationPoint.of("topo:machine/foundation", MachinePlugin.class, MachineDomainRegistration.DOMAIN, MachinePlugin::registerMachineFoundation);
-    static final RegistrationPoint<MachinePlugin, MachineDomainRegistration> MACHINES = RegistrationPoint.of("topo:machine/machines", MachinePlugin.class, MachineDomainRegistration.DOMAIN, MachinePlugin::registerMachines);
-    static final RegistrationPoint<MachinePlugin, MachineDomainRegistration> FOLLOW_UPS = RegistrationPoint.of("topo:machine/follow_ups", MachinePlugin.class, MachineDomainRegistration.DOMAIN, MachinePlugin::registerMachineFollowUps);
+    static final RegistrationPoint<MachinePlugin, MachineDomainRegistration> FOUNDATION = RegistrationPoint.of(IdHelper.id("machine/foundation"), MachinePlugin.class, MachineDomainRegistration.DOMAIN, MachinePlugin::registerMachineFoundation);
+    static final RegistrationPoint<MachinePlugin, MachineDomainRegistration> MACHINES = RegistrationPoint.of(IdHelper.id("machine/machines"), MachinePlugin.class, MachineDomainRegistration.DOMAIN, MachinePlugin::registerMachines);
+    static final RegistrationPoint<MachinePlugin, MachineDomainRegistration> FOLLOW_UPS = RegistrationPoint.of(IdHelper.id("machine/follow_ups"), MachinePlugin.class, MachineDomainRegistration.DOMAIN, MachinePlugin::registerMachineFollowUps);
 
     @Override
     public void define(RegistrationPlan.Builder plan, RegistrationContext context) {
