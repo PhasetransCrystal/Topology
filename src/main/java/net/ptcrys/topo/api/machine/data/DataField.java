@@ -27,7 +27,6 @@ public abstract class DataField {
     private final boolean persistEnabled;
     private final boolean syncToClientEnabled;
     private boolean syncToClientDirty;
-    private int syncToClientSlot = -1;
     private boolean computed;
     private Runnable recomputeAction;
 
@@ -155,19 +154,6 @@ public abstract class DataField {
 
     final void clearSyncDirty() {
         syncToClientDirty = false;
-    }
-
-    final int syncSlot() {
-        return syncToClientSlot;
-    }
-
-    final void assignSyncSlot(int slot) {
-        if (slot < 0) {
-            throw new IllegalArgumentException("Sync slot must be non-negative");
-        }
-        if (syncToClientSlot < 0) {
-            syncToClientSlot = slot;
-        }
     }
 
     private void markDirtyInternal() {

@@ -374,10 +374,9 @@ public final class MachineDataScope {
 
     public void enableClientSync(DataField field) {
         requireSchemaOpen("enable client sync for data field '" + field.path() + "'");
-        if (field.syncSlot() >= 0) {
+        if (syncToClientFields.contains(field)) {
             return;
         }
-        field.assignSyncSlot(syncToClientFields.size());
         syncToClientFields.add(field);
     }
 

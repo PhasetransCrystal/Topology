@@ -23,7 +23,6 @@ public final class PipeEngineStats {
     public static long openNanos;
     public static long extractNanos;
     public static long insertNanos;
-    public static long commitNanos;
     public static long boundNanos;
     public static long directMoves;
     public static long directSkipType;
@@ -34,9 +33,9 @@ public final class PipeEngineStats {
 
     public static String snapshotAndReset() {
         String line = String.format(Locale.ROOT,
-                "phases(ns): capability=%d gate=%d prepare=%d bucket=%d route=%d transaction=%d book=%d tx=%d direct=%d" + " portTicks=%d | tx-breakdown: bound=%d open=%d extract=%d insert=%d commit=%d" + " | directSkip: type=%d ready=%d lifecycle=%d",
+                "phases(ns): capability=%d gate=%d prepare=%d bucket=%d route=%d transaction=%d book=%d tx=%d direct=%d" + " portTicks=%d | tx-breakdown: bound=%d open=%d extract=%d insert=%d" + " | directSkip: type=%d ready=%d lifecycle=%d",
                 capabilityNanos, gateNanos, prepareNanos, bucketNanos, routeNanos, transactionNanos, bookNanos,
-                transactions, directMoves, portTicks, boundNanos, openNanos, extractNanos, insertNanos, commitNanos,
+                transactions, directMoves, portTicks, boundNanos, openNanos, extractNanos, insertNanos,
                 directSkipType, directSkipReady, directSkipLifecycle);
         capabilityNanos = 0;
         gateNanos = 0;
@@ -51,7 +50,6 @@ public final class PipeEngineStats {
         openNanos = 0;
         extractNanos = 0;
         insertNanos = 0;
-        commitNanos = 0;
         directMoves = 0;
         directSkipType = 0;
         directSkipReady = 0;
