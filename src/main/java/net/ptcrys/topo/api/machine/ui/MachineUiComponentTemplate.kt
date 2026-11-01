@@ -1,5 +1,7 @@
 package net.ptcrys.topo.api.machine.ui
 
+import net.ptcrys.topo.api.api.lang.LangKey
+import net.ptcrys.topo.api.api.lang.TopoApiLang
 import net.ptcrys.topo.api.machine.resource.RecipeSearchPoolId
 
 import net.minecraft.client.Minecraft
@@ -351,7 +353,7 @@ object MachineUiComponentTemplate {
         val idField = TopoTextField().apply {
             setAnyString()
             textFieldStyle {
-                it.placeholder(Component.translatable("ui.topo.search_pool.id_placeholder"))
+                it.placeholder(TopoApiLang.UI_SEARCH_POOL_ID_PLACEHOLDER.getComponent())
             }
         }
         val submitRpc = RPCEventBuilder.simple(
@@ -412,8 +414,8 @@ object MachineUiComponentTemplate {
             style {
                 it.backgroundTexture(MachineUiComponentStyle.sideIoCellBaseTexture())
                 it.tooltips(
-                    Component.translatable("ui.topo.search_pool.id.tooltip"),
-                    Component.translatable("ui.topo.search_pool.copy_hint"),
+                    TopoApiLang.UI_SEARCH_POOL_ID_TOOLTIP.getComponent(),
+                    TopoApiLang.UI_SEARCH_POOL_COPY_HINT.getComponent(),
                 )
             }
             layout {
@@ -446,12 +448,12 @@ object MachineUiComponentTemplate {
             }
         }
 
-        fun squareIconButton(id: String, tooltipKey: String, icon: IGuiTexture, requestedValue: String): Button = Button().apply {
+        fun squareIconButton(id: String, tooltipKey: LangKey, icon: IGuiTexture, requestedValue: String): Button = Button().apply {
             setId(id)
             noText()
             style {
                 it.background(MachineUiComponentStyle.sideIoCellBaseTexture())
-                it.tooltips(Component.translatable(tooltipKey))
+                it.tooltips(tooltipKey.getComponent())
             }
             buttonStyle {
                 it.baseTexture(MachineUiComponentStyle.sideIoCellBaseTexture())
@@ -490,13 +492,13 @@ object MachineUiComponentTemplate {
 
         val resetButton = squareIconButton(
             "topo_search_pool_reset",
-            "ui.topo.search_pool.reset.tooltip",
+            TopoApiLang.UI_SEARCH_POOL_RESET_TOOLTIP,
             MachineUiIcons.reset(),
             fieldDefault,
         )
         val universalButton = squareIconButton(
             "topo_search_pool_universal",
-            "ui.topo.search_pool.universal.tooltip",
+            TopoApiLang.UI_SEARCH_POOL_UNIVERSAL_TOOLTIP,
             MachineUiIcons.universal(),
             RecipeSearchPoolId.UNIVERSAL.value(),
         )
@@ -518,11 +520,11 @@ object MachineUiComponentTemplate {
     }
 
     /** 方形图标按钮(场景工具栏等):无文字、图标 + 提示,边长取 [MachineUiComponentStyle.sceneToolbarButtonSize]。 */
-    fun createIconButton(icon: IGuiTexture, tooltipKey: String, action: Runnable): SelectableButton = SelectableButton().apply {
+    fun createIconButton(icon: IGuiTexture, tooltipKey: LangKey, action: Runnable): SelectableButton = SelectableButton().apply {
         noText()
         addPreIcon(icon)
         style {
-            it.tooltips(Component.translatable(tooltipKey))
+            it.tooltips(tooltipKey.getComponent())
         }
         setOnClick { action.run() }
         layout {
@@ -697,7 +699,7 @@ object MachineUiComponentTemplate {
             }
             addChild(label)
             addChild(valueMirror)
-            style { it.tooltips(Component.translatable("ui.topo.amount_editor.click_to_edit")) }
+            style { it.tooltips(TopoApiLang.UI_AMOUNT_EDITOR_CLICK_TO_EDIT.getComponent()) }
             addRPCEvent(setRpc)
             setOnClick { event ->
                 if (event.button == 0) {

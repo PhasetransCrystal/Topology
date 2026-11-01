@@ -1,5 +1,6 @@
 package net.ptcrys.topo.api.machine.ui
 
+import net.ptcrys.topo.api.api.lang.TopoApiLang
 import net.ptcrys.topo.api.machine.ui.tooltip.LazyHoverPanel
 
 import net.minecraft.network.chat.Component
@@ -236,8 +237,7 @@ class ResourceBar @JvmOverloads constructor(private val resourceName: Component,
         } else {
             payload.add(resourceName.copy().withStyle(nameStyle))
             payload.add(
-                Component.translatable(
-                    "ui.topo.resource.amount_capacity",
+                TopoApiLang.UI_RESOURCE_AMOUNT_CAPACITY.getComponent(
                     amountSupplier.asLong,
                     capacitySupplier.asLong,
                 ),
@@ -273,25 +273,25 @@ class ResourceBar @JvmOverloads constructor(private val resourceName: Component,
             lcd.setId("topo_recipe_scalar_tooltip")
             lcd.addStaticEntry(
                 resourceName.copy().withStyle(Style.EMPTY.withColor(color and 0xFFFFFF)),
-                Component.translatable(
+                (
                     if (flow == Flow.CONSUMED) {
-                        "ui.topo.resource.consumed"
+                        TopoApiLang.UI_RESOURCE_CONSUMED
                     } else {
-                        "ui.topo.resource.produced"
-                    },
-                ),
+                        TopoApiLang.UI_RESOURCE_PRODUCED
+                    }
+                    ).getComponent(),
                 LcdData.LED_TEXT,
             )
             if (perTick) {
                 lcd.addStaticEntry(
-                    Component.translatable("ui.topo.resource.rate"),
+                    TopoApiLang.UI_RESOURCE_RATE.getComponent(),
                     Component.literal("$amount/t"),
                     LcdData.LED_TEXT,
                 )
             }
             val total = if (perTick) amount * durationTicks else amount
             lcd.addStaticEntry(
-                Component.translatable("ui.topo.resource.amount"),
+                TopoApiLang.UI_RESOURCE_AMOUNT.getComponent(),
                 Component.literal(total.toString()),
                 LcdData.LED_TEXT,
             )

@@ -1,5 +1,7 @@
 package net.ptcrys.topo.api.machine.multiblock.ui
 
+import net.ptcrys.topo.api.api.lang.LangKey
+import net.ptcrys.topo.api.api.lang.TopoApiLang
 import net.ptcrys.topo.api.machine.ui.MachineUiComponentStyle
 import net.ptcrys.topo.api.machine.ui.MachineUiComponentTemplate
 import net.ptcrys.topo.api.machine.ui.MachineUiLayout
@@ -69,7 +71,7 @@ object MultiblockScenePanel {
         /** Label / element pinned to the toolbar's left side (dimensions + rotation info). */
         fun headerInfo(header: UIElement): Builder = apply { headerInfo = header }
 
-        fun control(icon: IGuiTexture, tooltipKey: String, action: Runnable): Builder = apply {
+        fun control(icon: IGuiTexture, tooltipKey: LangKey, action: Runnable): Builder = apply {
             extraControls.add(Control(icon, tooltipKey, action))
         }
 
@@ -78,7 +80,7 @@ object MultiblockScenePanel {
         fun build(): Panel = assemble(this)
     }
 
-    internal data class Control(val icon: IGuiTexture, val tooltipKey: String, val action: Runnable)
+    internal data class Control(val icon: IGuiTexture, val tooltipKey: LangKey, val action: Runnable)
 
     class Panel internal constructor(private val sceneArea: UIElement, private val scene: Scene, private val resetView: Runnable) {
         fun sceneArea(): UIElement = sceneArea
@@ -171,23 +173,23 @@ object MultiblockScenePanel {
                 layerSlicer(scene, builder.positions, Vector3f(scene.center), scene.zoom)?.let { add(it) }
                 if (builder.zoomControls) {
                     add(
-                        MachineUiComponentTemplate.createIconButton(Icons.ADD, "ui.topo.multiblock.preview.zoom_in") {
+                        MachineUiComponentTemplate.createIconButton(Icons.ADD, TopoApiLang.UI_MULTIBLOCK_PREVIEW_ZOOM_IN) {
                             scene.setZoom(maxOf(ZOOM_MIN, scene.zoom - ZOOM_STEP))
                         },
                     )
                     add(
-                        MachineUiComponentTemplate.createIconButton(Icons.REMOVE, "ui.topo.multiblock.preview.zoom_out") {
+                        MachineUiComponentTemplate.createIconButton(Icons.REMOVE, TopoApiLang.UI_MULTIBLOCK_PREVIEW_ZOOM_OUT) {
                             scene.setZoom(minOf(ZOOM_MAX, scene.zoom + ZOOM_STEP))
                         },
                     )
                 }
                 add(
-                    MachineUiComponentTemplate.createIconButton(Icons.ROTATION, "ui.topo.multiblock.preview.rotate") {
+                    MachineUiComponentTemplate.createIconButton(Icons.ROTATION, TopoApiLang.UI_MULTIBLOCK_PREVIEW_ROTATE) {
                         spinning[0] = !spinning[0]
                     },
                 )
                 if (builder.resetControl) {
-                    add(MachineUiComponentTemplate.createIconButton(Icons.REPLAY, "ui.topo.multiblock.preview.reset") { resetView.run() })
+                    add(MachineUiComponentTemplate.createIconButton(Icons.REPLAY, TopoApiLang.UI_MULTIBLOCK_PREVIEW_RESET) { resetView.run() })
                 }
                 builder.extraControls.forEach { control ->
                     add(
@@ -209,7 +211,7 @@ object MultiblockScenePanel {
         val selectedLayer = intArrayOf(LAYER_ALL)
         return MachineUiComponentTemplate.createButton(Component.literal(layerLabel(LAYER_ALL, minY))).apply {
             setId("topo_multiblock_scene_layer_button")
-            style { it.tooltips(Component.translatable("ui.topo.multiblock.preview.layer")) }
+            style { it.tooltips(TopoApiLang.UI_MULTIBLOCK_PREVIEW_LAYER.getComponent()) }
             setOnClick {
                 selectedLayer[0] = when {
                     selectedLayer[0] == LAYER_ALL -> minY

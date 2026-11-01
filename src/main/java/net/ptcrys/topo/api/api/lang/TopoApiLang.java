@@ -43,6 +43,221 @@ public final class TopoApiLang {
             "multiblock.diagnose.need_found",
             "%s (found %s) at %s",
             "%s（发现 %s，位于 %s）");
+    public static final LangKey UI_MULTIBLOCK_STRUCTURE = LANG.key(
+            "ui",
+            "multiblock.structure",
+            "Structure",
+            "多方块结构");
+    public static final LangKey UI_MULTIBLOCK_STRUCTURE_FORMED = LANG.key(
+            "ui",
+            "multiblock.structure.formed",
+            "Formed",
+            "结构成型");
+    public static final LangKey UI_MULTIBLOCK_STRUCTURE_YES = LANG.key(
+            "ui",
+            "multiblock.structure.yes",
+            "Yes",
+            "成型");
+    public static final LangKey UI_MULTIBLOCK_STRUCTURE_NO = LANG.key(
+            "ui",
+            "multiblock.structure.no",
+            "No",
+            "未成形");
+    public static final LangKey UI_MULTIBLOCK_DIAGNOSE_ALL_MET = LANG.key(
+            "ui",
+            "multiblock.diagnose.all_met",
+            "All cells match",
+            "全部匹配");
+    public static final LangKey UI_MULTIBLOCK_DIAGNOSE_MORE = LANG.key(
+            "ui",
+            "multiblock.diagnose.more",
+            "%s more…",
+            "另有 %s 项…");
+    public static final LangKey UI_MULTIBLOCK_DIAGNOSE_LOCATE = LANG.key(
+            "ui",
+            "multiblock.diagnose.locate",
+            "Click to locate",
+            "点击定位");
+    public static final LangKey UI_MULTIBLOCK_DIAGNOSE_CELL_OK = LANG.key(
+            "ui",
+            "multiblock.diagnose.cell_ok",
+            "OK",
+            "正常");
+    public static final LangKey UI_MULTIBLOCK_DIAGNOSE_EMPTY_CELL = LANG.key(
+            "ui",
+            "multiblock.diagnose.empty",
+            "Empty cell",
+            "空格");
+    public static final LangKey UI_MULTIBLOCK_DIAGNOSE_WRONG_BLOCK = LANG.key(
+            "ui",
+            "multiblock.diagnose.wrong_block",
+            "Wrong block",
+            "方块错误");
+    public static final LangKey UI_MULTIBLOCK_DIAGNOSE_WRONG_PROPERTY = LANG.key(
+            "ui",
+            "multiblock.diagnose.wrong_property",
+            "Wrong state",
+            "状态错误");
+    public static final LangKey UI_MULTIBLOCK_DIAGNOSE_MISSING_PART = LANG.key(
+            "ui",
+            "multiblock.diagnose.missing_part",
+            "Missing part",
+            "缺少部件");
+    public static final LangKey UI_MULTIBLOCK_DIAGNOSE_EXCESS_PART = LANG.key(
+            "ui",
+            "multiblock.diagnose.excess_part",
+            "Excess part",
+            "多余部件");
+    public static final LangKey UI_MULTIBLOCK_DIAGNOSE_MISSING_COUNT = LANG.key(
+            "ui",
+            "multiblock.diagnose.missing_count",
+            "Missing %s: %s/%s",
+            "缺少 %s：%s/%s");
+    public static final LangKey UI_MULTIBLOCK_DIAGNOSE_EXCESS_COUNT = LANG.key(
+            "ui",
+            "multiblock.diagnose.excess_count",
+            "Excess %s: %s/%s",
+            "多余 %s：%s/%s");
+    public static final LangKey UI_MULTIBLOCK_STATS_BLOCKS = LANG.key(
+            "ui",
+            "multiblock.stats.blocks",
+            "Blocks",
+            "方块");
+    public static final LangKey UI_MULTIBLOCK_STATS_PARTS = LANG.key(
+            "ui",
+            "multiblock.stats.parts",
+            "Parts",
+            "部件");
+    public static final LangKey UI_MULTIBLOCK_STATS_CAPTURE = LANG.key(
+            "ui",
+            "multiblock.stats.capture",
+            "Capture",
+            "采集");
+    public static final LangKey UI_MULTIBLOCK_STATS_SCAN = LANG.key(
+            "ui",
+            "multiblock.stats.scan",
+            "Scan",
+            "扫描");
+    public static final LangKey UI_MULTIBLOCK_PREVIEW_AS_ROLE = LANG.key(
+            "ui",
+            "multiblock.preview.as_role",
+            "as %s",
+            "作为 %s");
+    public static final LangKey UI_MULTIBLOCK_PREVIEW_LAYER = LANG.key(
+            "ui",
+            "multiblock.preview.layer",
+            "Layer",
+            "层");
+    public static final LangKey UI_MULTIBLOCK_PREVIEW_ZOOM_IN = LANG.key(
+            "ui",
+            "multiblock.preview.zoom_in",
+            "Zoom in",
+            "放大");
+    public static final LangKey UI_MULTIBLOCK_PREVIEW_ZOOM_OUT = LANG.key(
+            "ui",
+            "multiblock.preview.zoom_out",
+            "Zoom out",
+            "缩小");
+    public static final LangKey UI_MULTIBLOCK_PREVIEW_ROTATE = LANG.key(
+            "ui",
+            "multiblock.preview.rotate",
+            "Toggle rotation",
+            "切换旋转");
+    public static final LangKey UI_MULTIBLOCK_PREVIEW_RESET = LANG.key(
+            "ui",
+            "multiblock.preview.reset",
+            "Reset view",
+            "重置视角");
+    public static final LangKey UI_MULTIBLOCK_SCENE_SWITCH_TO_REQUIRED = LANG.key(
+            "ui",
+            "multiblock.scene.switch_to_required",
+            "Show required blocks",
+            "显示所需方块");
+    public static final LangKey UI_MULTIBLOCK_SCENE_SWITCH_TO_DETECTED = LANG.key(
+            "ui",
+            "multiblock.scene.switch_to_detected",
+            "Show built blocks",
+            "显示已建方块");
+    public static final LangKey UI_SEARCH_POOL_ID_PLACEHOLDER = LANG.key(
+            "ui",
+            "search_pool.id_placeholder",
+            "Pool id",
+            "池 ID");
+    public static final LangKey UI_SEARCH_POOL_ID_TOOLTIP = LANG.key(
+            "ui",
+            "search_pool.id.tooltip",
+            "Search pool id; blank resets to default",
+            "搜索池 ID；留空恢复默认");
+    public static final LangKey UI_SEARCH_POOL_COPY_HINT = LANG.key(
+            "ui",
+            "search_pool.copy_hint",
+            "Click to copy",
+            "点击复制");
+    public static final LangKey UI_SEARCH_POOL_RESET_TOOLTIP = LANG.key(
+            "ui",
+            "search_pool.reset.tooltip",
+            "Reset to default",
+            "恢复默认");
+    public static final LangKey UI_SEARCH_POOL_UNIVERSAL_TOOLTIP = LANG.key(
+            "ui",
+            "search_pool.universal.tooltip",
+            "Use universal pool",
+            "使用通用池");
+    public static final LangKey UI_SEARCH_POOL_PANEL = LANG.key(
+            "ui",
+            "search_pool.panel",
+            "Search Pool",
+            "搜索池");
+    public static final LangKey UI_ITEM_PICKER_CANCEL = LANG.key(
+            "ui",
+            "item_picker.cancel",
+            "Cancel",
+            "取消");
+    public static final LangKey UI_ITEM_PICKER_CONFIRM = LANG.key(
+            "ui",
+            "item_picker.confirm",
+            "Confirm",
+            "确认");
+    public static final LangKey UI_ITEM_PICKER_HINT = LANG.key(
+            "ui",
+            "item_picker.hint",
+            "Click an item to stage it",
+            "点击物品加入暂存");
+    public static final LangKey UI_ITEM_PICKER_STAGED_TOOLTIP = LANG.key(
+            "ui",
+            "item_picker.staged_tooltip",
+            "Click to clear",
+            "点击清除");
+    public static final LangKey UI_AMOUNT_EDITOR_CLICK_TO_EDIT = LANG.key(
+            "ui",
+            "amount_editor.click_to_edit",
+            "Click to edit",
+            "点击编辑");
+    public static final LangKey UI_RESOURCE_AMOUNT_CAPACITY = LANG.key(
+            "ui",
+            "resource.amount_capacity",
+            "%s / %s",
+            "%s / %s");
+    public static final LangKey UI_RESOURCE_CONSUMED = LANG.key(
+            "ui",
+            "resource.consumed",
+            "Consumed",
+            "消耗");
+    public static final LangKey UI_RESOURCE_PRODUCED = LANG.key(
+            "ui",
+            "resource.produced",
+            "Produced",
+            "产出");
+    public static final LangKey UI_RESOURCE_RATE = LANG.key(
+            "ui",
+            "resource.rate",
+            "Rate",
+            "速率");
+    public static final LangKey UI_RESOURCE_AMOUNT = LANG.key(
+            "ui",
+            "resource.amount",
+            "Amount",
+            "总量");
 
     // --- Machine UI generic labels (runtime UI framework owns the layout, not content) --------
 

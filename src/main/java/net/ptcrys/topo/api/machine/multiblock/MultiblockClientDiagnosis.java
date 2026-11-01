@@ -1,5 +1,6 @@
 package net.ptcrys.topo.api.machine.multiblock;
 
+import net.ptcrys.topo.api.api.lang.LangKey;
 import net.ptcrys.topo.api.api.lang.TopoApiLang;
 import net.ptcrys.topo.api.machine.MachineBlockEntity;
 import net.ptcrys.topo.api.machine.MachineDefinition;
@@ -108,14 +109,18 @@ public final class MultiblockClientDiagnosis {
             return this == WRONG_PROPERTY;
         }
 
-        public String headlineKey() {
+        public LangKey headlineKey() {
             return switch (this) {
-                case EMPTY_CELL -> "ui.topo.multiblock.diagnose.empty";
-                case WRONG_BLOCK -> "ui.topo.multiblock.diagnose.wrong_block";
-                case WRONG_PROPERTY -> "ui.topo.multiblock.diagnose.wrong_property";
-                case MISSING_PART -> "ui.topo.multiblock.diagnose.missing_part";
-                case EXCESS_PART -> "ui.topo.multiblock.diagnose.excess_part";
+                case EMPTY_CELL -> TopoApiLang.UI_MULTIBLOCK_DIAGNOSE_EMPTY_CELL;
+                case WRONG_BLOCK -> TopoApiLang.UI_MULTIBLOCK_DIAGNOSE_WRONG_BLOCK;
+                case WRONG_PROPERTY -> TopoApiLang.UI_MULTIBLOCK_DIAGNOSE_WRONG_PROPERTY;
+                case MISSING_PART -> TopoApiLang.UI_MULTIBLOCK_DIAGNOSE_MISSING_PART;
+                case EXCESS_PART -> TopoApiLang.UI_MULTIBLOCK_DIAGNOSE_EXCESS_PART;
             };
+        }
+
+        public LangKey countKey() {
+            return this == EXCESS_PART ? TopoApiLang.UI_MULTIBLOCK_DIAGNOSE_EXCESS_COUNT : TopoApiLang.UI_MULTIBLOCK_DIAGNOSE_MISSING_COUNT;
         }
     }
 
@@ -194,7 +199,7 @@ public final class MultiblockClientDiagnosis {
                 null,
                 kind,
                 name,
-                Component.translatable(kind.headlineKey(), name, have, bound),
+                kind.countKey().getComponent(name, have, bound),
                 capabilityIcons(capability));
     }
 

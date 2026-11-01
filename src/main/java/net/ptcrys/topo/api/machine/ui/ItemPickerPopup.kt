@@ -1,5 +1,7 @@
 package net.ptcrys.topo.api.machine.ui
 
+import net.ptcrys.topo.api.api.lang.TopoApiLang
+
 import net.minecraft.client.Minecraft
 import net.minecraft.network.chat.Component
 import net.minecraft.world.item.ItemStack
@@ -135,14 +137,14 @@ object ItemPickerPopup {
                 add(
                     actionButton(
                         "topo_item_picker_cancel",
-                        Component.translatable("ui.topo.item_picker.cancel"),
+                        TopoApiLang.UI_ITEM_PICKER_CANCEL.getComponent(),
                         close,
                     ),
                 )
                 add(
                     actionButton(
                         "topo_item_picker_confirm",
-                        Component.translatable("ui.topo.item_picker.confirm"),
+                        TopoApiLang.UI_ITEM_PICKER_CONFIRM.getComponent(),
                         confirm,
                     ),
                 )
@@ -150,7 +152,7 @@ object ItemPickerPopup {
 
             MachineUiContainerTemplate.ModalPopupContent(
                 body = listOf(
-                    hintLabel(Component.translatable("ui.topo.item_picker.hint")),
+                    hintLabel(TopoApiLang.UI_ITEM_PICKER_HINT.getComponent()),
                     stagingRow,
                     divider(),
                     invGrid,
@@ -273,7 +275,7 @@ object ItemPickerPopup {
             }
             style {
                 it.backgroundTexture(MachineUiComponentStyle.sideIoCellBaseTexture())
-                it.tooltips(Component.translatable("ui.topo.item_picker.staged_tooltip"))
+                it.tooltips(TopoApiLang.UI_ITEM_PICKER_STAGED_TOOLTIP.getComponent())
             }
             addChild(icon)
             addChild(plus)

@@ -1,5 +1,6 @@
 package net.ptcrys.topo.api.machine.resource;
 
+import net.ptcrys.topo.api.api.lang.TopoApiLang;
 import net.ptcrys.topo.api.machine.component.ComponentContext;
 import net.ptcrys.topo.api.machine.component.MachineComponent;
 import net.ptcrys.topo.api.machine.data.DataInt;
@@ -347,15 +348,7 @@ public abstract class ResourcePort<S, R extends Resource> extends MachineCompone
         return Component.translatableWithFallback(
                 id().toLanguageKey("trait"),
                 "%s",
-                Component.translatable(sideIoTitleKey(metadata.recipeIo())));
-    }
-
-    private static String sideIoTitleKey(RecipeRole role) {
-        return switch (role) {
-            case INPUT -> "ui.topo.side_io.title.insert";
-            case OUTPUT -> "ui.topo.side_io.title.extract";
-            case BOTH, NONE -> "ui.topo.side_io.title.both";
-        };
+                TopoApiLang.sideIoTitle(metadata.recipeIo()).getComponent());
     }
 
     protected void onStorageChanged(int index, @NonNull S previousContents) {

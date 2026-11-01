@@ -1,5 +1,6 @@
 package net.ptcrys.topo.api.machine.multiblock.ui
 
+import net.ptcrys.topo.api.api.lang.TopoApiLang
 import net.ptcrys.topo.api.machine.ui.MachineUiComponentStyle
 import net.ptcrys.topo.api.machine.ui.MachineUiContainerTemplate
 import net.ptcrys.topo.api.machine.ui.MachineUiLayout
@@ -193,7 +194,7 @@ object MultiblockPreviewBlockList {
             val candidate = roles[i]
             val role = Component.literal(candidate.role()!!.id().path.replace('_', ' '))
                 .withStyle(ChatFormatting.GOLD)
-            Component.translatable("ui.topo.multiblock.preview.as_role", role)
+            TopoApiLang.UI_MULTIBLOCK_PREVIEW_AS_ROLE.getComponent(role)
                 .withStyle(ChatFormatting.DARK_GRAY)
                 .append(Component.literal("  "))
                 .append(countText(candidate.min(), candidate.max()).withStyle(ChatFormatting.GRAY))

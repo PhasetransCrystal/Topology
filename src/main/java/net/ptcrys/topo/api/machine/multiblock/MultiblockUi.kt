@@ -1,5 +1,6 @@
 package net.ptcrys.topo.api.machine.multiblock
 
+import net.ptcrys.topo.api.api.lang.TopoApiLang
 import net.ptcrys.topo.api.machine.component.ComponentContext
 import net.ptcrys.topo.api.machine.component.ComponentKey
 import net.ptcrys.topo.api.machine.component.ComponentMount
@@ -35,12 +36,12 @@ class MultiblockUi private constructor(context: ComponentContext<MultiblockUi>, 
         selection = MultiblockStructurePage.Selection()
         contribution.mainPage(
             pageKey,
-            Component.translatable("ui.topo.multiblock.structure"),
+            TopoApiLang.UI_MULTIBLOCK_STRUCTURE.getComponent(),
             createStructurePage(),
         )
         contribution.rightPanel(
             diagnosticsPanelKey,
-            Component.translatable("ui.topo.multiblock.structure"),
+            TopoApiLang.UI_MULTIBLOCK_STRUCTURE.getComponent(),
             pageKey = pageKey,
             element = MultiblockStructurePage.diagnosticsPanel(machine(), controller, blueprint(), selection),
         )

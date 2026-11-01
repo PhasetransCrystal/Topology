@@ -79,6 +79,9 @@ object MachineUiComponentStyle {
     val ioInsert = accent
     val ioExtract = waitingAmber
 
+    val formedYes = outputGreen
+    val formedNo = errorRed
+
     // ── 3. 组件配方(角色 → 纹理) ─────────────────────────────────────────────
 
     /** 描边宽度;必须先于 [boxTexture] 声明(object 按声明序初始化)。 */

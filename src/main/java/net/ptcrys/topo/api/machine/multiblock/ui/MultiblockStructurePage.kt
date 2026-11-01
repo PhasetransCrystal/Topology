@@ -1,5 +1,7 @@
 package net.ptcrys.topo.api.machine.multiblock.ui
 
+import net.ptcrys.topo.api.api.lang.LangKey
+import net.ptcrys.topo.api.api.lang.TopoApiLang
 import net.ptcrys.topo.api.machine.MachineBlockEntity
 import net.ptcrys.topo.api.machine.multiblock.MultiblockClientDiagnosis
 import net.ptcrys.topo.api.machine.multiblock.MultiblockController
@@ -130,7 +132,7 @@ object MultiblockStructurePage {
             root.layout { it.paddingAll(4f) }
             add(
                 lcdLabel(MachineUiComponentStyle.textMuted, Horizontal.LEFT).apply {
-                    setText(Component.translatable("ui.topo.multiblock.formed"))
+                    setText(TopoApiLang.UI_MULTIBLOCK_STRUCTURE_FORMED.getComponent())
                 },
             )
             add(
@@ -138,17 +140,11 @@ object MultiblockStructurePage {
                     bind(
                         DataBindingBuilder.componentS2C {
                             val formed = controller.formed()
-                            val color = if (formed) MachineUiComponentStyle.ledOutput else MachineUiComponentStyle.ledError
-                            tinted(
-                                Component.translatable(
-                                    if (formed) {
-                                        "ui.topo.multiblock.yes"
-                                    } else {
-                                        "ui.topo.multiblock.no"
-                                    },
-                                ),
-                                color,
-                            )
+                            if (formed) {
+                                TopoApiLang.UI_MULTIBLOCK_STRUCTURE_YES.getComponent().withColor(MachineUiComponentStyle.formedYes)
+                            } else {
+                                TopoApiLang.UI_MULTIBLOCK_STRUCTURE_NO.getComponent().withColor(MachineUiComponentStyle.formedNo)
+                            }
                         }.build(),
                     )
                 },
@@ -210,29 +206,29 @@ object MultiblockStructurePage {
                 statsPanel.clearAllChildren()
                 statsPanel.addChild(
                     hintRow(
-                        Component.translatable("ui.topo.multiblock.diagnose.all_met"),
+                        TopoApiLang.UI_MULTIBLOCK_DIAGNOSE_ALL_MET.getComponent(),
                         MachineUiComponentStyle.ledOutput,
                     ),
                 )
                 statsPanel.addChild(
                     MachineUiContainerTemplate.createLcdData(LcdData.Orientation.VERTICAL)
                         .addStaticEntry(
-                            Component.translatable("ui.topo.multiblock.stats.blocks"),
+                            TopoApiLang.UI_MULTIBLOCK_STATS_BLOCKS.getComponent(),
                             Component.literal("${report.totalCells()}"),
                             MachineUiComponentStyle.ledText,
                         )
                         .addStaticEntry(
-                            Component.translatable("ui.topo.multiblock.stats.parts"),
+                            TopoApiLang.UI_MULTIBLOCK_STATS_PARTS.getComponent(),
                             Component.literal("${report.partCount()}"),
                             MachineUiComponentStyle.ledText,
                         )
                         .addStaticEntry(
-                            Component.translatable("ui.topo.multiblock.stats.capture"),
+                            TopoApiLang.UI_MULTIBLOCK_STATS_CAPTURE.getComponent(),
                             Component.literal(String.format("%.2f ms", report.captureNanos() / 1_000_000.0)),
                             MachineUiComponentStyle.textMuted,
                         )
                         .addStaticEntry(
-                            Component.translatable("ui.topo.multiblock.stats.scan"),
+                            TopoApiLang.UI_MULTIBLOCK_STATS_SCAN.getComponent(),
                             Component.literal(String.format("%.2f ms", report.scanNanos() / 1_000_000.0)),
                             MachineUiComponentStyle.textMuted,
                         ),
@@ -327,7 +323,7 @@ object MultiblockStructurePage {
         if (report.allMet()) {
             return listOf(
                 hintRow(
-                    Component.translatable("ui.topo.multiblock.diagnose.all_met"),
+                    TopoApiLang.UI_MULTIBLOCK_DIAGNOSE_ALL_MET.getComponent(),
                     MachineUiComponentStyle.ledOutput,
                 ),
             )
@@ -337,7 +333,7 @@ object MultiblockStructurePage {
         if (report.hiddenProblems() > 0) {
             rows.add(
                 hintRow(
-                    Component.translatable("ui.topo.multiblock.diagnose.more", report.hiddenProblems()),
+                    TopoApiLang.UI_MULTIBLOCK_DIAGNOSE_MORE.getComponent(report.hiddenProblems()),
                     MachineUiComponentStyle.textMuted,
                 ),
             )
@@ -439,7 +435,7 @@ object MultiblockStructurePage {
                     it.tooltips(
                         reason.message(),
                         tinted(
-                            Component.translatable("ui.topo.multiblock.diagnose.locate"),
+                            TopoApiLang.UI_MULTIBLOCK_DIAGNOSE_LOCATE.getComponent(),
                             MachineUiComponentStyle.textMuted,
                         ),
                     )
@@ -550,7 +546,7 @@ object MultiblockStructurePage {
         add(
             Label().apply {
                 setId("topo_multiblock_cell_header_tag")
-                setText(Component.translatable(verdictKey(diagnosis)))
+                setText(verdictKey(diagnosis).getComponent())
                 textStyle {
                     it.textColor(verdictColor(diagnosis))
                     it.textShadow(false)
@@ -568,7 +564,7 @@ object MultiblockStructurePage {
         )
     }
 
-    private fun verdictKey(diagnosis: MultiblockClientDiagnosis.Reason?): String = diagnosis?.kind()?.headlineKey() ?: "ui.topo.multiblock.diagnose.cell_ok"
+    private fun verdictKey(diagnosis: MultiblockClientDiagnosis.Reason?): LangKey = diagnosis?.kind()?.headlineKey() ?: TopoApiLang.UI_MULTIBLOCK_DIAGNOSE_CELL_OK
 
     private fun verdictColor(diagnosis: MultiblockClientDiagnosis.Reason?): Int = if (diagnosis == null) MachineUiComponentStyle.ledOutput else kindColor(diagnosis.kind())
 
@@ -619,7 +615,7 @@ object MultiblockStructurePage {
                 panelRef[0]?.swapBlocks(requiredBlocks, requiredBlocks.keys, true)
             }
             buttonRef[0]?.style {
-                it.tooltips(Component.translatable(modeTooltipKey(showingBuilt[0])))
+                it.tooltips(modeTooltipKey(showingBuilt[0]).getComponent())
             }
         }
         buttonRef[0] = button
@@ -639,10 +635,10 @@ object MultiblockStructurePage {
         return button
     }
 
-    private fun modeTooltipKey(showingBuilt: Boolean): String = if (showingBuilt) {
-        "ui.topo.multiblock.scene.switch_to_required"
+    private fun modeTooltipKey(showingBuilt: Boolean): LangKey = if (showingBuilt) {
+        TopoApiLang.UI_MULTIBLOCK_SCENE_SWITCH_TO_REQUIRED
     } else {
-        "ui.topo.multiblock.scene.switch_to_detected"
+        TopoApiLang.UI_MULTIBLOCK_SCENE_SWITCH_TO_DETECTED
     }
 
     private fun signature(report: MultiblockClientDiagnosis.Report): String {
