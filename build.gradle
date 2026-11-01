@@ -94,6 +94,32 @@ publishing {
     publications {
         register('mavenJava', MavenPublication) {
             from components.java
+            pom {
+                name = project.mod_name
+                description = project.mod_description
+                url = project.mod_url
+                licenses {
+                    license {
+                        name = 'Apache-2.0'
+                        url = 'https://www.apache.org/licenses/LICENSE-2.0'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'PhasetransCrystal'
+                        name = 'PhasetransCrystal'
+                    }
+                    developer {
+                        id = 'xinxinsuried'
+                        name = 'xinxinsuried'
+                    }
+                }
+                scm {
+                    url = 'https://github.com/PhasetransCrystal/Topology'
+                    connection = 'scm:git:https://github.com/PhasetransCrystal/Topology.git'
+                    developerConnection = 'scm:git:ssh://git@github.com/PhasetransCrystal/Topology.git'
+                }
+            }
         }
     }
     repositories {
