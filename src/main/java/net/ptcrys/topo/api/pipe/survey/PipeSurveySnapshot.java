@@ -6,6 +6,7 @@ import io.netty.handler.codec.DecoderException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * 一帧管网勘测快照:服务端按勘测范围裁剪后发给客户端渲染的全部数据。节点四列平行数组
@@ -28,13 +29,30 @@ public record PipeSurveySnapshot(long anchor, int windowTicks, boolean truncated
 
     /** 统一发送边界:不裁断路径,省略超限车道并保留完整分析容量。 */
     public PipeSurveySnapshot {
+        Objects.requireNonNull(nodePos, "nodePos");
+        Objects.requireNonNull(nodeThroughput, "nodeThroughput");
+        Objects.requireNonNull(nodeUsed, "nodeUsed");
+        Objects.requireNonNull(nodePortBits, "nodePortBits");
+        Objects.requireNonNull(lanes, "lanes");
+        if (windowTicks < 1) {
+            throw new IllegalArgumentException("Survey windowTicks must be >= 1, got " + windowTicks);
+        }
+        if (pairCapacity < 0) {
+            throw new IllegalArgumentException("Survey pairCapacity must be non-negative, got " + pairCapacity);
+        }
         int count = nodePos.length;
         if (count > MAX_NODES || nodeThroughput.length != count || nodeUsed.length != count || nodePortBits.length != count) {
             throw new IllegalArgumentException("Survey node columns must have equal lengths of at most " + MAX_NODES);
         }
         List<Lane> boundedLanes = new ArrayList<>(Math.min(lanes.size(), MAX_WIRE_LANES));
         for (Lane lane : lanes) {
-            if (lane.positions.length > MAX_NODES || boundedLanes.size() >= MAX_WIRE_LANES) {
+            Objects.requireNonNull(lane, "lane");
+            Objects.requireNonNull(lane.positions(), "lane positions");
+            if (lane.bottleneckOrdinal() < -1 || lane.bottleneckOrdinal() >= lane.positions().length) {
+                throw new IllegalArgumentException(
+                        "Survey lane bottleneck ordinal " + lane.bottleneckOrdinal() + " outside [-1, " + lane.positions().length + ")");
+            }
+            if (lane.positions().length > MAX_NODES || boundedLanes.size() >= MAX_WIRE_LANES) {
                 truncated = true;
                 continue;
             }

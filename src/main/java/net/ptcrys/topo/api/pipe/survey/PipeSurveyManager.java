@@ -108,6 +108,11 @@ public final class PipeSurveyManager {
         SURVEYS.remove(player.getUUID());
     }
 
+    /** 服务端停止时清空所有玩家状态。 */
+    public static void clearAll() {
+        SURVEYS.clear();
+    }
+
     /**
      * 客户端轮询入口:限频重建快照;不再手持勘测仪(主/副手谓词由物品侧给定)或换维度
      * 即清状态,客户端随之淡出。

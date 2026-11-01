@@ -16,11 +16,15 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 import io.netty.handler.codec.DecoderException;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public record MachineDataBatchS2CPayload(List<Entry> entries) implements CustomPacketPayload {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(MachineDataBatchS2CPayload.class);
 
     public static final Identifier ID = IdHelper.id("machine_data_batch_s2c");
     public static final Type<MachineDataBatchS2CPayload> TYPE = new Type<>(ID);
@@ -71,11 +75,16 @@ public record MachineDataBatchS2CPayload(List<Entry> entries) implements CustomP
             return;
         }
         for (Entry entry : entries) {
-            if (level.getBlockEntity(BlockPos.of(entry.pos())) instanceof MachineBlockEntity machine) {
-                machine.data().lifecycleReceiveClientDelta(
-                        entry.data(),
-                        level.registryAccess(),
-                        connectionType);
+            BlockPos pos = BlockPos.of(entry.pos());
+            try {
+                if (level.getBlockEntity(pos) instanceof MachineBlockEntity machine) {
+                    machine.data().lifecycleReceiveClientDelta(
+                            entry.data(),
+                            level.registryAccess(),
+                            connectionType);
+                }
+            } catch (RuntimeException error) {
+                LOGGER.error("Failed to apply machine data sync at {}; dropping this entry", pos, error);
             }
         }
     }

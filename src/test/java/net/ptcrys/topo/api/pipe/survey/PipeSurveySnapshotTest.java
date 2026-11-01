@@ -181,6 +181,20 @@ class PipeSurveySnapshotTest {
                 11L, 33L, List.of(), 73));
     }
 
+    @Test
+    void rejectsInvalidWindowCapacityAndLaneOrdinals() {
+        assertThrows(IllegalArgumentException.class, () -> new PipeSurveySnapshot(
+                1L, 0, false, new long[0], new int[0], new long[0], new short[0],
+                PipeSurveySnapshot.NO_POINT, PipeSurveySnapshot.NO_POINT, List.of(), 0));
+        assertThrows(IllegalArgumentException.class, () -> new PipeSurveySnapshot(
+                1L, 1, false, new long[0], new int[0], new long[0], new short[0],
+                PipeSurveySnapshot.NO_POINT, PipeSurveySnapshot.NO_POINT, List.of(), -1));
+        assertThrows(IllegalArgumentException.class, () -> snapshot(
+                List.of(new PipeSurveySnapshot.Lane(new long[] { 11L, 33L }, 2))));
+        assertThrows(IllegalArgumentException.class, () -> snapshot(
+                List.of(new PipeSurveySnapshot.Lane(new long[] { 11L, 33L }, -2))));
+    }
+
     private static PipeSurveySnapshot snapshot(List<PipeSurveySnapshot.Lane> lanes) {
         return new PipeSurveySnapshot(1L, 20, false,
                 new long[] { 11L }, new int[] { 128 }, new long[] { 63L }, new short[] { 0x081 },
