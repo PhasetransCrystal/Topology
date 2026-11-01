@@ -2,6 +2,7 @@ package net.ptcrys.topodemo.api.material.common.form;
 
 import net.ptcrys.registrylib.RegistryCore;
 import net.ptcrys.registrylib.builders.BlockBuilder;
+import net.ptcrys.registrylib.datagen.loot.RegistryLibBlockLootTables;
 import net.ptcrys.registrylib.util.entry.BlockEntry;
 import net.ptcrys.topo.api.api.registration.ExternalBlockTarget;
 import net.ptcrys.topo.api.lang.DisplayNames;
@@ -23,6 +24,9 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.storage.loot.LootTable;
+
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,6 +50,7 @@ public final class BlockForm extends MaterialFormStrategy {
     private final BiFunction<Block, Item.Properties, ? extends BlockItem> blockItemFactory;
     private final Block initialProperties;
     private final UnaryOperator<BlockBehaviour.Properties> properties;
+    private final @Nullable LootFactory lootFactory;
 
     private BlockForm(Builder builder) {
         super(builder.data);
@@ -58,6 +63,7 @@ public final class BlockForm extends MaterialFormStrategy {
         this.blockItemFactory = builder.blockItemFactory;
         this.initialProperties = builder.initialProperties;
         this.properties = builder.properties;
+        this.lootFactory = builder.lootFactory;
     }
 
     public static Builder builder() {
@@ -119,7 +125,12 @@ public final class BlockForm extends MaterialFormStrategy {
         }
         builder.addTag(blockGroupTag, blockMaterialTag);
         builder.addItemTag(itemGroupTag, itemMaterialTag);
-        builder.defaultLoot();
+        if (lootFactory == null) {
+            builder.defaultLoot();
+        } else {
+            builder.loot((tables, block) -> tables.add(
+                    block, lootFactory.create(tables, block, context.material())));
+        }
         if (blockItemFactory == null) {
             builder.item(item -> item.addTab(creativeTab));
         } else {
@@ -139,6 +150,7 @@ public final class BlockForm extends MaterialFormStrategy {
         private BiFunction<Block, Item.Properties, ? extends BlockItem> blockItemFactory;
         private Block initialProperties = Blocks.STONE;
         private UnaryOperator<BlockBehaviour.Properties> properties;
+        private @Nullable LootFactory lootFactory;
         private final List<FormDataUse<?>> data = new ArrayList<>();
 
         private Builder() {}
@@ -203,6 +215,12 @@ public final class BlockForm extends MaterialFormStrategy {
             return this;
         }
 
+        /** Replaces the default drop-self loot table for this form. */
+        public Builder loot(LootFactory lootFactory) {
+            this.lootFactory = Objects.requireNonNull(lootFactory, "lootFactory");
+            return this;
+        }
+
         public BlockForm build() {
             requirePattern(registryPath, "registryPath");
             Objects.requireNonNull(displayName, "block form requires displayName(en, cn)");
@@ -210,5 +228,11 @@ public final class BlockForm extends MaterialFormStrategy {
             Objects.requireNonNull(creativeTab, "block form requires creativeTab");
             return new BlockForm(this);
         }
+    }
+
+    @FunctionalInterface
+    public interface LootFactory {
+
+        LootTable.Builder create(RegistryLibBlockLootTables tables, Block block, Material material);
     }
 }

@@ -2,6 +2,7 @@ package net.ptcrys.topodemo.api.material;
 
 import net.ptcrys.topo.api.api.builtin.MaterialDomainRegistration;
 import net.ptcrys.topo.api.material.form.MaterialForm;
+import net.ptcrys.topo.helper.MaterialHelper;
 import net.ptcrys.topodemo.api.TopoDemoApiPlugin;
 import net.ptcrys.topodemo.api.material.common.OreProductDataType.Product;
 import net.ptcrys.topodemo.api.material.common.form.BlockForm;
@@ -11,6 +12,7 @@ import net.ptcrys.topodemo.api.material.common.render.TintedTemplate;
 import net.ptcrys.topodemo.data.BuiltinCreativeTabs;
 
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.storage.loot.providers.number.UniformGenerator;
 
 import static net.ptcrys.topodemo.api.material.BuiltinFormDataTypes.AMOUNT;
 import static net.ptcrys.topodemo.api.material.BuiltinMaterialDataTypes.BULK;
@@ -88,6 +90,9 @@ public final class BuiltinMaterialForms {
             .strategy(BlockForm.builder().registryPath("%s_ore").displayName("%s Ore", "%s矿石").commonTag("ores")
                     .initialProperties(Blocks.COPPER_ORE)
                     .render(TintedTemplate.block(opaque(flat("block/material/ore_host_stone"))))
+                    .loot((tables, block, material) -> material.hasForm(BuiltinMaterialForms.RAW) ? tables.createSingleItemTableWithSilkTouch(block,
+                            MaterialHelper.requireItem(material, BuiltinMaterialForms.RAW),
+                            UniformGenerator.between(1.0F, 4.0F)) : tables.createSingleItemTableWithSilkTouch(block, block))
                     .creativeTab(BuiltinCreativeTabs.MATERIALS.getKey()).build())
             .build();
 
@@ -96,6 +101,9 @@ public final class BuiltinMaterialForms {
             .strategy(BlockForm.builder().registryPath("deepslate_%s_ore").displayName("Deepslate %s Ore", "深层%s矿石").commonTag("ores")
                     .initialProperties(Blocks.DEEPSLATE_COPPER_ORE)
                     .render(TintedTemplate.block(opaque(flat("block/material/ore_host_deepslate"))))
+                    .loot((tables, block, material) -> material.hasForm(BuiltinMaterialForms.RAW) ? tables.createSingleItemTableWithSilkTouch(block,
+                            MaterialHelper.requireItem(material, BuiltinMaterialForms.RAW),
+                            UniformGenerator.between(1.0F, 4.0F)) : tables.createSingleItemTableWithSilkTouch(block, block))
                     .creativeTab(BuiltinCreativeTabs.MATERIALS.getKey()).build())
             .build();
 

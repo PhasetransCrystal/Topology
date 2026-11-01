@@ -21,21 +21,12 @@ public final class BuiltinRecipes {
         var item = BuiltinResources.ITEM;
         for (var material : MaterialRegistry.registered()) {
             if (material.data(ORE_HOST).isEmpty() || !material.forms().contains(BuiltinMaterialForms.DUST)) continue;
-            boolean rawOre = material.forms().contains(BuiltinMaterialForms.RAW);
             for (var form : List.of(BuiltinMaterialForms.ORE, BuiltinMaterialForms.DEEPSLATE_ORE)) {
                 if (!material.forms().contains(form)) continue;
-                String path = material.id().getNamespace() + "/" + material.id().getPath() + "_" + form.id().getPath();
-                if (rawOre) {
-                    BuiltinRecipeTypes.GRINDING.recipe(path + "_to_raw")
-                            .input(item.in(MaterialHelper.materialItemSupplier(material, form), 1))
-                            .output(item.outRange(MaterialHelper.materialItemSupplier(material, BuiltinMaterialForms.RAW), 1, 4))
-                            .duration(80).productionLine(BuiltinRecipeTypes.METALLURGY).save();
-                } else {
-                    BuiltinRecipeTypes.GRINDING.recipe(path + "_to_dust")
-                            .input(item.in(MaterialHelper.materialItemSupplier(material, form), 1))
-                            .output(item.out(MaterialHelper.materialItemSupplier(material, BuiltinMaterialForms.DUST), 4))
-                            .duration(80).productionLine(BuiltinRecipeTypes.METALLURGY).save();
-                }
+                BuiltinRecipeTypes.GRINDING.recipe(material.id().getNamespace() + "/" + material.id().getPath() + "_" + form.id().getPath() + "_to_dust")
+                        .input(item.in(MaterialHelper.materialItemSupplier(material, form), 1))
+                        .output(item.out(MaterialHelper.materialItemSupplier(material, BuiltinMaterialForms.DUST), 4))
+                        .duration(80).productionLine(BuiltinRecipeTypes.METALLURGY).save();
             }
         }
         for (var material : MaterialRegistry.registered()) {

@@ -2,7 +2,6 @@ package net.ptcrys.topo.api.recipe.content;
 
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.level.ItemLike;
@@ -16,7 +15,6 @@ import org.jspecify.annotations.Nullable;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Supplier;
 
 /** Concrete item recipe output with a long logical amount and a count-one identity template. */
@@ -25,34 +23,31 @@ public final class TopoItemOutput {
     private static final Codec<TopoItemOutput> LEGACY_CODEC = ItemStackTemplate.CODEC.xmap(TopoItemOutput::new, TopoItemOutput::legacyTemplate);
     private static final Codec<TopoItemOutput> LONG_CODEC = RecordCodecBuilder.create(instance -> instance.group(
             ItemStackTemplate.CODEC.fieldOf("template").forGetter(TopoItemOutput::template),
-            Codec.LONG.fieldOf("amount").forGetter(TopoItemOutput::count),
-            Codec.LONG.optionalFieldOf("max_amount").forGetter(output -> output.maxCount() == output.count() ? Optional.empty() : Optional.of(output.maxCount())))
-            .apply(instance, (template, amount, maxAmount) -> new TopoItemOutput(template, amount, maxAmount.orElse(amount))));
+            Codec.LONG.fieldOf("amount").forGetter(TopoItemOutput::count))
+            .apply(instance, TopoItemOutput::new));
 
     /** Existing template-only JSON remains canonical while the amount fits its legacy int field. */
     public static final Codec<TopoItemOutput> CODEC = Codec.either(LEGACY_CODEC, LONG_CODEC).xmap(
             encoded -> encoded.map(value -> value, value -> value),
-            value -> value.maxCount == value.count && value.count <= Integer.MAX_VALUE ? Either.left(value) : Either.right(value));
+            value -> value.count <= Integer.MAX_VALUE ? Either.left(value) : Either.right(value));
 
     /** Same-version wire format: identity template followed by the complete logical VAR_LONG. */
     public static final StreamCodec<RegistryFriendlyByteBuf, TopoItemOutput> STREAM_CODEC = new StreamCodec<>() {
 
         @Override
         public TopoItemOutput decode(RegistryFriendlyByteBuf buf) {
-            return new TopoItemOutput(ItemStackTemplate.STREAM_CODEC.decode(buf), buf.readVarLong(), buf.readVarLong());
+            return new TopoItemOutput(ItemStackTemplate.STREAM_CODEC.decode(buf), buf.readVarLong());
         }
 
         @Override
         public void encode(RegistryFriendlyByteBuf buf, TopoItemOutput value) {
             ItemStackTemplate.STREAM_CODEC.encode(buf, value.template());
             buf.writeVarLong(value.count());
-            buf.writeVarLong(value.maxCount());
         }
     };
 
     private final Supplier<ItemStackTemplate> templateSupplier;
     private final long count;
-    private final long maxCount;
     private final Object contentKey;
     private volatile @Nullable ItemStackTemplate resolvedTemplate;
     private volatile @Nullable ItemResource resolvedResource;
@@ -62,24 +57,18 @@ public final class TopoItemOutput {
     }
 
     private TopoItemOutput(ItemStackTemplate template, long count) {
-        this(template, count, count);
-    }
-
-    private TopoItemOutput(ItemStackTemplate template, long count, long maxCount) {
-        validateRange(count, maxCount);
+        validateCount(count);
         ItemStackTemplate identity = identityTemplate(template);
         this.templateSupplier = () -> identity;
         this.count = count;
-        this.maxCount = maxCount;
-        this.contentKey = new ItemContentKey(identity, count, maxCount);
+        this.contentKey = new ItemContentKey(identity, count);
         this.resolvedTemplate = identity;
     }
 
-    private TopoItemOutput(Supplier<ItemStackTemplate> template, long count, long maxCount, Object contentKey) {
+    private TopoItemOutput(Supplier<ItemStackTemplate> template, long count, Object contentKey) {
         this.templateSupplier = Objects.requireNonNull(template, "TopoItemOutput.template");
-        validateRange(count, maxCount);
+        validateCount(count);
         this.count = count;
-        this.maxCount = maxCount;
         this.contentKey = Objects.requireNonNull(contentKey, "TopoItemOutput.contentKey");
     }
 
@@ -92,29 +81,17 @@ public final class TopoItemOutput {
     }
 
     public static TopoItemOutput of(ItemLike item, long count) {
-        return ofRange(item, count, count);
-    }
-
-    public static TopoItemOutput ofRange(ItemLike item, long minCount, long maxCount) {
-        validateRange(minCount, maxCount);
-        return new TopoItemOutput(
-                new ItemStackTemplate(Objects.requireNonNull(item, "item").asItem(), 1),
-                minCount,
-                maxCount);
+        validateCount(count);
+        return new TopoItemOutput(new ItemStackTemplate(Objects.requireNonNull(item, "item").asItem(), 1), count);
     }
 
     public static TopoItemOutput of(Supplier<? extends ItemLike> item, long count) {
-        return ofRange(item, count, count);
-    }
-
-    public static TopoItemOutput ofRange(Supplier<? extends ItemLike> item, long minCount, long maxCount) {
-        validateRange(minCount, maxCount);
+        validateCount(count);
         Objects.requireNonNull(item, "item");
         return new TopoItemOutput(
                 () -> new ItemStackTemplate(item.get().asItem(), 1),
-                minCount,
-                maxCount,
-                new LazyItemKey(item, minCount, maxCount));
+                count,
+                new LazyItemKey(item, count));
     }
 
     public ItemStackTemplate template() {
@@ -141,31 +118,14 @@ public final class TopoItemOutput {
         return count;
     }
 
-    public long maxCount() {
-        return maxCount;
-    }
-
-    /** Roll the effective output amount for one emission. */
-    public long rollCount(RandomSource random) {
-        if (count == maxCount) {
-            return count;
-        }
-        long span = maxCount - count;
-        return count + Long.remainderUnsigned(random.nextLong(), span + 1L);
-    }
-
     /** Display-only stack; the authoritative amount remains {@link #count()}. */
     public ItemStack stack() {
         return template().withCount((int) Math.min(count, Integer.MAX_VALUE)).create();
     }
 
     public TopoItemOutput withCount(long count) {
-        return withCounts(count, count);
-    }
-
-    public TopoItemOutput withCounts(long minCount, long maxCount) {
-        validateRange(minCount, maxCount);
-        return this.count == minCount && this.maxCount == maxCount ? this : new TopoItemOutput(template(), minCount, maxCount);
+        validateCount(count);
+        return this.count == count ? this : new TopoItemOutput(template(), count);
     }
 
     public TopoItemOutput withScaledCount(double factor) {
@@ -175,9 +135,15 @@ public final class TopoItemOutput {
         if (!Double.isFinite(factor) || factor <= 0.0d) {
             throw new IllegalArgumentException("factor must be finite and > 0 (was " + factor + ")");
         }
-        long scaledMin = scaleCount(count, factor);
-        long scaledMax = scaleCount(maxCount, factor);
-        return withCounts(scaledMin, Math.max(scaledMin, scaledMax));
+        BigDecimal scaled = BigDecimal.valueOf(count)
+                .multiply(BigDecimal.valueOf(factor))
+                .setScale(0, RoundingMode.HALF_UP)
+                .max(BigDecimal.ONE);
+        try {
+            return withCount(scaled.longValueExact());
+        } catch (ArithmeticException exception) {
+            throw new IllegalArgumentException("Scaled item output exceeds long range: " + scaled, exception);
+        }
     }
 
     public TopoItemOutput withParallelCount(long factor) {
@@ -187,10 +153,10 @@ public final class TopoItemOutput {
         if (factor == 1L) {
             return this;
         }
-        if (maxCount > Long.MAX_VALUE / factor) {
-            throw new IllegalArgumentException("Scaled item output exceeds long range: " + maxCount + " x " + factor);
+        if (count > Long.MAX_VALUE / factor) {
+            throw new IllegalArgumentException("Scaled item output exceeds long range: " + count + " x " + factor);
         }
-        return withCounts(count * factor, maxCount * factor);
+        return withCount(count * factor);
     }
 
     public Object contentKey() {
@@ -210,36 +176,20 @@ public final class TopoItemOutput {
         return value.count() == 1 ? value : value.withCount(1);
     }
 
-    private static long scaleCount(long count, double factor) {
-        BigDecimal scaled = BigDecimal.valueOf(count)
-                .multiply(BigDecimal.valueOf(factor))
-                .setScale(0, RoundingMode.HALF_UP)
-                .max(BigDecimal.ONE);
-        try {
-            return scaled.longValueExact();
-        } catch (ArithmeticException exception) {
-            throw new IllegalArgumentException("Scaled item output exceeds long range: " + scaled, exception);
+    private static void validateCount(long count) {
+        if (count <= 0L) {
+            throw new IllegalArgumentException("TopoItemOutput.count must be > 0 (was " + count + ")");
         }
     }
 
-    private static void validateRange(long minCount, long maxCount) {
-        if (minCount <= 0L) {
-            throw new IllegalArgumentException("TopoItemOutput.count must be > 0 (was " + minCount + ")");
-        }
-        if (maxCount < minCount) {
-            throw new IllegalArgumentException(
-                    "TopoItemOutput.maxCount must be >= count (was " + maxCount + " < " + minCount + ")");
-        }
-    }
-
-    private record LazyItemKey(Supplier<? extends ItemLike> item, long minCount, long maxCount) {
+    private record LazyItemKey(Supplier<? extends ItemLike> item, long count) {
 
         private LazyItemKey {
             Objects.requireNonNull(item, "item");
         }
     }
 
-    private record ItemContentKey(ItemStackTemplate template, long minCount, long maxCount) {
+    private record ItemContentKey(ItemStackTemplate template, long count) {
 
         private ItemContentKey {
             Objects.requireNonNull(template, "template");
