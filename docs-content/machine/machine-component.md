@@ -94,6 +94,8 @@ resourceKey / valueIoField / itemResourceHandler / fluidResourceHandler`。
 
 :::caution
 `syncToClientAtEndOfDirtyTick` 用于世界渲染（非菜单场景）。开菜单的 UI 走 LDLib2 自己的同步，不要用机器数据同步。
+
+通用机器字段 C2S 上传 API 已移除。菜单编辑应通过 LDLib2 UI binding/RPC 请求服务端校验并更新状态。
 :::
 
 ## 服务 — capability 式绑定

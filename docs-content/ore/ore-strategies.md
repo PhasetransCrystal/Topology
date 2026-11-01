@@ -78,11 +78,11 @@ ore.conflict("replace_lower", (candidate, existing) -> candidate >= existing);
 
 | 策略     | 注册入口                          | 钩子                     |
 |----------|-----------------------------------|--------------------------|
-| 形状     | `ore.shape(path, strategy)`       | 13 registerOreFoundation |
-| 模式     | `ore.mode(path, strategy)`        | 13                       |
-| 空气暴露 | `ore.airExposure(path, strategy)` | 13                       |
-| 冲突     | `ore.conflict(path, strategy)`    | 13                       |
-| 显示     | `ore.display(modeId, strategy)`   | 14 registerOreDisplays   |
+| 形状     | `ore.shape(path, strategy)`       | 12 registerOreFoundation |
+| 模式     | `ore.mode(path, strategy)`        | 12                       |
+| 空气暴露 | `ore.airExposure(path, strategy)` | 12                       |
+| 冲突     | `ore.conflict(path, strategy)`    | 12                       |
+| 显示     | `ore.display(modeId, strategy)`   | 13 registerOreDisplays   |
 
 矿脉声明与环境构造见 [Ore](../ore.md)。
 

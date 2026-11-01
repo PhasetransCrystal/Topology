@@ -158,6 +158,16 @@ public final class TopoApiLang {
     public static final LangKey EQUIPMENT_PIPE_SURVEYOR_POINT_A = LANG.key("equipment", "pipe_surveyor.point_a", "Endpoint A set", "端点 A 已设置");
     public static final LangKey EQUIPMENT_PIPE_SURVEYOR_POINT_B = LANG.key("equipment", "pipe_surveyor.point_b", "Endpoint B set", "端点 B 已设置");
     public static final LangKey EQUIPMENT_PIPE_SURVEYOR_CLEARED = LANG.key("equipment", "pipe_surveyor.cleared", "Survey ended", "勘测已结束");
+    public static final LangKey EQUIPMENT_PIPE_SURVEYOR_TRUNCATED = LANG.key(
+            "equipment",
+            "pipe_surveyor.truncated",
+            "Incomplete display: over-limit nodes or paths omitted",
+            "展示不完整：已省略超限节点或路径");
+    public static final LangKey EQUIPMENT_PIPE_SURVEYOR_CAPACITY = LANG.key(
+            "equipment",
+            "pipe_surveyor.capacity",
+            "Analyzed capacity: %s/t; paths shown: %s",
+            "分析容量：%s/t；已显示路径：%s");
     public static final LangKey EQUIPMENT_PIPE_SURVEYOR_NEED_ANCHOR = LANG.key(
             "equipment",
             "pipe_surveyor.need_anchor",

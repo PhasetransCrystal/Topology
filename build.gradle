@@ -18,15 +18,34 @@ def buildDate = new Date()
 def year = String.format('%ty', buildDate)
 def month = buildDate.month + 1
 def day = buildDate.date
+def pinnedVersion = providers.gradleProperty('buildVersion').orNull
 def dynamicVersion
-if (isRelease) {
-    dynamicVersion = "${mod_major_version}.${year}.${month}.${day}"
+if (pinnedVersion != null) {
+    def versionPattern = isRelease ? /[0-9]+(?:\.[0-9]+){5}/ : /[0-9]+\.[0-9]+\.[0-9]+-SNAPSHOT/
+    if (!(pinnedVersion ==~ versionPattern)) {
+        throw new GradleException('buildVersion does not match the release or SNAPSHOT version format')
+    }
+    dynamicVersion = pinnedVersion
+} else if (isRelease) {
+    def runNumber = System.getenv('GITHUB_RUN_NUMBER')
+    def runAttempt = System.getenv('GITHUB_RUN_ATTEMPT')
+    if (!(runNumber ==~ /[1-9][0-9]*/) || !(runAttempt ==~ /[1-9][0-9]*/)) {
+        throw new GradleException('Release builds require positive GITHUB_RUN_NUMBER and GITHUB_RUN_ATTEMPT, or a pinned buildVersion')
+    }
+    dynamicVersion = "${mod_major_version}.${year}.${month}.${day}.${runNumber}.${runAttempt}"
 } else {
     dynamicVersion = "${mod_major_version}.${year}.${month}-SNAPSHOT"
 }
 ext.mod_version = dynamicVersion
 version = dynamicVersion
 group = mod_group_id
+
+// CI resolves this once and pins it for every subsequent Gradle invocation in the run.
+tasks.register('printBuildVersion') {
+    doLast {
+        println project.version
+    }
+}
 
 tasks.named('wrapper', Wrapper).configure {
     distributionType = Wrapper.DistributionType.BIN
@@ -45,7 +64,7 @@ generateModMetadata.doFirst {
     mkdir('run/client')
     mkdir('run/server')
     mkdir('run/clientData')
-    mkdir('run/serverData')
+    mkdir('run/gameTestServer')
 }
 
 tasks.withType(JavaCompile).configureEach {

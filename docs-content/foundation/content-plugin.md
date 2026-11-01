@@ -118,14 +118,13 @@ TopoDemo 的 `ItemRecipeCapability` 只支持精确物品输入；通用标签�
 ```bash
 ./gradlew demoClasses compileTestJava spotlessCheck
 ./gradlew runClientData
-./gradlew runServerData
 ./gradlew runClient
 ```
 
-`runClientData` / `runServerData` 选择 `topo` 和 `topodemo` 两个 modid，
-输出分别位于 `src/generated/resources/<modid>` 和 `src/generated/serverResources/<modid>`。
-RegistryLib 当前使用客户端 GatherData 入口，模型、语言、标签和其配方生成需要 `runClientData`；
-`runServerData` 不能替代这一步。自己的项目应配置自己的 modid 和资源输出目录。
+`runClientData` 选择 `topo` 和 `topodemo` 两个 modid，
+输出位于 `src/generated/resources/<modid>`。
+RegistryLib 当前使用客户端 GatherData 入口，模型、语言、标签及其配方生成需要 `runClientData`。
+自己的项目应配置自己的 modid 和资源输出目录。
 
 检查注册表里是否出现预期 ID、复用条目是否重复生成、名称与模型是否完整、配方输入输出是否正确。
 兼容验证还要覆盖依赖模组存在／缺席以及专用服务端；详见[测试与验证](testing.md)。

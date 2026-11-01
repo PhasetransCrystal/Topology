@@ -24,8 +24,17 @@ PipeSurveyManager.activate(player, pos, range);   // 锚定勘测（pos = 管道
 PipeSurveyManager.selectPoint(player, pos);       // 设置端点 A（首次）/ B（第二次）
 ```
 
-调查数据（`PipeSurveySnapshot`：锚点、双端点、6 通道上限 `MAX_LANES`）经
+调查数据（`PipeSurveySnapshot`：锚点、双端点、快照协议最多 16 条车道；服务端分析上限
+`PipeSurveyManager.MAX_LANES` = 6）经
 `PipeSurveyNetworking` 自动同步客户端。
+
+每帧节点表最多展示 2048 个节点，每条 A/B 路径最多包含 2048 个节点。超长路径会整体省略，
+不会裁断后冒充完整路径；其他合规路径仍会显示。节点表或路径超限时，锚点上方提示
+“展示不完整：已省略超限节点或路径”。B 端浮签分别显示分析容量和实际显示路径数；
+分析容量仍包含被省略路径的贡献，因此所有路径都被省略时也可能显示非零容量。
+
+合法快照的字段顺序和编码保持不变。接收端会拒绝负数或超过协议上限的节点数、车道数及路径长度，
+不会通过只读一部分坐标来兼容超限报文。新客户端无法修复旧服务端发出的非法超长报文，应同步更新两端。
 
 ## 接线
 
@@ -42,5 +51,5 @@ PipeSurveyManager.selectPoint(player, pos);       // 设置端点 A（首次）/
 | `PipeSurveyTool`                                 | 勘测器标记接口         |
 | `PipeSurveyManager.activate(player, pos, range)` | 锚定勘测               |
 | `PipeSurveyManager.selectPoint(player, pos)`     | 端点 A/B 设置          |
-| `PipeSurveyManager.MAX_LANES`                    | 快照通道上限（6）      |
+| `PipeSurveyManager.MAX_LANES`                    | 服务端分析/渲染上限（6）；协议上限 16 |
 | `PipeSurveyNetworking.register(modEventBus)`     | 网络通道（宿主已注册） |

@@ -37,11 +37,11 @@ OreVein             ← 一条矿脉（材料成分 + 高度 + 生成参数）
 @Override
 public void registerOreFoundation(OreDomainRegistration ore) {
     // ① 环境：主世界 + 石头/深板岩两种宿主。每个宿主规则把可替换方块标签映射到对应矿石形态。
-    ore.shape("oval", (dx, dy, dz, radius) ->
+    OreVeinShape ovalShape = ore.shape("oval", (dx, dy, dz, radius) ->
             dx * dx + dy * dy + dz * dz <= radius * radius);           // 球形包含测试
 
     // ② 模式：feature 散布通道（替换石类方块，size 个方块、每 chunk attempts 次尝试）
-    ore.mode("stone_replace", new OreVeinMode.Strategy() {
+    OreVeinMode stoneReplace = ore.mode("stone_replace", new OreVeinMode.Strategy() {
         @Override
         public void validate(OrePlacement placement) {
             // 只接受 feature 放置配置，拒绝 grid 配置
@@ -58,21 +58,39 @@ public void registerOreFoundation(OreDomainRegistration ore) {
         }
     });
 
-    // ③ 空气暴露策略：永不丢弃 / 总是丢弃 / 概率丢弃
-    ore.airExposure("allow", new OreAirExposurePolicy.Strategy() {
+    // ③ 网格模式：只在 grid 放置时参与
+    OreVeinMode stoneReplaceGrid = ore.mode("stone_replace_grid", new OreVeinMode.Strategy() {
+        @Override
+        public void validate(OrePlacement placement) {
+            // 只接受 grid 放置配置
+        }
+
+        @Override
+        public void collectGrid(OreVein vein, OreVeinCollector collector) {
+            collector.add(vein);
+        }
+
+        @Override
+        public void collectFeature(OreVein vein, OreVeinCollector collector) {
+            // feature 通道：不参与
+        }
+    });
+
+    // ④ 空气暴露策略：永不丢弃 / 总是丢弃 / 概率丢弃
+    OreAirExposurePolicy allow = ore.airExposure("allow", new OreAirExposurePolicy.Strategy() {
         @Override public boolean discardExposed(double discardChance, double randomSample) { return false; }
         @Override public Component describe(double discardChance) { return Component.literal("Exposed"); }
     });
-    ore.airExposure("probabilistic", new OreAirExposurePolicy.Strategy() {
+    OreAirExposurePolicy probabilisticDiscard = ore.airExposure("probabilistic", new OreAirExposurePolicy.Strategy() {
         @Override public boolean discardExposed(double discardChance, double randomSample) { return randomSample < discardChance; }
         @Override public Component describe(double discardChance) { return Component.literal("Probabilistic"); }
     });
 
-    // ④ 冲突策略：保留高优先级 / 替换低优先级
-    ore.conflict("preserve_higher", (candidate, existing) -> candidate > existing);
-    ore.conflict("replace_lower", (candidate, existing) -> candidate >= existing);
+    // ⑤ 冲突策略：保留高优先级 / 替换低优先级
+    OreConflictPolicy preserveHigher = ore.conflict("preserve_higher", (candidate, existing) -> candidate > existing);
+    OreConflictPolicy replaceLower = ore.conflict("replace_lower", (candidate, existing) -> candidate >= existing);
 
-    // ⑤ 环境：维度规则 + 宿主规则。显示名 LangKey 通过 plugin.lang().key(...) 铸造。
+    // ⑥ 环境：维度规则 + 宿主规则。显示名 LangKey 通过 plugin.lang().key(...) 铸造。
     OreDimensionRule overworld = new OreDimensionRule(
             Level.OVERWORLD,
             BiomeTags.IS_OVERWORLD,
@@ -108,8 +126,8 @@ public void registerOreVeins(OreDomainRegistration ore) {
         .lang("Copper Vein", "铜矿脉")
         .environment(overworldStone)                  // registerOreFoundation 里构造的环境
         .feature(stoneReplace, 33, 16)                // mode, size, attemptsPerChunk
-        .entry(MaterialRegistry.require(id("copper")), 80)
-        .entry(MaterialRegistry.require(id("iron")), 20)
+        .entry(MaterialRegistry.require(ore.id("copper")), 80)
+        .entry(MaterialRegistry.require(ore.id("iron")), 20)
         .triangularHeight(-16, 112)
         .airExposure(probabilisticDiscard, 0.5)
         .build();
@@ -126,6 +144,7 @@ public void registerOreVeins(OreDomainRegistration ore) {
 | `height(min, max)`            | 均匀分布高度                             |
 | `triangularHeight(min, max)`  | 三角分布（中部更密集）                   |
 | `airExposure(policy, chance)` | 空气暴露策略 + 丢弃概率                  |
+
 ## Grid 模式 — 大型网格矿脉
 
 ```java
@@ -139,8 +158,8 @@ ore.vein("iron_grid")
     .weight(100)
     .priority(1)
     .conflict(replaceLower)
-    .entry(MaterialRegistry.require(id("iron")), 100)
-    .entry(MaterialRegistry.require(id("nickel")), 10)
+    .entry(MaterialRegistry.require(ore.id("iron")), 100)
+    .entry(MaterialRegistry.require(ore.id("nickel")), 10)
     .height(-64, 64)
     .airExposure(allow, 0)
     .build();
@@ -162,7 +181,8 @@ ore.vein("iron_grid")
 
 ```java
 // 查找包含某个材料的所有矿脉
-List<OreVein> veins = OreVeins.byMaterial(MaterialRegistry.require(id("copper")));
+Identifier copperId = Identifier.fromNamespaceAndPath("your_modid", "copper");
+List<OreVein> veins = OreVeins.byMaterial(MaterialRegistry.require(copperId));
 
 for (OreVein vein : veins) {
     System.out.println(vein.displayName());

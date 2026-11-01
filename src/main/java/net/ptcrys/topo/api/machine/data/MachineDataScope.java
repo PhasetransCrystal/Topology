@@ -2,7 +2,6 @@ package net.ptcrys.topo.api.machine.data;
 
 import net.ptcrys.topo.api.machine.MachineBlockEntity;
 import net.ptcrys.topo.api.machine.component.ComponentKey;
-import net.ptcrys.topo.api.machine.data.network.MachineDataC2SPayload;
 
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.server.level.ServerLevel;
@@ -59,7 +58,6 @@ public final class MachineDataScope {
     private final MachineBlockEntity machine;
     private final Map<String, DataScope> scopes = new LinkedHashMap<>();
     private final List<DataField> syncToClientFields = new ArrayList<>();
-    private final List<DataField> syncToServerFields = new ArrayList<>();
 
     private DataField[] computedFieldsCache = NO_FIELDS;
     private long lastRecomputeGameTime = Long.MIN_VALUE;
@@ -212,7 +210,7 @@ public final class MachineDataScope {
                                                byte[] data, RegistryAccess registryAccess, ConnectionType connectionType) {
         Objects.requireNonNull(data, "data");
         runWithSuppressedMutationSideEffects(
-                () -> applySync(DataSyncDirection.TO_CLIENT, data, registryAccess, connectionType));
+                () -> applySync(data, registryAccess, connectionType));
         clientBaselineReceived = true;
         phase = Phase.CLIENT_LIVE;
         clearRuntimeDirty();
@@ -225,14 +223,7 @@ public final class MachineDataScope {
             throw new IllegalStateException("Cannot apply machine data delta before initial client baseline for " + machine.definition().id() + " at " + machine.getBlockPos() + "; deltas are incremental and require a full update-tag snapshot first");
         }
         runWithSuppressedMutationSideEffects(
-                () -> applySync(DataSyncDirection.TO_CLIENT, data, registryAccess, connectionType));
-    }
-
-    /** C2S upload apply (when enabled). */
-    public void lifecycleReceiveClientUpload(
-                                             byte[] data, RegistryAccess registryAccess, ConnectionType connectionType) {
-        requireBusinessReady("apply client machine data upload");
-        applySync(DataSyncDirection.TO_SERVER, data, registryAccess, connectionType);
+                () -> applySync(data, registryAccess, connectionType));
     }
 
     /** Coordinator-only: enter the current persist epoch; the coordinator marks the chunk once. */
@@ -284,7 +275,6 @@ public final class MachineDataScope {
     /** Full S2C snapshot bytes for update-tag / first track. Does not clear delta dirty bits. */
     public byte[] lifecycleWriteUpdateTag(RegistryAccess registryAccess) {
         return encodeSync(
-                DataSyncDirection.TO_CLIENT,
                 registryAccess,
                 ConnectionType.OTHER,
                 MachineDataSyncCodec.WriteMode.FULL_SNAPSHOT);
@@ -293,7 +283,6 @@ public final class MachineDataScope {
     public byte[] lifecycleDrainClientDelta(RegistryAccess registryAccess, ConnectionType connectionType) {
         try {
             return encodeSync(
-                    DataSyncDirection.TO_CLIENT,
                     registryAccess,
                     connectionType,
                     MachineDataSyncCodec.WriteMode.DRAIN_DIRTY_DELTA);
@@ -304,26 +293,9 @@ public final class MachineDataScope {
 
     public void lifecycleDropClientDelta() {
         for (DataField field : syncToClientFields) {
-            field.clearSyncDirty(DataSyncDirection.TO_CLIENT);
+            field.clearSyncDirty();
         }
         endOfTickSyncRequested = false;
-    }
-
-    public void lifecycleSendToServer(boolean force) {
-        Level level = machine.getLevel();
-        if (level == null || !level.isClientSide()) {
-            return;
-        }
-        requireBusinessReady("send machine data to server");
-        byte[] payload = encodeSync(
-                DataSyncDirection.TO_SERVER,
-                level.registryAccess(),
-                ConnectionType.NEOFORGE,
-                force ? MachineDataSyncCodec.WriteMode.FULL_SNAPSHOT : MachineDataSyncCodec.WriteMode.DRAIN_DIRTY_DELTA);
-        if (payload.length == 0) {
-            return;
-        }
-        MachineDataC2SPayload.sendToServer(machine.getBlockPos().asLong(), payload);
     }
 
     // =============================================================================================
@@ -376,10 +348,6 @@ public final class MachineDataScope {
         }
     }
 
-    public boolean hasClientToServerFields() {
-        return !syncToServerFields.isEmpty();
-    }
-
     // =============================================================================================
     // Schema + dirty bookkeeping
     // =============================================================================================
@@ -401,11 +369,12 @@ public final class MachineDataScope {
     }
 
     public void enableClientSync(DataField field) {
-        enableSyncField(field, DataSyncDirection.TO_CLIENT, syncToClientFields);
-    }
-
-    public void enableServerSync(DataField field) {
-        throw new UnsupportedOperationException("TO_SERVER machine data sync is disabled until " + "menu/session authorization and field validators are implemented for " + field.path());
+        requireSchemaOpen("enable client sync for data field '" + field.path() + "'");
+        if (field.syncSlot() >= 0) {
+            return;
+        }
+        field.assignSyncSlot(syncToClientFields.size());
+        syncToClientFields.add(field);
     }
 
     void recordManualPersistMutation() {
@@ -425,7 +394,7 @@ public final class MachineDataScope {
         if (field.persistEnabled()) {
             recordPersistMutation();
         }
-        if (field.isSyncDirty(DataSyncDirection.TO_CLIENT)) {
+        if (field.isSyncDirty()) {
             requestEndOfTickSync();
         }
     }
@@ -484,28 +453,24 @@ public final class MachineDataScope {
     }
 
     private byte[] encodeSync(
-                              DataSyncDirection direction,
                               RegistryAccess registryAccess,
                               ConnectionType connectionType,
                               MachineDataSyncCodec.WriteMode writeMode) {
         return MachineDataSyncCodec.write(
                 machine,
-                direction,
-                syncFields(direction),
+                syncToClientFields,
                 registryAccess,
                 connectionType,
                 writeMode);
     }
 
     private void applySync(
-                           DataSyncDirection direction,
                            byte[] data,
                            RegistryAccess registryAccess,
                            ConnectionType connectionType) {
         MachineDataSyncCodec.read(
                 machine,
-                direction,
-                syncFields(direction),
+                syncToClientFields,
                 data,
                 registryAccess,
                 connectionType);
@@ -569,23 +534,6 @@ public final class MachineDataScope {
 
     private static long maxGeneration(long first, long second) {
         return Math.max(first, second);
-    }
-
-    private void enableSyncField(
-                                 DataField field,
-                                 DataSyncDirection direction,
-                                 List<DataField> fields) {
-        requireSchemaOpen("enable " + direction + " sync for data field '" + field.path() + "'");
-        if (field.syncSlot(direction) >= 0) {
-            return;
-        }
-        int slot = fields.size();
-        field.assignSyncSlot(direction, slot);
-        fields.add(field);
-    }
-
-    private List<DataField> syncFields(DataSyncDirection direction) {
-        return direction == DataSyncDirection.TO_CLIENT ? syncToClientFields : syncToServerFields;
     }
 
     private IllegalStateException accessException(String operation, @Nullable DataField field) {

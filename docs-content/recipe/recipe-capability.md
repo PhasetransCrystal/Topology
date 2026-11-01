@@ -53,6 +53,7 @@ public abstract class RecipeCapability<I, O> {
 public abstract int countPreviewSlots(ResourcePortMetadata port);       // 端口折成几个预览槽
 public abstract UIElement createPreviewInputSlotWidget(@Nullable I content);
 public abstract UIElement createPreviewOutputSlotWidget(@Nullable O content);
+public abstract @NonNull UIElement createLiveSlotWidget(ResourcePort<?, R> storage, int slot);
 ```
 
 :::caution
@@ -92,16 +93,20 @@ public final class ManaRecipeCapability extends RecipeCapability<Long, Long> {
 ```
 
 ```java
+/** 页面示例用的集成记录；实际项目可替换为自己的类型。 */
+private record ManaIntegration(MachineResourceType<ManaResource> resourceType,
+        ManaRecipeCapability recipeCapability) {}
+
 /** 资源集成：registerRecipeFoundation 里一次调用完成四件事。 */
-private static BuiltinResourceIntegration<ManaResource, ManaRecipeCapability> mana() {
+private static ManaIntegration mana() {
     MachineResourceType<ManaResource> resourceType = MACHINE.resourceTypeWithDataField(
             "mana", ManaResource.class, /* capability */ null, /* dataFieldFactory */);
     ManaRecipeCapability recipeCapability = RECIPE.capability(
             new ManaRecipeCapability(RECIPE.id("mana"), resourceType));
     // 名称与图标同点绑定——不留到后续阶段：
     MACHINE.bindResourceName(resourceType, "Mana", "魔力");
-    MachineUiIcons.register(resourceType, /* icon */);
-    return new BuiltinResourceIntegration<>(resourceType, recipeCapability);
+    MachineUiIcons.register(resourceType, () -> icon);
+    return new ManaIntegration(resourceType, recipeCapability);
 }
 ```
 

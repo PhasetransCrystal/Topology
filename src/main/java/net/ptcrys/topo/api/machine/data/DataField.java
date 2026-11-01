@@ -26,11 +26,8 @@ public abstract class DataField {
     private final String key;
     private final boolean persistEnabled;
     private final boolean syncToClientEnabled;
-    private final boolean syncToServerEnabled;
     private boolean syncToClientDirty;
-    private boolean syncToServerDirty;
     private int syncToClientSlot = -1;
-    private int syncToServerSlot = -1;
     private boolean computed;
     private Runnable recomputeAction;
 
@@ -39,7 +36,6 @@ public abstract class DataField {
         this.key = validateKey(key);
         this.persistEnabled = policy.persistEnabled();
         this.syncToClientEnabled = policy.syncToClient();
-        this.syncToServerEnabled = policy.syncToServer();
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -149,46 +145,34 @@ public abstract class DataField {
         return persistEnabled;
     }
 
-    final boolean isSyncDirty(DataSyncDirection direction) {
-        return direction == DataSyncDirection.TO_CLIENT ? syncToClientDirty : syncToServerDirty;
+    final boolean isSyncDirty() {
+        return syncToClientDirty;
     }
 
     final void clearRuntimeDirty() {
+        clearSyncDirty();
+    }
+
+    final void clearSyncDirty() {
         syncToClientDirty = false;
-        syncToServerDirty = false;
     }
 
-    final void clearSyncDirty(DataSyncDirection direction) {
-        if (direction == DataSyncDirection.TO_CLIENT) {
-            syncToClientDirty = false;
-        } else {
-            syncToServerDirty = false;
-        }
+    final int syncSlot() {
+        return syncToClientSlot;
     }
 
-    final int syncSlot(DataSyncDirection direction) {
-        return direction == DataSyncDirection.TO_CLIENT ? syncToClientSlot : syncToServerSlot;
-    }
-
-    final void assignSyncSlot(DataSyncDirection direction, int slot) {
+    final void assignSyncSlot(int slot) {
         if (slot < 0) {
             throw new IllegalArgumentException("Sync slot must be non-negative");
         }
-        if (direction == DataSyncDirection.TO_CLIENT) {
-            if (syncToClientSlot < 0) {
-                syncToClientSlot = slot;
-            }
-        } else if (syncToServerSlot < 0) {
-            syncToServerSlot = slot;
+        if (syncToClientSlot < 0) {
+            syncToClientSlot = slot;
         }
     }
 
     private void markDirtyInternal() {
         if (syncToClientEnabled) {
             syncToClientDirty = true;
-        }
-        if (syncToServerEnabled) {
-            syncToServerDirty = true;
         }
     }
 

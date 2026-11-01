@@ -54,7 +54,7 @@ gantt
     TopoRecipeTypes 冻结                 :milestone, crit, typesFrozen, after recipeTypes, 0s
 
     section 材料基础表
-    data／form／post-processor 未冻结    :foundationWindow, 1000, 3s
+    data／form-data／form／post-processor 未冻结    :foundationWindow, 1000, 3s
     registerMaterialFoundation          :active, foundation, 3000, 1s
     材料基础四表冻结                    :milestone, crit, foundationFrozen, after foundation, 0s
 
@@ -196,11 +196,11 @@ gantt
 |----|------------------------------------------|------------------------------------------------------------------------------------------|----------------------------------------------------------------|
 | 1  | `registerRecipeFoundation(recipe)`       | `RecipeCapabilities`                                                                     | 机器资源类型、配方能力                                         |
 | 2  | `registerRecipeTypes(recipe)`            | `TopoRecipeTypes`                                                                        | 已冻结的配方能力                                               |
-| 3  | `registerMaterialFoundation(material)`   | 材质四表（data/form/post-processor）                                                     | 尚未有材质实例                                                 |
-| 4  | `registerMaterials(material)`            | `MaterialRegistry`                                                                       | 已冻结的表单、数据类型、后处理器                               |
+| 3  | `registerMaterialFoundation(material)`   | 材质四表（data / form-data / form / post-processor）                                      | 尚未有材质实例                                                 |
+| 4  | `registerMaterials(material)`            | `MaterialRegistry`                                                                       | 已冻结的形态、数据类型、后处理器                               |
 | 5  | `registerMaterialCreativeTabs(material)` | —                                                                                        | 已冻结的材质                                                   |
-| 6  | （引擎内部）                             | —                                                                                        | 为每个材质铸造表单物品；先跑全部 `validate` 再跑全部 `process` |
-| 7  | `registerMaterialFollowUps(material)`    | —                                                                                        | 全部表单物品已排队；可用稳定 ID，不能读取游戏实例                 |
+| 6  | （引擎内部）                             | —                                                                                        | 为每个材质铸造形态物品；先跑全部 `validate` 再跑全部 `process` |
+| 7  | `registerMaterialFollowUps(material)`    | —                                                                                        | 全部形态物品已排队；可用稳定 ID，不能读取游戏实例                 |
 | 8  | `registerEquipmentKinds(equipment)`      | `EquipmentRegistry`                                                                      | 全部材质（含数据）；之后引擎按 (材料 × 种类) 铸造物品          |
 | 9  | `registerMachineFoundation(machine)`     | 机器六表（resource type / UI icon / render / part role / property display / attachment） | 尚未有机器定义                                                 |
 | 10 | `registerMachines(machine)`              | `Machines`                                                                               | 已冻结的机器基础表；之后引擎铸造方块/BE 并安装预览计划         |
@@ -238,7 +238,7 @@ NeoForge 的 `RegisterEvent` 按优先级跨 Mod 派发，因此 `HIGHEST` 的�
 RegistryLib 的 `LOW`。common setup 属于并行生命周期事件，不能靠另一个 Mod 的监听器
 优先级保证其 deferred work 先执行；共享运行时表必须在后续生命周期事件中冻结。
 
-上表的能力注册事件位置按项目当前 NeoForge 26.1.2.107 的 `CommonModLoader.load` /
+上表的能力注册事件位置按项目当前 NeoForge 26.1.2.125 的 `CommonModLoader.load` /
 `RegistrationEvents.init` 实现核对：发生在 common / sided setup 之后、IMC 和 load complete 之前。
 
 每个钩子先遍历**全部插件**，再冻结对应表，随后进入下一个钩子。

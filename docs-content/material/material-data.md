@@ -4,7 +4,7 @@ sidebar_position: 3
 
 # MaterialDataType
 
-材质数据 = 附加在 `Material` 上的类型化属性（颜色、质量、工具/护甲属性……）。装备策略与表单校验依据
+材质数据 = 附加在 `Material` 上的类型化属性（颜色、质量、工具/护甲属性……）。装备策略与形态校验依据
 材质数据决定行为。
 
 本页是 [Material](../material.md) 模块的子页——概念与页面导航见 [Material](../material.md)。
@@ -61,7 +61,7 @@ ToolStatsDataType toolStats = material.dataType("tool_stats", new ToolStatsDataT
 ## 消费
 
 ```java
-// 策略/表单侧（如 EquipmentStrategy.appliesTo 或 MaterialFormStrategy.validateMaterial）：
+// 策略/形态侧（如 EquipmentStrategy.appliesTo 或 MaterialFormStrategy.validateMaterial）：
 Optional<ToolStatsData> stats = material.strategy().data(toolStats);   // MaterialStrategy.data(type)
 
 // 材料声明侧附加数据（registerMaterials）：
@@ -105,7 +105,7 @@ Builder 从创建起便持有该策略；构建前后使用同一份数据存储
 材料冻结时仍会统一执行已安装的校验策略，包含补充的数据。
 
 :::info
-数据类型与表单一样有冻结点：在 `registerMaterialFoundation` 注册，`registerMaterials` 只能引用。
+数据类型与形态一样有冻结点：在 `registerMaterialFoundation` 注册，`registerMaterials` 只能引用。
 :::
 
 ## API 速查

@@ -78,7 +78,7 @@ Blueprint.of()
     .where('@', CellPredicates.controller())
     .where('C', CellPredicates.block(casingBlock),
         casingBlock.defaultBlockState(),                       // expectedState（预旋转）
-        PropertyRules.direction(BlockDirectionProperties.FACING))   // FACING 随结构旋转协变
+        PropertyRules.direction(BlockStateProperties.FACING))   // FACING 随结构旋转协变
     .build();
 ```
 
@@ -100,7 +100,7 @@ MultiblockController 自动管理：
 1. **变更检测** — `MultiblockChangeWatcher` 只重新检查已知结构位置
 2. **结构匹配** — `StructureEngine.recognize()` 执行完整诊断
 3. **异步验证** — 大型结构使用 `AsyncStructureService` 异步计算
-4. **成型传播** — formed 状态通过 `MachineWorkView` 暴露给 RecipeLogic 等组件
+4. **成型传播** — formed 状态由 `MultiblockController` 通过 `RecipeCondition` 服务暴露给 RecipeLogic 等组件；`MachineWorkView` 只暴露工作状态
 5. **客户端诊断** — `MultiblockClientDiagnosis` 可视化缺失方块
 
 ## API 速查

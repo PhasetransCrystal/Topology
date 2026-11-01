@@ -141,7 +141,7 @@ m.material("moonstone").lang("Moonstone", "月长石")
 | 类/方法                                                               | 用途                       |
 |-----------------------------------------------------------------------|----------------------------|
 | `MaterialFormStrategy(Collection<FormDataUse<?>>)`                    | 基类构造                   |
-| `strategy.data(type)` / `.requireData(type)`                          | 表单参数读取               |
+| `strategy.data(type)` / `.requireData(type)`                          | 形态参数读取               |
 | `strategy.registryPath()`                                             | 注册 id 模板（`%s_ingot`） |
 | `strategy.validateMaterial(material, form)`                           | 材质冻结时校验             |
 | `strategy.register(context, form)`                                    | 每材质铸造一次             |

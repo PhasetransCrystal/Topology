@@ -26,7 +26,7 @@ MachineResourceType<R> type = machine.resourceTypeWithDataField(
 ```
 
 标量型资源（能量/热量等）可用现成工厂：`MachineResourceTypes.valueIoDataFieldFactory()`。
-名称与图标在同一声明点绑定：`machine.bindResourceName(type, en, cn)` + `MachineUiIcons.register(type, icon)`。
+名称与图标在同一声明点绑定：`machine.bindResourceName(type, en, cn)` + `MachineUiIcons.register(type, () -> icon)`。
 
 ## ResourcePort 泛型基类 — 端口组件
 
@@ -90,7 +90,13 @@ public final class MyPort extends ResourcePort<MyStack, MyResource> {
 
     /** mount 工厂：metadata 作为 Attachment 挂到 ComponentMount 上。 */
     public static PartRoleMount<MyPort> mount(ComponentKey<MyPort> key, int slots, PortAccess policy) {
-        MyPortMetadata metadata = new MyPortMetadata(slots, policy);
+        return mount(key, slots, policy, null);
+    }
+
+    /** 四轴工厂：访问策略 + 可选资源过滤。 */
+    public static PartRoleMount<MyPort> mount(ComponentKey<MyPort> key, int slots, PortAccess policy,
+            @Nullable Predicate<Resource> filter) {
+        MyPortMetadata metadata = new MyPortMetadata(slots, policy, filter);
         return new PartRoleMount<>(key.mount(context -> new MyPort(context, metadata), metadata));
     }
 
@@ -162,7 +168,7 @@ boolean playerConfigurableSides();    // true = 玩家可逐面配置（Resource
 // registerMachineFoundation：声明资源类型（无原版能力时用 resourceType，默认 valueIo 存储工厂）
 MachineResourceType<MyResource> myType = machine.resourceType("my_resource", MyResource.class, null);
 machine.bindResourceName(myType, "My Resource", "我的资源");
-MachineUiIcons.register(myType, /* icon */);
+MachineUiIcons.register(myType, () -> icon);
 
 // registerMachines：挂载自定义端口
 machine.machine("my_machine")
@@ -180,7 +186,7 @@ machine.machine("my_machine")
 | `machine.resourceType(path, type, capability)`                                 | 领域入口（valueIo 默认） |
 | `machine.resourceTypeWithDataField(path, type, capability, factory)`           | 自定义工厂               |
 | `machine.bindResourceName(type, en, cn)`                                       | 资源显示名（同点绑定）   |
-| `MachineUiIcons.register(type, icon)`                                          | 资源图标（同点绑定）     |
+| `MachineUiIcons.register(type, Supplier<IGuiTexture>)`                        | 资源图标（同点绑定）     |
 | `ResourcePort.setSideIo(side, mode)` / `.cycleSideIo(side)` / `.resetSideIo()` | 逐面配置                 |
 | `PortAccess.input()` / `.output()` / `.storage()`                              | 访问策略工厂             |
 | `ResourcePortMetadata.recipePoolIsolatable()`                                  | 配方搜索池隔离声明       |

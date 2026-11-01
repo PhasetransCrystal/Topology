@@ -89,7 +89,6 @@ side="BOTH"
 [[dependencies.${mod_id}]]
 modId="jei"
 type="required"
-versionRange="[${jei_version},)"
 ordering="AFTER"
 side="CLIENT"
 
@@ -102,7 +101,6 @@ side="BOTH"
 [[dependencies.${mod_id}]]
 modId="ldlib2"
 type="required"
-versionRange="[${ldlib2_version},)"
 ordering="AFTER"
 side="BOTH"
 
@@ -111,15 +109,14 @@ side="BOTH"
 [[dependencies.${mod_id}]]
 modId="registrylib"
 type="required"
-versionRange="[${registry_lib_version},)"
 ordering="AFTER"
 side="BOTH"
 
-# Applied Energistics 2: required for the ME hatch machines (integration.ae2).
+# Applied Energistics 2: retained as required groundwork for planned integration.
+# The integration itself is not implemented in this repository yet.
 [[dependencies.${mod_id}]]
 modId="ae2"
 type="required"
-versionRange="[${ae2_version},)"
 ordering="AFTER"
 side="BOTH"
 

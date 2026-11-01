@@ -26,7 +26,7 @@ public class MyBlockEntity extends BlockEntity {
         handle = hub.register(
                 TickKind.SYNC,      // 同步（游戏线程）
                 20,                  // 每 20 tick = 1 秒
-                gameTime -> tick()   // 回调
+                (gameTime, handle) -> tick()   // 回调
         );
     }
 

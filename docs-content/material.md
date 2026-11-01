@@ -11,7 +11,7 @@ sidebar_position: 1
 ```
 Material          ← 一个材料（铜、铁、硫酸……）
   ├── MaterialForm        ← 形态（锭/粉/板/流体/矿石……），为匹配的材料生成内容
-  ├── MaterialDataType    ← 附加属性（颜色、质量、工具/护甲属性……），驱动装备与表单行为
+  ├── MaterialDataType    ← 附加属性（颜色、质量、工具/护甲属性……），驱动装备与形态行为
   └── MaterialPostProcessor ← 批量派生配方链（矿石处理线等），按材质激活
 ```
 
@@ -124,7 +124,7 @@ public void registerMaterialFoundation(MaterialDomainRegistration m) {
 - 在 `registerMaterials()` 中不能注册新 Form，只能引用已注册的 Form
 - `registerMaterials()` 的共享窗口内支持给已构建的材料补数据；重复类型会报错
 - 所有插件完成注入后关闭写入，再统一匹配形态并校验；此后 `strategy().forms()` 才是完整且不可变的集合
-- `MaterialPostProcessor` 在表单物品铸造后运行（先全部 validate，再全部 process）
+- `MaterialPostProcessor` 在形态物品铸造后运行（先全部 validate，再全部 process）
 
 ## 注册流程与性能边界
 

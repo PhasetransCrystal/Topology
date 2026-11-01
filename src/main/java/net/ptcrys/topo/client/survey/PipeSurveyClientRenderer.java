@@ -1,5 +1,6 @@
 package net.ptcrys.topo.client.survey;
 
+import net.ptcrys.topo.api.api.lang.TopoApiLang;
 import net.ptcrys.topo.api.pipe.survey.PipeSurveyRefreshC2SPayload;
 import net.ptcrys.topo.api.pipe.survey.PipeSurveySnapshot;
 import net.ptcrys.topo.api.pipe.survey.PipeSurveyTool;
@@ -31,7 +32,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 /**
  * 勘测叠加层的世界渲染:节点线框按占用率配色(绿→黄→红),抽取/接收端口面框(橙/蓝),
  * 端点 A/B 立柱(金/紫),A→B 车道折线(逐车道色相)与瓶颈节点红色脉冲;准星指向快照内
- * 节点时浮签显示 占用/容量,选齐端点后 B 上方浮签显示静态容量×车道数。几何经
+ * 节点时浮签显示 占用/容量,选齐端点后 B 上方浮签显示分析容量与已显示路径数。几何经
  * {@link SubmitCustomGeometryEvent} 提交(26.1 自定义世界几何正道),坐标平移到相机空间。
  * 另挂客户端 tick 轮询:激活期间每 20t 发刷新空包,收起工具即停(快照 80t 后淡出)。
  */
@@ -258,19 +259,23 @@ public final class PipeSurveyClientRenderer {
                     long used = snapshot.nodeUsed()[i];
                     int percent = capacity <= 0 ? 0 : (int) (used * 100 / capacity);
                     submitLabel(collector, poseStack, camera, cameraPos, target, 1.2f,
-                            used + " / " + capacity + " (" + percent + "%)", minecraft);
+                            Component.literal(used + " / " + capacity + " (" + percent + "%)"), minecraft);
                     break;
                 }
             }
         }
-        if (snapshot.pointB() != PipeSurveySnapshot.NO_POINT && !snapshot.lanes().isEmpty()) {
+        if (snapshot.truncated()) {
+            submitLabel(collector, poseStack, camera, cameraPos, snapshot.anchor(), 2.6f,
+                    TopoApiLang.EQUIPMENT_PIPE_SURVEYOR_TRUNCATED.getComponent(), minecraft);
+        }
+        if (snapshot.pointB() != PipeSurveySnapshot.NO_POINT && (!snapshot.lanes().isEmpty() || snapshot.truncated())) {
             submitLabel(collector, poseStack, camera, cameraPos, snapshot.pointB(), 1.9f,
-                    snapshot.pairCapacity() + "/t x " + snapshot.lanes().size(), minecraft);
+                    TopoApiLang.EQUIPMENT_PIPE_SURVEYOR_CAPACITY.getComponent(snapshot.pairCapacity(), snapshot.lanes().size()), minecraft);
         }
     }
 
     private static void submitLabel(SubmitNodeCollector collector, PoseStack poseStack,
-                                    CameraRenderState camera, Vec3 cameraPos, long pos, float lift, String text,
+                                    CameraRenderState camera, Vec3 cameraPos, long pos, float lift, Component text,
                                     Minecraft minecraft) {
         poseStack.pushPose();
         poseStack.translate(
@@ -281,7 +286,7 @@ public final class PipeSurveyClientRenderer {
         poseStack.scale(0.025f, -0.025f, 0.025f);
         float width = minecraft.font.width(text);
         collector.submitText(poseStack, -width / 2f, 0f,
-                Component.literal(text).getVisualOrderText(), false,
+                text.getVisualOrderText(), false,
                 Font.DisplayMode.SEE_THROUGH, LightCoordsUtil.FULL_BRIGHT, 0xFFFFFFFF, 0x66000000, 0);
         poseStack.popPose();
     }

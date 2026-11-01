@@ -2,6 +2,8 @@ package net.ptcrys.topo.api.pipe.survey;
 
 import net.minecraft.network.FriendlyByteBuf;
 
+import io.netty.handler.codec.DecoderException;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,11 +18,30 @@ public record PipeSurveySnapshot(long anchor, int windowTicks, boolean truncated
 
     /** 端点未选择的哨兵。 */
     public static final long NO_POINT = Long.MIN_VALUE;
-    /** 单帧快照节点硬上限(防爆包);超限置 truncated。 */
+    /** 节点表与单条路径的节点硬上限;节点表由管理器裁剪,超限路径整体省略。 */
     public static final int MAX_NODES = 2048;
+    /** 保留现有协议车道上限;服务端分析器通常只生成最多 6 条。 */
+    private static final int MAX_WIRE_LANES = 16;
 
     /** 一条 A→B 车道:节点位置序列(A 端在前)与瓶颈节点在序列中的下标。 */
     public record Lane(long[] positions, int bottleneckOrdinal) {}
+
+    /** 统一发送边界:不裁断路径,省略超限车道并保留完整分析容量。 */
+    public PipeSurveySnapshot {
+        int count = nodePos.length;
+        if (count > MAX_NODES || nodeThroughput.length != count || nodeUsed.length != count || nodePortBits.length != count) {
+            throw new IllegalArgumentException("Survey node columns must have equal lengths of at most " + MAX_NODES);
+        }
+        List<Lane> boundedLanes = new ArrayList<>(Math.min(lanes.size(), MAX_WIRE_LANES));
+        for (Lane lane : lanes) {
+            if (lane.positions.length > MAX_NODES || boundedLanes.size() >= MAX_WIRE_LANES) {
+                truncated = true;
+                continue;
+            }
+            boundedLanes.add(lane);
+        }
+        lanes = List.copyOf(boundedLanes);
+    }
 
     public static PipeSurveySnapshot empty() {
         return new PipeSurveySnapshot(0L, 1, false,
@@ -74,7 +95,7 @@ public record PipeSurveySnapshot(long anchor, int windowTicks, boolean truncated
         long anchor = buffer.readLong();
         int windowTicks = buffer.readVarInt();
         boolean truncated = buffer.readBoolean();
-        int count = Math.min(buffer.readVarInt(), MAX_NODES);
+        int count = readCount(buffer, MAX_NODES, "node count");
         long[] nodePos = new long[count];
         int[] nodeThroughput = new int[count];
         long[] nodeUsed = new long[count];
@@ -87,10 +108,10 @@ public record PipeSurveySnapshot(long anchor, int windowTicks, boolean truncated
         }
         long pointA = buffer.readLong();
         long pointB = buffer.readLong();
-        int laneCount = Math.min(buffer.readVarInt(), 16);
+        int laneCount = readCount(buffer, MAX_WIRE_LANES, "lane count");
         List<Lane> lanes = new ArrayList<>(laneCount);
         for (int l = 0; l < laneCount; l++) {
-            int length = Math.min(buffer.readVarInt(), MAX_NODES);
+            int length = readCount(buffer, MAX_NODES, "path length");
             long[] positions = new long[length];
             for (int i = 0; i < length; i++) {
                 positions[i] = buffer.readLong();
@@ -99,6 +120,14 @@ public record PipeSurveySnapshot(long anchor, int windowTicks, boolean truncated
         }
         return new PipeSurveySnapshot(anchor, windowTicks, truncated,
                 nodePos, nodeThroughput, nodeUsed, nodePortBits,
-                pointA, pointB, List.copyOf(lanes), buffer.readVarInt());
+                pointA, pointB, lanes, buffer.readVarInt());
+    }
+
+    private static int readCount(FriendlyByteBuf buffer, int maximum, String field) {
+        int count = buffer.readVarInt();
+        if (count < 0 || count > maximum) {
+            throw new DecoderException("Invalid survey " + field + ": " + count + " (expected 0.." + maximum + ")");
+        }
+        return count;
     }
 }
