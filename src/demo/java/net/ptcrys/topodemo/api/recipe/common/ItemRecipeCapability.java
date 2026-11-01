@@ -55,6 +55,10 @@ public final class ItemRecipeCapability extends SlottedRecipeCapability<TopoItem
         return outputUse(TopoItemOutput.of(item, amount));
     }
 
+    public RecipeOutputUse<TopoItemOutput> outRange(Supplier<? extends ItemLike> item, long minAmount, long maxAmount) {
+        return outputUse(TopoItemOutput.ofRange(item, minAmount, maxAmount));
+    }
+
     @Override
     public boolean matchInput(@Nullable MachineBlockEntity machine, List<TopoItemInput.Resource> contents) {
         try (Transaction simulation = Transaction.openRoot()) {
@@ -65,7 +69,7 @@ public final class ItemRecipeCapability extends SlottedRecipeCapability<TopoItem
     @Override
     public boolean matchOutput(@Nullable MachineBlockEntity machine, List<TopoItemOutput> contents) {
         try (Transaction simulation = Transaction.openRoot()) {
-            return transferOutputs(machine, contents, simulation);
+            return transferOutputs(machine, contents, simulation, false);
         }
     }
 
@@ -76,7 +80,7 @@ public final class ItemRecipeCapability extends SlottedRecipeCapability<TopoItem
 
     @Override
     public boolean handleOutputChecked(@Nullable MachineBlockEntity machine, List<TopoItemOutput> contents, Transaction transaction) {
-        return transferOutputs(machine, contents, transaction);
+        return transferOutputs(machine, contents, transaction, true);
     }
 
     private static TopoItemInput.Resource exactInput(TopoItemInput input) {
@@ -98,16 +102,20 @@ public final class ItemRecipeCapability extends SlottedRecipeCapability<TopoItem
         }
     }
 
-    private boolean transferOutputs(@Nullable MachineBlockEntity machine, List<TopoItemOutput> contents, Transaction parent) {
+    private boolean transferOutputs(@Nullable MachineBlockEntity machine, List<TopoItemOutput> contents,
+                                    Transaction parent, boolean roll) {
         if (contents.isEmpty()) return true;
         if (machine == null) return false;
         ResourceHandler<ItemResource> handler = machine.machineComponents().resources().recipeSide()
                 .handler(type, RecipeRole.OUTPUT);
         if (handler == null) return false;
+        var random = machine.getLevel() == null ? null : machine.getLevel().getRandom();
         try (Transaction batch = Transaction.open(parent)) {
             for (TopoItemOutput content : contents) {
-                long moved = ResourceHandlerLongOps.insert(handler, content.resource(), content.count(), batch);
-                if (moved != content.count()) return false;
+                // Feasibility reserves the maximum amount; emission rolls within the reserved range.
+                long amount = roll && random != null ? content.rollCount(random) : content.maxCount();
+                long moved = ResourceHandlerLongOps.insert(handler, content.resource(), amount, batch);
+                if (moved != amount) return false;
             }
             batch.commit();
             return true;
@@ -141,7 +149,7 @@ public final class ItemRecipeCapability extends SlottedRecipeCapability<TopoItem
 
     @Override
     public long maxParallelScaleOutput(TopoItemOutput content) {
-        return Long.MAX_VALUE / content.count();
+        return Long.MAX_VALUE / content.maxCount();
     }
 
     @Override

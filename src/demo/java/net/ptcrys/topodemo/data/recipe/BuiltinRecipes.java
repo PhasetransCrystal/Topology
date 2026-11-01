@@ -9,6 +9,8 @@ import net.ptcrys.topodemo.data.material.BuiltinMaterials;
 import java.util.List;
 
 import static net.ptcrys.topodemo.api.material.BuiltinMaterialDataTypes.ORE_HOST;
+import static net.ptcrys.topodemo.api.material.BuiltinMaterialDataTypes.ORE_PRODUCT;
+import static net.ptcrys.topodemo.api.material.common.OreProductDataType.Product.RAW;
 
 /** Concrete recipes run after all content modules; every not-yet-bound item remains deferred. */
 public final class BuiltinRecipes {
@@ -19,13 +21,29 @@ public final class BuiltinRecipes {
         var item = BuiltinResources.ITEM;
         for (var material : MaterialRegistry.registered()) {
             if (material.data(ORE_HOST).isEmpty() || !material.forms().contains(BuiltinMaterialForms.DUST)) continue;
+            boolean rawOre = material.forms().contains(BuiltinMaterialForms.RAW);
             for (var form : List.of(BuiltinMaterialForms.ORE, BuiltinMaterialForms.DEEPSLATE_ORE)) {
                 if (!material.forms().contains(form)) continue;
-                BuiltinRecipeTypes.GRINDING.recipe(material.id().getNamespace() + "/" + material.id().getPath() + "_" + form.id().getPath() + "_to_dust")
-                        .input(item.in(MaterialHelper.materialItemSupplier(material, form), 1))
-                        .output(item.out(MaterialHelper.materialItemSupplier(material, BuiltinMaterialForms.DUST), 2))
-                        .duration(80).productionLine(BuiltinRecipeTypes.METALLURGY).save();
+                String path = material.id().getNamespace() + "/" + material.id().getPath() + "_" + form.id().getPath();
+                if (rawOre) {
+                    BuiltinRecipeTypes.GRINDING.recipe(path + "_to_raw")
+                            .input(item.in(MaterialHelper.materialItemSupplier(material, form), 1))
+                            .output(item.outRange(MaterialHelper.materialItemSupplier(material, BuiltinMaterialForms.RAW), 1, 4))
+                            .duration(80).productionLine(BuiltinRecipeTypes.METALLURGY).save();
+                } else {
+                    BuiltinRecipeTypes.GRINDING.recipe(path + "_to_dust")
+                            .input(item.in(MaterialHelper.materialItemSupplier(material, form), 1))
+                            .output(item.out(MaterialHelper.materialItemSupplier(material, BuiltinMaterialForms.DUST), 4))
+                            .duration(80).productionLine(BuiltinRecipeTypes.METALLURGY).save();
+                }
             }
+        }
+        for (var material : MaterialRegistry.registered()) {
+            if (material.data(ORE_PRODUCT).filter(RAW::equals).isEmpty() || !material.forms().contains(BuiltinMaterialForms.RAW) || !material.forms().contains(BuiltinMaterialForms.DUST)) continue;
+            BuiltinRecipeTypes.GRINDING.recipe(material.id().getNamespace() + "/" + material.id().getPath() + "_raw_to_dust")
+                    .input(item.in(MaterialHelper.materialItemSupplier(material, BuiltinMaterialForms.RAW), 2))
+                    .output(item.out(MaterialHelper.materialItemSupplier(material, BuiltinMaterialForms.DUST), 3))
+                    .duration(80).productionLine(BuiltinRecipeTypes.METALLURGY).save();
         }
         BuiltinRecipeTypes.ALLOYING.recipe("bronze_alloy")
                 .input(item.in(MaterialHelper.materialItemSupplier(BuiltinMaterials.COPPER, BuiltinMaterialForms.DUST), 3))
