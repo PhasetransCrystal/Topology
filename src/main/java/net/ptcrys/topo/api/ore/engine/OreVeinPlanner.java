@@ -34,6 +34,7 @@ import java.util.Optional;
 public final class OreVeinPlanner {
 
     private static final long MAX_BLOCK_SCANS_PER_CHUNK = 262_144L;
+    private static final long MAX_CELL_CANDIDATES_PER_CHUNK = 65_536L;
     private static final long EXPOSURE_SALT = 0x6A09E667F3BCC909L;
     private static final Identifier VEIN_SELECT_SALT = IdHelper.id("vein_select");
 
@@ -78,6 +79,12 @@ public final class OreVeinPlanner {
             int lastX = lastOrigin(chunkPos.x() + searchChunks, gridSize);
             int firstZ = firstOrigin(chunkPos.z() - searchChunks, gridSize);
             int lastZ = lastOrigin(chunkPos.z() + searchChunks, gridSize);
+            long columns = Math.max(0L, (long) (lastX - firstX) / gridSize + 1L);
+            long rows = Math.max(0L, (long) (lastZ - firstZ) / gridSize + 1L);
+            if (columns * rows > MAX_CELL_CANDIDATES_PER_CHUNK) {
+                throw new IllegalStateException(
+                        "Ore vein " + gridVein.vein().id() + " enumerates " + columns * rows + " candidate cells per chunk; reduce radius/random offset or increase grid spacing");
+            }
             for (int cx = firstX; cx <= lastX; cx += gridSize) {
                 for (int cz = firstZ; cz <= lastZ; cz += gridSize) {
                     byCell.computeIfAbsent(new OriginCell(cx, cz), ignored -> new ArrayList<>()).add(gridVein);
@@ -205,16 +212,16 @@ public final class OreVeinPlanner {
 
     private GridVein selectVein(
                                 long seed, ResourceKey<Level> dimension, OriginCell cell, List<GridVein> candidates) {
-        int totalWeight = 0;
+        long totalWeight = 0L;
         for (GridVein candidate : candidates) {
             totalWeight += candidate.grid().weight();
         }
-        if (totalWeight <= 0) {
+        if (totalWeight <= 0L) {
             return null;
         }
         long mixed = OreGridMath.seed(seed, dimension.identifier(), VEIN_SELECT_SALT, cell.x(), cell.z());
-        int selected = OreGridMath.randomInt(mixed, 5, 0, totalWeight - 1);
-        int cursor = 0;
+        long selected = OreGridMath.randomLong(mixed, 5, totalWeight);
+        long cursor = 0L;
         for (GridVein candidate : candidates) {
             cursor += candidate.grid().weight();
             if (selected < cursor) {

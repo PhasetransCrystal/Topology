@@ -1,5 +1,6 @@
 package net.ptcrys.topo.api.machine.multiblock;
 
+import net.ptcrys.topo.api.api.async.TopoAsyncExecutors;
 import net.ptcrys.topo.api.machine.multiblock.pattern.Blueprint;
 import net.ptcrys.topo.api.machine.multiblock.pattern.CompiledSnapshot;
 import net.ptcrys.topo.api.machine.multiblock.pattern.Orientation;
@@ -10,10 +11,6 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Worker-thread structure recognition for large footprints: the server thread captures immutable
@@ -31,18 +28,6 @@ public final class AsyncStructureService {
 
     private static final int DEFAULT_ASYNC_CELL_THRESHOLD = 2048;
 
-    private static final ExecutorService POOL = Executors.newFixedThreadPool(2, new ThreadFactory() {
-
-        private final AtomicInteger index = new AtomicInteger();
-
-        @Override
-        public Thread newThread(Runnable runnable) {
-            Thread thread = new Thread(runnable, "Topo-Multiblock-Recognize-" + index.incrementAndGet());
-            thread.setDaemon(true);
-            return thread;
-        }
-    });
-
     private AsyncStructureService() {}
 
     /** Footprints at or above this many (maximal) cells recognize on the worker pool. */
@@ -52,7 +37,7 @@ public final class AsyncStructureService {
 
     /** Recognizes the captured views on the worker pool; same decision as the synchronous path. */
     public static CompletableFuture<Outcome> recognizeAsync(Captures captures, Blueprint blueprint) {
-        return CompletableFuture.supplyAsync(() -> recognizePreferringMirror(captures, blueprint), POOL);
+        return CompletableFuture.supplyAsync(() -> recognizePreferringMirror(captures, blueprint), TopoAsyncExecutors.structureExecutor());
     }
 
     /**
@@ -65,7 +50,7 @@ public final class AsyncStructureService {
         Objects.requireNonNull(snapshot, "snapshot");
         Objects.requireNonNull(blueprint, "blueprint");
         return CompletableFuture.supplyAsync(
-                () -> StructureEngine.verify(snapshot, blueprint, snapshot.compiled().orientation()), POOL);
+                () -> StructureEngine.verify(snapshot, blueprint, snapshot.compiled().orientation()), TopoAsyncExecutors.structureExecutor());
     }
 
     /**

@@ -81,6 +81,9 @@ public final class PipeLevelRuntime {
         this.level = level;
         this.data = PipeNetworksSavedData.of(level);
         if (data.nodeCount() > 0) {
+            // Reloaded worlds have no live graph. Seed every recorded node; resolvePending floods
+            // each connected component once and skips nodes already claimed by that flood.
+            rebuildSeeds.addAll(data.nodePositions());
             ensureTickHook();
         }
     }

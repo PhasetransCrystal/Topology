@@ -53,12 +53,15 @@ public final class PipeNetworksSavedData extends SavedData {
 
     private record NodeEntry(BlockPos pos, Identifier definitionId, int intent, int roles, List<PortEntry> ports) {
 
+        private static final Codec<List<PortEntry>> PORTS_CODEC = PortEntry.CODEC.listOf()
+                .promotePartial(error -> LOGGER.error("Dropped corrupted pipe port entry: {}", error));
+
         static final Codec<NodeEntry> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                 BlockPos.CODEC.fieldOf("pos").forGetter(NodeEntry::pos),
                 Identifier.CODEC.fieldOf("definition").forGetter(NodeEntry::definitionId),
                 Codec.INT.fieldOf("intent").forGetter(NodeEntry::intent),
                 Codec.INT.fieldOf("roles").forGetter(NodeEntry::roles),
-                PortEntry.CODEC.listOf().optionalFieldOf("ports", List.of()).forGetter(NodeEntry::ports)).apply(instance, NodeEntry::new));
+                PORTS_CODEC.optionalFieldOf("ports", List.of()).forGetter(NodeEntry::ports)).apply(instance, NodeEntry::new));
     }
 
     private static final Codec<List<NodeEntry>> ENTRIES_CODEC = NodeEntry.CODEC.listOf()
@@ -132,6 +135,11 @@ public final class PipeNetworksSavedData extends SavedData {
 
     public int nodeCount() {
         return nodes.size();
+    }
+
+    /** Snapshot of all recorded node positions; used to seed recovery after a reload. */
+    public LongArrayList nodePositions() {
+        return new LongArrayList(nodes.keySet());
     }
 
     public PipeNodeRecord addNode(long pos, PipeDefinition definition, int intentBits) {

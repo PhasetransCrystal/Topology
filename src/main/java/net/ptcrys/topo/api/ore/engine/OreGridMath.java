@@ -36,8 +36,14 @@ public final class OreGridMath {
             return min;
         }
         long range = (long) max - (long) min + 1L;
-        long value = Long.remainderUnsigned(mix(seed + salt * 0x9E3779B97F4A7C15L), range);
-        return (int) (min + value);
+        return (int) (min + randomLong(seed, salt, range));
+    }
+
+    public static long randomLong(long seed, int salt, long bound) {
+        if (bound <= 0L) {
+            throw new IllegalArgumentException("bound must be positive, got " + bound);
+        }
+        return Long.remainderUnsigned(mix(seed + salt * 0x9E3779B97F4A7C15L), bound);
     }
 
     public static long mix(long value) {
