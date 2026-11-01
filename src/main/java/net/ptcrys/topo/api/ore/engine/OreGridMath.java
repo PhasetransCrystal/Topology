@@ -19,8 +19,10 @@ public final class OreGridMath {
 
     public static long seed(long worldSeed, Identifier dimensionId, Identifier id, int x, int z) {
         long value = worldSeed;
-        value ^= ((long) dimensionId.hashCode()) * 0x9E3779B97F4A7C15L;
-        value ^= ((long) id.hashCode()) * 0xBF58476D1CE4E5B9L;
+        // String hashes preserve the pre-Identifier worldgen seed layout; Identifier.hashCode()
+        // would silently re-seed every existing world.
+        value ^= ((long) dimensionId.toString().hashCode()) * 0x9E3779B97F4A7C15L;
+        value ^= ((long) id.toString().hashCode()) * 0xBF58476D1CE4E5B9L;
         value ^= ((long) x) * 0x94D049BB133111EBL;
         value ^= ((long) z) * 0xD6E8FEB86659FD93L;
         return mix(value);

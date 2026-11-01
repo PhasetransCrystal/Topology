@@ -443,12 +443,26 @@ public final class PipeLevelRuntime {
             return false;
         }
         pendingPortScreens.put(player.getUUID(), new PendingPort(pos.immutable(), side));
-        return BlockUIMenuType.openUI(serverPlayer, pos);
+        if (BlockUIMenuType.openUI(serverPlayer, pos)) {
+            return true;
+        }
+        pendingPortScreens.remove(player.getUUID());
+        return false;
     }
 
     /** Server-side createUI picks up (and clears) the clicked port for this player. */
     public @Nullable PendingPort consumePendingPortScreen(UUID playerId) {
         return pendingPortScreens.remove(playerId);
+    }
+
+    /** Picks up the pending port only when it belongs to the block whose UI is being created. */
+    public @Nullable PendingPort consumePendingPortScreen(UUID playerId, BlockPos expectedPos) {
+        PendingPort pending = pendingPortScreens.get(playerId);
+        if (pending == null) {
+            return null;
+        }
+        pendingPortScreens.remove(playerId);
+        return pending.pos().equals(expectedPos) ? pending : null;
     }
 
     /** The port's healed strategy config (resets to the initial offer when missing/invalid). */
@@ -753,10 +767,10 @@ public final class PipeLevelRuntime {
      * strategies its tier unlocks (declaration order), resetting the config to the new strategy's
      * default, and tell the player.
      */
-    void cycleExtractStrategy(BlockPos pos, Direction side, Player player) {
+    boolean cycleExtractStrategy(BlockPos pos, Direction side, Player player) {
         PipeNodeRecord record = data.node(pos.asLong());
         if (record == null || record.role(side) != PipeSideRole.EXTRACT) {
-            return;
+            return false;
         }
         PipeDefinition definition = record.definition();
         List<PipeStrategyOffer> offers = definition.strategies();
@@ -778,6 +792,7 @@ public final class PipeLevelRuntime {
         refreshPortsAt(pos.asLong());
         player.sendOverlayMessage(TopoApiLang.PIPE_STRATEGY_SELECTED.getComponent(
                 next.strategy().displayName()));
+        return true;
     }
 
     // --- wrench ------------------------------------------------------------------------------

@@ -30,6 +30,20 @@ public final class TopoApiLang {
             "等待输出空间");
     public static final LangKey UI_RECIPE_STATE_MISSING_ACTIVE_RECIPE = LANG.key("ui", "recipe.state.missing_active_recipe", "Recipe missing", "配方缺失");
 
+    // --- Multiblock structure diagnosis ------------------------------------------------------
+
+    public static final LangKey UI_MULTIBLOCK_NONE = LANG.key("ui", "multiblock.none", "None", "无");
+    public static final LangKey UI_MULTIBLOCK_DIAGNOSE_NEED = LANG.key(
+            "ui",
+            "multiblock.diagnose.need",
+            "%s at %s",
+            "%s（位于 %s）");
+    public static final LangKey UI_MULTIBLOCK_DIAGNOSE_NEED_FOUND = LANG.key(
+            "ui",
+            "multiblock.diagnose.need_found",
+            "%s (found %s) at %s",
+            "%s（发现 %s，位于 %s）");
+
     // --- Machine UI generic labels (runtime UI framework owns the layout, not content) --------
 
     public static final LangKey UI_RECIPE_PAGE = LANG.key("ui", "recipe.page", "Recipe", "配方");

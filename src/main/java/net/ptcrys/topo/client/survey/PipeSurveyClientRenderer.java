@@ -34,7 +34,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
  * 端点 A/B 立柱(金/紫),A→B 车道折线(逐车道色相)与瓶颈节点红色脉冲;准星指向快照内
  * 节点时浮签显示 占用/容量,选齐端点后 B 上方浮签显示分析容量与已显示路径数。几何经
  * {@link SubmitCustomGeometryEvent} 提交(26.1 自定义世界几何正道),坐标平移到相机空间。
- * 另挂客户端 tick 轮询:激活期间每 20t 发刷新空包,收起工具即停(快照 80t 后淡出)。
+ * 另挂客户端 tick 轮询:持工具期间每 20t 发刷新空包,收起工具即停(快照 80t 后淡出)。
  */
 public final class PipeSurveyClientRenderer {
 
@@ -64,7 +64,7 @@ public final class PipeSurveyClientRenderer {
             return;
         }
         long gameTime = minecraft.level.getGameTime();
-        if (!PipeSurveyClientState.fresh(gameTime) || gameTime % POLL_INTERVAL_TICKS != 0) {
+        if (gameTime % POLL_INTERVAL_TICKS != 0) {
             return;
         }
         if (holdsSurveyor(minecraft.player)) {

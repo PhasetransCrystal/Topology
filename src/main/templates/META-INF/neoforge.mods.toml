@@ -89,6 +89,7 @@ side="BOTH"
 [[dependencies.${mod_id}]]
 modId="jei"
 type="required"
+versionRange="[${jei_version},)"
 ordering="AFTER"
 side="CLIENT"
 
@@ -101,6 +102,7 @@ side="BOTH"
 [[dependencies.${mod_id}]]
 modId="ldlib2"
 type="required"
+versionRange="[${ldlib2_version},)"
 ordering="AFTER"
 side="BOTH"
 
@@ -109,6 +111,7 @@ side="BOTH"
 [[dependencies.${mod_id}]]
 modId="registrylib"
 type="required"
+versionRange="[26.1.2-${registry_lib_version},)"
 ordering="AFTER"
 side="BOTH"
 
@@ -117,6 +120,7 @@ side="BOTH"
 [[dependencies.${mod_id}]]
 modId="ae2"
 type="required"
+versionRange="[${ae2_version},)"
 ordering="AFTER"
 side="BOTH"
 

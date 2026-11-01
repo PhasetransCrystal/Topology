@@ -1289,7 +1289,7 @@ object PipePortConfigUi {
         val player = holder.player as? ServerPlayer ?: return null
         val level = player.level()
         val runtime = PipeNetworkEngine.runtime(level)
-        val pending = runtime.consumePendingPortScreen(player.uuid) ?: return null
+        val pending = runtime.consumePendingPortScreen(player.uuid, holder.pos) ?: return null
         return Session(runtime, pending.pos, pending.side)
     }
 

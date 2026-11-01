@@ -71,7 +71,9 @@ public final class OreVeinPlanner {
         for (GridVein gridVein : veins) {
             OrePlacement.Grid grid = gridVein.grid();
             int gridSize = grid.gridSizeChunks();
-            int searchChunks = Math.ceilDiv(grid.radiusBlocks() + grid.randomOffsetBlocks() + 15, 16);
+            // Cell centers sit half a grid cell past the origin, so a chunk on the +X/+Z side can
+            // belong to a cell whose origin lies up to gridSize/2 chunks outside the footprint.
+            int searchChunks = Math.ceilDiv(grid.radiusBlocks() + grid.randomOffsetBlocks() + 15, 16) + Math.ceilDiv(gridSize, 2);
             int firstX = firstOrigin(chunkPos.x() - searchChunks, gridSize);
             int lastX = lastOrigin(chunkPos.x() + searchChunks, gridSize);
             int firstZ = firstOrigin(chunkPos.z() - searchChunks, gridSize);

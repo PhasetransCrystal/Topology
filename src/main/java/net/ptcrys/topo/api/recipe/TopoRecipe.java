@@ -168,6 +168,10 @@ public class TopoRecipe implements Recipe<TopoRecipeInput> {
         this.tickOutputs = Objects.requireNonNull(tickOutputs, "TopoRecipe.tickOutputs").clone();
         this.groupedTickOutputs = groupOutputsByCapability(this.tickOutputs);
         this.groupedTickIo = groupTickIoByCapability(groupedTickInputs, groupedTickOutputs);
+        if (this.inputs.length == 0 && this.outputs.length == 0 && this.tickInputs.length == 0 && this.tickOutputs.length == 0) {
+            throw new IllegalArgumentException(
+                    "TopoRecipe must declare at least one input or output (including tick I/O)");
+        }
         if (duration <= 0) {
             throw new IllegalArgumentException("TopoRecipe.duration must be > 0 (was " + duration + ")");
         }

@@ -25,6 +25,8 @@ import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -35,6 +37,8 @@ import java.util.List;
  * definition, runs the trait lifecycle, and delegates persistence/sync to its machine data domain.
  */
 public class MachineBlockEntity extends BlockEntity {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(MachineBlockEntity.class);
 
     private static final MachineComponents.RuntimeAccess COMPONENT_RUNTIME_ACCESS = new ComponentRuntimeAccess();
     private static final long[] EMPTY_PERFORMANCE_BREAKDOWN = new long[0];
@@ -517,7 +521,11 @@ public class MachineBlockEntity extends BlockEntity {
 
     private void detachTickersFromHub() {
         for (MachineTicker ticker : requireComponents().tickersForRuntime(COMPONENT_RUNTIME_ACCESS)) {
-            ticker.detachFromHub();
+            try {
+                ticker.detachFromHub();
+            } catch (RuntimeException error) {
+                LOGGER.error("Failed to detach machine ticker for {} at {}", definition.id(), getBlockPos(), error);
+            }
         }
     }
 

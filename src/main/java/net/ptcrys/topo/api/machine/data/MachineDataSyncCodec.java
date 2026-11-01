@@ -33,8 +33,12 @@ final class MachineDataSyncCodec {
         var buffer = new RegistryFriendlyByteBuf(byteBuf, registryAccess, connectionType);
         try {
             writeHeader(buffer, machine, fields, dirtyWords);
-            writeDirtyFieldValues(buffer, fields, dirtyWords, writeMode.clearDirty);
-            return copyReadableBytes(byteBuf);
+            writeDirtyFieldValues(buffer, fields, dirtyWords);
+            byte[] data = copyReadableBytes(byteBuf);
+            if (writeMode.clearDirty) {
+                clearDirtyFields(fields, dirtyWords);
+            }
+            return data;
         } finally {
             byteBuf.release();
         }
@@ -79,15 +83,19 @@ final class MachineDataSyncCodec {
     private static void writeDirtyFieldValues(
                                               RegistryFriendlyByteBuf buffer,
                                               List<DataField> fields,
-                                              long[] dirtyWords,
-                                              boolean clearDirty) {
+                                              long[] dirtyWords) {
         for (int i = 0; i < fields.size(); i++) {
             if (bit(dirtyWords, i)) {
-                DataField field = fields.get(i);
-                field.writeSync(buffer);
-                if (clearDirty) {
-                    field.clearSyncDirty();
-                }
+                fields.get(i).writeSync(buffer);
+            }
+        }
+    }
+
+    /** Dirty bits are cleared only after the complete frame has been encoded successfully. */
+    private static void clearDirtyFields(List<DataField> fields, long[] dirtyWords) {
+        for (int i = 0; i < fields.size(); i++) {
+            if (bit(dirtyWords, i)) {
+                fields.get(i).clearSyncDirty();
             }
         }
     }

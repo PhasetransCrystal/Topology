@@ -1,6 +1,6 @@
 package net.ptcrys.topo.api.machine.multiblock;
 
-import net.ptcrys.topo.api.api.lang.LangRegistry;
+import net.ptcrys.topo.api.api.lang.TopoApiLang;
 import net.ptcrys.topo.api.machine.MachineBlockEntity;
 import net.ptcrys.topo.api.machine.MachineDefinition;
 import net.ptcrys.topo.api.machine.Machines;
@@ -135,21 +135,24 @@ public final class MultiblockClientDiagnosis {
         for (RecognitionResult.MissingCell missing : result.missingCells()) {
             all.add(cellReason(missing));
         }
-        int mismatchedCells = all.size();
+        int cellProblems = result.missingCount();
+        int countProblems = 0;
         for (Blueprint.CountRequirement requirement : blueprint.countRequirements().values()) {
             int count = result.roleCounts().getOrDefault(requirement.role(), 0);
             if (count < requirement.min()) {
                 all.add(countReason(Kind.MISSING_PART, requirement.role(), count, requirement.min()));
+                countProblems++;
             } else if (count > requirement.max()) {
                 all.add(countReason(Kind.EXCESS_PART, requirement.role(), count, requirement.max()));
+                countProblems++;
             }
         }
         int totalCells = blueprint.cells().size();
         int partCount = result.roleCounts().values().stream().mapToInt(Integer::intValue).sum();
         return new Report(
                 sample(all, displayMax),
-                all.size(),
-                totalCells - mismatchedCells,
+                cellProblems + countProblems,
+                totalCells - cellProblems,
                 totalCells,
                 partCount,
                 timed.captureNanos(),
@@ -320,7 +323,7 @@ public final class MultiblockClientDiagnosis {
         if (!candidates.isEmpty()) {
             return candidates.get(0).getHoverName();
         }
-        return LangRegistry.require("ui.topo.multiblock.none").getComponent();
+        return TopoApiLang.UI_MULTIBLOCK_NONE.getComponent();
     }
 
     /** Representative icon of what a cell expects, or {@code null} when it has no item face. */
@@ -378,11 +381,11 @@ public final class MultiblockClientDiagnosis {
         BlockState actual = missing.actual();
         Component message;
         if (kind == Kind.EMPTY_CELL || actual == null) {
-            message = tinted(LangRegistry.require("ui.topo.multiblock.diagnose.need").getComponent(
+            message = tinted(TopoApiLang.UI_MULTIBLOCK_DIAGNOSE_NEED.getComponent(
                     expected,
                     coords(missing.localPos())), muted);
         } else {
-            message = tinted(LangRegistry.require("ui.topo.multiblock.diagnose.need_found").getComponent(
+            message = tinted(TopoApiLang.UI_MULTIBLOCK_DIAGNOSE_NEED_FOUND.getComponent(
                     expected,
                     actual.getBlock().getName(),
                     coords(missing.localPos())), muted);

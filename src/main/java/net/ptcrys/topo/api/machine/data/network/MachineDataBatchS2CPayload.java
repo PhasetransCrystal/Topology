@@ -13,6 +13,7 @@ import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.network.connection.ConnectionType;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
+import io.netty.handler.codec.DecoderException;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
@@ -44,6 +45,10 @@ public record MachineDataBatchS2CPayload(List<Entry> entries) implements CustomP
 
     private static MachineDataBatchS2CPayload decode(RegistryFriendlyByteBuf buffer) {
         int count = buffer.readVarInt();
+        // Each entry needs at least 8 bytes of position plus a 1-byte empty payload length.
+        if (count < 0 || count > buffer.readableBytes() / 9) {
+            throw new DecoderException("Invalid machine data batch entry count: " + count);
+        }
         List<Entry> entries = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
             entries.add(new Entry(buffer.readLong(), buffer.readByteArray()));

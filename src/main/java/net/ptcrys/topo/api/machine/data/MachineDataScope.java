@@ -13,6 +13,8 @@ import net.neoforged.neoforge.network.connection.ConnectionType;
 
 import com.mojang.serialization.Codec;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -48,6 +50,8 @@ import java.util.Objects;
  * </pre>
  */
 public final class MachineDataScope {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(MachineDataScope.class);
 
     public static final String SAVE_KEY = "machine_data";
     public static final String UPDATE_TAG_SYNC_KEY = "machine_data_sync";
@@ -415,7 +419,8 @@ public final class MachineDataScope {
 
     private void promoteToWorldSide(Level level) {
         if (level.isClientSide()) {
-            phase = clientBaselineReceived ? Phase.CLIENT_LIVE : Phase.CLIENT_WAITING;
+            // Nothing to receive means the declared defaults are the complete client mirror.
+            phase = clientBaselineReceived || syncToClientFields.isEmpty() ? Phase.CLIENT_LIVE : Phase.CLIENT_WAITING;
         } else {
             phase = Phase.SERVER_LIVE;
         }
@@ -425,7 +430,10 @@ public final class MachineDataScope {
         input.child(SAVE_KEY).ifPresent(root -> {
             int version = root.getIntOr("version", -1);
             if (version != FORMAT_VERSION) {
-                throw new IllegalStateException("Unsupported machine_data persist version " + version + " for " + machine.definition().id() + " at " + machine.getBlockPos());
+                LOGGER.error(
+                        "Ignoring unsupported machine_data persist version {} for {} at {} (expected {}); fields keep defaults",
+                        version, machine.definition().id(), machine.getBlockPos(), FORMAT_VERSION);
+                return;
             }
             root.child("scopes").ifPresent(scopesIn -> {
                 for (DataScope scope : scopes.values()) {
