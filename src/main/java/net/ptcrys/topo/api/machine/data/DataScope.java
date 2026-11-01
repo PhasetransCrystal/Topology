@@ -68,6 +68,9 @@ public final class DataScope {
         if (existing != null) {
             return existing;
         }
+        if (fieldsByKey.containsKey(key)) {
+            throw new IllegalStateException("Data group '" + fullPath(key) + "' conflicts with a field key");
+        }
         domain.requireSchemaOpen("create data group '" + fullPath(key) + "'");
         DataScope created = new DataScope(domain, this, key);
         groups.put(key, created);
@@ -210,6 +213,9 @@ public final class DataScope {
 
     void register(DataField field) {
         domain.requireSchemaOpen("register data field '" + fullPath(field.key()) + "'");
+        if (groups.containsKey(field.key())) {
+            throw new IllegalStateException("Data field '" + fullPath(field.key()) + "' conflicts with a group key");
+        }
         DataField previous = fieldsByKey.putIfAbsent(field.key(), field);
         if (previous != null) {
             throw new IllegalStateException("Duplicate data field '" + fullPath(field.key()) + "'");

@@ -80,9 +80,16 @@ public final class LangDomainRegistration {
      */
     public LangKey absolute(String fullKey, String en, String cn) {
         Objects.requireNonNull(fullKey, "fullKey");
-        if (!fullKey.contains(modId())) {
+        boolean owned = false;
+        for (String segment : fullKey.split("\\.", -1)) {
+            if (segment.equals(modId())) {
+                owned = true;
+                break;
+            }
+        }
+        if (!owned) {
             throw new IllegalArgumentException(
-                    "absolute lang key must include plugin modId '" + modId() + "': " + fullKey);
+                    "absolute lang key must contain a segment equal to plugin modId '" + modId() + "': " + fullKey);
         }
         return register(fullKey, en, cn);
     }
