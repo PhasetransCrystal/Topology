@@ -66,12 +66,12 @@ public abstract class MaterialPostProcessor {
 
     /** Whether {@code material} does not declare this processor's activation. */
     protected final boolean notDeclaredOn(Material material) {
-        return material.strategy().data(dataType()).isEmpty();
+        return !material.hasData(dataType());
     }
 
     /** Throws if {@code material} does not declare {@code form}. */
     protected final void require(Material material, MaterialForm form) {
-        if (!material.strategy().hasForm(form)) {
+        if (!material.hasForm(form)) {
             throw new IllegalStateException(
                     getClass().getSimpleName() + ": material " + material.id() + " is missing required form " + form.id());
         }

@@ -212,8 +212,7 @@ public final class TintedTemplate {
         if (layer.requiredData == null) {
             return 0xFFFFFF;
         }
-        return material.strategy()
-                .data(layer.requiredData)
+        return material.data(layer.requiredData)
                 .map(RgbColorData::rgb)
                 .orElse(0xFFFFFF);
     }

@@ -44,19 +44,37 @@ class TopoPluginEngineIntegrationTest {
     }
 
     @Test
+    void contributionPhaseInjectsCapabilitiesIntoOtherPluginsMaterials() {
+        assertTrue(contributionSawAllMaterials);
+        assertTrue(contributionDataVisible);
+        var material = MaterialRegistry.require(a.material().id("lifecycle_material"));
+        assertTrue(material.data(contributionMarker).orElse(false));
+    }
+
+    @Test
+    void requiredPropertiesAreCheckedWhenDataIsInjected() {
+        assertNotNull(missingDependencyFailure);
+        assertTrue(missingDependencyFailure.getMessage().contains("dependent_probe"));
+        assertTrue(missingDependencyFailure.getMessage().contains("form_probe"));
+        assertTrue(dependencySatisfied);
+        var material = MaterialRegistry.require(a.material().id("dependency_material"));
+        assertTrue(material.data(dependentMarker).orElse(false));
+    }
+
+    @Test
     void formRulesApplyInBothDirectionsAcrossPluginsBeforeValidationAndContent() {
         var base = MaterialRegistry.require(a.material().id("lifecycle_material"));
         var extension = MaterialRegistry.require(b.material().id("extension_material"));
         for (var material : List.of(base, extension)) {
-            assertEquals(List.of(baseForm, extensionForm), material.strategy().forms());
-            assertEquals(material.strategy().forms(), generatedForms.get(material));
+            assertEquals(List.of(baseForm, extensionForm), material.forms());
+            assertEquals(material.forms(), generatedForms.get(material));
         }
         assertTrue(formValidationSawResolvedForms);
         assertSame(coreA, generatedFormOwners.get(base));
         assertSame(coreB, generatedFormOwners.get(extension));
-        var before = base.strategy().forms();
+        var before = base.forms();
         MaterialRegistry.freeze();
-        assertSame(before, base.strategy().forms());
+        assertSame(before, base.forms());
         assertEquals(2, generatedForms.get(base).size());
         assertTrue(MaterialFormRegistry.isFrozen());
     }
@@ -64,13 +82,13 @@ class TopoPluginEngineIntegrationTest {
     @Test
     void externalItemOptionsCannotSelectANonMatchingForm() {
         var material = MaterialRegistry.require(a.material().id("lifecycle_material"));
-        assertTrue(material.strategy().optionsFor(nonMatchingForm).orElseThrow().itemOverride().isPresent());
+        assertTrue(material.optionsFor(nonMatchingForm).orElseThrow().itemOverride().isPresent());
         assertFalse(nonMatchingForm.appliesTo(material));
-        assertFalse(material.strategy().forms().contains(nonMatchingForm));
+        assertFalse(material.forms().contains(nonMatchingForm));
         assertFalse(generatedForms.get(material).contains(nonMatchingForm));
         assertEquals(1, scopedValidations);
-        assertTrue(material.strategy().data(scopedMarker).isEmpty());
-        assertTrue(material.strategy().data(scopedMarker, baseForm).orElseThrow());
+        assertTrue(material.data(scopedMarker).isEmpty());
+        assertTrue(material.data(scopedMarker, baseForm).orElseThrow());
     }
 
     @Test
@@ -81,9 +99,9 @@ class TopoPluginEngineIntegrationTest {
         assertNotNull(foreignFormFailure);
         assertNotNull(duplicateBuildFailure);
         var material = MaterialRegistry.require(a.material().id("lifecycle_material"));
-        assertTrue(material.strategy().hasForm(baseForm));
-        assertFalse(material.strategy().hasForm(nonMatchingForm));
-        assertThrows(UnsupportedOperationException.class, () -> material.strategy().forms().clear());
+        assertTrue(material.hasForm(baseForm));
+        assertFalse(material.hasForm(nonMatchingForm));
+        assertThrows(UnsupportedOperationException.class, () -> material.forms().clear());
         assertThrows(IllegalStateException.class, () -> retainedFormOptions.overrideItem(ExternalTargets.mcItem("diamond")));
         assertThrows(IllegalStateException.class, () -> retainedFormOptions.overrideBlock(ExternalTargets.mcBlock("stone")));
         assertThrows(IllegalStateException.class, () -> retainedFormOptions.data(materialMarker.enabled()));
@@ -96,9 +114,9 @@ class TopoPluginEngineIntegrationTest {
     void processorsOnlyVisitActivatedMaterialsAndValidateBeforeProcessing() {
         var material = MaterialRegistry.require(a.material().id("lifecycle_material"));
         var extension = MaterialRegistry.require(b.material().id("extension_material"));
-        assertEquals(List.of(alphaProcessor, zetaProcessor), material.strategy().postProcessors());
-        assertTrue(extension.strategy().postProcessors().isEmpty());
-        assertThrows(UnsupportedOperationException.class, () -> material.strategy().postProcessors().clear());
+        assertEquals(List.of(alphaProcessor, zetaProcessor), material.postProcessors());
+        assertTrue(extension.postProcessors().isEmpty());
+        assertThrows(UnsupportedOperationException.class, () -> material.postProcessors().clear());
         // Activation data is validated before content, followed by the post-content validation pass.
         assertEquals(List.of("validate:zeta", "validate:alpha", "validate:alpha", "validate:zeta",
                 "process:alpha", "process:zeta"), processorEvents);

@@ -27,7 +27,7 @@ public final class MaterialHelper {
      * (RegisterEvent HIGHEST) prefer {@link #materialItemSupplier} and {@link #itemId}.
      */
     public static Optional<Item> item(Material material, MaterialForm form) {
-        if (!material.strategy().hasForm(form)) {
+        if (!material.hasForm(form)) {
             return Optional.empty();
         }
 
@@ -41,7 +41,7 @@ public final class MaterialHelper {
     public static Identifier itemId(Material material, MaterialForm form) {
         Objects.requireNonNull(material, "material");
         Objects.requireNonNull(form, "form");
-        Optional<MaterialFormOptions> options = material.strategy().optionsFor(form);
+        Optional<MaterialFormOptions> options = material.optionsFor(form);
         Optional<Identifier> overrideId = options
                 .flatMap(MaterialFormOptions::itemOverride)
                 .map(ExternalItemTarget::id)
@@ -86,7 +86,7 @@ public final class MaterialHelper {
 
     /** Resolves the registered source fluid backing a material fluid form. */
     public static Optional<Fluid> fluid(Material material, MaterialForm form) {
-        if (!material.strategy().hasForm(form)) {
+        if (!material.hasForm(form)) {
             return Optional.empty();
         }
 

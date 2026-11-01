@@ -61,11 +61,12 @@ gantt
     section 材料构建与数据注入
     材料声明与数据写入开放              :materialWindow, 1000, 7s
     registerMaterials（全部插件）       :active, materials, 4000, 4s
+    registerMaterialContributions       :active, contributions, after materials, 2s
     目标材料 build 完成（示意）         :milestone, built, 5000, 0s
     向该已构建材料注入 data             :injection, after built, 3s
-    关闭材料声明及数据写入              :milestone, crit, dataClosed, after materials, 0s
+    关闭材料声明及数据写入              :milestone, crit, dataClosed, after contributions, 0s
     MaterialForm.appliesTo → Predicate.test :done, selection, after dataClosed, 1s
-    MaterialDataStrategy.validate        :done, dataValidation, 9000, 1s
+    MaterialDataType.validate           :done, dataValidation, 9000, 1s
     MaterialPostProcessor.validate（激活数据） :done, activationValidation, 9000, 1s
     MaterialFormStrategy.validateMaterial :done, validation, 9000, 1s
     MaterialRegistry 冻结               :milestone, crit, materialFrozen, after validation, 0s
@@ -163,7 +164,7 @@ gantt
 | 区间 | 回调与实际顺序 |
 |------|----------------|
 | 材料匹配 8–9 | 对全部材料／形态组合调用 `MaterialForm.appliesTo`，转到声明的 `Predicate.test`；只有返回 true 的形态入选，配置覆盖不会跳过规则。全部结果计算完成后统一发布，求值期间形态集合均为空。 |
-| 材料校验 9–10 | **逐材料**先校验全局 data，再逐个匹配形态校验其作用域 data（`MaterialDataStrategy.validate`）并调用 `MaterialFormStrategy.validateMaterial`。激活后处理器的 data 校验器还会调用一次 `MaterialPostProcessor.validate`。 |
+| 材料校验 9–10 | **逐材料**先校验全局 data，再逐个匹配形态校验其作用域 data（`MaterialDataType.validate`）并调用 `MaterialFormStrategy.validateMaterial`。激活后处理器的 data 校验器还会调用一次 `MaterialPostProcessor.validate`。 |
 | 材料生成 11–12 | 先为全部材料／形态调用 `MaterialFormStrategy.register`；随后只对缓存的已激活材料／后处理器组合调用 `validate`，全部通过后再调用 `process`。这次后处理校验独立于冻结前的激活数据校验；未激活组合不收到调用。 |
 | 装备生成 13.5–14 | **逐材料／装备种类组合**调用 `EquipmentStrategy.appliesTo`，仅当其返回 true 时立即调用该组合的 `register`。装备表此时已冻结。 |
 | 机器生成 15.3–15.7 | 对有渲染声明的每台机器，依次调用 `MachineBlockRenderStrategy.validate`、`applyBlockModel` 配置 Builder；随后排队方块及共享 BE 类型。策略内提交的模型 datagen lambda 仍在 datagen 时执行。 |
@@ -198,6 +199,7 @@ gantt
 | 2  | `registerRecipeTypes(recipe)`            | `TopoRecipeTypes`                                                                        | 已冻结的配方能力                                               |
 | 3  | `registerMaterialFoundation(material)`   | 材质四表（data / form-data / form / post-processor）                                      | 尚未有材质实例                                                 |
 | 4  | `registerMaterials(material)`            | `MaterialRegistry`                                                                       | 已冻结的形态、数据类型、后处理器                               |
+| 4b | `registerMaterialContributions(contributions)` | `MaterialRegistry` 在全部插件完成后冻结                                            | 全部已构建材料；可补能力 data 与形态局部选项                    |
 | 5  | `registerMaterialCreativeTabs(material)` | —                                                                                        | 已冻结的材质                                                   |
 | 6  | （引擎内部）                             | —                                                                                        | 为每个材质铸造形态物品；先跑全部 `validate` 再跑全部 `process` |
 | 7  | `registerMaterialFollowUps(material)`    | —                                                                                        | 全部形态物品已排队；可用稳定 ID，不能读取游戏实例                 |

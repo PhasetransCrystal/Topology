@@ -255,7 +255,7 @@ public final class TooltipProbe {
         total = 0;
         healthy = 0;
         for (var material : net.ptcrys.topo.api.material.MaterialRegistry.registered()) {
-            for (var form : material.strategy().forms()) {
+            for (var form : material.forms()) {
                 var item = net.ptcrys.topo.helper.MaterialHelper.item(material, form).orElse(null);
                 if (item == null) {
                     continue;

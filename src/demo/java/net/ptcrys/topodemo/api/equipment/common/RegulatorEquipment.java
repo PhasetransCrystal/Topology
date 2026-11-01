@@ -51,7 +51,7 @@ public final class RegulatorEquipment implements EquipmentStrategy {
 
     @Override
     public boolean appliesTo(Material material) {
-        return material.strategy().data(BuiltinMaterialDataTypes.MASS).isPresent() && material.strategy().forms().contains(BuiltinMaterialForms.INGOT);
+        return material.data(BuiltinMaterialDataTypes.MASS).isPresent() && material.forms().contains(BuiltinMaterialForms.INGOT);
     }
 
     @Override

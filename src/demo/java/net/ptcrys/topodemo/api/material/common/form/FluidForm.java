@@ -69,13 +69,13 @@ public final class FluidForm extends MaterialFormStrategy {
 
     @Override
     public void validateMaterial(Material material, MaterialForm form) {
-        material.strategy().optionsFor(form)
+        material.optionsFor(form)
                 .flatMap(MaterialFormOptions::itemOverride)
                 .ifPresent(target -> {
                     throw new IllegalStateException(
                             "material " + material.id() + " declares an item override for fluid form " + form.id() + "; fluid forms do not accept item overrides");
                 });
-        material.strategy().optionsFor(form)
+        material.optionsFor(form)
                 .flatMap(MaterialFormOptions::blockOverride)
                 .ifPresent(target -> {
                     throw new IllegalStateException(
@@ -91,7 +91,7 @@ public final class FluidForm extends MaterialFormStrategy {
         RegistryCore core = context.core();
         var groupTag = TagHelper.fluid(commonTag);
         var materialTag = TagHelper.fluidMaterial(commonTag, materialPath);
-        int tint = context.material().strategy().data(tintData)
+        int tint = context.material().data(tintData)
                 .map(RgbColorData::rgb)
                 .map(FluidForm::opaqueArgb)
                 .orElse(0xFFFFFFFF);

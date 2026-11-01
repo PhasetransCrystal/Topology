@@ -34,7 +34,7 @@ public interface EquipmentStrategy {
 
     boolean appliesTo(Material material);
     // 依据材质数据判断，例如：
-    // material.strategy().data(MyDataTypes.TOOL_STATS).isPresent()
+    // material.data(MyDataTypes.TOOL_STATS).isPresent()
 
     void register(MaterialContentContext context, Equipment self);
     // 为 (材料, 本种类) 铸造物品：context.core().item(...)
@@ -56,7 +56,7 @@ public final class ToolEquipment implements EquipmentStrategy {
 
     @Override
     public boolean appliesTo(Material material) {
-        return material.strategy().data(MyDataTypes.TOOL_STATS).isPresent();
+        return material.data(MyDataTypes.TOOL_STATS).isPresent();
     }
 
     @Override

@@ -6,10 +6,15 @@ import net.ptcrys.topodemo.api.material.BuiltinMaterialDataTypes;
 import net.ptcrys.topodemo.api.material.BuiltinMaterialForms;
 import net.ptcrys.topodemo.data.TopoDemoPlugin;
 
-import static net.ptcrys.topodemo.api.material.BuiltinMaterialDataTypes.KIND;
+import static net.ptcrys.topodemo.api.material.BuiltinMaterialDataTypes.BULK;
+import static net.ptcrys.topodemo.api.material.BuiltinMaterialDataTypes.FUEL;
+import static net.ptcrys.topodemo.api.material.BuiltinMaterialDataTypes.GEM;
+import static net.ptcrys.topodemo.api.material.BuiltinMaterialDataTypes.INGOT;
 import static net.ptcrys.topodemo.api.material.BuiltinMaterialDataTypes.ORE_HOST;
 import static net.ptcrys.topodemo.api.material.BuiltinMaterialDataTypes.ORE_PRODUCT;
-import static net.ptcrys.topodemo.api.material.common.MaterialKindDataType.Kind.*;
+import static net.ptcrys.topodemo.api.material.BuiltinMaterialDataTypes.PULVERIZABLE;
+import static net.ptcrys.topodemo.api.material.BuiltinMaterialDataTypes.SHARD;
+import static net.ptcrys.topodemo.api.material.BuiltinMaterialDataTypes.TOOL;
 import static net.ptcrys.topodemo.api.material.common.OreHostDataType.Host.*;
 import static net.ptcrys.topodemo.api.material.common.OreProductDataType.Product.*;
 
@@ -17,7 +22,10 @@ public final class BuiltinMaterials {
 
     public static final Material COPPER = TopoDemoPlugin.INSTANCE.material().material("copper")
             .lang("Copper", "铜")
-            .data(KIND.kind(METAL))
+            .data(INGOT.enabled())
+            .data(PULVERIZABLE.enabled())
+            .data(BULK.enabled())
+            .data(TOOL.tool(2, 200))
             .data(ORE_HOST.host(OVERWORLD))
             .data(ORE_PRODUCT.product(RAW))
             .data(BuiltinMaterialDataTypes.MASS.mass(64))
@@ -33,7 +41,10 @@ public final class BuiltinMaterials {
 
     public static final Material TIN = TopoDemoPlugin.INSTANCE.material().material("tin")
             .lang("Tin", "锡")
-            .data(KIND.kind(METAL))
+            .data(INGOT.enabled())
+            .data(PULVERIZABLE.enabled())
+            .data(BULK.enabled())
+            .data(TOOL.tool(2, 200))
             .data(ORE_HOST.host(OVERWORLD))
             .data(ORE_PRODUCT.product(RAW))
             .data(BuiltinMaterialDataTypes.MASS.mass(119))
@@ -43,7 +54,10 @@ public final class BuiltinMaterials {
 
     public static final Material BRONZE = TopoDemoPlugin.INSTANCE.material().material("bronze")
             .lang("Bronze", "青铜")
-            .data(KIND.kind(METAL))
+            .data(INGOT.enabled())
+            .data(PULVERIZABLE.enabled())
+            .data(BULK.enabled())
+            .data(TOOL.tool(2, 200))
             .data(BuiltinMaterialDataTypes.MASS.mass(78))
             .data(BuiltinMaterialDataTypes.PRIMARY_COLOR.rgb(0xC58A42))
             .data(BuiltinProcessors.GRINDING.activation())
@@ -51,7 +65,10 @@ public final class BuiltinMaterials {
 
     public static final Material IRON = TopoDemoPlugin.INSTANCE.material().material("iron")
             .lang("Iron", "铁")
-            .data(KIND.kind(METAL))
+            .data(INGOT.enabled())
+            .data(PULVERIZABLE.enabled())
+            .data(BULK.enabled())
+            .data(TOOL.tool(2, 200))
             .data(ORE_HOST.host(OVERWORLD))
             .data(ORE_PRODUCT.product(RAW))
             .data(BuiltinMaterialDataTypes.MASS.mass(56))
@@ -67,7 +84,10 @@ public final class BuiltinMaterials {
 
     public static final Material GOLD = TopoDemoPlugin.INSTANCE.material().material("gold")
             .lang("Gold", "金")
-            .data(KIND.kind(METAL))
+            .data(INGOT.enabled())
+            .data(PULVERIZABLE.enabled())
+            .data(BULK.enabled())
+            .data(TOOL.tool(2, 200))
             .data(ORE_HOST.host(OVERWORLD))
             .data(ORE_PRODUCT.product(RAW))
             .data(BuiltinMaterialDataTypes.MASS.mass(197))
@@ -83,7 +103,10 @@ public final class BuiltinMaterials {
 
     public static final Material STEEL = TopoDemoPlugin.INSTANCE.material().material("steel")
             .lang("Steel", "钢")
-            .data(KIND.kind(METAL))
+            .data(INGOT.enabled())
+            .data(PULVERIZABLE.enabled())
+            .data(BULK.enabled())
+            .data(TOOL.tool(2, 200))
             .data(BuiltinMaterialDataTypes.MASS.mass(56))
             .data(BuiltinMaterialDataTypes.PRIMARY_COLOR.rgb(0x89949D))
             .data(BuiltinProcessors.GRINDING.activation())
@@ -91,7 +114,10 @@ public final class BuiltinMaterials {
 
     public static final Material NETHERITE = TopoDemoPlugin.INSTANCE.material().material("netherite")
             .lang("Netherite", "下界合金")
-            .data(KIND.kind(METAL))
+            .data(INGOT.enabled())
+            .data(PULVERIZABLE.enabled())
+            .data(BULK.enabled())
+            .data(TOOL.tool(2, 200))
             .data(ORE_HOST.host(NETHER))
             .data(ORE_PRODUCT.product(SCRAP))
             .data(BuiltinMaterialDataTypes.MASS.mass(200))
@@ -105,7 +131,9 @@ public final class BuiltinMaterials {
 
     public static final Material COAL = TopoDemoPlugin.INSTANCE.material().material("coal")
             .lang("Coal", "煤炭")
-            .data(KIND.kind(FUEL))
+            .data(FUEL.fuel(1600, 1000))
+            .data(PULVERIZABLE.enabled())
+            .data(BULK.enabled())
             .data(ORE_HOST.host(OVERWORLD))
             .data(BuiltinMaterialDataTypes.MASS.mass(12))
             .data(BuiltinProcessors.FUEL_GRINDING.activation())
@@ -117,7 +145,9 @@ public final class BuiltinMaterials {
 
     public static final Material CHARCOAL = TopoDemoPlugin.INSTANCE.material().material("charcoal")
             .lang("Charcoal", "木炭")
-            .data(KIND.kind(FUEL))
+            .data(FUEL.fuel(1600, 1000))
+            .data(PULVERIZABLE.enabled())
+            .data(BULK.enabled())
             .data(BuiltinMaterialDataTypes.MASS.mass(12))
             .data(BuiltinProcessors.FUEL_GRINDING.activation())
             .form(BuiltinMaterialForms.FUEL, options -> options.overrideItem(ExternalTargets.mcItem("charcoal")))
@@ -125,7 +155,8 @@ public final class BuiltinMaterials {
 
     public static final Material REDSTONE = TopoDemoPlugin.INSTANCE.material().material("redstone")
             .lang("Redstone", "红石")
-            .data(KIND.kind(DUST))
+            .data(PULVERIZABLE.enabled())
+            .data(BULK.enabled())
             .data(ORE_HOST.host(OVERWORLD))
             .data(BuiltinMaterialDataTypes.MASS.mass(32))
             .form(BuiltinMaterialForms.DUST, options -> options.overrideItem(ExternalTargets.mcItem("redstone")))
@@ -136,7 +167,9 @@ public final class BuiltinMaterials {
 
     public static final Material DIAMOND = TopoDemoPlugin.INSTANCE.material().material("diamond")
             .lang("Diamond", "钻石")
-            .data(KIND.kind(GEM))
+            .data(GEM.allQualities())
+            .data(PULVERIZABLE.enabled())
+            .data(BULK.enabled())
             .data(ORE_HOST.host(OVERWORLD))
             .data(BuiltinMaterialDataTypes.MASS.mass(12))
             .data(BuiltinProcessors.GEM_GRINDING.activation())
@@ -148,7 +181,9 @@ public final class BuiltinMaterials {
 
     public static final Material LAPIS = TopoDemoPlugin.INSTANCE.material().material("lapis")
             .lang("Lapis Lazuli", "青金石")
-            .data(KIND.kind(GEM))
+            .data(GEM.allQualities())
+            .data(PULVERIZABLE.enabled())
+            .data(BULK.enabled())
             .data(ORE_HOST.host(OVERWORLD))
             .data(BuiltinMaterialDataTypes.MASS.mass(56))
             .data(BuiltinProcessors.GEM_GRINDING.activation())
@@ -160,7 +195,9 @@ public final class BuiltinMaterials {
 
     public static final Material EMERALD = TopoDemoPlugin.INSTANCE.material().material("emerald")
             .lang("Emerald", "绿宝石")
-            .data(KIND.kind(GEM))
+            .data(GEM.allQualities())
+            .data(PULVERIZABLE.enabled())
+            .data(BULK.enabled())
             .data(ORE_HOST.host(OVERWORLD))
             .data(BuiltinMaterialDataTypes.MASS.mass(64))
             .data(BuiltinProcessors.GEM_GRINDING.activation())
@@ -172,7 +209,9 @@ public final class BuiltinMaterials {
 
     public static final Material QUARTZ = TopoDemoPlugin.INSTANCE.material().material("quartz")
             .lang("Quartz", "石英")
-            .data(KIND.kind(GEM))
+            .data(GEM.allQualities())
+            .data(PULVERIZABLE.enabled())
+            .data(BULK.enabled())
             .data(ORE_HOST.host(NETHER))
             .data(BuiltinMaterialDataTypes.MASS.mass(60))
             .data(BuiltinProcessors.GEM_GRINDING.activation())
@@ -183,7 +222,9 @@ public final class BuiltinMaterials {
 
     public static final Material AMETHYST = TopoDemoPlugin.INSTANCE.material().material("amethyst")
             .lang("Amethyst", "紫水晶")
-            .data(KIND.kind(SHARD))
+            .data(SHARD.enabled())
+            .data(PULVERIZABLE.enabled())
+            .data(BULK.enabled())
             .data(BuiltinMaterialDataTypes.MASS.mass(60))
             .data(BuiltinProcessors.SHARD_GRINDING.activation())
             .form(BuiltinMaterialForms.SHARD, options -> options.overrideItem(ExternalTargets.mcItem("amethyst_shard")))

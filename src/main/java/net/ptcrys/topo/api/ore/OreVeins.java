@@ -77,7 +77,7 @@ public final class OreVeins {
             Material material = entry.material();
             for (OreHostRule host : vein.environment().hostRules()) {
                 MaterialForm form = host.generatedForm();
-                if (!material.strategy().forms().contains(form)) {
+                if (!material.forms().contains(form)) {
                     throw new IllegalStateException(
                             "ore vein " + vein.id() + ": material " + material.id() + " does not declare form " + form.id() + " required by host rule " + host.replaceableTag().location());
                 }

@@ -9,7 +9,7 @@ import net.ptcrys.topo.api.material.process.ProcessorDataType;
 
 import net.minecraft.resources.Identifier;
 
-import java.util.Collection;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -19,7 +19,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 
-public final class MaterialStrategy {
+/** Internal per-material state: capability data, form options, and resolved content tables. */
+final class MaterialStrategy {
 
     private final Identifier id;
     private final Map<MaterialDataType<?>, MaterialDataUse<?>> data = new LinkedHashMap<>();
@@ -33,12 +34,12 @@ public final class MaterialStrategy {
     }
 
     @SuppressWarnings("unchecked")
-    public <D> Optional<D> data(MaterialDataType<D> type) {
+    <D> Optional<D> data(MaterialDataType<D> type) {
         MaterialDataUse<?> use = data.get(type);
         return use == null ? Optional.empty() : Optional.of((D) use.data());
     }
 
-    public <D> Optional<D> data(MaterialDataType<D> type, MaterialForm form) {
+    <D> Optional<D> data(MaterialDataType<D> type, MaterialForm form) {
         MaterialFormOptions formOptions = options.get(form);
         if (formOptions != null) {
             Optional<D> scoped = formOptions.data(type);
@@ -49,26 +50,28 @@ public final class MaterialStrategy {
         return data(type);
     }
 
-    public List<MaterialForm> forms() {
+    boolean hasData(MaterialDataType<?> type) {
+        return data.containsKey(type);
+    }
+
+    List<MaterialDataUse<?>> dataUses() {
+        return List.copyOf(data.values());
+    }
+
+    List<MaterialForm> forms() {
         return forms;
     }
 
-    /** Constant-time membership in the resolved form set. */
-    public boolean hasForm(MaterialForm form) {
+    boolean hasForm(MaterialForm form) {
         return formSet.contains(form);
     }
 
-    /** Activated processors, cached when declarations close and ordered by full ID. */
-    public List<MaterialPostProcessor> postProcessors() {
+    List<MaterialPostProcessor> postProcessors() {
         return postProcessors;
     }
 
-    public Optional<MaterialFormOptions> optionsFor(MaterialForm form) {
+    Optional<MaterialFormOptions> optionsFor(MaterialForm form) {
         return Optional.ofNullable(options.get(form));
-    }
-
-    Collection<MaterialDataUse<?>> dataUses() {
-        return data.values();
     }
 
     void configureForm(MaterialForm form, Consumer<MaterialFormOptions> configure) {
@@ -84,6 +87,12 @@ public final class MaterialStrategy {
     void addData(MaterialDataUse<?> use) {
         MaterialRegistry.requireDeclarationsOpen(id);
         Objects.requireNonNull(use, "use");
+        for (MaterialDataType<?> dependency : use.type().dependencies()) {
+            if (!data.containsKey(dependency)) {
+                throw new IllegalStateException(
+                        "material " + id + " declares " + use.type().id() + " but is missing required property " + dependency.id());
+            }
+        }
         if (data.putIfAbsent(use.type(), use) != null) {
             throw new IllegalStateException("duplicate material data type " + use.type().id() + " for " + id);
         }
@@ -92,11 +101,13 @@ public final class MaterialStrategy {
     void resolveForms(List<MaterialForm> resolved) {
         forms = List.copyOf(resolved);
         formSet = Set.copyOf(resolved);
-        postProcessors = data.keySet().stream()
-                .filter(ProcessorDataType.class::isInstance)
-                .map(ProcessorDataType.class::cast)
-                .map(ProcessorDataType::processor)
-                .sorted(Comparator.comparing(MaterialPostProcessor::id))
-                .toList();
+        List<MaterialPostProcessor> processors = new ArrayList<>();
+        for (MaterialDataUse<?> use : data.values()) {
+            if (use.type() instanceof ProcessorDataType processorType) {
+                processors.add(processorType.processor());
+            }
+        }
+        processors.sort(Comparator.comparing(MaterialPostProcessor::id));
+        postProcessors = List.copyOf(processors);
     }
 }

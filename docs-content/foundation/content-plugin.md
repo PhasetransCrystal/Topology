@@ -51,22 +51,24 @@ Demo 将声明放在静态字段中，并从所属钩子显式调用对应类的
 
 ## 3. 声明材料，让规则决定生成内容
 
-产品先定义共享数据，例如 Demo 的 `KIND`、`ORE_HOST`、`ORE_PRODUCT`，再用 `appliesTo` 选择形态。
+产品先定义共享属性，例如 Demo 的 `INGOT`、`GEM`、`ORE_HOST`、`ORE_PRODUCT`，再用 `appliesTo` 选择形态。
+每个属性都是独立的 DataUse；不存在统一的分类枚举。
 材料注册行填写数据和覆盖选项：
 
 ```java
 // registerMaterials 内；这些句柄由自己的 registerMaterialFoundation 初始化。
 Material copper = material.material("copper")
         .lang("Copper", "铜")
-        .data(KIND.kind(METAL))
+        .data(INGOT.enabled())
+        .data(PULVERIZABLE.enabled())
         .data(PRIMARY_COLOR.rgb(0xB87333))
         .data(GRINDING.activation())
-        .form(INGOT, options -> options.overrideItem(ExternalTargets.mcItem("copper_ingot")))
+        .form(INGOT_FORM, options -> options.overrideItem(ExternalTargets.mcItem("copper_ingot")))
         .build();
 ```
 
-`KIND` 等分类属于产品代码，Topo 没有统一的“金属”枚举。形态依据公开数据匹配，
-这样新的材料和新的形态可以分别由不同插件贡献。
+`INGOT`、`GEM` 等属性属于产品代码，Topo 没有统一的“金属/宝石”枚举。
+形态依据属性匹配；新增能力只需注册新的 DataType 并注入，不需要修改其他分类或形态逻辑。
 示例中的 `INGOT` 规则必须匹配该材料；配置覆盖本身不会使形态入选。
 
 形态策略决定具体生成方式：

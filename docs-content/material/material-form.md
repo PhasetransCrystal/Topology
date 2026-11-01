@@ -95,7 +95,7 @@ public final class OrbForm extends MaterialFormStrategy {
 // registerMaterialFoundation（MaterialFormRegistry.freeze() 之前）：
 orbForm = material.form("orb")
         .lang("Orb", "宝珠")
-        .appliesTo(mat -> mat.strategy().data(magicDataType).isPresent())
+        .appliesTo(mat -> mat.data(magicDataType).isPresent())
         .strategy(OrbForm.builder()
                 .registryPath("%s_orb")
                 .displayName("%s Orb", "%s宝珠")
@@ -113,7 +113,7 @@ m.material("moonstone").lang("Moonstone", "月长石")
 所有插件完成 `registerMaterials` 后，框架关闭数据写入，
 先计算所有材料的最终形态，再统一校验，随后才生成内容。其他插件注入的数据同样参与规则判断。
 规则必须无副作用，并基于材料的声明数据判断，不应读取其他规则推导的形态或尚未生成的注册项。
-匹配期间全部材料的 `strategy().forms()` 均为空；全部规则求值完成后统一发布最终集合。
+匹配期间全部材料的 `forms()` 均为空；全部规则求值完成后统一发布最终集合。
 
 - 默认条件始终为 `false`，该形态不会被选中。调用 `.appliesToAll()` 可设置为始终 `true`，
   自动匹配所有插件的材料；这是 `.appliesTo(mat -> true)` 的 `@SyntaxSugar`。

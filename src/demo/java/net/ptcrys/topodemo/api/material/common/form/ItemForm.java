@@ -56,7 +56,7 @@ public final class ItemForm extends MaterialFormStrategy {
 
     @Override
     public void validateMaterial(Material material, MaterialForm form) {
-        material.strategy().optionsFor(form)
+        material.optionsFor(form)
                 .flatMap(MaterialFormOptions::blockOverride)
                 .ifPresent(target -> {
                     throw new IllegalStateException(
@@ -75,7 +75,7 @@ public final class ItemForm extends MaterialFormStrategy {
         var itemGroupTag = TagHelper.item(commonTag);
         var itemMaterialTag = TagHelper.itemMaterial(commonTag, materialPath);
 
-        ExternalItemTarget override = context.material().strategy().optionsFor(form)
+        ExternalItemTarget override = context.material().optionsFor(form)
                 .flatMap(MaterialFormOptions::itemOverride)
                 .orElse(null);
         if (override != null) {

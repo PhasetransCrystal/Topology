@@ -7,6 +7,7 @@ import net.ptcrys.topo.api.OfficialTopoAPIPlugin;
 import net.ptcrys.topo.api.api.builtin.EquipmentDomainRegistration;
 import net.ptcrys.topo.api.api.builtin.LangDomainRegistration;
 import net.ptcrys.topo.api.api.builtin.MachineDomainRegistration;
+import net.ptcrys.topo.api.api.builtin.MaterialContributionRegistration;
 import net.ptcrys.topo.api.api.builtin.MaterialDomainRegistration;
 import net.ptcrys.topo.api.api.builtin.RecipeDomainRegistration;
 import net.ptcrys.topo.api.api.builtin.RuntimeDomainRegistration;
@@ -26,7 +27,6 @@ import net.ptcrys.topo.api.material.Material;
 import net.ptcrys.topo.api.material.MaterialContentContext;
 import net.ptcrys.topo.api.material.MaterialFormOptions;
 import net.ptcrys.topo.api.material.MaterialRegistry;
-import net.ptcrys.topo.api.material.data.MaterialDataRegistry;
 import net.ptcrys.topo.api.material.data.MaterialDataType;
 import net.ptcrys.topo.api.material.data.MaterialDataUse;
 import net.ptcrys.topo.api.material.form.MaterialForm;
@@ -90,6 +90,12 @@ public class LifecycleTestEntrypoint {
     static MaterialRegistry.Builder builtMaterialBuilder;
     static MaterialFormOptions retainedFormOptions;
     static ProbeDataType scopedMarker;
+    static ProbeDataType contributionMarker;
+    static ProbeDataType dependentMarker;
+    static boolean contributionSawAllMaterials;
+    static boolean contributionDataVisible;
+    static boolean dependencySatisfied;
+    static IllegalStateException missingDependencyFailure;
     static int scopedValidations;
     static int ruleCalls;
     static boolean rulesSawEmptyForms = true;
@@ -106,23 +112,33 @@ public class LifecycleTestEntrypoint {
             @Override
             public void registerMaterialFoundation(MaterialDomainRegistration material) {
                 materialMarker = material.dataType("form_probe", new ProbeDataType(material.id("form_probe")));
-                scopedMarker = MaterialDataRegistry.begin(material.id("scoped_probe"), new ProbeDataType(material.id("scoped_probe")),
-                        (target, enabled) -> {
-                            if (!enabled) throw new IllegalStateException("unmatched form data must not be validated");
-                            scopedValidations++;
-                        });
+                contributionMarker = material.dataType("contribution_probe", new ProbeDataType(material.id("contribution_probe")));
+                dependentMarker = material.dataType("dependent_probe", new ProbeDataType(material.id("dependent_probe")) {
+
+                    {
+                        requires(materialMarker);
+                    }
+                });
+                scopedMarker = material.dataType("scoped_probe", new ProbeDataType(material.id("scoped_probe")) {
+
+                    @Override
+                    public void validate(Material material, Boolean enabled) {
+                        if (!enabled) throw new IllegalStateException("unmatched form data must not be validated");
+                        scopedValidations++;
+                    }
+                });
                 baseForm = material.form("base_form").lang("Base", "基础形态")
                         .appliesTo(value -> {
                             ruleCalls++;
                             var snapshot = MaterialRegistry.registered();
                             rulesReusedMaterialSnapshot &= snapshot == MaterialRegistry.registered();
-                            rulesSawEmptyForms &= snapshot.stream().allMatch(target -> target.strategy().forms().isEmpty());
+                            rulesSawEmptyForms &= snapshot.stream().allMatch(target -> target.forms().isEmpty());
                             try {
                                 value.data(materialMarker.enabled());
                             } catch (IllegalStateException error) {
                                 selectionTimeDataFailure = error;
                             }
-                            return value.strategy().data(materialMarker).orElse(false);
+                            return value.data(materialMarker).orElse(false);
                         })
                         .strategy(probeFormStrategy()).build();
                 nonMatchingForm = material.form("non_matching_form").lang("Non-matching", "不匹配形态")
@@ -150,6 +166,15 @@ public class LifecycleTestEntrypoint {
                     retainedFormOptions = options;
                     options.data(scopedMarker.enabled());
                 });
+                var dependencyBuilder = material.material("dependency_material").lang("Dependency", "依赖");
+                try {
+                    dependencyBuilder.data(dependentMarker.enabled());
+                } catch (IllegalStateException error) {
+                    missingDependencyFailure = error;
+                }
+                dependencyBuilder.data(materialMarker.enabled());
+                dependencyBuilder.data(dependentMarker.enabled());
+                dependencySatisfied = dependencyBuilder.build().data(dependentMarker).orElse(false);
                 try {
                     builtMaterialBuilder.form(new MaterialForm(baseForm.id(), probeFormStrategy(), null), options -> {});
                 } catch (IllegalArgumentException error) {
@@ -228,12 +253,20 @@ public class LifecycleTestEntrypoint {
             }
 
             @Override
+            public void registerMaterialContributions(MaterialContributionRegistration contributions) {
+                contributionSawAllMaterials = contributions.materials().size() == 3 && !MaterialRegistry.isFrozen();
+                var target = contributions.require(a.material().id("lifecycle_material"));
+                contributions.data(target, contributionMarker.enabled());
+                contributionDataVisible = target.data(contributionMarker).orElse(false);
+            }
+
+            @Override
             public void registerMaterials(MaterialDomainRegistration material) {
                 var builder = material.material("extension_material").lang("Extension", "扩展材料");
                 var built = builder.build();
-                injectionSawAllMaterials = MaterialRegistry.registered().size() == 2 && !MaterialRegistry.isFrozen();
+                injectionSawAllMaterials = MaterialRegistry.registered().size() == 3 && !MaterialRegistry.isFrozen();
                 builder.data(materialMarker.enabled());
-                builderDataSharedAfterBuild = built.strategy().data(materialMarker).orElse(false);
+                builderDataSharedAfterBuild = built.data(materialMarker).orElse(false);
                 var target = MaterialRegistry.require(a.material().id("lifecycle_material"));
                 dataWriteReturnedTarget = target.data(materialMarker.enabled()) == target;
                 target.data(zetaProcessor.activation()).data(alphaProcessor.activation());
@@ -314,7 +347,7 @@ public class LifecycleTestEntrypoint {
             @Override
             public void validateMaterial(Material material, MaterialForm form) {
                 for (Material declared : MaterialRegistry.registered()) {
-                    formValidationSawResolvedForms &= declared.strategy().forms().containsAll(List.of(baseForm, extensionForm));
+                    formValidationSawResolvedForms &= declared.forms().containsAll(List.of(baseForm, extensionForm));
                 }
             }
 
@@ -328,7 +361,7 @@ public class LifecycleTestEntrypoint {
         };
     }
 
-    static final class ProbeDataType extends MaterialDataType<Boolean> {
+    static class ProbeDataType extends MaterialDataType<Boolean> {
 
         ProbeDataType(net.minecraft.resources.Identifier id) {
             super(id);

@@ -86,7 +86,7 @@ public final class MyContentPlugin extends TopoPlugin {
         metal = material.dataType("metal", new MetalDataType(material.id("metal")));
         material.form("dust")
                 .lang("Dust", "粉")
-                .appliesTo(value -> value.strategy().data(metal).orElse(false))
+                .appliesTo(value -> value.data(metal).orElse(false))
                 .strategy(new DustForm())
                 .build();
     }

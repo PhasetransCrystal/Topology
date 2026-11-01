@@ -1,5 +1,6 @@
 package net.ptcrys.topo.api.material.process;
 
+import net.ptcrys.topo.api.material.Material;
 import net.ptcrys.topo.api.material.data.MaterialDataType;
 import net.ptcrys.topo.api.material.data.MaterialDataUse;
 
@@ -26,5 +27,10 @@ public final class ProcessorDataType extends MaterialDataType<MaterialPostProces
 
     public MaterialDataUse<MaterialPostProcessor> activation() {
         return use(processor);
+    }
+
+    @Override
+    public void validate(Material material, MaterialPostProcessor data) {
+        processor.validate(material);
     }
 }

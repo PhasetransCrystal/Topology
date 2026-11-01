@@ -28,6 +28,7 @@ public final class MaterialRegistrationModule implements RegistrationModule {
 
     static final RegistrationPoint<MaterialPlugin, MaterialDomainRegistration> FOUNDATION = RegistrationPoint.of(IdHelper.id("material/foundation"), MaterialPlugin.class, MaterialDomainRegistration.DOMAIN, MaterialPlugin::registerMaterialFoundation);
     static final RegistrationPoint<MaterialPlugin, MaterialDomainRegistration> MATERIALS = RegistrationPoint.of(IdHelper.id("material/materials"), MaterialPlugin.class, MaterialDomainRegistration.DOMAIN, MaterialPlugin::registerMaterials);
+    static final RegistrationPoint<MaterialPlugin, MaterialContributionRegistration> CONTRIBUTIONS = RegistrationPoint.of(IdHelper.id("material/contributions"), MaterialPlugin.class, MaterialContributionRegistration.DOMAIN, MaterialPlugin::registerMaterialContributions);
     static final RegistrationPoint<MaterialPlugin, MaterialDomainRegistration> CREATIVE_TABS = RegistrationPoint.of(IdHelper.id("material/creative_tabs"), MaterialPlugin.class, MaterialDomainRegistration.DOMAIN, MaterialPlugin::registerMaterialCreativeTabs);
     static final RegistrationPoint<MaterialPlugin, MaterialDomainRegistration> FOLLOW_UPS = RegistrationPoint.of(IdHelper.id("material/follow_ups"), MaterialPlugin.class, MaterialDomainRegistration.DOMAIN, MaterialPlugin::registerMaterialFollowUps);
 
@@ -41,8 +42,9 @@ public final class MaterialRegistrationModule implements RegistrationModule {
             MaterialFormRegistry.freeze();
             MaterialPostProcessorRegistry.freeze();
         });
-        plan.point(Phase.CONTENT, MaterialRegistrationModule.MATERIALS, List.of(MaterialRegistrationModule.FOUNDATION.id()), context, MaterialRegistry::freeze);
-        plan.point(Phase.CONTENT, MaterialRegistrationModule.CREATIVE_TABS, List.of(MaterialRegistrationModule.MATERIALS.id()), context, () -> {});
+        plan.point(Phase.CONTENT, MaterialRegistrationModule.MATERIALS, List.of(MaterialRegistrationModule.FOUNDATION.id()), context, () -> {});
+        plan.point(Phase.CONTENT, MaterialRegistrationModule.CONTRIBUTIONS, List.of(MaterialRegistrationModule.MATERIALS.id()), context, MaterialRegistry::freeze);
+        plan.point(Phase.CONTENT, MaterialRegistrationModule.CREATIVE_TABS, List.of(MaterialRegistrationModule.CONTRIBUTIONS.id()), context, () -> {});
         plan.step(Phase.CONTENT, CONTENT, List.of(MaterialRegistrationModule.CREATIVE_TABS.id()), () -> {
             registerMaterialFormContent(context);
             runMaterialPostProcessors();
@@ -54,7 +56,7 @@ public final class MaterialRegistrationModule implements RegistrationModule {
         for (Material material : MaterialRegistry.registered()) {
             RegistryCore core = context.registry(material.id().getNamespace());
             MaterialContentContext materialContext = new MaterialContentContext(core, material);
-            for (MaterialForm form : material.strategy().forms()) {
+            for (MaterialForm form : material.forms()) {
                 form.strategy().register(materialContext, form);
             }
         }
@@ -62,12 +64,12 @@ public final class MaterialRegistrationModule implements RegistrationModule {
 
     private static void runMaterialPostProcessors() {
         for (Material material : MaterialRegistry.registered()) {
-            for (MaterialPostProcessor processor : material.strategy().postProcessors()) {
+            for (MaterialPostProcessor processor : material.postProcessors()) {
                 processor.validate(material);
             }
         }
         for (Material material : MaterialRegistry.registered()) {
-            for (MaterialPostProcessor processor : material.strategy().postProcessors()) {
+            for (MaterialPostProcessor processor : material.postProcessors()) {
                 processor.process(material);
             }
         }

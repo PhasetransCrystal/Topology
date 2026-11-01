@@ -91,12 +91,11 @@ public final class MaterialRegistry {
     }
 
     static void validate(Material material) {
-        MaterialStrategy strategy = material.strategy();
-        for (MaterialDataUse<?> use : strategy.dataUses()) {
+        for (MaterialDataUse<?> use : material.dataUses()) {
             MaterialDataRegistry.validate(material, use);
         }
-        for (MaterialForm form : strategy.forms()) {
-            strategy.optionsFor(form).ifPresent(options -> {
+        for (MaterialForm form : material.forms()) {
+            material.optionsFor(form).ifPresent(options -> {
                 for (MaterialDataUse<?> use : options.dataUses()) {
                     MaterialDataRegistry.validate(material, use);
                 }

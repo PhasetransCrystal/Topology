@@ -60,7 +60,7 @@ public abstract class MaterialFormStrategy {
     protected final void requireMaterialData(Material material, MaterialForm form,
                                              List<MaterialDataType<?>> required) {
         for (MaterialDataType<?> type : required) {
-            if (material.strategy().data(type).isEmpty()) {
+            if (!material.hasData(type)) {
                 throw new IllegalStateException(
                         "material " + material.id() + " is missing data " + type.id() + " required by the render of form " + form.id());
             }

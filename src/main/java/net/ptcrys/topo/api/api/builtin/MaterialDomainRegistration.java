@@ -64,9 +64,9 @@ public final class MaterialDomainRegistration {
         return MaterialFormRegistry.begin(id(path), plugin.lang());
     }
 
-    /** Register a material data type (mass, colors, tool stats, …). */
+    /** Register a material capability type (mass, colors, tool stats, …). */
     public <D, H extends MaterialDataType<D>> H dataType(String path, H handle) {
-        return MaterialDataRegistry.begin(id(path), handle, MaterialDataRegistry.noValidation());
+        return MaterialDataRegistry.begin(id(path), handle);
     }
 
     /** Register a form payload type (e.g. amount). */
