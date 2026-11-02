@@ -3,15 +3,20 @@ package net.ptcrys.topodemo.api.material.common.form;
 import net.ptcrys.registrylib.RegistryCore;
 import net.ptcrys.registrylib.builders.FluidBuilder;
 import net.ptcrys.topo.api.api.lang.ChineseConvert;
+import net.ptcrys.topo.api.api.registration.ExternalFluidTarget;
 import net.ptcrys.topo.api.lang.DisplayNames;
 import net.ptcrys.topo.api.lang.FixedDisplayName;
 import net.ptcrys.topo.api.lang.TemplateDisplayName;
 import net.ptcrys.topo.api.material.Material;
 import net.ptcrys.topo.api.material.MaterialContentContext;
 import net.ptcrys.topo.api.material.MaterialFormOptions;
+import net.ptcrys.topo.api.material.MaterialFormTargets;
 import net.ptcrys.topo.api.material.data.MaterialDataType;
 import net.ptcrys.topo.api.material.form.FormDataUse;
+import net.ptcrys.topo.api.material.form.MaterialContentKey;
+import net.ptcrys.topo.api.material.form.MaterialContentTypes;
 import net.ptcrys.topo.api.material.form.MaterialForm;
+import net.ptcrys.topo.api.material.form.MaterialFormPlan;
 import net.ptcrys.topo.api.material.form.MaterialFormStrategy;
 import net.ptcrys.topo.helper.TagHelper;
 import net.ptcrys.topodemo.api.TopoDemoApiPlugin;
@@ -22,6 +27,8 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.CreativeModeTab;
 import net.neoforged.neoforge.fluids.BaseFlowingFluid;
 import net.neoforged.neoforge.fluids.FluidType;
+
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -68,30 +75,70 @@ public final class FluidForm extends MaterialFormStrategy {
     }
 
     @Override
-    public void validateMaterial(Material material, MaterialForm form) {
-        material.optionsFor(form)
-                .flatMap(MaterialFormOptions::itemOverride)
-                .ifPresent(target -> {
-                    throw new IllegalStateException(
-                            "material " + material.id() + " declares an item override for fluid form " + form.id() + "; fluid forms do not accept item overrides");
-                });
-        material.optionsFor(form)
-                .flatMap(MaterialFormOptions::blockOverride)
-                .ifPresent(target -> {
-                    throw new IllegalStateException(
-                            "material " + material.id() + " declares a block override for fluid form " + form.id() + "; fluid forms do not accept block overrides");
-                });
-        requireMaterialData(material, form, List.of(tintData));
+    public MaterialFormPlan plan(Material material, MaterialForm form) {
+        MaterialFormTargets targets = material.optionsFor(form)
+                .map(MaterialFormOptions::targets)
+                .orElseGet(MaterialFormTargets::empty);
+        ExternalFluidTarget override = targets.fluid().orElse(null);
+        List<MaterialContentKey> outputs = outputKeys(material, override);
+        return MaterialFormPlan.of(
+                outputs,
+                targets,
+                () -> validateForm(material, form, targets),
+                context -> registerForm(context, form, override));
     }
 
-    @Override
-    public void register(MaterialContentContext context, MaterialForm form) {
+    private List<MaterialContentKey> outputKeys(Material material, @Nullable ExternalFluidTarget override) {
+        if (override != null) {
+            try {
+                return List.of(new MaterialContentKey(MaterialContentTypes.FLUID, override.id()));
+            } catch (RuntimeException unavailable) {
+                return List.of();
+            }
+        }
+        String entryPath = String.format(registryPath, material.id().getPath());
+        return List.of(
+                new MaterialContentKey(
+                        MaterialContentTypes.FLUID, material.id().withPath(entryPath)),
+                new MaterialContentKey(
+                        MaterialContentTypes.BLOCK, material.id().withPath(entryPath)),
+                new MaterialContentKey(
+                        MaterialContentTypes.ITEM, material.id().withPath(entryPath + "_bucket")));
+    }
+
+    private void validateForm(Material material, MaterialForm form, MaterialFormTargets targets) {
+        targets.item().ifPresent(target -> {
+            throw new IllegalStateException(
+                    "material " + material.id() + " declares an item override for fluid form " + form.id() + "; fluid forms do not accept item overrides");
+        });
+        targets.block().ifPresent(target -> {
+            throw new IllegalStateException(
+                    "material " + material.id() + " declares a block override for fluid form " + form.id() + "; fluid forms do not accept block overrides");
+        });
+        if (targets.fluid().isEmpty()) {
+            requireMaterialData(material, form, List.of(tintData));
+        }
+    }
+
+    private void registerForm(MaterialContentContext context, MaterialForm form, @Nullable ExternalFluidTarget override) {
         String materialPath = context.material().id().getPath();
         String entryPath = String.format(registryPath, materialPath);
         RegistryCore core = context.core();
         var groupTag = TagHelper.fluid(commonTag);
         var materialTag = TagHelper.fluidMaterial(commonTag, materialPath);
-        int tint = context.material().data(tintData)
+
+        if (override != null) {
+            if (override.explicitId().isPresent()) {
+                core.fluidTags().addIds(groupTag, override.id()).addIds(materialTag, override.id());
+            } else {
+                TagHelper.addFluidTag(core, groupTag, override::id);
+                TagHelper.addFluidTag(core, materialTag, override::id);
+            }
+            override.bucketSupplier().ifPresent(bucket -> core.addExistingSupplierToTab(creativeTab, bucket));
+            return;
+        }
+
+        int tint = context.material().data(tintData, form)
                 .map(RgbColorData::rgb)
                 .map(FluidForm::opaqueArgb)
                 .orElse(0xFFFFFFFF);

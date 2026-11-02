@@ -21,7 +21,7 @@ public final class BuiltinRecipes {
         var item = BuiltinResources.ITEM;
         for (var material : MaterialRegistry.registered()) {
             if (material.data(ORE_HOST).isEmpty() || !material.forms().contains(BuiltinMaterialForms.DUST)) continue;
-            for (var form : List.of(BuiltinMaterialForms.ORE, BuiltinMaterialForms.DEEPSLATE_ORE)) {
+            for (var form : List.of(BuiltinMaterialForms.ORE, BuiltinMaterialForms.DEEPSLATE_ORE, BuiltinMaterialForms.NETHER_ORE)) {
                 if (!material.forms().contains(form)) continue;
                 BuiltinRecipeTypes.GRINDING.recipe(material.id().getNamespace() + "/" + material.id().getPath() + "_" + form.id().getPath() + "_to_dust")
                         .input(item.in(MaterialHelper.materialItemSupplier(material, form), 1))

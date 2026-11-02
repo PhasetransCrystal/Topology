@@ -81,12 +81,41 @@ public void registerMaterials(MaterialDomainRegistration m) {
 ```java
 m.material("copper").lang("Copper", "铜")
         .data(toolStatsDataType.stats(200, 4.5f, 1.5f))
-        .form(ingotForm, options -> options.overrideItem(ExternalTargets.mcItem("copper_ingot")))
+        .form(ingotForm, options -> options.overrideItem(ExternalTargets.item(Items.COPPER_INGOT)))
         .build();
 ```
 
 跨模组的现有条目复用见[兼容其他模组](compatibility/other-mods.md)，
 共享类型、新形态与已构建材料的数据补充见[兼容其他 TopoPlugin](compatibility/topo-plugins.md)。
+
+## 原版矿石替换
+
+TopoDemo 的数据生成会把原版主世界矿石 configured feature 的 target 替换为 Topo 原生矿石方块；
+原版 placed feature 与生物群系分布保持不变，因此不需要重建矿脉分布。铜是例外：原版铜
+placed feature 被移除，继续由 Demo 的自定义铜矿脉生成，避免重复生成。
+
+原生矿石的掉落由 `ORE_DROP` 数据声明：粗金属掉 1–4 个粗矿，煤/宝石/红石等掉对应形态，
+没有 `ORE_DROP` 的矿石退回掉落自身。下界石英、下界金矿和远古残骸的 configured feature 也走同一替换流程。
+
+## 按兼容物品获取材料
+
+`MaterialLookup` 是冻结后构建的 O(1) 内容索引，按 `MaterialContentType + 注册 ID` 定位材料：
+
+```java
+MaterialBinding binding = MaterialLookup.current()
+        .byItem(otherModItem)
+        .orElseThrow();
+Material material = binding.material();
+MaterialForm form = binding.form();
+
+MaterialLookup.current().byItem(itemStack);
+MaterialLookup.current().byContent(MaterialContentTypes.ITEM, itemId);
+```
+
+索引来自每个形态计划的输出以及外部 item/block/fluid target；运行时还会在游戏注册表绑定完成后重建一次。
+同一个 `MaterialContentType + 注册 ID` 出现多个不同绑定会使索引构建失败。
+`byItem(ItemStack)` 只按物品 ID 查找，不比较 data component；组件敏感的场景应使用完整的自定义 content type
+或自定义查询策略。
 
 ## 查询已注册材料
 
@@ -105,7 +134,7 @@ for (Material mat : MaterialRegistry.registered()) {
 
 ## 自定义 MaterialForm
 
-形态 = `MaterialFormStrategy` 子类（`registryPath()` 模板 + 每个材质一次 `register`）：
+形态 = `MaterialFormStrategy` 子类（`registryPath()` 模板 + 每个材质一份 `MaterialFormPlan`）：
 
 ```java
 // 在 registerMaterialFoundation 中注册
@@ -126,7 +155,7 @@ public void registerMaterialFoundation(MaterialDomainRegistration m) {
 - 自定义 `MaterialForm` / `MaterialDataType` 必须在 `registerMaterialFoundation()` 中注册
 - 在 `registerMaterials()` 中不能注册新 Form，只能引用已注册的 Form
 - `registerMaterials()` 的共享窗口内支持给已构建的材料补数据；重复类型会报错
-- `registerMaterialContributions()` 在所有插件完成 `registerMaterials` 后运行，适合给全量材料或其他插件的材料注入能力；重复类型仍报错
+- `registerMaterialContributions()` 在所有插件完成 `registerMaterials` 后运行，适合给全量材料或其他插件的材料注入能力；重复类型仍报错，也不能再创建新材料
 - 所有插件完成注入后关闭写入，再统一匹配形态并校验；此后 `forms()` 才是完整且不可变的集合
 - `MaterialPostProcessor` 在形态物品铸造后运行（先全部 validate，再全部 process）
 
@@ -136,7 +165,7 @@ public void registerMaterialFoundation(MaterialDomainRegistration m) {
 |------|------------|----------|
 | 基础声明 | 注册数据类型、形态规则和后处理器，然后冻结这些注册表 | 扩展插件在 `registerMaterialFoundation` 提供新类型与策略 |
 | 材料声明 | Builder 与材料共享同一个策略，按数据类型存储属性 | `registerMaterials` 内允许补充不同类型，重复类型拒绝覆盖 |
-| 关闭写入与匹配 | 固定材料快照，形态按完整 ID 排序，每个材料／形态组合求值一次 | 所有规则求值完毕后统一发布形态；保留的 Builder 和 options 引用也无法继续写入 |
+| 关闭写入与匹配 | 固定材料快照，形态按完整 ID 排序，每个材料／形态组合求值一次，再统一构建执行计划 | 所有规则求值完毕后统一发布形态并构建 plan；保留的 Builder 和 options 引用也无法继续写入 |
 | 校验与冻结 | 校验材料数据、匹配形态的局部数据及形态策略 | 未匹配形态的选项不参与校验；失败终止启动，不能继续修改后重试冻结 |
 | 生成与后处理 | 使用材料所属插件的 RegistryCore 生成内容，再处理实际激活的处理器 | 全部材料内容生成后才运行后处理；先完成所有校验再执行处理 |
 

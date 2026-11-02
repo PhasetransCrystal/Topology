@@ -28,7 +28,7 @@ public final class RuntimeRegistrationModule implements RegistrationModule {
 
     @Override
     public void define(RegistrationPlan.Builder plan, RegistrationContext context) {
-        plan.step(Phase.RUNTIME, BUILTINS, List.of(), () -> {
+        plan.step(Phase.RUNTIME, BUILTINS, List.of(MaterialRegistrationModule.LOOKUP), () -> {
             PipeSpecTooltips.registerProviders();
             for (EquipmentRegistry.EquipmentItemRecord record : EquipmentRegistry.itemRecords()) {
                 MachineItemBehavior behavior = record.equipment().strategy().machineBehavior();

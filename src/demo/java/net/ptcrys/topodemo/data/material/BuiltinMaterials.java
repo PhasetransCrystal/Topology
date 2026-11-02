@@ -6,10 +6,14 @@ import net.ptcrys.topodemo.api.material.BuiltinMaterialDataTypes;
 import net.ptcrys.topodemo.api.material.BuiltinMaterialForms;
 import net.ptcrys.topodemo.data.TopoDemoPlugin;
 
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Blocks;
+
 import static net.ptcrys.topodemo.api.material.BuiltinMaterialDataTypes.BULK;
 import static net.ptcrys.topodemo.api.material.BuiltinMaterialDataTypes.FUEL;
 import static net.ptcrys.topodemo.api.material.BuiltinMaterialDataTypes.GEM;
 import static net.ptcrys.topodemo.api.material.BuiltinMaterialDataTypes.INGOT;
+import static net.ptcrys.topodemo.api.material.BuiltinMaterialDataTypes.ORE_DROP;
 import static net.ptcrys.topodemo.api.material.BuiltinMaterialDataTypes.ORE_HOST;
 import static net.ptcrys.topodemo.api.material.BuiltinMaterialDataTypes.ORE_PRODUCT;
 import static net.ptcrys.topodemo.api.material.BuiltinMaterialDataTypes.PULVERIZABLE;
@@ -27,16 +31,15 @@ public final class BuiltinMaterials {
             .data(BULK.enabled())
             .data(TOOL.tool(2, 200))
             .data(ORE_HOST.host(OVERWORLD))
+            .data(ORE_DROP.drop(BuiltinMaterialForms.RAW, 1, 4))
             .data(ORE_PRODUCT.product(RAW))
             .data(BuiltinMaterialDataTypes.MASS.mass(64))
             .data(BuiltinMaterialDataTypes.PRIMARY_COLOR.rgb(0xB87333))
             .data(BuiltinProcessors.GRINDING.activation())
-            .form(BuiltinMaterialForms.INGOT, options -> options.overrideItem(ExternalTargets.mcItem("copper_ingot")))
-            .form(BuiltinMaterialForms.NUGGET, options -> options.overrideItem(ExternalTargets.mcItem("copper_nugget")))
-            .form(BuiltinMaterialForms.RAW, options -> options.overrideItem(ExternalTargets.mcItem("raw_copper")))
-            .form(BuiltinMaterialForms.STORAGE_BLOCK, options -> options.overrideBlock(ExternalTargets.mcBlock("copper_block")))
-            .form(BuiltinMaterialForms.ORE, options -> options.overrideBlock(ExternalTargets.mcBlock("copper_ore")))
-            .form(BuiltinMaterialForms.DEEPSLATE_ORE, options -> options.overrideBlock(ExternalTargets.mcBlock("deepslate_copper_ore")))
+            .form(BuiltinMaterialForms.INGOT, options -> options.overrideItem(ExternalTargets.item(Items.COPPER_INGOT)))
+            .form(BuiltinMaterialForms.NUGGET, options -> options.overrideItem(ExternalTargets.item(Items.COPPER_NUGGET)))
+            .form(BuiltinMaterialForms.RAW, options -> options.overrideItem(ExternalTargets.item(Items.RAW_COPPER)))
+            .form(BuiltinMaterialForms.STORAGE_BLOCK, options -> options.overrideBlock(ExternalTargets.block(Blocks.COPPER_BLOCK)))
             .build();
 
     public static final Material TIN = TopoDemoPlugin.INSTANCE.material().material("tin")
@@ -46,6 +49,7 @@ public final class BuiltinMaterials {
             .data(BULK.enabled())
             .data(TOOL.tool(2, 200))
             .data(ORE_HOST.host(OVERWORLD))
+            .data(ORE_DROP.drop(BuiltinMaterialForms.RAW, 1, 4))
             .data(ORE_PRODUCT.product(RAW))
             .data(BuiltinMaterialDataTypes.MASS.mass(119))
             .data(BuiltinMaterialDataTypes.PRIMARY_COLOR.rgb(0xD5DFDF))
@@ -70,16 +74,15 @@ public final class BuiltinMaterials {
             .data(BULK.enabled())
             .data(TOOL.tool(2, 200))
             .data(ORE_HOST.host(OVERWORLD))
+            .data(ORE_DROP.drop(BuiltinMaterialForms.RAW, 1, 4))
             .data(ORE_PRODUCT.product(RAW))
             .data(BuiltinMaterialDataTypes.MASS.mass(56))
             .data(BuiltinMaterialDataTypes.PRIMARY_COLOR.rgb(0xD8D8D8))
             .data(BuiltinProcessors.GRINDING.activation())
-            .form(BuiltinMaterialForms.INGOT, options -> options.overrideItem(ExternalTargets.mcItem("iron_ingot")))
-            .form(BuiltinMaterialForms.NUGGET, options -> options.overrideItem(ExternalTargets.mcItem("iron_nugget")))
-            .form(BuiltinMaterialForms.RAW, options -> options.overrideItem(ExternalTargets.mcItem("raw_iron")))
-            .form(BuiltinMaterialForms.STORAGE_BLOCK, options -> options.overrideBlock(ExternalTargets.mcBlock("iron_block")))
-            .form(BuiltinMaterialForms.ORE, options -> options.overrideBlock(ExternalTargets.mcBlock("iron_ore")))
-            .form(BuiltinMaterialForms.DEEPSLATE_ORE, options -> options.overrideBlock(ExternalTargets.mcBlock("deepslate_iron_ore")))
+            .form(BuiltinMaterialForms.INGOT, options -> options.overrideItem(ExternalTargets.item(Items.IRON_INGOT)))
+            .form(BuiltinMaterialForms.NUGGET, options -> options.overrideItem(ExternalTargets.item(Items.IRON_NUGGET)))
+            .form(BuiltinMaterialForms.RAW, options -> options.overrideItem(ExternalTargets.item(Items.RAW_IRON)))
+            .form(BuiltinMaterialForms.STORAGE_BLOCK, options -> options.overrideBlock(ExternalTargets.block(Blocks.IRON_BLOCK)))
             .build();
 
     public static final Material GOLD = TopoDemoPlugin.INSTANCE.material().material("gold")
@@ -89,16 +92,15 @@ public final class BuiltinMaterials {
             .data(BULK.enabled())
             .data(TOOL.tool(2, 200))
             .data(ORE_HOST.host(OVERWORLD))
+            .data(ORE_DROP.drop(BuiltinMaterialForms.RAW, 1, 4))
             .data(ORE_PRODUCT.product(RAW))
             .data(BuiltinMaterialDataTypes.MASS.mass(197))
             .data(BuiltinMaterialDataTypes.PRIMARY_COLOR.rgb(0xFFD54A))
             .data(BuiltinProcessors.GRINDING.activation())
-            .form(BuiltinMaterialForms.INGOT, options -> options.overrideItem(ExternalTargets.mcItem("gold_ingot")))
-            .form(BuiltinMaterialForms.NUGGET, options -> options.overrideItem(ExternalTargets.mcItem("gold_nugget")))
-            .form(BuiltinMaterialForms.RAW, options -> options.overrideItem(ExternalTargets.mcItem("raw_gold")))
-            .form(BuiltinMaterialForms.STORAGE_BLOCK, options -> options.overrideBlock(ExternalTargets.mcBlock("gold_block")))
-            .form(BuiltinMaterialForms.ORE, options -> options.overrideBlock(ExternalTargets.mcBlock("gold_ore")))
-            .form(BuiltinMaterialForms.DEEPSLATE_ORE, options -> options.overrideBlock(ExternalTargets.mcBlock("deepslate_gold_ore")))
+            .form(BuiltinMaterialForms.INGOT, options -> options.overrideItem(ExternalTargets.item(Items.GOLD_INGOT)))
+            .form(BuiltinMaterialForms.NUGGET, options -> options.overrideItem(ExternalTargets.item(Items.GOLD_NUGGET)))
+            .form(BuiltinMaterialForms.RAW, options -> options.overrideItem(ExternalTargets.item(Items.RAW_GOLD)))
+            .form(BuiltinMaterialForms.STORAGE_BLOCK, options -> options.overrideBlock(ExternalTargets.block(Blocks.GOLD_BLOCK)))
             .build();
 
     public static final Material STEEL = TopoDemoPlugin.INSTANCE.material().material("steel")
@@ -119,14 +121,14 @@ public final class BuiltinMaterials {
             .data(BULK.enabled())
             .data(TOOL.tool(2, 200))
             .data(ORE_HOST.host(NETHER))
+            .data(ORE_DROP.drop(BuiltinMaterialForms.SCRAP, 1, 1))
             .data(ORE_PRODUCT.product(SCRAP))
             .data(BuiltinMaterialDataTypes.MASS.mass(200))
             .data(BuiltinMaterialDataTypes.PRIMARY_COLOR.rgb(0x52494B))
             .data(BuiltinProcessors.GRINDING.activation())
-            .form(BuiltinMaterialForms.INGOT, options -> options.overrideItem(ExternalTargets.mcItem("netherite_ingot")))
-            .form(BuiltinMaterialForms.SCRAP, options -> options.overrideItem(ExternalTargets.mcItem("netherite_scrap")))
-            .form(BuiltinMaterialForms.STORAGE_BLOCK, options -> options.overrideBlock(ExternalTargets.mcBlock("netherite_block")))
-            .form(BuiltinMaterialForms.ORE, options -> options.overrideBlock(ExternalTargets.mcBlock("ancient_debris")))
+            .form(BuiltinMaterialForms.INGOT, options -> options.overrideItem(ExternalTargets.item(Items.NETHERITE_INGOT)))
+            .form(BuiltinMaterialForms.SCRAP, options -> options.overrideItem(ExternalTargets.item(Items.NETHERITE_SCRAP)))
+            .form(BuiltinMaterialForms.STORAGE_BLOCK, options -> options.overrideBlock(ExternalTargets.block(Blocks.NETHERITE_BLOCK)))
             .build();
 
     public static final Material COAL = TopoDemoPlugin.INSTANCE.material().material("coal")
@@ -135,12 +137,11 @@ public final class BuiltinMaterials {
             .data(PULVERIZABLE.enabled())
             .data(BULK.enabled())
             .data(ORE_HOST.host(OVERWORLD))
+            .data(ORE_DROP.drop(BuiltinMaterialForms.FUEL, 1, 1))
             .data(BuiltinMaterialDataTypes.MASS.mass(12))
             .data(BuiltinProcessors.FUEL_GRINDING.activation())
-            .form(BuiltinMaterialForms.FUEL, options -> options.overrideItem(ExternalTargets.mcItem("coal")))
-            .form(BuiltinMaterialForms.STORAGE_BLOCK, options -> options.overrideBlock(ExternalTargets.mcBlock("coal_block")))
-            .form(BuiltinMaterialForms.ORE, options -> options.overrideBlock(ExternalTargets.mcBlock("coal_ore")))
-            .form(BuiltinMaterialForms.DEEPSLATE_ORE, options -> options.overrideBlock(ExternalTargets.mcBlock("deepslate_coal_ore")))
+            .form(BuiltinMaterialForms.FUEL, options -> options.overrideItem(ExternalTargets.item(Items.COAL)))
+            .form(BuiltinMaterialForms.STORAGE_BLOCK, options -> options.overrideBlock(ExternalTargets.block(Blocks.COAL_BLOCK)))
             .build();
 
     public static final Material CHARCOAL = TopoDemoPlugin.INSTANCE.material().material("charcoal")
@@ -150,7 +151,7 @@ public final class BuiltinMaterials {
             .data(BULK.enabled())
             .data(BuiltinMaterialDataTypes.MASS.mass(12))
             .data(BuiltinProcessors.FUEL_GRINDING.activation())
-            .form(BuiltinMaterialForms.FUEL, options -> options.overrideItem(ExternalTargets.mcItem("charcoal")))
+            .form(BuiltinMaterialForms.FUEL, options -> options.overrideItem(ExternalTargets.item(Items.CHARCOAL)))
             .build();
 
     public static final Material REDSTONE = TopoDemoPlugin.INSTANCE.material().material("redstone")
@@ -158,11 +159,10 @@ public final class BuiltinMaterials {
             .data(PULVERIZABLE.enabled())
             .data(BULK.enabled())
             .data(ORE_HOST.host(OVERWORLD))
+            .data(ORE_DROP.drop(BuiltinMaterialForms.DUST, 4, 5))
             .data(BuiltinMaterialDataTypes.MASS.mass(32))
-            .form(BuiltinMaterialForms.DUST, options -> options.overrideItem(ExternalTargets.mcItem("redstone")))
-            .form(BuiltinMaterialForms.STORAGE_BLOCK, options -> options.overrideBlock(ExternalTargets.mcBlock("redstone_block")))
-            .form(BuiltinMaterialForms.ORE, options -> options.overrideBlock(ExternalTargets.mcBlock("redstone_ore")))
-            .form(BuiltinMaterialForms.DEEPSLATE_ORE, options -> options.overrideBlock(ExternalTargets.mcBlock("deepslate_redstone_ore")))
+            .form(BuiltinMaterialForms.DUST, options -> options.overrideItem(ExternalTargets.item(Items.REDSTONE)))
+            .form(BuiltinMaterialForms.STORAGE_BLOCK, options -> options.overrideBlock(ExternalTargets.block(Blocks.REDSTONE_BLOCK)))
             .build();
 
     public static final Material DIAMOND = TopoDemoPlugin.INSTANCE.material().material("diamond")
@@ -171,12 +171,11 @@ public final class BuiltinMaterials {
             .data(PULVERIZABLE.enabled())
             .data(BULK.enabled())
             .data(ORE_HOST.host(OVERWORLD))
+            .data(ORE_DROP.drop(BuiltinMaterialForms.GEM, 1, 1))
             .data(BuiltinMaterialDataTypes.MASS.mass(12))
             .data(BuiltinProcessors.GEM_GRINDING.activation())
-            .form(BuiltinMaterialForms.GEM, options -> options.overrideItem(ExternalTargets.mcItem("diamond")))
-            .form(BuiltinMaterialForms.STORAGE_BLOCK, options -> options.overrideBlock(ExternalTargets.mcBlock("diamond_block")))
-            .form(BuiltinMaterialForms.ORE, options -> options.overrideBlock(ExternalTargets.mcBlock("diamond_ore")))
-            .form(BuiltinMaterialForms.DEEPSLATE_ORE, options -> options.overrideBlock(ExternalTargets.mcBlock("deepslate_diamond_ore")))
+            .form(BuiltinMaterialForms.GEM, options -> options.overrideItem(ExternalTargets.item(Items.DIAMOND)))
+            .form(BuiltinMaterialForms.STORAGE_BLOCK, options -> options.overrideBlock(ExternalTargets.block(Blocks.DIAMOND_BLOCK)))
             .build();
 
     public static final Material LAPIS = TopoDemoPlugin.INSTANCE.material().material("lapis")
@@ -185,12 +184,11 @@ public final class BuiltinMaterials {
             .data(PULVERIZABLE.enabled())
             .data(BULK.enabled())
             .data(ORE_HOST.host(OVERWORLD))
+            .data(ORE_DROP.drop(BuiltinMaterialForms.GEM, 4, 9))
             .data(BuiltinMaterialDataTypes.MASS.mass(56))
             .data(BuiltinProcessors.GEM_GRINDING.activation())
-            .form(BuiltinMaterialForms.GEM, options -> options.overrideItem(ExternalTargets.mcItem("lapis_lazuli")))
-            .form(BuiltinMaterialForms.STORAGE_BLOCK, options -> options.overrideBlock(ExternalTargets.mcBlock("lapis_block")))
-            .form(BuiltinMaterialForms.ORE, options -> options.overrideBlock(ExternalTargets.mcBlock("lapis_ore")))
-            .form(BuiltinMaterialForms.DEEPSLATE_ORE, options -> options.overrideBlock(ExternalTargets.mcBlock("deepslate_lapis_ore")))
+            .form(BuiltinMaterialForms.GEM, options -> options.overrideItem(ExternalTargets.item(Items.LAPIS_LAZULI)))
+            .form(BuiltinMaterialForms.STORAGE_BLOCK, options -> options.overrideBlock(ExternalTargets.block(Blocks.LAPIS_BLOCK)))
             .build();
 
     public static final Material EMERALD = TopoDemoPlugin.INSTANCE.material().material("emerald")
@@ -199,12 +197,11 @@ public final class BuiltinMaterials {
             .data(PULVERIZABLE.enabled())
             .data(BULK.enabled())
             .data(ORE_HOST.host(OVERWORLD))
+            .data(ORE_DROP.drop(BuiltinMaterialForms.GEM, 1, 1))
             .data(BuiltinMaterialDataTypes.MASS.mass(64))
             .data(BuiltinProcessors.GEM_GRINDING.activation())
-            .form(BuiltinMaterialForms.GEM, options -> options.overrideItem(ExternalTargets.mcItem("emerald")))
-            .form(BuiltinMaterialForms.STORAGE_BLOCK, options -> options.overrideBlock(ExternalTargets.mcBlock("emerald_block")))
-            .form(BuiltinMaterialForms.ORE, options -> options.overrideBlock(ExternalTargets.mcBlock("emerald_ore")))
-            .form(BuiltinMaterialForms.DEEPSLATE_ORE, options -> options.overrideBlock(ExternalTargets.mcBlock("deepslate_emerald_ore")))
+            .form(BuiltinMaterialForms.GEM, options -> options.overrideItem(ExternalTargets.item(Items.EMERALD)))
+            .form(BuiltinMaterialForms.STORAGE_BLOCK, options -> options.overrideBlock(ExternalTargets.block(Blocks.EMERALD_BLOCK)))
             .build();
 
     public static final Material QUARTZ = TopoDemoPlugin.INSTANCE.material().material("quartz")
@@ -213,11 +210,11 @@ public final class BuiltinMaterials {
             .data(PULVERIZABLE.enabled())
             .data(BULK.enabled())
             .data(ORE_HOST.host(NETHER))
+            .data(ORE_DROP.drop(BuiltinMaterialForms.GEM, 1, 1))
             .data(BuiltinMaterialDataTypes.MASS.mass(60))
             .data(BuiltinProcessors.GEM_GRINDING.activation())
-            .form(BuiltinMaterialForms.GEM, options -> options.overrideItem(ExternalTargets.mcItem("quartz")))
-            .form(BuiltinMaterialForms.STORAGE_BLOCK, options -> options.overrideBlock(ExternalTargets.mcBlock("quartz_block")))
-            .form(BuiltinMaterialForms.ORE, options -> options.overrideBlock(ExternalTargets.mcBlock("nether_quartz_ore")))
+            .form(BuiltinMaterialForms.GEM, options -> options.overrideItem(ExternalTargets.item(Items.QUARTZ)))
+            .form(BuiltinMaterialForms.STORAGE_BLOCK, options -> options.overrideBlock(ExternalTargets.block(Blocks.QUARTZ_BLOCK)))
             .build();
 
     public static final Material AMETHYST = TopoDemoPlugin.INSTANCE.material().material("amethyst")
@@ -227,8 +224,8 @@ public final class BuiltinMaterials {
             .data(BULK.enabled())
             .data(BuiltinMaterialDataTypes.MASS.mass(60))
             .data(BuiltinProcessors.SHARD_GRINDING.activation())
-            .form(BuiltinMaterialForms.SHARD, options -> options.overrideItem(ExternalTargets.mcItem("amethyst_shard")))
-            .form(BuiltinMaterialForms.STORAGE_BLOCK, options -> options.overrideBlock(ExternalTargets.mcBlock("amethyst_block")))
+            .form(BuiltinMaterialForms.SHARD, options -> options.overrideItem(ExternalTargets.item(Items.AMETHYST_SHARD)))
+            .form(BuiltinMaterialForms.STORAGE_BLOCK, options -> options.overrideBlock(ExternalTargets.block(Blocks.AMETHYST_BLOCK)))
             .build();
 
     private BuiltinMaterials() {}

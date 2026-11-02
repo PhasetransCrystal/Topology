@@ -9,6 +9,7 @@ import net.ptcrys.registrylib.util.color.RgbColor;
 import net.ptcrys.registrylib.util.visual.BlockModelLayer;
 import net.ptcrys.topo.api.material.Material;
 import net.ptcrys.topo.api.material.data.MaterialDataType;
+import net.ptcrys.topo.api.material.form.MaterialForm;
 import net.ptcrys.topo.api.material.render.MaterialBlockRender;
 import net.ptcrys.topo.api.material.render.MaterialItemRender;
 import net.ptcrys.topodemo.api.TopoDemoApiPlugin;
@@ -138,8 +139,8 @@ public final class TintedTemplate {
         }
 
         @Override
-        public void apply(ItemBuilder<Item, RegistryCore> builder, Material material) {
-            ItemTintSource[] tints = itemTintSources(layers, material);
+        public void apply(ItemBuilder<Item, RegistryCore> builder, Material material, MaterialForm form) {
+            ItemTintSource[] tints = itemTintSources(layers, material, form);
             builder.model(() -> (item, generator) -> {
                 Identifier model = switch (layers.size()) {
                     case 1 -> (handheld ? ModelTemplates.FLAT_HANDHELD_ITEM : ModelTemplates.FLAT_ITEM).create(
@@ -187,11 +188,11 @@ public final class TintedTemplate {
         }
 
         @Override
-        public void apply(BlockBuilder<Block, RegistryCore> builder, Material material) {
+        public void apply(BlockBuilder<Block, RegistryCore> builder, Material material, MaterialForm form) {
             TextureRef particle = templateTextureRef(layers.get(0).layer);
             builder.layeredCube(particle, blockModelLayers(layers))
-                    .blockTintSource(() -> () -> blockTintSources(layers, material))
-                    .tintSource(blockItemTintSources(layers, material));
+                    .blockTintSource(() -> () -> blockTintSources(layers, material, form))
+                    .tintSource(blockItemTintSources(layers, material, form));
         }
     }
 
@@ -200,19 +201,20 @@ public final class TintedTemplate {
                 TopoDemoApiPlugin.INSTANCE.material().id(layer.texturePath));
     }
 
-    private static ItemTintSource[] itemTintSources(List<Layer> layers, Material material) {
+    private static ItemTintSource[] itemTintSources(List<Layer> layers, Material material, MaterialForm form) {
         ItemTintSource[] tints = new ItemTintSource[layers.size()];
         for (int index = 0; index < layers.size(); index++) {
-            tints[index] = RegistryLibTintSources.itemConstant(RgbColor.of(layerColor(layers.get(index), material)));
+            tints[index] = RegistryLibTintSources.itemConstant(
+                    RgbColor.of(layerColor(layers.get(index), material, form)));
         }
         return tints;
     }
 
-    private static int layerColor(Layer layer, Material material) {
+    private static int layerColor(Layer layer, Material material, MaterialForm form) {
         if (layer.requiredData == null) {
             return 0xFFFFFF;
         }
-        return material.data(layer.requiredData)
+        return material.data(layer.requiredData, form)
                 .map(RgbColorData::rgb)
                 .orElse(0xFFFFFF);
     }
@@ -236,20 +238,20 @@ public final class TintedTemplate {
         return result;
     }
 
-    private static BlockTintSource[] blockTintSources(List<BlockLayer> layers, Material material) {
+    private static BlockTintSource[] blockTintSources(List<BlockLayer> layers, Material material, MaterialForm form) {
         BlockTintSource[] tints = new BlockTintSource[layers.size()];
         for (int index = 0; index < layers.size(); index++) {
             tints[index] = RegistryLibTintSources.blockConstant(
-                    RgbColor.of(layerColor(layers.get(index).layer, material)));
+                    RgbColor.of(layerColor(layers.get(index).layer, material, form)));
         }
         return tints;
     }
 
-    private static ItemTintSource[] blockItemTintSources(List<BlockLayer> layers, Material material) {
+    private static ItemTintSource[] blockItemTintSources(List<BlockLayer> layers, Material material, MaterialForm form) {
         ItemTintSource[] tints = new ItemTintSource[layers.size()];
         for (int index = 0; index < layers.size(); index++) {
             tints[index] = RegistryLibTintSources.itemConstant(
-                    RgbColor.of(layerColor(layers.get(index).layer, material)));
+                    RgbColor.of(layerColor(layers.get(index).layer, material, form)));
         }
         return tints;
     }

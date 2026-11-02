@@ -83,5 +83,7 @@ Topo 发布包不应夹带 TopoDemo 内容。不能用编译通过推断这些�
 ./gradlew build demoClasses
 ```
 
-数据生成会写入 `src/generated/resources/<modid>/`。普通本地 `build` 不自动运行数据生成；
+数据生成会写入 `src/generated/resources/<modid>/`；TopoDemo 的原版矿石替换还会写入
+`src/generated/resources/topodemo/data/minecraft/worldgen/configured_feature/`，用于把原版矿石 target 指向 Topo 方块。
+普通本地 `build` 不自动运行数据生成；
 验证干净检出的发布流程时应使用独立目录，避免依赖已有生成文件。

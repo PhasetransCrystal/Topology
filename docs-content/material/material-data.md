@@ -61,7 +61,7 @@ ToolStatsDataType toolStats = material.dataType("tool_stats", new ToolStatsDataT
 ## 消费
 
 ```java
-// 策略/形态侧（如 EquipmentStrategy.appliesTo 或 MaterialFormStrategy.validateMaterial）：
+// 策略/形态侧（如 EquipmentStrategy.appliesTo 或 MaterialFormPlan.validate）：
 Optional<ToolStatsData> stats = material.data(toolStats);   // Material.data(type)
 
 // 能力谓词可直接用于形态匹配：
@@ -92,6 +92,7 @@ public void registerMaterialContributions(MaterialContributionRegistration contr
 - 数据类型仍须在 `registerMaterialFoundation` 注册；注入只补充数据值，不改变目标材料归属。
 - 对同一材料重复写入同一数据类型会报错，包括覆盖其构建时声明的数据；不同数据类型可由多个插件分别补充。
 - 形态匹配开始前关闭写入；匹配 Lambda、校验、内容生成及运行时均不能注入。
+- 形态局部数据依赖按「材料级数据 + 同一形态的局部数据」在注入时检查；互斥在同一作用域冻结时检查。
 
 ## 依赖与互斥
 
@@ -107,16 +108,22 @@ GEM.excludes(INGOT);
 
 - `requires(...)` 在每次 `data(use)` / Builder `.data(use)` 注入时检查；缺少依赖立即失败。
 - `excludes(...)` 在材料冻结时逐条检查（`checkExclusions` 先于 `validate`）；同时声明会终止启动。
+- 冻结校验会再次检查依赖，覆盖 form-scoped data 和基础阶段之后才补上的关系。
+- 关系本身只允许在基础阶段修改；数据类型表冻结后调用 `requires(...)` / `excludes(...)` 会失败。
 - 两者都按 DataType 身份判断，不依赖值相等；新增属性只需声明关系，不改材料核心。
+- `present()` 只判断类型是否存在；`is(value)` / `matches(predicate)` 依赖 payload 的值相等或谓词。payload 推荐使用 record 或实现 `equals/hashCode`。
+- `.form(form, options -> options.data(use))` 声明的值只对那个形态生效；用 `material.data(type, form)` 读取。
+  `hasData(type)` / `dataUses()` 仍只表示材料级能力，渲染接口也会收到 form，因此可以使用形态局部数据。
 
 ## 校验
 
 数据类型可覆写 `validate(Material, D)`；材料冻结时统一执行已安装的校验，包含补充的数据。
 产品的数据值约束也可放在 payload record 的构造器或类型公开的工厂方法中；
-与某个形态有关的数据依赖在 `MaterialFormStrategy.validateMaterial` 中检查。
+与某个形态有关的数据依赖在 `MaterialFormPlan.validate` 中检查。
 
 :::info
 数据类型与形态一样有冻结点：在 `registerMaterialFoundation` 注册，`registerMaterials` 只能引用。
+所有插件的 `registerMaterials` 完成后，材料创建入口关闭；`registerMaterialContributions` 只能补数据和配置形态选项，不能创建新材料。
 :::
 
 ## API 速查

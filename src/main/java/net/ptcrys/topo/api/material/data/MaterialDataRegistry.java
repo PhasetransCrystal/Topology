@@ -8,6 +8,8 @@ import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.function.Predicate;
 
 /**
  * Material capability-type table (query + freeze). Product writes only via the material domain
@@ -47,14 +49,22 @@ public final class MaterialDataRegistry {
         REGISTRY.freeze();
     }
 
-    @SuppressWarnings({ "rawtypes", "unchecked" })
     public static void validate(Material material, MaterialDataUse<?> use) {
-        use.type().checkExclusions(material);
+        validate(material, use, material::hasData);
+    }
+
+    /** Validates one use against the supplied visibility scope. */
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    @ApiStatus.Internal
+    public static void validate(Material material, MaterialDataUse<?> use,
+                                Predicate<MaterialDataType<?>> present) {
+        use.type().checkDependencies(material.id(), present);
+        use.type().checkExclusions(material.id(), present);
         ((MaterialDataType) use.type()).validate(material, use.data());
     }
 
     static <D> MaterialDataUse<D> use(MaterialDataType<D> type, D data) {
         REGISTRY.verifyOwnedHandle(type.id(), type);
-        return new MaterialDataUse<>(type, data);
+        return new MaterialDataUse<>(type, Objects.requireNonNull(data, "material data"));
     }
 }

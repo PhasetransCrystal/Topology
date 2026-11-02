@@ -67,13 +67,12 @@ gantt
     关闭材料声明及数据写入              :milestone, crit, dataClosed, after contributions, 0s
     MaterialForm.appliesTo → Predicate.test :done, selection, after dataClosed, 1s
     MaterialDataType.validate           :done, dataValidation, 9000, 1s
-    MaterialPostProcessor.validate（激活数据） :done, activationValidation, 9000, 1s
-    MaterialFormStrategy.validateMaterial :done, validation, 9000, 1s
+    MaterialFormPlan.validate      :done, validation, 9000, 1s
+    MaterialPostProcessor.validate :done, activationValidation, 9000, 1s
     MaterialRegistry 冻结               :milestone, crit, materialFrozen, after validation, 0s
     registerMaterialCreativeTabs        :active, tabs, after materialFrozen, 1s
-    MaterialFormStrategy.register        :done, formContent, 11000, 11400
-    MaterialPostProcessor.validate（激活组合） :done, processorValidation, 11400, 11700
-    MaterialPostProcessor.process        :done, content, 11700, 12000
+    MaterialFormPlan.register            :done, formContent, 11000, 11400
+    MaterialPostProcessor.process        :done, content, 11400, 12000
     registerMaterialFollowUps           :active, followups, after content, 1s
 
     section 装备
@@ -163,9 +162,9 @@ gantt
 
 | 区间 | 回调与实际顺序 |
 |------|----------------|
-| 材料匹配 8–9 | 对全部材料／形态组合调用 `MaterialForm.appliesTo`，转到声明的 `Predicate.test`；只有返回 true 的形态入选，配置覆盖不会跳过规则。全部结果计算完成后统一发布，求值期间形态集合均为空。 |
-| 材料校验 9–10 | **逐材料**先校验全局 data，再逐个匹配形态校验其作用域 data（`MaterialDataType.validate`）并调用 `MaterialFormStrategy.validateMaterial`。激活后处理器的 data 校验器还会调用一次 `MaterialPostProcessor.validate`。 |
-| 材料生成 11–12 | 先为全部材料／形态调用 `MaterialFormStrategy.register`；随后只对缓存的已激活材料／后处理器组合调用 `validate`，全部通过后再调用 `process`。这次后处理校验独立于冻结前的激活数据校验；未激活组合不收到调用。 |
+| 材料匹配 8–9 | 形态有 `appliesToData` 提示时，先用材料级 data 的 BitSet 索引过滤候选，再调用 `MaterialForm.appliesTo`；无提示形态回退到全部材料。只有返回 true 的形态入选，配置覆盖不会跳过规则。全部结果计算完成后统一发布，求值期间形态集合均为空；发布完成后才统一构建 `MaterialFormPlan`，plan 构造期可读取完整形态表。 |
+| 材料校验 9–10 | **逐材料**先校验全局 data，再逐个匹配形态校验其作用域 data（`MaterialDataType.validate`）并调用 `MaterialFormPlan.validate`；激活的后处理器在同一冻结阶段调用一次 `MaterialPostProcessor.validate`。 |
+| 材料生成 11–12 | 先为全部材料／形态调用 `MaterialFormPlan.register`；随后只对已激活材料／后处理器组合调用一次 `MaterialPostProcessor.process`，不再重复 validate。 |
 | 装备生成 13.5–14 | **逐材料／装备种类组合**调用 `EquipmentStrategy.appliesTo`，仅当其返回 true 时立即调用该组合的 `register`。装备表此时已冻结。 |
 | 机器生成 15.3–15.7 | 对有渲染声明的每台机器，依次调用 `MachineBlockRenderStrategy.validate`、`applyBlockModel` 配置 Builder；随后排队方块及共享 BE 类型。策略内提交的模型 datagen lambda 仍在 datagen 时执行。 |
 | 配方预览计划 15.7–16 | 对每个配方类型调用安装器的 planner（当前为 `RecipePreviewPlans.canonical`）；计算槽位布局时调用 `SlottedRecipeCapability.countPreviewSlots`。此时配方类型、机器表已冻结，具体配方尚未注册。 |

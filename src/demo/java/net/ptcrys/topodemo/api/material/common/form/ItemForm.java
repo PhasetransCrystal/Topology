@@ -2,7 +2,6 @@ package net.ptcrys.topodemo.api.material.common.form;
 
 import net.ptcrys.registrylib.RegistryCore;
 import net.ptcrys.registrylib.builders.ItemBuilder;
-import net.ptcrys.registrylib.util.entry.ItemEntry;
 import net.ptcrys.topo.api.api.registration.ExternalItemTarget;
 import net.ptcrys.topo.api.lang.DisplayNames;
 import net.ptcrys.topo.api.lang.RegistryDisplayLang;
@@ -10,8 +9,12 @@ import net.ptcrys.topo.api.lang.TemplateDisplayName;
 import net.ptcrys.topo.api.material.Material;
 import net.ptcrys.topo.api.material.MaterialContentContext;
 import net.ptcrys.topo.api.material.MaterialFormOptions;
+import net.ptcrys.topo.api.material.MaterialFormTargets;
 import net.ptcrys.topo.api.material.form.FormDataUse;
+import net.ptcrys.topo.api.material.form.MaterialContentKey;
+import net.ptcrys.topo.api.material.form.MaterialContentTypes;
 import net.ptcrys.topo.api.material.form.MaterialForm;
+import net.ptcrys.topo.api.material.form.MaterialFormPlan;
 import net.ptcrys.topo.api.material.form.MaterialFormStrategy;
 import net.ptcrys.topo.api.material.render.MaterialItemRender;
 import net.ptcrys.topo.helper.TagHelper;
@@ -19,6 +22,8 @@ import net.ptcrys.topo.helper.TagHelper;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
+
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -55,35 +60,61 @@ public final class ItemForm extends MaterialFormStrategy {
     }
 
     @Override
-    public void validateMaterial(Material material, MaterialForm form) {
-        material.optionsFor(form)
-                .flatMap(MaterialFormOptions::blockOverride)
-                .ifPresent(target -> {
-                    throw new IllegalStateException(
-                            "material " + material.id() + " declares a block override for item form " + form.id() + "; item forms only accept overrideItem");
-                });
+    public MaterialFormPlan plan(Material material, MaterialForm form) {
+        MaterialFormTargets targets = material.optionsFor(form)
+                .map(MaterialFormOptions::targets)
+                .orElseGet(MaterialFormTargets::empty);
+        ExternalItemTarget override = targets.item().orElse(null);
+        List<MaterialContentKey> outputs = outputKeys(material, override);
+        return MaterialFormPlan.of(
+                outputs,
+                targets,
+                () -> validateForm(material, form, targets),
+                context -> registerForm(context, form, override));
+    }
+
+    private List<MaterialContentKey> outputKeys(Material material, @Nullable ExternalItemTarget override) {
+        if (override != null) {
+            try {
+                return List.of(new MaterialContentKey(MaterialContentTypes.ITEM, override.id()));
+            } catch (RuntimeException unavailable) {
+                return List.of();
+            }
+        }
+        return List.of(nativeContentKey(material, MaterialContentTypes.ITEM));
+    }
+
+    private void validateForm(Material material, MaterialForm form, MaterialFormTargets targets) {
+        targets.block().ifPresent(target -> {
+            throw new IllegalStateException(
+                    "material " + material.id() + " declares a block override for item form " + form.id() + "; item forms only accept overrideItem");
+        });
+        targets.fluid().ifPresent(target -> {
+            throw new IllegalStateException(
+                    "material " + material.id() + " declares a fluid override for item form " + form.id() + "; item forms only accept overrideItem");
+        });
         if (render != null) {
             requireMaterialData(material, form, render.requiredMaterialData());
         }
     }
 
-    @Override
-    public void register(MaterialContentContext context, MaterialForm form) {
+    private void registerForm(MaterialContentContext context, MaterialForm form, @Nullable ExternalItemTarget override) {
         String materialPath = context.material().id().getPath();
         RegistryCore core = context.core();
         // The conventional tags are the same for both paths; only how they are attached differs.
         var itemGroupTag = TagHelper.item(commonTag);
         var itemMaterialTag = TagHelper.itemMaterial(commonTag, materialPath);
 
-        ExternalItemTarget override = context.material().optionsFor(form)
-                .flatMap(MaterialFormOptions::itemOverride)
-                .orElse(null);
         if (override != null) {
-            // A vanilla item stands in for an overridden form. It is already bound, so attach tags
-            // and the creative tab through the existing-entry APIs.
-            ItemEntry<Item> item = core.existingItem(override.id());
-            core.itemTags().addSuppliers(itemGroupTag, item).addSuppliers(itemMaterialTag, item);
-            core.addExistingSupplierToTab(creativeTab, item);
+            // External items may not be bound yet. Prefer id-based tag entries and resolve the
+            // creative-tab item only when the tab event fires.
+            if (override.explicitId().isPresent()) {
+                core.itemTags().addIds(itemGroupTag, override.id()).addIds(itemMaterialTag, override.id());
+            } else {
+                TagHelper.addItemTag(core, itemGroupTag, override::id);
+                TagHelper.addItemTag(core, itemMaterialTag, override::id);
+            }
+            core.addExistingSupplierToTab(creativeTab, override.itemSupplier());
             return;
         }
 
@@ -93,7 +124,7 @@ public final class ItemForm extends MaterialFormStrategy {
         ItemBuilder<Item, RegistryCore> builder = core.item(entryPath);
         RegistryDisplayLang.applyItem(builder, core, entryPath, displayName.resolve(context.material()));
         if (render != null) {
-            render.apply(builder, context.material());
+            render.apply(builder, context.material(), form);
         }
         builder.addTab(creativeTab);
         builder.addTag(itemGroupTag, itemMaterialTag);

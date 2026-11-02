@@ -36,6 +36,7 @@ public abstract class MaterialDataType<D> {
 
     /** Properties that must already be declared when this property is injected. */
     public final MaterialDataType<D> requires(MaterialDataType<?>... types) {
+        requireRelationsOpen();
         for (MaterialDataType<?> type : types) {
             Objects.requireNonNull(type, "required data type");
             if (type == this) {
@@ -52,6 +53,7 @@ public abstract class MaterialDataType<D> {
 
     /** Properties that must not coexist with this property; checked when materials freeze. */
     public final MaterialDataType<D> excludes(MaterialDataType<?>... types) {
+        requireRelationsOpen();
         for (MaterialDataType<?> type : types) {
             Objects.requireNonNull(type, "excluded data type");
             if (type == this) {
@@ -62,22 +64,41 @@ public abstract class MaterialDataType<D> {
         return this;
     }
 
+    private void requireRelationsOpen() {
+        if (MaterialDataRegistry.isFrozen()) {
+            throw new IllegalStateException(
+                    "material data type " + id + ": dependency/exclusion relations are frozen");
+        }
+    }
+
     @ApiStatus.Internal
     public final void checkDependencies(Material material) {
+        checkDependencies(material.id(), material::hasData);
+    }
+
+    /** Scope-aware variant used for form-local data, where dependencies may live in the same form. */
+    @ApiStatus.Internal
+    public final void checkDependencies(Identifier materialId, Predicate<MaterialDataType<?>> present) {
         for (MaterialDataType<?> dependency : dependencies) {
-            if (!material.hasData(dependency)) {
+            if (!present.test(dependency)) {
                 throw new IllegalStateException(
-                        "material " + material.id() + " declares " + id + " but is missing required property " + dependency.id());
+                        "material " + materialId + " declares " + id + " but is missing required property " + dependency.id());
             }
         }
     }
 
     @ApiStatus.Internal
     public final void checkExclusions(Material material) {
+        checkExclusions(material.id(), material::hasData);
+    }
+
+    /** Scope-aware variant used for form-local data; exclusions are checked after data freezes. */
+    @ApiStatus.Internal
+    public final void checkExclusions(Identifier materialId, Predicate<MaterialDataType<?>> present) {
         for (MaterialDataType<?> exclusion : exclusions) {
-            if (material.hasData(exclusion)) {
+            if (present.test(exclusion)) {
                 throw new IllegalStateException(
-                        "material " + material.id() + " cannot declare both " + id + " and " + exclusion.id());
+                        "material " + materialId + " cannot declare both " + id + " and " + exclusion.id());
             }
         }
     }

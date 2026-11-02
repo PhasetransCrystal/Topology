@@ -9,10 +9,10 @@ import net.minecraft.resources.Identifier;
 import java.util.List;
 
 /**
- * A global material post-processing step. It runs once for every registered material after material
- * forms have registered their items and blocks. A material opts in by declaring the processor's
- * paired {@link ProcessorDataType} via {@link #activation()}; materials without that declaration
- * are skipped.
+ * A global material post-processing step. Structural validation runs once during material freeze;
+ * processing runs once for activated materials after all form plans have registered content. A
+ * material opts in by declaring the processor's paired {@link ProcessorDataType} via
+ * {@link #activation()}; materials without that declaration are skipped.
  */
 public abstract class MaterialPostProcessor {
 

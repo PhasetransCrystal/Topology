@@ -6,6 +6,7 @@ import net.ptcrys.topodemo.api.TopoDemoApiPlugin;
 import net.ptcrys.topodemo.api.material.common.FuelDataType;
 import net.ptcrys.topodemo.api.material.common.GemDataType;
 import net.ptcrys.topodemo.api.material.common.MassDataType;
+import net.ptcrys.topodemo.api.material.common.OreDropDataType;
 import net.ptcrys.topodemo.api.material.common.OreHostDataType;
 import net.ptcrys.topodemo.api.material.common.OreProductDataType;
 import net.ptcrys.topodemo.api.material.common.RadiationDataType;
@@ -28,6 +29,7 @@ public final class BuiltinMaterialDataTypes {
     public static final RadiationDataType RADIATION = MATERIAL.dataType("radiation", new RadiationDataType(MATERIAL.id("radiation")));
     public static final MaterialFlagDataType PULVERIZABLE = MATERIAL.dataType("pulverizable", new MaterialFlagDataType(MATERIAL.id("pulverizable")));
     public static final MaterialFlagDataType BULK = MATERIAL.dataType("bulk", new MaterialFlagDataType(MATERIAL.id("bulk")));
+    public static final OreDropDataType ORE_DROP = MATERIAL.dataType("ore_drop", new OreDropDataType(MATERIAL.id("ore_drop")));
     public static final OreHostDataType ORE_HOST = MATERIAL.dataType("ore_host", new OreHostDataType(MATERIAL.id("ore_host")));
     public static final OreProductDataType ORE_PRODUCT = MATERIAL.dataType("ore_product", new OreProductDataType(MATERIAL.id("ore_product")));
 

@@ -1,9 +1,13 @@
 package net.ptcrys.topo.helper;
 
 import net.ptcrys.topo.api.api.registration.ExternalBlockTarget;
+import net.ptcrys.topo.api.api.registration.ExternalFluidTarget;
 import net.ptcrys.topo.api.api.registration.ExternalItemTarget;
 import net.ptcrys.topo.api.material.Material;
 import net.ptcrys.topo.api.material.MaterialFormOptions;
+import net.ptcrys.topo.api.material.MaterialFormTargets;
+import net.ptcrys.topo.api.material.form.MaterialContentKey;
+import net.ptcrys.topo.api.material.form.MaterialContentTypes;
 import net.ptcrys.topo.api.material.form.MaterialForm;
 
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -35,19 +39,24 @@ public final class MaterialHelper {
     }
 
     /**
-     * Stable registry id for a material form item (including overrides). Safe before the item is
-     * bound in {@link BuiltInRegistries}.
+     * Stable registry id for a material form's primary item (including overrides). Once forms are
+     * frozen the plan's item output is authoritative; before freeze this falls back to declared
+     * external targets and then to the form's registry-path convention.
      */
     public static Identifier itemId(Material material, MaterialForm form) {
         Objects.requireNonNull(material, "material");
         Objects.requireNonNull(form, "form");
-        Optional<MaterialFormOptions> options = material.optionsFor(form);
-        Optional<Identifier> overrideId = options
-                .flatMap(MaterialFormOptions::itemOverride)
+        if (material.hasForm(form)) {
+            for (MaterialContentKey key : material.formPlan(form).outputs()) {
+                if (key.type().equals(MaterialContentTypes.ITEM)) {
+                    return key.id();
+                }
+            }
+        }
+        MaterialFormTargets targets = targets(material, form);
+        Optional<Identifier> overrideId = targets.item()
                 .map(ExternalItemTarget::id)
-                .or(() -> options
-                        .flatMap(MaterialFormOptions::blockOverride)
-                        .map(ExternalBlockTarget::id));
+                .or(() -> targets.block().map(ExternalBlockTarget::itemId));
         return overrideId.orElseGet(() -> material.id().withPath(String.format(form.strategy().registryPath(), material.id().getPath())));
     }
 
@@ -90,6 +99,15 @@ public final class MaterialHelper {
             return Optional.empty();
         }
 
+        for (MaterialContentKey key : material.formPlan(form).outputs()) {
+            if (key.type().equals(MaterialContentTypes.FLUID)) {
+                return BuiltInRegistries.FLUID.getOptional(key.id());
+            }
+        }
+        Optional<ExternalFluidTarget> override = targets(material, form).fluid();
+        if (override.isPresent()) {
+            return BuiltInRegistries.FLUID.getOptional(override.get().id());
+        }
         Identifier fluidId = material.id().withPath(String.format(form.strategy().registryPath(), material.id().getPath()));
         return BuiltInRegistries.FLUID.getOptional(fluidId);
     }
@@ -102,6 +120,15 @@ public final class MaterialHelper {
 
     public static Supplier<Fluid> materialFluidSupplier(Material material, MaterialForm form) {
         return new MaterialFluidSupplier(material, form);
+    }
+
+    private static MaterialFormTargets targets(Material material, MaterialForm form) {
+        if (material.hasForm(form)) {
+            return material.formPlan(form).targets();
+        }
+        return material.optionsFor(form)
+                .map(MaterialFormOptions::targets)
+                .orElseGet(MaterialFormTargets::empty);
     }
 
     private record MaterialItemSupplier(Material material, MaterialForm form) implements Supplier<Item> {

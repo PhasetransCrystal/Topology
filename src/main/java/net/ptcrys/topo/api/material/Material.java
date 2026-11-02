@@ -5,6 +5,7 @@ import net.ptcrys.topo.api.lang.DisplayNameSource;
 import net.ptcrys.topo.api.material.data.MaterialDataType;
 import net.ptcrys.topo.api.material.data.MaterialDataUse;
 import net.ptcrys.topo.api.material.form.MaterialForm;
+import net.ptcrys.topo.api.material.form.MaterialFormPlan;
 import net.ptcrys.topo.api.material.process.MaterialPostProcessor;
 
 import net.minecraft.network.chat.Component;
@@ -88,6 +89,12 @@ public final class Material implements DisplayNameSource {
 
     public List<MaterialPostProcessor> postProcessors() {
         return strategy.postProcessors();
+    }
+
+    /** Framework-only access to the frozen plan for one resolved form. */
+    @ApiStatus.Internal
+    public MaterialFormPlan formPlan(MaterialForm form) {
+        return strategy.plan(form);
     }
 
     public Optional<MaterialFormOptions> optionsFor(MaterialForm form) {

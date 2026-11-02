@@ -26,10 +26,15 @@ import net.ptcrys.topo.api.machine.ui.tooltip.TopoTooltipUiProvider;
 import net.ptcrys.topo.api.material.Material;
 import net.ptcrys.topo.api.material.MaterialContentContext;
 import net.ptcrys.topo.api.material.MaterialFormOptions;
+import net.ptcrys.topo.api.material.MaterialFormTargets;
 import net.ptcrys.topo.api.material.MaterialRegistry;
 import net.ptcrys.topo.api.material.data.MaterialDataType;
 import net.ptcrys.topo.api.material.data.MaterialDataUse;
+import net.ptcrys.topo.api.material.form.MaterialContentKey;
+import net.ptcrys.topo.api.material.form.MaterialContentType;
+import net.ptcrys.topo.api.material.form.MaterialContentTypes;
 import net.ptcrys.topo.api.material.form.MaterialForm;
+import net.ptcrys.topo.api.material.form.MaterialFormPlan;
 import net.ptcrys.topo.api.material.form.MaterialFormStrategy;
 import net.ptcrys.topo.api.material.process.MaterialPostProcessor;
 import net.ptcrys.topo.api.ore.OreVeins;
@@ -79,6 +84,7 @@ public class LifecycleTestEntrypoint {
     static final Map<Material, List<MaterialForm>> generatedForms = new LinkedHashMap<>();
     static final Map<Material, RegistryCore> generatedFormOwners = new LinkedHashMap<>();
     static boolean formValidationSawResolvedForms = true;
+    static boolean plansSawCompleteFormTable = true;
     static MaterialForm nonMatchingForm;
     static boolean injectionSawAllMaterials;
     static boolean dataWriteReturnedTarget;
@@ -90,13 +96,24 @@ public class LifecycleTestEntrypoint {
     static MaterialRegistry.Builder builtMaterialBuilder;
     static MaterialFormOptions retainedFormOptions;
     static ProbeDataType scopedMarker;
+    static ProbeDataType scopedDependentMarker;
+    static IllegalStateException scopedMissingDependencyFailure;
+    static boolean scopedDependencySatisfied;
     static ProbeDataType contributionMarker;
     static ProbeDataType dependentMarker;
     static boolean contributionSawAllMaterials;
     static boolean contributionDataVisible;
     static boolean dependencySatisfied;
     static IllegalStateException missingDependencyFailure;
+    static IllegalStateException contributionCreationFailure;
+    static IllegalStateException relationMutationFailure;
     static int scopedValidations;
+    static int planCreations;
+    static int planOutputBuilds;
+    static int planValidations;
+    static int planRegistrations;
+    static final MaterialContentType customContentType = new MaterialContentType(
+            net.minecraft.resources.Identifier.fromNamespaceAndPath("topo_test_a", "probe_custom"));
     static int ruleCalls;
     static boolean rulesSawEmptyForms = true;
     static boolean rulesReusedMaterialSnapshot = true;
@@ -127,6 +144,12 @@ public class LifecycleTestEntrypoint {
                         scopedValidations++;
                     }
                 });
+                scopedDependentMarker = material.dataType("scoped_dependent_probe", new ProbeDataType(material.id("scoped_dependent_probe")) {
+
+                    {
+                        requires(contributionMarker);
+                    }
+                });
                 baseForm = material.form("base_form").lang("Base", "基础形态")
                         .appliesTo(value -> {
                             ruleCalls++;
@@ -140,6 +163,7 @@ public class LifecycleTestEntrypoint {
                             }
                             return value.data(materialMarker).orElse(false);
                         })
+                        .appliesToData(materialMarker)
                         .strategy(probeFormStrategy()).build();
                 nonMatchingForm = material.form("non_matching_form").lang("Non-matching", "不匹配形态")
                         .strategy(probeFormStrategy()).build();
@@ -158,12 +182,23 @@ public class LifecycleTestEntrypoint {
                 } catch (IllegalStateException error) {
                     builderDuplicateDataFailure = error;
                 }
+                lateMaterialBuilder.form(nonMatchingForm, options -> {
+                    try {
+                        options.data(scopedDependentMarker.enabled());
+                    } catch (IllegalStateException error) {
+                        scopedMissingDependencyFailure = error;
+                    }
+                });
+                lateMaterialBuilder.data(contributionMarker.enabled());
+                lateMaterialBuilder.form(nonMatchingForm, options -> options.data(scopedDependentMarker.enabled()));
+                scopedDependencySatisfied = true;
                 builtMaterialBuilder = material.material("lifecycle_material").lang("Probe", "探针材料");
                 builtMaterialBuilder
                         .form(nonMatchingForm, options -> options.overrideItem(ExternalTargets.mcItem("stick")).data(scopedMarker.disabled()))
                         .build();
                 builtMaterialBuilder.form(baseForm, options -> {
                     retainedFormOptions = options;
+                    options.overrideItem(ExternalTargets.mcItem("stick"));
                     options.data(scopedMarker.enabled());
                 });
                 var dependencyBuilder = material.material("dependency_material").lang("Dependency", "依赖");
@@ -175,6 +210,11 @@ public class LifecycleTestEntrypoint {
                 dependencyBuilder.data(materialMarker.enabled());
                 dependencyBuilder.data(dependentMarker.enabled());
                 dependencySatisfied = dependencyBuilder.build().data(dependentMarker).orElse(false);
+                try {
+                    materialMarker.excludes(contributionMarker);
+                } catch (IllegalStateException error) {
+                    relationMutationFailure = error;
+                }
                 try {
                     builtMaterialBuilder.form(new MaterialForm(baseForm.id(), probeFormStrategy(), null), options -> {});
                 } catch (IllegalArgumentException error) {
@@ -258,6 +298,11 @@ public class LifecycleTestEntrypoint {
                 var target = contributions.require(a.material().id("lifecycle_material"));
                 contributions.data(target, contributionMarker.enabled());
                 contributionDataVisible = target.data(contributionMarker).orElse(false);
+                try {
+                    a.material().material("late_contribution_material");
+                } catch (IllegalStateException error) {
+                    contributionCreationFailure = error;
+                }
             }
 
             @Override
@@ -329,7 +374,13 @@ public class LifecycleTestEntrypoint {
 
             @Override
             public void process(Material target) {
-                if (generatedForms.size() != 2) throw new IllegalStateException("processor ran before all material content");
+                long expectedMaterials = MaterialRegistry.registered().stream()
+                        .filter(material -> !material.forms().isEmpty())
+                        .count();
+                if (generatedForms.size() != expectedMaterials) {
+                    throw new IllegalStateException(
+                            "processor ran before all material content: generated=" + generatedForms.size() + " expected=" + expectedMaterials);
+                }
                 // Deliberately no activation guard: dispatch belongs to the framework.
                 processorEvents.add("process:" + path);
             }
@@ -345,18 +396,35 @@ public class LifecycleTestEntrypoint {
             }
 
             @Override
-            public void validateMaterial(Material material, MaterialForm form) {
+            public MaterialFormPlan plan(Material material, MaterialForm form) {
+                planCreations++;
                 for (Material declared : MaterialRegistry.registered()) {
-                    formValidationSawResolvedForms &= declared.forms().containsAll(List.of(baseForm, extensionForm));
+                    plansSawCompleteFormTable &= declared.hasForm(extensionForm);
                 }
-            }
-
-            @Override
-            public void register(MaterialContentContext context, MaterialForm form) {
-                if (!MaterialRegistry.isFrozen()) throw new IllegalStateException("content before material freeze");
-                generatedForms.computeIfAbsent(context.material(), ignored -> new ArrayList<>()).add(form);
-                generatedFormOwners.put(context.material(), context.core());
-                context.core().item(context.material().id().getPath() + "_" + form.id().getPath()).register();
+                String path = material.id().getPath() + "_" + form.id().getPath();
+                var targets = material.optionsFor(form)
+                        .map(MaterialFormOptions::targets)
+                        .orElseGet(MaterialFormTargets::empty);
+                planOutputBuilds++;
+                List<MaterialContentKey> outputs = List.of(
+                        new MaterialContentKey(MaterialContentTypes.ITEM, material.id().withPath(path)),
+                        new MaterialContentKey(customContentType, material.id().withPath(path + "_custom")));
+                return MaterialFormPlan.of(
+                        outputs,
+                        targets,
+                        () -> {
+                            planValidations++;
+                            for (Material declared : MaterialRegistry.registered()) {
+                                formValidationSawResolvedForms &= declared.forms().containsAll(List.of(baseForm, extensionForm));
+                            }
+                        },
+                        context -> {
+                            planRegistrations++;
+                            if (!MaterialRegistry.isFrozen()) throw new IllegalStateException("content before material freeze");
+                            generatedForms.computeIfAbsent(context.material(), ignored -> new ArrayList<>()).add(form);
+                            generatedFormOwners.put(context.material(), context.core());
+                            context.core().item(context.material().id().getPath() + "_" + form.id().getPath()).register();
+                        });
             }
         };
     }

@@ -41,6 +41,13 @@ class TopoPluginEngineOrderTest {
     }
 
     @Test
+    void materialLookupIsBuiltBeforeRuntimeBindings() {
+        var snapshot = new PluginSnapshot(List.of(new TestPlugin()), Map.of(Topology.MODID, Topology.REGISTRY));
+        var order = TopoContentBootstrap.compile(snapshot, TopoContentBootstrap.MODULES).order();
+        assertTrue(order.indexOf(Identifier.parse("topo:material/lookup")) < order.indexOf(Identifier.parse("topo:runtime/builtins")));
+    }
+
+    @Test
     void everyPluginAndModulePermutationProducesTheSameCompleteResult() {
         Result expected = null;
         for (List<Integer> plugins : permutations(List.of(0, 1, 2))) {
