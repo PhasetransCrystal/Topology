@@ -1,4 +1,4 @@
-package net.ptcrys.topodemo.api.ore.common;
+package net.ptcrys.topo.api.ore.datagen;
 
 import net.ptcrys.registrylib.RegistryCore;
 import net.ptcrys.topo.api.material.Material;
@@ -40,7 +40,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 
 /**
- * Datagen bridge for feature-channel veins: emits {@code Feature.ORE} ConfiguredFeature +
+ * Framework datagen bridge for feature-channel veins: emits {@code Feature.ORE} ConfiguredFeature +
  * PlacedFeature + BiomeModifier. Veins are selected through mode self-collection; dimension → biome
  * comes from declared {@link net.ptcrys.topo.api.ore.OreDimensionRule}s (no Level hard-switch).
  */
@@ -54,6 +54,7 @@ public final class VanillaOreFeatureBridge {
         this.namespace = namespace;
     }
 
+    /** Installs datagen callbacks for every feature-channel vein owned by {@code core}'s namespace. */
     public static void registerDatagen(RegistryCore core) {
         var bridge = new VanillaOreFeatureBridge(core.getModid());
         core.getDataGenInitializer().add(Registries.CONFIGURED_FEATURE, bridge::bootstrapConfiguredFeatures);

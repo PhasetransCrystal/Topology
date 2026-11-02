@@ -237,7 +237,7 @@ public class LifecycleTestEntrypoint {
                     }
 
                     @Override
-                    public void register(MaterialContentContext context, Equipment self) {
+                    public ItemEntry<Item> register(MaterialContentContext context, Equipment self) {
                         var builder = context.core().item("lifecycle_tool");
                         RegistryDisplayLang.applyItem(builder, context.core(), "lifecycle_tool", DisplayNames.fixed("Tool", "工具"));
                         generatedEquipment = builder.register();
@@ -246,7 +246,7 @@ public class LifecycleTestEntrypoint {
                         } catch (IllegalStateException error) {
                             entryThenKeyFailure = error;
                         }
-                        EquipmentRegistry.recordItem(self, context.material(), generatedEquipment);
+                        return generatedEquipment;
                     }
 
                     @Override

@@ -187,7 +187,7 @@ for (Material target : MaterialRegistry.registered()) {
 
 | 要扩展什么 | 做法 | 边界 |
 |---|---|---|
-| 为其他材料增加装备 | 在 `registerEquipmentKinds` 声明按共享数据匹配的策略 | 生成时使用材料的 `context.core()`，通过 `EquipmentRegistry.recordItem` 记录装备以接入自动行为 |
+| 为其他材料增加装备 | 在 `registerEquipmentKinds` 声明按共享数据匹配的策略 | 生成时使用材料的 `context.core()` 并返回 `ItemEntry`；框架统一记录装备以接入自动行为 |
 | 用对方组件搭自己的机器 | 在 `registerMachines` 引用已公开的组件工厂、资源类型与配方类型 | 组件 key、依赖结构和数据字段应遵守对方契约 |
 | 让管道与对方资源体系兼容 | 复用公开的 `MachineResourceType` 与匹配 capability | 不要重新注册同名资源类型；实际传输还取决于 handler 兼容性 |
 | 为对方物品添加工具交互／面板 | `registerRuntime` 中对已绑定物品登记 | 一个物品一个对应贡献，重复登记不会自动合并 |

@@ -16,11 +16,7 @@ import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -35,7 +31,7 @@ public final class OreVeins {
 
     private static final FreezableStrategyRegistry<Identifier, OreVein, OreVein> REGISTRY = FreezableStrategyRegistry.create("ore veins");
 
-    private static volatile Snapshot frozenSnapshot;
+    private static volatile OreVeinSnapshot frozenSnapshot;
 
     private OreVeins() {}
 
@@ -54,7 +50,7 @@ public final class OreVeins {
     }
 
     public static List<OreVein> byMaterial(Material material) {
-        return snapshot().byMaterial().getOrDefault(Objects.requireNonNull(material, "material"), List.of());
+        return snapshot().byMaterial(material);
     }
 
     public static boolean isFrozen() {
@@ -63,13 +59,14 @@ public final class OreVeins {
 
     @ApiStatus.Internal
     public static void freeze() {
-        if (!REGISTRY.isFrozen()) {
-            for (OreVein vein : REGISTRY.handlesView()) {
-                validateMaterialForms(vein);
-            }
-            REGISTRY.freeze();
+        if (REGISTRY.isFrozen()) {
+            return;
         }
-        frozenSnapshot = buildSnapshot(REGISTRY.handlesView());
+        for (OreVein vein : REGISTRY.handlesView()) {
+            validateMaterialForms(vein);
+        }
+        REGISTRY.freeze();
+        frozenSnapshot = OreVeinSnapshot.of(REGISTRY.handlesView());
     }
 
     private static void validateMaterialForms(OreVein vein) {
@@ -85,26 +82,10 @@ public final class OreVeins {
         }
     }
 
-    private static Snapshot snapshot() {
-        Snapshot snapshot = frozenSnapshot;
-        return snapshot != null ? snapshot : buildSnapshot(REGISTRY.handlesView());
+    private static OreVeinSnapshot snapshot() {
+        OreVeinSnapshot snapshot = frozenSnapshot;
+        return snapshot != null ? snapshot : OreVeinSnapshot.of(REGISTRY.handlesView());
     }
-
-    private static Snapshot buildSnapshot(List<OreVein> veins) {
-        var environments = new LinkedHashSet<OreEnvironment>();
-        var byMaterial = new LinkedHashMap<Material, LinkedHashSet<OreVein>>();
-        for (OreVein vein : veins) {
-            environments.add(vein.environment());
-            for (OreVeinEntry entry : vein.entries()) {
-                byMaterial.computeIfAbsent(entry.material(), ignored -> new LinkedHashSet<>()).add(vein);
-            }
-        }
-        var byMaterialCopy = new LinkedHashMap<Material, List<OreVein>>();
-        byMaterial.forEach((material, list) -> byMaterialCopy.put(material, List.copyOf(list)));
-        return new Snapshot(List.copyOf(environments), Collections.unmodifiableMap(byMaterialCopy));
-    }
-
-    private record Snapshot(List<OreEnvironment> environments, Map<Material, List<OreVein>> byMaterial) {}
 
     /**
      * Vein declaration builder. Exactly one of {@link #feature} or {@link #grid} must be chosen;

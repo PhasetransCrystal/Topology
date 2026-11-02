@@ -185,7 +185,7 @@ gantt
 | 管道 | `PipeDistributionStrategy.initialPortConfig`、`budget`、`distribute`、`contributeConfigUi`、`configCodec` | 分别在端口初始化／切换／恢复、传输预算计算、批次分配、配置界面构建、配置编解码时使用。分配策略表冻结只关闭声明。 |
 | 矿脉 | `OreVeinMode.Strategy.collectGrid`、`OreVeinShape.Strategy.contains`、`OreAirExposurePolicy.Strategy.discardExposed`、`OreConflictPolicy.Strategy.canReplace` | 世界矿脉规划与放置时。 |
 | 矿脉展示 | `OreVeinDisplay.Strategy.buildPreview`、`OreAirExposurePolicy.Strategy.describe` | 客户端矿脉预览／说明构建时。 |
-| 矿脉 feature 桥 | `OreVeinMode.Strategy.collectFeature` | 内容插件的 `VanillaOreFeatureBridge.featureVeins` 在 configured feature、placed feature、biome modifier 的 datagen bootstrap 内调用。`registerOreDatagen` 仅安装这些 bootstrap 回调。 |
+| 矿脉 feature 桥 | `OreVeinMode.Strategy.collectFeature` | 框架 `VanillaOreFeatureBridge.featureVeins` 在 configured feature、placed feature、biome modifier 的 datagen bootstrap 内调用；`ore.featureDatagen()` 仅安装这些 bootstrap 回调。 |
 | 配方 UI | `SlottedRecipeCapability.createPreviewInputSlotWidget`、`createPreviewOutputSlotWidget`、`createLiveSlotWidget`、`previewInputSlotAssignment` | 构建预览／实况 UI 及分配预览内容时；与启动时的 `countPreviewSlots` 区分。 |
 | 配方执行 | `RecipeCapability` 的匹配、传输及 `DirectTickIoBinding` 回调 | 配方搜索、开始执行和工作 tick 时；注册能力本身不执行配方。 |
 | 资源生成 | 向 RegistryLib 提交的模型、标签、配方等 provider 回调 | datagen 对应 provider 运行时；声明 provider 的 hook 可以已经结束。 |
@@ -209,7 +209,7 @@ gantt
 | 12 | `registerOreFoundation(ore)`             | 矿石四表（shape / mode / air exposure / conflict）                                       | 尚未有矿脉                                                     |
 | 13 | `registerOreDisplays(ore)`               | `OreVeinDisplays`                                                                        | 已冻结的模式表；每种模式必须有对应显示                         |
 | 14 | `registerOreVeins(ore)`                  | `OreVeins`                                                                               | 已冻结的矿石基础表                                             |
-| 15 | `registerOreDatagen(ore)`                | —                                                                                        | 全部矿脉                                                       |
+| 15 | `registerOreDatagen(ore)`                | —                                                                                        | 全部矿脉；通常调用 `ore.featureDatagen()` 安装通用 feature 桥 |
 | 16 | `registerRecipes(recipe)`                | `ProductionLines`                                                                        | 全部领域定义及已排队的 RegistryLib Entry；游戏对象仍未绑定      |
 | 17 | `registerLang(lang)`                     | `LangRegistry`                                                                           | 全部                                                           |
 | 18 | `registerRuntime(runtime)`               | 此时不冻结；load complete 才冻结共享运行时表                                               | 已绑定的游戏对象；common setup deferred work                  |

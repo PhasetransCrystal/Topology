@@ -25,20 +25,21 @@ ore.shape("oval", (dx, dy, dz, radius) ->
 ```java
 public interface Strategy {
     void validate(OrePlacement placement);      // 拒绝不属于本通道的放置配置
-    void collectGrid(OreVein vein, OreVeinCollector collector);     // 网格通道：写入每 chunk 确定性放置计划
-    void collectFeature(OreVein vein, OreVeinCollector collector);  // feature 通道：交给原版 feature 数据生成桥
+    default void collectGrid(OreVein vein, OreVeinCollector collector) {}     // 网格通道：写入每 chunk 确定性放置计划
+    default void collectFeature(OreVein vein, OreVeinCollector collector) {}  // feature 通道：交给原版 feature 数据生成桥
 }
 ```
 
 `OrePlacement` 是 sealed 接口（`Feature` / `Grid` 两种）——validate 用 `instanceof` 区分。
-模式必须与显示成对：`registerOreDisplays` 里 `ore.display(modeId, strategy)`（引擎校验每种模式都有显示）。
+模式必须与显示成对：`registerOreDisplays` 里 `ore.display(modeId, strategy)`。引擎双向校验：
+每个模式必须有显示，每个显示也必须指向已注册模式。
 
 ```java
 ore.mode("stone_replace", new OreVeinMode.Strategy() {
     @Override public void validate(OrePlacement placement) {
         if (!(placement instanceof OrePlacement.Feature)) throw new IllegalArgumentException(...);
     }
-    @Override public void collectGrid(OreVein vein, OreVeinCollector collector) { /* 不参与 */ }
+    // 只实现本通道需要的方法；另一个通道使用默认 no-op。
     @Override public void collectFeature(OreVein vein, OreVeinCollector collector) { collector.add(vein); }
 });
 ```

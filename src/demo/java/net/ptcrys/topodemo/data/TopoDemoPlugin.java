@@ -3,7 +3,6 @@ package net.ptcrys.topodemo.data;
 import net.ptcrys.topo.api.api.builtin.*;
 import net.ptcrys.topo.api.api.plugin.TopoPlugin;
 import net.ptcrys.topodemo.TopoDemo;
-import net.ptcrys.topodemo.api.ore.common.VanillaOreFeatureBridge;
 import net.ptcrys.topodemo.data.equipment.BuiltinEquipment;
 import net.ptcrys.topodemo.data.equipment.BuiltinToolPanels;
 import net.ptcrys.topodemo.data.equipment.BuiltinTools;
@@ -84,7 +83,7 @@ public final class TopoDemoPlugin extends TopoPlugin {
 
     @Override
     public void registerOreDatagen(OreDomainRegistration ore) {
-        VanillaOreFeatureBridge.registerDatagen(ore.registry());
+        ore.featureDatagen();
     }
 
     @Override

@@ -206,6 +206,7 @@ OreVeins.view().forEach(v -> System.out.println(v.id()));
 | `OreDomainRegistration.airExposure(path, strategy)` | 注册空气暴露策略                                       |
 | `OreDomainRegistration.conflict(path, strategy)`    | 注册冲突策略                                           |
 | `OreDomainRegistration.vein(path)`                  | 开始矿脉注册                                           |
+| `OreDomainRegistration.featureDatagen()`            | 安装框架 feature 通道 datagen 桥（`registerOreDatagen`） |
 | `OreVeins.byMaterial(Material)`                     | 按材料反向查询                                         |
 | `OreVeins.view()`                                   | 所有已注册矿脉                                         |
 | `OreVein.entries()`                                 | 矿脉的材料+权重组成                                    |

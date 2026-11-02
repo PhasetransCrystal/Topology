@@ -41,7 +41,7 @@ Demo 将声明放在静态字段中，并从所属钩子显式调用对应类的
 | `registerEquipmentKinds` | 声明装备策略，由框架按材料属性生成物品 | `BuiltinEquipment` |
 | `registerMachineFoundation` / `registerMachines` | 先声明机器基础类型，再组合组件、端口、渲染和 UI | `BuiltinMachineTypes`、`BuiltinMachines` |
 | `registerMachineFollowUps` | 声明管道、分发策略及配套工具 | `BuiltinPipes`、`BuiltinTools` |
-| 矿脉相关钩子 | 先声明生成类型与显示，再创建矿脉、安装 datagen 桥 | `BuiltinOreTypes`、`BuiltinVeinDisplays`、`BuiltinVeins`、`VanillaOreFeatureBridge` |
+| 矿脉相关钩子 | 先声明生成类型与显示，再创建矿脉；`registerOreDatagen` 调用 `ore.featureDatagen()` 安装框架 feature 桥 | `BuiltinOreTypes`、`BuiltinVeinDisplays`、`BuiltinVeins` |
 | `registerRecipes` | 使用所有内容领域的句柄组装具体配方 | `BuiltinRecipes` |
 | `registerLang` / `registerRuntime` | 分别声明独立文本、绑定真实物品的面板和交互 | `ContentLang`、`BuiltinToolPanels` |
 

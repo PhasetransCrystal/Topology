@@ -223,6 +223,25 @@ class TopoPluginEngineIntegrationTest {
     }
 
     @Test
+    void equipmentItemsArePublishedOnceAndIndexedByMaterialAndKind() {
+        var material = MaterialRegistry.require(a.material().id("lifecycle_material"));
+        var equipment = EquipmentRegistry.require(a.equipment().id("lifecycle_tool"));
+        var byMaterial = EquipmentRegistry.itemsFor(material);
+        var byEquipment = EquipmentRegistry.itemsFor(equipment);
+        assertEquals(1, byMaterial.size());
+        assertEquals(1, byEquipment.size());
+        var record = byMaterial.getFirst();
+        assertSame(record, byEquipment.getFirst());
+        assertSame(equipment, record.equipment());
+        assertSame(material, record.material());
+        assertSame(generatedEquipment, record.entry());
+        assertSame(record, EquipmentRegistry.itemFor(generatedEquipment.identifier()).orElseThrow());
+        assertTrue(EquipmentRegistry.isItemsPublished());
+        assertThrows(UnsupportedOperationException.class, () -> EquipmentRegistry.itemRecords().clear());
+        assertThrows(IllegalStateException.class, () -> EquipmentRegistry.publishItems(List.of()));
+    }
+
+    @Test
     void hostRunsAllPluginsAndLegacyCommonSetupBeforeFreezingSharedRegistries() {
         TopoPluginEngine.host().bootstrapContent();
         assertTrue(TopoPlugins.view().contains(OfficialTopoAPIPlugin.INSTANCE));

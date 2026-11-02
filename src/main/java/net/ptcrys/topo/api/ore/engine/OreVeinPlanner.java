@@ -179,12 +179,14 @@ public final class OreVeinPlanner {
         if (host.isEmpty()) {
             return Optional.empty();
         }
+        // Discard exposed candidates before weighted entry selection and block resolution: both
+        // are deterministic but unnecessary for a block that will not be placed.
+        if (isExposedToAir(pos, existing) && shouldDiscardExposed(vein, placement, pos)) {
+            return Optional.empty();
+        }
         OreVeinEntry entry = entryTables.get(vein).select(entrySeed(placement, vein, pos));
         Optional<Block> block = resolver.block(entry.material(), host.get().generatedForm());
         if (block.isEmpty()) {
-            return Optional.empty();
-        }
-        if (isExposedToAir(pos, existing) && shouldDiscardExposed(vein, placement, pos)) {
             return Optional.empty();
         }
         return Optional.of(new PlannedOreBlock(
@@ -277,25 +279,25 @@ public final class OreVeinPlanner {
 
     private record GridVein(OreVein vein, OrePlacement.Grid grid) {}
 
-    private record WeightedEntries(OreVeinEntry[] entries, int[] cumulative, int total) {
+    private record WeightedEntries(OreVeinEntry[] entries, long[] cumulative, long total) {
 
         static WeightedEntries compile(OreVein vein) {
             OreVeinEntry[] entries = vein.entries().toArray(OreVeinEntry[]::new);
-            int[] cumulative = new int[entries.length];
-            int total = 0;
+            long[] cumulative = new long[entries.length];
+            long total = 0L;
             for (int i = 0; i < entries.length; i++) {
                 total += entries[i].weight();
                 cumulative[i] = total;
             }
-            if (total <= 0) {
+            if (total <= 0L) {
                 throw new IllegalArgumentException("ore vein has no positive entry weight: " + vein.id());
             }
             return new WeightedEntries(entries, cumulative, total);
         }
 
         OreVeinEntry select(long mixed) {
-            int selected = OreGridMath.randomInt(mixed, 31, 0, total - 1);
-            int index = Arrays.binarySearch(cumulative, selected + 1);
+            long selected = OreGridMath.randomLong(mixed, 31, total);
+            int index = Arrays.binarySearch(cumulative, selected + 1L);
             if (index < 0) {
                 index = -index - 1;
             }

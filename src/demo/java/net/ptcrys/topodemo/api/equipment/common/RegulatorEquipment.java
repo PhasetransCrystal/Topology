@@ -1,8 +1,8 @@
 package net.ptcrys.topodemo.api.equipment.common;
 
 import net.ptcrys.registrylib.util.TextureRef;
+import net.ptcrys.registrylib.util.entry.ItemEntry;
 import net.ptcrys.topo.api.equipment.Equipment;
-import net.ptcrys.topo.api.equipment.EquipmentRegistry;
 import net.ptcrys.topo.api.equipment.EquipmentStrategy;
 import net.ptcrys.topo.api.lang.DisplayNames;
 import net.ptcrys.topo.api.lang.RegistryDisplayLang;
@@ -55,7 +55,7 @@ public final class RegulatorEquipment implements EquipmentStrategy {
     }
 
     @Override
-    public void register(MaterialContentContext context, Equipment self) {
+    public ItemEntry<Item> register(MaterialContentContext context, Equipment self) {
         String path = registryPath.formatted(context.material().id().getPath());
         var builder = context.core().<Item>item(path, RegulatorItem::new)
                 .properties(properties -> properties.stacksTo(1))
@@ -63,7 +63,7 @@ public final class RegulatorEquipment implements EquipmentStrategy {
                 .addTag(Tags.Items.TOOLS_WRENCH)
                 .addTab(creativeTab.get());
         RegistryDisplayLang.applyItem(builder, context.core(), path, displayName.resolve(context.material()));
-        EquipmentRegistry.recordItem(self, context.material(), builder.register());
+        return builder.register();
     }
 
     @Override

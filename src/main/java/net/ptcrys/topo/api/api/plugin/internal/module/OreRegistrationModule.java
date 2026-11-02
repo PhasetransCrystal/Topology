@@ -8,6 +8,7 @@ import net.ptcrys.topo.api.api.plugin.internal.RegistrationModule;
 import net.ptcrys.topo.api.api.plugin.internal.RegistrationPlan;
 import net.ptcrys.topo.api.api.plugin.internal.RegistrationPoint;
 import net.ptcrys.topo.api.ore.OreVeins;
+import net.ptcrys.topo.api.ore.display.OreVeinDisplay;
 import net.ptcrys.topo.api.ore.display.OreVeinDisplays;
 import net.ptcrys.topo.api.ore.mode.OreVeinMode;
 import net.ptcrys.topo.api.ore.mode.OreVeinModes;
@@ -36,7 +37,12 @@ public final class OreRegistrationModule implements RegistrationModule {
         });
         plan.point(Phase.CONTENT, OreRegistrationModule.DISPLAYS, List.of(OreRegistrationModule.FOUNDATION.id()), context, () -> {
             OreVeinDisplays.freeze();
-            for (OreVeinMode mode : OreVeinModes.view()) OreVeinDisplays.require(mode.id());
+            for (OreVeinMode mode : OreVeinModes.view()) {
+                OreVeinDisplays.require(mode.id());
+            }
+            for (OreVeinDisplay display : OreVeinDisplays.view()) {
+                OreVeinModes.require(display.id());
+            }
         });
         plan.point(Phase.CONTENT, OreRegistrationModule.VEINS, List.of(OreRegistrationModule.DISPLAYS.id()), context, OreVeins::freeze);
         plan.point(Phase.CONTENT, OreRegistrationModule.DATAGEN, List.of(OreRegistrationModule.VEINS.id()), context, () -> {});
