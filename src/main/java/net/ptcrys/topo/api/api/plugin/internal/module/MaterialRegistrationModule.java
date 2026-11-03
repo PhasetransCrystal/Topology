@@ -24,15 +24,15 @@ import java.util.List;
 /** Owns material registration steps and their freeze fences. */
 public final class MaterialRegistrationModule implements RegistrationModule {
 
-    static final RegistrationPoint<MaterialPlugin, MaterialDomainRegistration> FOUNDATION = RegistrationPoint.of(IdHelper.id("material/foundation"), MaterialPlugin.class, MaterialDomainRegistration.DOMAIN, MaterialPlugin::registerMaterialFoundation);
-    static final RegistrationPoint<MaterialPlugin, MaterialDomainRegistration> MATERIALS = RegistrationPoint.of(IdHelper.id("material/materials"), MaterialPlugin.class, MaterialDomainRegistration.DOMAIN, MaterialPlugin::registerMaterials);
-    static final Identifier MATERIALS_CLOSED = IdHelper.id("material/materials_closed");
-    static final RegistrationPoint<MaterialPlugin, MaterialContributionRegistration> CONTRIBUTIONS = RegistrationPoint.of(IdHelper.id("material/contributions"), MaterialPlugin.class, MaterialContributionRegistration.DOMAIN, MaterialPlugin::registerMaterialContributions);
-    static final RegistrationPoint<MaterialPlugin, MaterialDomainRegistration> CREATIVE_TABS = RegistrationPoint.of(IdHelper.id("material/creative_tabs"), MaterialPlugin.class, MaterialDomainRegistration.DOMAIN, MaterialPlugin::registerMaterialCreativeTabs);
-    static final RegistrationPoint<MaterialPlugin, MaterialDomainRegistration> FOLLOW_UPS = RegistrationPoint.of(IdHelper.id("material/follow_ups"), MaterialPlugin.class, MaterialDomainRegistration.DOMAIN, MaterialPlugin::registerMaterialFollowUps);
+    static final RegistrationPoint<MaterialPlugin, MaterialDomainRegistration> FOUNDATION = RegistrationPoint.of(IdHelper.topo("material/foundation"), MaterialPlugin.class, MaterialDomainRegistration.DOMAIN, MaterialPlugin::registerMaterialFoundation);
+    static final RegistrationPoint<MaterialPlugin, MaterialDomainRegistration> MATERIALS = RegistrationPoint.of(IdHelper.topo("material/materials"), MaterialPlugin.class, MaterialDomainRegistration.DOMAIN, MaterialPlugin::registerMaterials);
+    static final Identifier MATERIALS_CLOSED = IdHelper.topo("material/materials_closed");
+    static final RegistrationPoint<MaterialPlugin, MaterialContributionRegistration> CONTRIBUTIONS = RegistrationPoint.of(IdHelper.topo("material/contributions"), MaterialPlugin.class, MaterialContributionRegistration.DOMAIN, MaterialPlugin::registerMaterialContributions);
+    static final RegistrationPoint<MaterialPlugin, MaterialDomainRegistration> CREATIVE_TABS = RegistrationPoint.of(IdHelper.topo("material/creative_tabs"), MaterialPlugin.class, MaterialDomainRegistration.DOMAIN, MaterialPlugin::registerMaterialCreativeTabs);
+    static final RegistrationPoint<MaterialPlugin, MaterialDomainRegistration> FOLLOW_UPS = RegistrationPoint.of(IdHelper.topo("material/follow_ups"), MaterialPlugin.class, MaterialDomainRegistration.DOMAIN, MaterialPlugin::registerMaterialFollowUps);
 
-    static final Identifier CONTENT = IdHelper.id("material/generate");
-    static final Identifier LOOKUP = IdHelper.id("material/lookup");
+    static final Identifier CONTENT = IdHelper.topo("material/generate");
+    static final Identifier LOOKUP = IdHelper.topo("material/lookup");
 
     @Override
     public void define(RegistrationPlan.Builder plan, RegistrationContext context) {

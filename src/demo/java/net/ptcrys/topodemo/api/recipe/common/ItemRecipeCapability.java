@@ -22,6 +22,7 @@ import com.mojang.serialization.DataResult;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
+import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -53,6 +54,21 @@ public final class ItemRecipeCapability extends SlottedRecipeCapability<TopoItem
 
     public RecipeOutputUse<TopoItemOutput> out(Supplier<? extends ItemLike> item, long amount) {
         return outputUse(TopoItemOutput.of(item, amount));
+    }
+
+    @Override
+    public Set<?> importConflictKeys(TopoItemInput.Resource content) {
+        return TopoItemInput.importConflictKeys(content);
+    }
+
+    @Override
+    public Object inputIdentity(TopoItemInput.Resource content) {
+        return content.contentKey();
+    }
+
+    @Override
+    public Object outputIdentity(TopoItemOutput content) {
+        return content.contentKey();
     }
 
     @Override

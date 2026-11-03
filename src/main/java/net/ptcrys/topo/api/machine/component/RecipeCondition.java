@@ -4,7 +4,7 @@ package net.ptcrys.topo.api.machine.component;
 @FunctionalInterface
 public interface RecipeCondition {
 
-    ServiceKey<RecipeCondition, RecipeLogic> KEY = ServiceKey.oi("recipe_condition", RecipeCondition.class, RecipeLogic.class);
+    ServiceKey<RecipeCondition, RecipeLogic> KEY = ServiceKey.topo("recipe_condition", RecipeCondition.class, RecipeLogic.class);
 
     boolean allowsRecipeSearch();
 }

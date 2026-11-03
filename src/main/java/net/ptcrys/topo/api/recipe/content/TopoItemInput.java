@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Supplier;
 
 /**
@@ -125,6 +126,23 @@ public sealed interface TopoItemInput
     static TopoItemInput of(ItemLike item, long count) {
         validateCount(count, "TopoItemInput.Resource");
         return new Resource(new ItemStackTemplate(Objects.requireNonNull(item, "item").asItem(), 1), count);
+    }
+
+    /** Capability-neutral item identities for recipe import/replacement conflict detection. */
+    static Set<Object> importConflictKeys(TopoItemInput input) {
+        Objects.requireNonNull(input, "recipe item input");
+        return switch (input) {
+            case Resource resource -> Set.of(resource.template().item().value());
+            case Unconsumed unconsumed -> Set.of(unconsumed.template().item().value());
+            case Tag tag -> Set.of(tag.tag());
+            case AnyOf anyOf -> {
+                Set<Object> keys = new LinkedHashSet<>();
+                for (ItemStackTemplate template : anyOf.templates()) {
+                    keys.add(template.item().value());
+                }
+                yield Set.copyOf(keys);
+            }
+        };
     }
 
     static TopoItemInput of(Supplier<? extends ItemLike> item, long count) {

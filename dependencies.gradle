@@ -13,6 +13,7 @@ dependencies {
 
     //https://maven.ptcrys.net/release/net/ptcrys/RegistryLib
     implementation("net.ptcrys:RegistryLib:26.1.2-${registry_lib_version}")
+    implementation("dev.toma.configuration:configuration-neoforge:${configuration_version}")
 
     //https://maven.blamejared.com/mezz/jei/jei-26.1.2-neoforge
     compileOnly "mezz.jei:jei-${minecraft_version}-common-api:${jei_version}"

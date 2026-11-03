@@ -79,7 +79,6 @@ public final class MachineDataScope {
     private Phase phase = Phase.BOOTSTRAP;
     private boolean clientBaselineReceived;
     private boolean schemaSealed;
-    private boolean endOfTickSyncRequested;
     /** Depth: while &gt; 0, handler mutations must not raise business dirty / recipe invalidation. */
     private int suppressMutationSideEffectsDepth;
 
@@ -181,18 +180,6 @@ public final class MachineDataScope {
     }
 
     /**
-     * @deprecated Persistence and S2C queues now publish independently at mutation time. This
-     *             compatibility hook only reasserts any outstanding requests.
-     */
-    @Deprecated(forRemoval = false)
-    public void lifecycleFlushEndOfTick() {
-        MachineDataPersistCoordinator.flushDomainNow(this);
-        if (endOfTickSyncRequested) {
-            MachineDataSyncBatcher.markClientDirty(this);
-        }
-    }
-
-    /**
      * Refresh computed fields. Server-live only; no-op otherwise. {@code Long.MIN_VALUE} bypasses
      * per-tick dedupe (used after enter-world).
      */
@@ -264,18 +251,6 @@ public final class MachineDataScope {
         MachineDataPersistCoordinator.detach(this);
     }
 
-    /**
-     * @deprecated Use the automatic persist coordinator. Retained for integrations that invoke the
-     *             previous save backstop explicitly.
-     */
-    @Deprecated(forRemoval = false)
-    public void lifecyclePersistResidualForSave() {
-        Level level = machine.getLevel();
-        if (level != null) {
-            MachineDataPersistCoordinator.flushResidualPersistForSave(level);
-        }
-    }
-
     /** Full S2C snapshot bytes for update-tag / first track. Does not clear delta dirty bits. */
     public byte[] lifecycleWriteUpdateTag(RegistryAccess registryAccess) {
         return encodeSync(
@@ -285,21 +260,16 @@ public final class MachineDataScope {
     }
 
     public byte[] lifecycleDrainClientDelta(RegistryAccess registryAccess, ConnectionType connectionType) {
-        try {
-            return encodeSync(
-                    registryAccess,
-                    connectionType,
-                    MachineDataSyncCodec.WriteMode.DRAIN_DIRTY_DELTA);
-        } finally {
-            endOfTickSyncRequested = false;
-        }
+        return encodeSync(
+                registryAccess,
+                connectionType,
+                MachineDataSyncCodec.WriteMode.DRAIN_DIRTY_DELTA);
     }
 
     public void lifecycleDropClientDelta() {
         for (DataField field : syncToClientFields) {
             field.clearSyncDirty();
         }
-        endOfTickSyncRequested = false;
     }
 
     // =============================================================================================
@@ -385,7 +355,6 @@ public final class MachineDataScope {
     }
 
     public void requestEndOfTickSync() {
-        endOfTickSyncRequested = true;
         MachineDataSyncBatcher.markClientDirty(this);
     }
 
@@ -511,7 +480,6 @@ public final class MachineDataScope {
         acknowledgedPersistGeneration = 0L;
         markedPersistGeneration = 0L;
         persistAwaitingSnapshot = false;
-        endOfTickSyncRequested = false;
     }
 
     private void recordPersistMutation() {

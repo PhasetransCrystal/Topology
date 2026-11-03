@@ -66,20 +66,6 @@ public abstract class ResourcePort<S, R extends Resource> extends MachineCompone
         this.poolScoped = metadata.recipePoolIsolatable() && (role.acceptsInput() || role.acceptsOutput());
     }
 
-    /**
-     * @deprecated Persistence cadence is no longer a field policy. The parameter is retained for
-     *             source compatibility; persisted mutations enter one coalesced machine snapshot epoch.
-     */
-    @Deprecated(forRemoval = false)
-    protected ResourcePort(
-                           ComponentContext<? extends ResourcePort<S, R>> context,
-                           MachineResourceType<R> resourceType,
-                           StacksResourceHandler<S, R> handler,
-                           ResourcePortMetadata metadata,
-                           int contentsPersistIntervalTicks) {
-        this(context, resourceType, handler, metadata);
-    }
-
     @Override
     public RecipeSearchPoolId recipeSearchPoolId() {
         if (!poolScoped) {

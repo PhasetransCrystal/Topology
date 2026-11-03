@@ -40,7 +40,8 @@ public abstract class RecipeCapability<I, O> {
     protected final RecipeOutputUse<O> outputUse(O content);
 
     // 可选覆盖：maxParallelByInputs / matchOutputAfterInputs / supportsDirectTickIo /
-    // bindDirectTickIo / indexKeys / inputAmount / extractMachineKeys / contributesIndexKeys ...
+    // bindDirectTickIo / indexKeys / inputAmount / extractMachineKeys / contributesIndexKeys /
+    // importConflictKeys / inputIdentity / outputIdentity ...
 }
 ```
 
@@ -57,7 +58,8 @@ public abstract @NonNull UIElement createLiveSlotWidget(ResourcePort<?, R> stora
 ```
 
 :::caution
-capability id 与资源类型 id **1:1**——`RecipeCapabilities.freeze()` 校验槽位型能力不得与另一能力共享资源类型。
+槽位型 capability 与资源类型 **1:1**——`RecipeCapabilities.freeze()` 校验槽位型能力不得与另一能力共享资源类型；
+capability id 是独立的配方 I/O 标识，不要求等于资源类型 id。
 :::
 
 ## 生产级结构：资源集成（类型 + 能力 + 名称 + 图标同点声明）
@@ -142,6 +144,7 @@ type.recipe("spell")
 | `handleInputChecked` / `handleOutputChecked`                                    | 事务性执行          |
 | `scaleInput` / `scaleOutput`（+ ForParallel）                                   | 配方缩放            |
 | `hasAnyContent(machine)`                                                        | 存量查询            |
+| `importConflictKeys(content)` / `inputIdentity` / `outputIdentity`             | 导入冲突与配方去重  |
 | `inputUse(content)` / `outputUse(content)`                                      | 铸造权（protected） |
 | `recipe.capability(cap)`                                                        | 领域注册（钩子 1）  |
 | `SlottedRecipeCapability.countPreviewSlots(port)`                               | 槽位预览            |

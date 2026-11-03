@@ -5,8 +5,6 @@ import net.ptcrys.topo.api.machine.data.network.MachineDataBatchS2CPayload;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.level.Level;
-import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
@@ -36,7 +34,7 @@ public final class MachineDataSyncBatcher {
 
     private MachineDataSyncBatcher() {}
 
-    public static void register(IEventBus ignoredModEventBus) {
+    public static void register() {
         MachineDataPersistCoordinator.register();
         NeoForge.EVENT_BUS.register(MachineDataSyncBatcher.class);
     }
@@ -45,20 +43,6 @@ public final class MachineDataSyncBatcher {
         if (domain.serverLevel() != null) {
             CLIENT_DIRTY_DOMAINS.add(domain);
         }
-    }
-
-    /**
-     * @deprecated Persistence is coordinated independently from network batching. Kept as a
-     *             source/binary compatibility bridge for integrations compiled against the old API.
-     */
-    @Deprecated(forRemoval = false)
-    public static void markPersistDirty(MachineDataScope domain) {
-        MachineDataPersistCoordinator.flushDomainNow(domain);
-    }
-
-    /** Compatibility/test hook: drain the independent persistence queue for this level. */
-    public static void flushResidualPersistForSave(Level level) {
-        MachineDataPersistCoordinator.flushResidualPersistForSave(level);
     }
 
     @SubscribeEvent

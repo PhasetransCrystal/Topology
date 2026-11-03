@@ -39,7 +39,7 @@ public record ConnectedTextureMachineModel(
                                            Identifier family)
         implements CustomUnbakedBlockStateModel {
 
-    public static final Identifier LOADER = IdHelper.id("ctm_machine");
+    public static final Identifier LOADER = IdHelper.topo("ctm_machine");
     private static final ModelDebugName DEBUG_NAME = () -> "ConnectedTextureMachineModel";
 
     public static final MapCodec<ConnectedTextureMachineModel> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(

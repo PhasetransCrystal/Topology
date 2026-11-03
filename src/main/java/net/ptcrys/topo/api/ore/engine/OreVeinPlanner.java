@@ -36,7 +36,7 @@ public final class OreVeinPlanner {
     private static final long MAX_BLOCK_SCANS_PER_CHUNK = 262_144L;
     private static final long MAX_CELL_CANDIDATES_PER_CHUNK = 65_536L;
     private static final long EXPOSURE_SALT = 0x6A09E667F3BCC909L;
-    private static final Identifier VEIN_SELECT_SALT = IdHelper.id("vein_select");
+    private static final Identifier VEIN_SELECT_SALT = IdHelper.topo("vein_select");
 
     private final Map<ResourceKey<Level>, List<GridVein>> gridByDimension;
     private final Map<OreVein, WeightedEntries> entryTables;

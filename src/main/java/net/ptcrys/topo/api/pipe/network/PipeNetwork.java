@@ -256,7 +256,7 @@ public final class PipeNetwork<R extends Resource> {
      * Rebuild the extract/destination port lists contributed by one node in place (its LINK set
      * is unchanged). Bumps {@link #revision} so extractor path tables resync lazily.
      */
-    public void refreshPortsAt(PipeNetworksSavedData data, long pos) {
+    void refreshPortsAt(PipeNetworksSavedData data, long pos) {
         int nodeIndex = indexByPos.get(pos);
         if (nodeIndex < 0) {
             return;
@@ -967,13 +967,13 @@ public final class PipeNetwork<R extends Resource> {
         final PipeDefinition definition;
         final BlockCapabilityCache<ResourceHandler<R>, @Nullable Direction> cache;
         int cursor;
-        /** Resolved strategy config, cached against the runtime's config generation counter. */
+        /** Resolved strategy config, cached against the owning node's port revision. */
         @Nullable
         PipePortStrategyConfig cachedConfig;
-        /** Compiled white/black filter (null = pass-all), cached on the same generation. */
+        /** Compiled white/black filter (null = pass-all), cached on the same revision. */
         @Nullable
         Predicate<R> cachedFilter;
-        long cachedConfigGeneration = -1;
+        long cachedConfigRevision = -1;
         int pathRevision = -1;
         int @Nullable [] parent;
         byte @Nullable [] parentDir;

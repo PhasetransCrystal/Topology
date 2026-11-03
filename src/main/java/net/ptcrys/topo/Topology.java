@@ -13,11 +13,14 @@ import net.ptcrys.topo.api.pipe.network.PipeNetworkEngine;
 import net.ptcrys.topo.api.recipe.search.TopoRecipeSearchEvents;
 import net.ptcrys.topo.client.debug.JeiLookupProbe;
 import net.ptcrys.topo.client.debug.TooltipProbe;
+import net.ptcrys.topo.config.TopoConfiguration;
 
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.registries.RegisterEvent;
+
+import dev.toma.configuration.Configuration;
 
 /**
  * Host mod entry. Plugins are registered explicitly ({@link TopoPlugins#register}); content bootstrap
@@ -30,6 +33,7 @@ public class Topology {
 
     public static final String MODID = "topo";
     public static final RegistryCore REGISTRY = RegistryCore.create(MODID);
+    public static final TopoConfiguration config = Configuration.registerSimpleYmlConfig(TopoConfiguration.class);
 
     public Topology(IEventBus modEventBus) {
         // Same path as third-party: explicit register in @Mod constructor.
@@ -40,7 +44,7 @@ public class Topology {
 
         CtmClientInit.register(modEventBus);
         MachineDataNetworking.register(modEventBus);
-        MachineDataSyncBatcher.register(modEventBus);
+        MachineDataSyncBatcher.register();
         TopoAsyncExecutors.register();
         TopoRecipeSearchEvents.register(modEventBus);
         MultiblockChangeWatcher.register();

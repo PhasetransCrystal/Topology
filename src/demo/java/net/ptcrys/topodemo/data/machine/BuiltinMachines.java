@@ -42,11 +42,13 @@ public final class BuiltinMachines {
             .creativeTab(BuiltinCreativeTabs.MACHINES.getKey()).render(BuiltinMachineTypes.CUBE.cube("block/dropper_front"))
             .component(ItemPort.mount(ItemPort.OUTPUT, 3, PortAccess.output()).role(BuiltinMachineTypes.OUTPUT)).build();
     // Three-wide, two-high, one-deep. @ is the controller; input/output buses supply recipe IO.
-    public static final Blueprint ALLOY_BLUEPRINT = Blueprint.of().aisle("I@O").aisle("CCC")
+    public static final Blueprint ALLOY_BLUEPRINT = Blueprint.of()
+            .aisle("CCC", "I@O")
+            .aisle("CCC", "CCC")
             .where('@', CellPredicates.controller())
             .where('I', CellPredicates.role(BuiltinMachineTypes.INPUT))
             .where('O', CellPredicates.role(BuiltinMachineTypes.OUTPUT))
-            .where('C', CellPredicates.block(Blocks.IRON_BLOCK)).build();
+            .where('C', CellPredicates.block(Blocks.IRON_BLOCK, Blocks.COPPER_BLOCK)).build();
     public static final MachineDefinition ALLOYER = MACHINE.machine("alloyer").displayName("Alloy Mixer", "合金混合器")
             .creativeTab(BuiltinCreativeTabs.MACHINES.getKey()).render(BuiltinMachineTypes.CUBE.cube("block/blast_furnace_front"))
             .block(FormedMachineBlock::new)

@@ -69,7 +69,7 @@ public final class PipeNetworksSavedData extends SavedData {
 
     public static final Codec<PipeNetworksSavedData> CODEC = ENTRIES_CODEC.fieldOf("nodes").codec().xmap(PipeNetworksSavedData::new, PipeNetworksSavedData::toEntries);
 
-    public static final SavedDataType<PipeNetworksSavedData> TYPE = new SavedDataType<>(IdHelper.id("pipe_networks"), PipeNetworksSavedData::new, CODEC);
+    public static final SavedDataType<PipeNetworksSavedData> TYPE = new SavedDataType<>(IdHelper.topo("pipe_networks"), PipeNetworksSavedData::new, CODEC);
 
     private final Long2ObjectOpenHashMap<PipeNodeRecord> nodes = new Long2ObjectOpenHashMap<>();
     /** Runtime index: chunk long -> node positions inside it. Rebuilt on load, maintained on edit. */
@@ -84,22 +84,15 @@ public final class PipeNetworksSavedData extends SavedData {
                 LOGGER.warn("Dropping pipe node at {}: unknown pipe definition '{}'", entry.pos(), entry.definitionId());
                 continue;
             }
-            EnumMap<Direction, PipePortStrategyConfig> configs = null;
-            EnumMap<Direction, PipePortFilter> filters = null;
+            EnumMap<Direction, PipeNodeRecord.ExtractPort> ports = null;
             for (PortEntry port : entry.ports()) {
-                if (configs == null) {
-                    configs = new EnumMap<>(Direction.class);
+                if (ports == null) {
+                    ports = new EnumMap<>(Direction.class);
                 }
-                configs.put(port.side(), port.config());
-                if (!port.filter().isEmpty()) {
-                    if (filters == null) {
-                        filters = new EnumMap<>(Direction.class);
-                    }
-                    filters.put(port.side(), port.filter());
-                }
+                ports.put(port.side(), new PipeNodeRecord.ExtractPort(port.config(), port.filter()));
             }
             long key = entry.pos().asLong();
-            nodes.put(key, new PipeNodeRecord(definition, entry.intent(), entry.roles(), configs, filters));
+            nodes.put(key, new PipeNodeRecord(definition, entry.intent(), entry.roles(), ports));
             chunkIndexAdd(key);
         }
     }
@@ -109,13 +102,12 @@ public final class PipeNetworksSavedData extends SavedData {
         for (var iterator = nodes.long2ObjectEntrySet().fastIterator(); iterator.hasNext();) {
             var entry = iterator.next();
             PipeNodeRecord record = entry.getValue();
+            Map<Direction, PipeNodeRecord.ExtractPort> storedPorts = record.extractPortsView();
             List<PortEntry> ports = List.of();
-            Map<Direction, PipePortStrategyConfig> configs = record.extractConfigsView();
-            if (!configs.isEmpty()) {
-                ports = new ArrayList<>(configs.size());
-                for (Map.Entry<Direction, PipePortStrategyConfig> config : configs.entrySet()) {
-                    ports.add(new PortEntry(
-                            config.getKey(), config.getValue(), record.extractFilter(config.getKey())));
+            if (!storedPorts.isEmpty()) {
+                ports = new ArrayList<>(storedPorts.size());
+                for (Map.Entry<Direction, PipeNodeRecord.ExtractPort> port : storedPorts.entrySet()) {
+                    ports.add(new PortEntry(port.getKey(), port.getValue().config(), port.getValue().filter()));
                 }
             }
             entries.add(new NodeEntry(
@@ -143,7 +135,7 @@ public final class PipeNetworksSavedData extends SavedData {
     }
 
     public PipeNodeRecord addNode(long pos, PipeDefinition definition, int intentBits) {
-        PipeNodeRecord record = new PipeNodeRecord(definition, intentBits, 0, null, null);
+        PipeNodeRecord record = new PipeNodeRecord(definition, intentBits, 0, null);
         PipeNodeRecord previous = nodes.put(pos, record);
         if (previous == null) {
             chunkIndexAdd(pos);

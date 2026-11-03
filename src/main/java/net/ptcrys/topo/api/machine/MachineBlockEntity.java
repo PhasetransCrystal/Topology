@@ -1,6 +1,5 @@
 package net.ptcrys.topo.api.machine;
 
-import net.ptcrys.topo.api.api.tick.TickHandle;
 import net.ptcrys.topo.api.machine.component.MachineComponent;
 import net.ptcrys.topo.api.machine.component.MachineComponents;
 import net.ptcrys.topo.api.machine.component.MachineWorkView;
@@ -28,10 +27,6 @@ import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 /**
  * The slim composition root for a machine. It assembles its {@link MachineComponents} from the
  * definition, runs the trait lifecycle, and delegates persistence/sync to its machine data domain.
@@ -41,34 +36,15 @@ public class MachineBlockEntity extends BlockEntity {
     private static final Logger LOGGER = LoggerFactory.getLogger(MachineBlockEntity.class);
 
     private static final MachineComponents.RuntimeAccess COMPONENT_RUNTIME_ACCESS = new ComponentRuntimeAccess();
-    private static final long[] EMPTY_PERFORMANCE_BREAKDOWN = new long[0];
 
     private final MachineDefinition definition;
     private final MachineDataScope data;
+    private final MachinePerformanceMonitor performance;
     private @Nullable MachineComponents components;
     /** Work views request an aggregate ACTIVE-state refresh only when their running state changes. */
     private boolean activeBlockStateRefreshRequested = true;
     /** Existing third-party work views keep legacy polling unless they explicitly publish edges. */
     private boolean activeBlockStatePollingRequired = true;
-    private long currentPerformanceGameTime = Long.MIN_VALUE;
-    private long currentPerformanceTotalNanos;
-    private long currentPerformanceSelfNanos;
-    private long currentPerformanceComponentsNanos;
-    private long[] currentPerformanceTraitNanos = EMPTY_PERFORMANCE_BREAKDOWN;
-    // Rolling stats folded once per completed monitored tick: EMA (alpha 1/8) and a slowly
-    // decaying peak (1/16 per tick, floored at the latest sample). They smooth the overlay so a
-    // single noisy tick cannot masquerade as steady-state cost.
-    private long performanceEmaTotalNanos;
-    private long performanceEmaSelfNanos;
-    private long performanceEmaComponentsNanos;
-    private long performancePeakTotalNanos;
-    private long performancePeakSelfNanos;
-    private long performancePeakComponentsNanos;
-    private long[] performanceEmaTraitNanos = EMPTY_PERFORMANCE_BREAKDOWN;
-    private long[] performancePeakTraitNanos = EMPTY_PERFORMANCE_BREAKDOWN;
-    private boolean performanceSnapshotDirty;
-    private volatile long performanceMonitorUntilGameTime = Long.MIN_VALUE;
-    private volatile MachinePerformanceSnapshot publishedPerformanceSnapshot = MachinePerformanceSnapshot.EMPTY;
 
     /** Framework-only access token for machine trait lifecycle fanout. */
     public static final class ComponentRuntimeAccess implements MachineComponents.RuntimeAccess {
@@ -80,6 +56,10 @@ public class MachineBlockEntity extends BlockEntity {
         super(type, pos, state);
         this.definition = resolveDefinition(state);
         this.data = MachineDataScope.create(this);
+        this.performance = new MachinePerformanceMonitor(
+                () -> level == null ? Long.MIN_VALUE + 1L : level.getGameTime(),
+                () -> requireComponents().allForRuntime(COMPONENT_RUNTIME_ACCESS),
+                () -> requireComponents().tickersForRuntime(COMPONENT_RUNTIME_ACCESS));
     }
 
     private static MachineDefinition resolveDefinition(BlockState state) {
@@ -117,7 +97,7 @@ public class MachineBlockEntity extends BlockEntity {
         MachineComponents createdComponents = MachineComponents.createForRuntime(
                 COMPONENT_RUNTIME_ACCESS, this, definition.componentMounts());
         createdComponents.resolveAll(COMPONENT_RUNTIME_ACCESS);
-        initializePerformanceStorage(createdComponents);
+        performance.initialize(createdComponents.allForRuntime(COMPONENT_RUNTIME_ACCESS).size());
         this.components = createdComponents;
         this.activeBlockStatePollingRequired = requiresActiveBlockStatePolling(createdComponents);
         activeBlockStateRefreshRequested = true;
@@ -259,201 +239,44 @@ public class MachineBlockEntity extends BlockEntity {
      * looking at the block, so machines outside the overlay pay only one volatile-read branch.
      */
     public final void activatePerformanceMonitoring(int ticks) {
-        if (ticks <= 0) {
-            return;
-        }
-        long until = currentPerformanceGameTime() + ticks;
-        if (until > performanceMonitorUntilGameTime) {
-            performanceMonitorUntilGameTime = until;
-        }
+        performance.activate(ticks);
     }
 
     public final boolean isPerformanceMonitoringActive(long gameTime) {
-        return gameTime <= performanceMonitorUntilGameTime;
+        return performance.isActive(gameTime);
     }
 
     public final MachinePerformanceSnapshot lastPerformanceSnapshot() {
-        publishPerformanceSnapshotIfDirty();
-        return publishedPerformanceSnapshot;
+        return performance.last();
     }
 
     public final MachinePerformanceSnapshot recentPerformanceSnapshot(int maxAgeTicks) {
-        publishPerformanceSnapshotIfDirty();
-        MachinePerformanceSnapshot snapshot = publishedPerformanceSnapshot;
-        return isRecentPerformanceSample(snapshot.gameTime(), currentPerformanceGameTime(), maxAgeTicks) ? snapshot : MachinePerformanceSnapshot.EMPTY;
+        return performance.recent(maxAgeTicks);
     }
 
-    /**
-     * Freshness window (in ticks) for externally displayed performance samples. A sample counts as
-     * current while it is no older than the machine's slowest attached ticker interval plus one
-     * tick of cross-tick slack: interval machines (ME hatches tick every 20-40 ticks) keep a
-     * stable reading between runs, while every-tick machines still expire stale samples after the
-     * same 2-tick window as before.
-     */
     public final int performanceSampleMaxAgeTicks() {
-        int slowestInterval = 1;
-        for (MachineTicker ticker : requireComponents().tickersForRuntime(COMPONENT_RUNTIME_ACCESS)) {
-            TickHandle handle = ticker.handle();
-            int interval = handle == null ? ticker.tickInterval() : handle.interval();
-            slowestInterval = Math.max(slowestInterval, interval);
-        }
-        return slowestInterval + 1;
+        return performance.sampleMaxAgeTicks();
     }
 
     /** Server-thread helper for Jade/tests that need the just-recorded current tick now. */
     public final void publishPerformanceSnapshotForCurrentTick() {
-        publishRecentPerformanceSnapshot(0);
+        performance.publishRecent(0);
     }
 
     public final boolean publishRecentPerformanceSnapshot(int maxAgeTicks) {
-        if (currentPerformanceGameTime == Long.MIN_VALUE || currentPerformanceTotalNanos <= 0L) {
-            return false;
-        }
-        if (!isRecentPerformanceSample(currentPerformanceGameTime, currentPerformanceGameTime(), maxAgeTicks)) {
-            return false;
-        }
-        publishPerformanceSnapshotIfDirty();
-        return true;
-    }
-
-    private long currentPerformanceGameTime() {
-        return level == null ? Long.MIN_VALUE + 1L : level.getGameTime();
-    }
-
-    private static boolean isRecentPerformanceSample(long sampleGameTime, long currentGameTime, int maxAgeTicks) {
-        if (sampleGameTime == Long.MIN_VALUE || currentGameTime == Long.MIN_VALUE) {
-            return false;
-        }
-        long age = currentGameTime - sampleGameTime;
-        return age >= 0L && age <= Math.max(0, maxAgeTicks);
-    }
-
-    private void initializePerformanceStorage(MachineComponents createdComponents) {
-        int traitCount = createdComponents.allForRuntime(COMPONENT_RUNTIME_ACCESS).size();
-        currentPerformanceTraitNanos = traitCount == 0 ? EMPTY_PERFORMANCE_BREAKDOWN : new long[traitCount];
-        performanceEmaTraitNanos = traitCount == 0 ? EMPTY_PERFORMANCE_BREAKDOWN : new long[traitCount];
-        performancePeakTraitNanos = traitCount == 0 ? EMPTY_PERFORMANCE_BREAKDOWN : new long[traitCount];
+        return performance.publishRecent(maxAgeTicks);
     }
 
     public final void recordPerformanceSample(long gameTime, long elapsedNanos, int profileSlot) {
-        recordPerformanceSample(gameTime, elapsedNanos, 0L, profileSlot);
+        performance.record(gameTime, elapsedNanos, profileSlot);
     }
 
     /**
      * Accumulates one monitored ticker sample. {@code frameworkNanos} is the after-tick framework
-     * cost (block state sync, computed fields, flush) reported in the snapshot's self bucket. The
-     * published snapshot object is rebuilt lazily on read, never per sample — building it allocates
-     * and must not triple the monitored tick cost.
+     * cost (block state sync, computed fields, flush) reported in the snapshot's self bucket.
      */
     public final void recordPerformanceSample(long gameTime, long elapsedNanos, long frameworkNanos, int profileSlot) {
-        beginPerformanceTick(gameTime);
-        long elapsed = normalizeElapsedNanos(elapsedNanos);
-        long framework = Math.max(0L, frameworkNanos);
-        currentPerformanceTotalNanos = saturatingAdd(currentPerformanceTotalNanos, saturatingAdd(elapsed, framework));
-        currentPerformanceComponentsNanos = saturatingAdd(currentPerformanceComponentsNanos, elapsed);
-        currentPerformanceSelfNanos = saturatingAdd(currentPerformanceSelfNanos, framework);
-        if (profileSlot >= 0 && profileSlot < currentPerformanceTraitNanos.length) {
-            currentPerformanceTraitNanos[profileSlot] = saturatingAdd(currentPerformanceTraitNanos[profileSlot], elapsed);
-        }
-        performanceSnapshotDirty = true;
-    }
-
-    private void beginPerformanceTick(long gameTime) {
-        if (currentPerformanceGameTime == gameTime) {
-            return;
-        }
-        if (currentPerformanceGameTime != Long.MIN_VALUE && currentPerformanceTotalNanos > 0L) {
-            foldPerformanceRollingStats();
-        }
-        currentPerformanceGameTime = gameTime;
-        currentPerformanceTotalNanos = 0L;
-        currentPerformanceSelfNanos = 0L;
-        currentPerformanceComponentsNanos = 0L;
-        Arrays.fill(currentPerformanceTraitNanos, 0L);
-    }
-
-    /** Folds the just-completed tick's accumulators into the rolling EMA/peak stats. */
-    private void foldPerformanceRollingStats() {
-        performanceEmaTotalNanos = emaFold(performanceEmaTotalNanos, currentPerformanceTotalNanos);
-        performanceEmaSelfNanos = emaFold(performanceEmaSelfNanos, currentPerformanceSelfNanos);
-        performanceEmaComponentsNanos = emaFold(performanceEmaComponentsNanos, currentPerformanceComponentsNanos);
-        performancePeakTotalNanos = peakFold(performancePeakTotalNanos, currentPerformanceTotalNanos);
-        performancePeakSelfNanos = peakFold(performancePeakSelfNanos, currentPerformanceSelfNanos);
-        performancePeakComponentsNanos = peakFold(performancePeakComponentsNanos, currentPerformanceComponentsNanos);
-        int len = Math.min(currentPerformanceTraitNanos.length, performanceEmaTraitNanos.length);
-        for (int i = 0; i < len; i++) {
-            performanceEmaTraitNanos[i] = emaFold(performanceEmaTraitNanos[i], currentPerformanceTraitNanos[i]);
-            performancePeakTraitNanos[i] = peakFold(performancePeakTraitNanos[i], currentPerformanceTraitNanos[i]);
-        }
-    }
-
-    private static long emaFold(long ema, long sample) {
-        return ema == 0L ? sample : ema + (sample - ema) / 8L;
-    }
-
-    private static long peakFold(long peak, long sample) {
-        return Math.max(sample, peak - (peak >>> 4));
-    }
-
-    private void publishPerformanceSnapshotIfDirty() {
-        if (!performanceSnapshotDirty) {
-            return;
-        }
-        performanceSnapshotDirty = false;
-        List<MachineComponent> allTraits = requireComponents().allForRuntime(COMPONENT_RUNTIME_ACCESS);
-        int len = Math.min(allTraits.size(), currentPerformanceTraitNanos.length);
-        List<MachinePerformanceSnapshot.ComponentSample> samples = new ArrayList<>(len);
-        for (int i = 0; i < len; i++) {
-            MachineComponent trait = allTraits.get(i);
-            long nanos = currentPerformanceTraitNanos[i];
-            long avgNanos = performanceEmaTraitNanos.length > i ? performanceEmaTraitNanos[i] : 0L;
-            long peakNanos = performancePeakTraitNanos.length > i ? performancePeakTraitNanos[i] : 0L;
-            List<MachinePerformanceSnapshot.TimingSample> children = List.of();
-            if (trait instanceof MachineTicker ticker) {
-                // Live handle interval, not the static registration value: parked tickers decay
-                // their interval at runtime and the panel should show the cadence actually paid.
-                var tickerHandle = ticker.handle();
-                int liveInterval = tickerHandle == null || tickerHandle.isCancelled() ? ticker.tickInterval() : tickerHandle.interval();
-                children = List.of(new MachinePerformanceSnapshot.TimingSample(
-                        trait.id() + ".tick",
-                        "tick",
-                        ticker.kind() + " interval=" + liveInterval,
-                        nanos,
-                        avgNanos,
-                        peakNanos));
-            }
-            samples.add(new MachinePerformanceSnapshot.ComponentSample(
-                    trait.id(),
-                    trait.getClass().getSimpleName(),
-                    nanos,
-                    avgNanos,
-                    peakNanos,
-                    children));
-        }
-        publishedPerformanceSnapshot = new MachinePerformanceSnapshot(
-                currentPerformanceGameTime,
-                currentPerformanceTotalNanos,
-                currentPerformanceSelfNanos,
-                currentPerformanceComponentsNanos,
-                performanceEmaTotalNanos,
-                performancePeakTotalNanos,
-                performanceEmaSelfNanos,
-                performancePeakSelfNanos,
-                performanceEmaComponentsNanos,
-                performancePeakComponentsNanos,
-                samples);
-    }
-
-    private static long normalizeElapsedNanos(long elapsedNanos) {
-        if (elapsedNanos < 0L) {
-            return 0L;
-        }
-        return elapsedNanos == 0L ? 1L : elapsedNanos;
-    }
-
-    private static long saturatingAdd(long a, long b) {
-        long r = a + b;
-        return r < 0L ? Long.MAX_VALUE : r;
+        performance.record(gameTime, elapsedNanos, frameworkNanos, profileSlot);
     }
 
     @Override

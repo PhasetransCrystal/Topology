@@ -139,10 +139,10 @@ object MachineUiComponentStyle {
     fun ghostSlotOverlayTexture(): ColorRectTexture = ColorRectTexture(ghostSlotInsetFill)
 
     /** 模具槽幽灵图标:空槽显示模具剪影提示用途(slotOverlay 仅空槽显示,物品之下)。 */
-    fun dieSlotOverlayTexture(): IGuiTexture = SpriteTexture.of(IdHelper.id("textures/gui/slot/mold_overlay.png"))
+    fun dieSlotOverlayTexture(): IGuiTexture = SpriteTexture.of(IdHelper.topo("textures/gui/slot/mold_overlay.png"))
 
     /** 流体槽幽灵图标:空罐剪影,语义同 [dieSlotOverlayTexture]。 */
-    fun fluidSlotOverlayTexture(): IGuiTexture = SpriteTexture.of(IdHelper.id("textures/gui/slot/fluid_overlay.png"))
+    fun fluidSlotOverlayTexture(): IGuiTexture = SpriteTexture.of(IdHelper.topo("textures/gui/slot/fluid_overlay.png"))
 
     /** JEI 催化剂(不消耗)预览槽:槽框叠强调色内边与普通输入槽区分;文案在模具物品自身 tooltip。 */
     fun catalystSlotTexture(): IGuiTexture = GuiTextureGroup(realSlotTexture(), ColorBorderTexture(-1, accent))
@@ -176,7 +176,7 @@ object MachineUiComponentStyle {
      * Topo 自带 2x2 雪碧格，每帧 16x16，帧间隔为 9 tick。
      * 每次调用新建实例(AnimationTexture 自带帧状态)。
      */
-    fun scalarConversionFanTexture(): AnimationTexture = AnimationTexture(IdHelper.id("textures/gui/recipe/scalar_conversion_fan.png"))
+    fun scalarConversionFanTexture(): AnimationTexture = AnimationTexture(IdHelper.topo("textures/gui/recipe/scalar_conversion_fan.png"))
         .setCellSize(2)
         .setAnimation(0, 3)
         .setAnimation(scalarFanFrameTicks)

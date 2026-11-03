@@ -26,7 +26,7 @@ public record MachineDataBatchS2CPayload(List<Entry> entries) implements CustomP
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MachineDataBatchS2CPayload.class);
 
-    public static final Identifier ID = IdHelper.id("machine_data_batch_s2c");
+    public static final Identifier ID = IdHelper.topo("machine_data_batch_s2c");
     public static final Type<MachineDataBatchS2CPayload> TYPE = new Type<>(ID);
     public static final StreamCodec<RegistryFriendlyByteBuf, MachineDataBatchS2CPayload> CODEC = StreamCodec.ofMember(MachineDataBatchS2CPayload::write, MachineDataBatchS2CPayload::decode);
 

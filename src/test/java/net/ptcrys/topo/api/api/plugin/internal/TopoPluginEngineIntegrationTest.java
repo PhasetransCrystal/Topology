@@ -217,7 +217,10 @@ class TopoPluginEngineIntegrationTest {
         assertSame(ProductionLines.require(b.recipe().id("machine_line")), recipeLine);
         assertTrue(recipesSawFrozenContent);
         assertTrue(ProductionLines.isFrozen());
-        assertNotNull(ProductionLines.require(a.recipe().id("final_line")));
+        var finalLine = ProductionLines.require(a.recipe().id("final_line"));
+        var finalView = ProductionLines.view(finalLine.id());
+        assertSame(finalView, ProductionLines.view(finalLine.id()));
+        assertTrue(finalView.recipes().isEmpty());
         TopoPluginEngine.host().bootstrapContent();
         assertEquals(1, recipeCalls);
     }

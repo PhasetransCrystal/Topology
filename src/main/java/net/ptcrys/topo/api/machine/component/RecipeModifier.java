@@ -36,7 +36,7 @@ import org.jspecify.annotations.Nullable;
  */
 public interface RecipeModifier {
 
-    ServiceKey<RecipeModifier, RecipeLogic> KEY = ServiceKey.oi("recipe_modifier", RecipeModifier.class, RecipeLogic.class);
+    ServiceKey<RecipeModifier, RecipeLogic> KEY = ServiceKey.topo("recipe_modifier", RecipeModifier.class, RecipeLogic.class);
 
     /** Entry title above this modifier's detail UI / left cell of the machine tooltip row. */
     Component title();

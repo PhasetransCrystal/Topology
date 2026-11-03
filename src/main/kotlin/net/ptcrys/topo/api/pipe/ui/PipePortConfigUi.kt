@@ -146,22 +146,22 @@ object PipePortConfigUi {
         val strategyBinding = authoritativeIntValue(
             "topo_pipe_port_strategy_value",
             0,
-            Supplier { session?.run { runtime.portStrategyIndex(pos, side) } ?: 0 },
-            Consumer { selected -> session?.run { runtime.uiSelectStrategy(pos, side, selected) } },
+            Supplier { session?.run { runtime.ports().strategyIndex(pos, side) } ?: 0 },
+            Consumer { selected -> session?.run { runtime.ports().selectStrategy(pos, side, selected) } },
             Consumer(::applyStrategy),
         ).also(syncAnchors::add)
         val amountBinding = authoritativeIntValue(
             "topo_pipe_port_amount_value",
             0,
-            Supplier { session?.run { runtime.portAmount(pos, side) } ?: 0 },
-            Consumer { amount -> session?.run { runtime.uiSetAmount(pos, side, amount) } },
+            Supplier { session?.run { runtime.ports().amount(pos, side) } ?: 0 },
+            Consumer { amount -> session?.run { runtime.ports().setAmount(pos, side, amount) } },
             Consumer(::applyAmount),
         ).also(syncAnchors::add)
         val intervalBinding = authoritativeIntValue(
             "topo_pipe_port_interval_value",
             lastInterval,
-            Supplier { session?.run { runtime.portInterval(pos, side) } ?: 1 },
-            Consumer { interval -> session?.run { runtime.uiSetInterval(pos, side, interval) } },
+            Supplier { session?.run { runtime.ports().interval(pos, side) } ?: 1 },
+            Consumer { interval -> session?.run { runtime.ports().setInterval(pos, side, interval) } },
             Consumer(::applyInterval),
         ).also(syncAnchors::add)
 
@@ -173,13 +173,13 @@ object PipePortConfigUi {
                     val fallback = offer.strategy().initialPortConfig(definition, offer.aggregation())
                     val active = session ?: return fallback
                     return try {
-                        active.runtime.portConfig(active.pos, active.side)
+                        active.runtime.ports().config(active.pos, active.side)
                     } catch (_: IllegalStateException) {
                         fallback
                     }
                 }
                 override fun updateConfig(update: UnaryOperator<PipePortStrategyConfig>) {
-                    session?.run { runtime.uiUpdateConfig(pos, side, update) }
+                    session?.run { runtime.ports().updateConfig(pos, side, update) }
                 }
                 override fun bindInt(id: String, initialValue: Int, serverGetter: Supplier<Int>, serverSetter: Consumer<Int>, clientApply: Consumer<Int>): BindableValue<Int> {
                     val value = authoritativeIntValue(
@@ -736,14 +736,14 @@ object PipePortConfigUi {
         private val addRpc = RPCEventBuilder.simple(String::class.java) { payload ->
             session?.run {
                 parsePayload(payload)?.let { (white, entry) ->
-                    runtime.uiAddFilterEntry(pos, side, white, entry)
+                    runtime.ports().addFilterEntry(pos, side, white, entry)
                 }
             }
         }
         private val removeRpc = RPCEventBuilder.simple(String::class.java) { payload ->
             session?.run {
                 parsePayload(payload)?.let { (white, entry) ->
-                    runtime.uiRemoveFilterEntry(pos, side, white, entry)
+                    runtime.ports().removeFilterEntry(pos, side, white, entry)
                 }
             }
         }
@@ -800,7 +800,7 @@ object PipePortConfigUi {
             "topo_pipe_port_filter_whitelist_value",
             "",
             DataBindingBuilder.stringS2C {
-                session?.run { runtime.portFilter(pos, side).whitelist().joinToString("\n") } ?: ""
+                session?.run { runtime.ports().filter(pos, side).whitelist().joinToString("\n") } ?: ""
             },
         ).apply {
             registerValueListener { joined ->
@@ -812,7 +812,7 @@ object PipePortConfigUi {
             "topo_pipe_port_filter_blacklist_value",
             "",
             DataBindingBuilder.stringS2C {
-                session?.run { runtime.portFilter(pos, side).blacklist().joinToString("\n") } ?: ""
+                session?.run { runtime.ports().filter(pos, side).blacklist().joinToString("\n") } ?: ""
             },
         ).apply {
             registerValueListener { joined ->

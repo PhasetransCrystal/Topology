@@ -2,7 +2,6 @@ package net.ptcrys.topo.api.machine.data;
 
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
-import net.minecraft.world.level.Level;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.level.ChunkDataEvent;
@@ -68,12 +67,6 @@ final class MachineDataPersistCoordinator {
             if (outstanding.isEmpty()) {
                 state.outstandingByChunk.remove(chunkKey);
             }
-        }
-    }
-
-    static void flushResidualPersistForSave(Level level) {
-        if (level instanceof ServerLevel serverLevel) {
-            recoverDroppedChunkMarks(serverLevel, LEVEL_STATES.get(serverLevel));
         }
     }
 

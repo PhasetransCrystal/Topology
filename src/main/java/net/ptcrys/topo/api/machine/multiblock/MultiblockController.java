@@ -1,10 +1,7 @@
 package net.ptcrys.topo.api.machine.multiblock;
 
-import net.ptcrys.topo.api.api.lang.TopoApiLang;
+import net.ptcrys.topo.Topology;
 import net.ptcrys.topo.api.api.tick.TickHandle;
-import net.ptcrys.topo.api.api.visual.ConnectedTextureProperties;
-import net.ptcrys.topo.api.machine.FormedMachineBlock;
-import net.ptcrys.topo.api.machine.MachineBlockEntity;
 import net.ptcrys.topo.api.machine.OrientedMachineBlock;
 import net.ptcrys.topo.api.machine.component.ComponentContext;
 import net.ptcrys.topo.api.machine.component.ComponentKey;
@@ -12,9 +9,6 @@ import net.ptcrys.topo.api.machine.component.ComponentMount;
 import net.ptcrys.topo.api.machine.component.RecipeCondition;
 import net.ptcrys.topo.api.machine.component.RecipeLogic;
 import net.ptcrys.topo.api.machine.component.RecipeModifier;
-import net.ptcrys.topo.api.machine.component.ServiceMatch;
-import net.ptcrys.topo.api.machine.data.DataEnum;
-import net.ptcrys.topo.api.machine.multiblock.ability.PartRole;
 import net.ptcrys.topo.api.machine.multiblock.pattern.Blueprint;
 import net.ptcrys.topo.api.machine.multiblock.pattern.CompiledBlueprint;
 import net.ptcrys.topo.api.machine.multiblock.pattern.CompiledSnapshot;
@@ -23,29 +17,21 @@ import net.ptcrys.topo.api.machine.multiblock.pattern.Orientations;
 import net.ptcrys.topo.api.machine.multiblock.pattern.RecognitionResult;
 import net.ptcrys.topo.api.machine.multiblock.pattern.RepeatResolution;
 import net.ptcrys.topo.api.machine.multiblock.pattern.StructureEngine;
-import net.ptcrys.topo.api.machine.multiblock.pattern.StructureView;
 import net.ptcrys.topo.api.machine.resource.MachineResourceType;
 import net.ptcrys.topo.api.machine.resource.RecipeRole;
-import net.ptcrys.topo.api.machine.ui.LcdData;
-import net.ptcrys.topo.api.machine.ui.MachineUiContainerTemplate;
-import net.ptcrys.topo.api.recipe.TopoRecipe;
 import net.ptcrys.topo.api.tick.MachineTicker;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.transfer.resource.Resource;
 
-import com.lowdragmc.lowdraglib2.gui.ui.UIElement;
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -62,11 +48,11 @@ import java.util.concurrent.CompletableFuture;
  *
  * <p>
  * Correctness does not depend on event coverage: formed controllers additionally self-mark dirty
- * every {@link #BACKSTOP_INTERVAL_TICKS} ticks, staggered by position hash, so a missed world change
- * is repaired by the next backstop recheck at the latest. Backstop upkeep on an intact structure is
- * the cheap path — a single formed-orientation capture plus the zero-allocation
- * {@link StructureEngine#verify}; the full recognize (mirror twin, members, diagnostics) only runs
- * on formation transitions and verify failures.
+ * every {@link net.ptcrys.topo.Topology#config} MULTIBLOCK.backstopIntervalTicks ticks, staggered by
+ * position hash, so a missed world change is repaired by the next backstop recheck at the latest.
+ * Backstop upkeep on an intact structure is the cheap path — a single formed-orientation capture plus
+ * the zero-allocation {@link StructureEngine#verify}; the full recognize (mirror twin, members,
+ * diagnostics) only runs on formation transitions and verify failures.
  */
 public final class MultiblockController extends MachineTicker {
 
@@ -80,26 +66,22 @@ public final class MultiblockController extends MachineTicker {
             .service(RecipeModifier.KEY, MultiblockController::memberFoldModifier);
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MultiblockController.class);
-    /** Formed controllers self-recheck at least this often; events only lower reaction latency. */
-    private static final int BACKSTOP_INTERVAL_TICKS = 150;
 
     private final Blueprint blueprint;
     private final FormedRuntime runtime;
-    private final DataEnum<FormState> formState = data().enumField("form_state", FormState.class, FormState.UNFORMED)
-            .saveNone()
-            .syncNone()
-            .done();
+    private final MultiblockRecipeModifiers recipeModifiers;
     /** Last footprint registration, so an unchanged (orientation, mirror) pair skips the watch rebuild. */
     private @Nullable MultiblockClaimIndex watchedClaims;
     private @Nullable Orientation watchedOrientation;
     /** Per-level services, cached so the every-tick path skips the binder's synchronized map lookup. */
     private MultiblockLevelBinder.@Nullable Services cachedServices;
     /**
-     * The orientation/repeats the formed structure recognized under; null when unformed. Targeted
-     * invalidation re-derives any cell from these arithmetically — no per-cell index exists.
+     * The orientation/repeats the formed structure recognized under; null when unformed. This is
+     * the single source of truth for both formation status and formed geometry, so the two cannot
+     * diverge. Targeted invalidation re-derives any cell from it arithmetically — no per-cell index
+     * exists.
      */
-    private @Nullable Orientation formedOrientation;
-    private @Nullable RepeatResolution formedRepeats;
+    private @Nullable FormedShape formedShape;
     /** In-flight async recognition; results commit on the server thread with staleness checks. */
     private @Nullable PendingRecognition pending;
     /** In-flight async upkeep verification (formed backstop); commits like {@link #pending}. */
@@ -112,6 +94,7 @@ public final class MultiblockController extends MachineTicker {
         super(context);
         this.blueprint = Objects.requireNonNull(blueprint, "blueprint");
         this.runtime = new FormedRuntime(machine());
+        this.recipeModifiers = new MultiblockRecipeModifiers(machine(), runtime);
     }
 
     public static ComponentMount<MultiblockController> mount(Blueprint blueprint) {
@@ -129,7 +112,7 @@ public final class MultiblockController extends MachineTicker {
     }
 
     public boolean formed() {
-        return formState.value() == FormState.FORMED;
+        return formedShape != null;
     }
 
     @Override
@@ -142,7 +125,7 @@ public final class MultiblockController extends MachineTicker {
         MultiblockRecheckDirtySet rechecks = services.rechecks();
         commitPendingRecognition(level, services);
         commitPendingVerification(level, services);
-        if (formed() && Math.floorMod(machine().getBlockPos().hashCode() + gameTime, BACKSTOP_INTERVAL_TICKS) == 0) {
+        if (formed() && Math.floorMod(machine().getBlockPos().hashCode() + gameTime, Topology.config.MULTIBLOCK.backstopIntervalTicks) == 0) {
             rechecks.markDirty(machine().getBlockPos());
         }
         MultiblockRecheckDirtySet.Note note = rechecks.consume(machine().getBlockPos());
@@ -153,7 +136,7 @@ public final class MultiblockController extends MachineTicker {
         // instead of O(footprint) — and unforms within this tick on the first mismatch. Bounded
         // notes that touch positions outside the formed footprint (repeat growth area) escalate.
         boolean escalated = false;
-        if (formed() && note.bounded() && formedOrientation != null) {
+        if (Topology.config.MULTIBLOCK.enableTargetedRecheck && formedShape != null && note.bounded()) {
             try {
                 TargetedVerdict verdict = targetedRecheck(level, note.changedCells());
                 if (verdict == TargetedVerdict.RETAINED) {
@@ -179,12 +162,12 @@ public final class MultiblockController extends MachineTicker {
         // Formed upkeep fast path: a reason-less full mark (backstop, load) on an intact structure
         // only pays the cheap maintained-orientation verify — single capture, no mirror twin,
         // short-circuit walk. Only a failing verify escalates to the full recognize below.
-        if (!escalated && !forceFullRecheck && formed() && formedOrientation != null) {
+        if (!escalated && !forceFullRecheck && formedShape != null) {
             upkeepVerify(level, services);
             return;
         }
         forceFullRecheck = false;
-        if (blueprint.maxCellCount() >= AsyncStructureService.asyncCellThreshold()) {
+        if (blueprint.maxCellCount() >= Topology.config.MULTIBLOCK.asyncCellThreshold) {
             submitAsyncRecheck(services);
         } else {
             recheck(level);
@@ -239,10 +222,11 @@ public final class MultiblockController extends MachineTicker {
      */
     private void upkeepVerify(ServerLevel level, MultiblockLevelBinder.Services services) {
         try {
-            Orientation orientation = Objects.requireNonNull(formedOrientation);
+            FormedShape shape = Objects.requireNonNull(formedShape);
+            Orientation orientation = shape.orientation();
             watchFootprint(services.claims(), orientationFromBlockState(machine().getBlockState()));
             CompiledSnapshot capture = services.claims().snapshot(machine().getBlockPos(), blueprint, orientation);
-            if (blueprint.maxCellCount() >= AsyncStructureService.asyncCellThreshold()) {
+            if (blueprint.maxCellCount() >= Topology.config.MULTIBLOCK.asyncCellThreshold) {
                 long submissionId = ++submissionCounter;
                 pendingVerify = new PendingVerification(
                         submissionId,
@@ -264,7 +248,8 @@ public final class MultiblockController extends MachineTicker {
      */
     private void applyVerification(
                                    ServerLevel level, MultiblockLevelBinder.Services services, StructureEngine.Verification verification) {
-        if (verification.formed() && verification.repeats().equals(formedRepeats)) {
+        FormedShape shape = formedShape;
+        if (verification.formed() && shape != null && verification.repeats().equals(shape.repeats())) {
             return;
         }
         if (!verification.formed()) {
@@ -283,7 +268,8 @@ public final class MultiblockController extends MachineTicker {
         pendingVerify = null;
         try {
             StructureEngine.Verification verification = inFlight.future().join();
-            boolean stale = inFlight.submissionId() != submissionCounter || !formed() || !inFlight.orientation().equals(formedOrientation) || services.rechecks().isDirty(machine().getBlockPos());
+            FormedShape shape = formedShape;
+            boolean stale = inFlight.submissionId() != submissionCounter || shape == null || !inFlight.orientation().equals(shape.orientation()) || services.rechecks().isDirty(machine().getBlockPos());
             if (stale) {
                 // The world (or the controller) moved on while the verdict was in flight; rerun.
                 services.rechecks().markDirty(machine().getBlockPos());
@@ -346,23 +332,32 @@ public final class MultiblockController extends MachineTicker {
         return false;
     }
 
-    /** Apply step: member set, formed orientation/repeats, member visuals, and the form state flip. */
+    /** Apply step: member set, formed geometry, member visuals, and the formation-status flip. */
     private void apply(ServerLevel level, boolean formed, AsyncStructureService.Outcome outcome) {
+        if (!formed) {
+            clearFormed(level);
+            return;
+        }
+        boolean wasFormed = formedShape != null;
         RecognitionResult result = outcome.result();
         List<BlockPos> previousMembers = runtime.memberPositions();
-        if (formed) {
-            runtime.updateMembers(result.members());
-            formedRepeats = result.repeats();
-            formedOrientation = outcome.orientation();
-        } else {
-            runtime.clearMembers();
-            formedRepeats = null;
-            formedOrientation = null;
+        runtime.updateMembers(result.members());
+        formedShape = new FormedShape(outcome.orientation(), result.repeats());
+        MultiblockVisuals.writeMemberCtmActive(level, previousMembers, runtime.memberPositions());
+        if (!wasFormed) {
+            machine().machineComponents().noteResourceContentChanged();
+            level.invalidateCapabilities(machine().getBlockPos());
         }
-        writeMemberCtmActive(level, previousMembers, runtime.memberPositions());
-        FormState next = formed ? FormState.FORMED : FormState.UNFORMED;
-        if (formState.value() != next) {
-            formState.set(next);
+    }
+
+    /** Clears all formed runtime state and publishes the unformed transition exactly once. */
+    private void clearFormed(ServerLevel level) {
+        boolean wasFormed = formedShape != null;
+        List<BlockPos> previousMembers = runtime.memberPositions();
+        runtime.clearMembers();
+        formedShape = null;
+        MultiblockVisuals.writeMemberCtmActive(level, previousMembers, List.of());
+        if (wasFormed) {
             machine().machineComponents().noteResourceContentChanged();
             level.invalidateCapabilities(machine().getBlockPos());
         }
@@ -370,7 +365,7 @@ public final class MultiblockController extends MachineTicker {
 
     /** Publish step: writes the {@code FORMED} visual block state. */
     private void publish(ServerLevel level, boolean formed) {
-        writeFormedBlockState(level, formed);
+        MultiblockVisuals.writeFormedBlockState(level, machine().getBlockPos(), formed);
     }
 
     /**
@@ -380,17 +375,16 @@ public final class MultiblockController extends MachineTicker {
      * (growth area) escalate to a full recheck; positions outside the footprint are not ours.
      */
     private TargetedVerdict targetedRecheck(ServerLevel level, Set<BlockPos> changedCells) {
-        Orientation orientation = Objects.requireNonNull(formedOrientation);
-        RepeatResolution repeats = Objects.requireNonNull(formedRepeats);
-        CompiledBlueprint compiled = blueprint.compiled(orientation);
+        FormedShape shape = Objects.requireNonNull(formedShape);
+        CompiledBlueprint compiled = blueprint.compiled(shape.orientation());
         BlockPos controllerPos = machine().getBlockPos();
-        LiveStructureView view = new LiveStructureView(level, controllerPos);
+        MultiblockLiveView view = new MultiblockLiveView(level, controllerPos);
         for (BlockPos changed : changedCells) {
             int cellIndex = compiled.cellIndexOfWorld(changed, controllerPos);
             if (cellIndex < 0) {
                 continue; // Outside the maximal footprint — not one of our cells.
             }
-            if (!compiled.withinRepeats(cellIndex, repeats)) {
+            if (!compiled.withinRepeats(cellIndex, shape.repeats())) {
                 return TargetedVerdict.ESCALATE; // Growth area of a repeatable segment.
             }
             CompiledBlueprint.CompiledDefinition definition = compiled.definitions()[compiled.definitionOrdinalAt(cellIndex)];
@@ -407,15 +401,7 @@ public final class MultiblockController extends MachineTicker {
      */
     private void unformNow(ServerLevel level, MultiblockLevelBinder.Services services) {
         releaseClaimsAndWakeWatchers(services);
-        writeMemberCtmActive(level, runtime.memberPositions(), List.of());
-        runtime.clearMembers();
-        formedOrientation = null;
-        formedRepeats = null;
-        if (formState.value() != FormState.UNFORMED) {
-            formState.set(FormState.UNFORMED);
-            machine().machineComponents().noteResourceContentChanged();
-            level.invalidateCapabilities(machine().getBlockPos());
-        }
+        clearFormed(level);
         publish(level, false);
     }
 
@@ -431,16 +417,8 @@ public final class MultiblockController extends MachineTicker {
                 failure);
         try {
             pending = null;
-            formedOrientation = null;
-            formedRepeats = null;
             releaseClaimsAndWakeWatchers(services);
-            writeMemberCtmActive(level, runtime.memberPositions(), List.of());
-            runtime.clearMembers();
-            if (formState.value() != FormState.UNFORMED) {
-                formState.set(FormState.UNFORMED);
-                machine().machineComponents().noteResourceContentChanged();
-                level.invalidateCapabilities(machine().getBlockPos());
-            }
+            clearFormed(level);
             publish(level, false);
         } catch (Exception cleanupFailure) {
             LOGGER.error(
@@ -496,103 +474,8 @@ public final class MultiblockController extends MachineTicker {
         }
     }
 
-    /**
-     * Member visual sync: parts melting into the formed structure light their
-     * {@code CTM_ACTIVE} runtime flag, dropped-out parts go back to the standalone look. The flag is
-     * declared a runtime state property on the part block, so flipping it never re-dirties the
-     * structure watcher. Diff-only: an identical member list (same instance — the runtime keeps the
-     * old list when nothing changed) skips entirely, and unchanged members are never re-written, so
-     * the formed backstop costs no block-state reads here.
-     */
-    private void writeMemberCtmActive(ServerLevel level, List<BlockPos> previousMembers, List<BlockPos> currentMembers) {
-        if (previousMembers == currentMembers) {
-            return;
-        }
-        Set<BlockPos> current = currentMembers.isEmpty() ? Set.of() : new HashSet<>(currentMembers);
-        for (BlockPos member : previousMembers) {
-            if (!current.contains(member)) {
-                ConnectedTextureProperties.setActive(level, member, false);
-            }
-        }
-        Set<BlockPos> previous = previousMembers.isEmpty() ? Set.of() : new HashSet<>(previousMembers);
-        for (BlockPos member : currentMembers) {
-            if (!previous.contains(member)) {
-                ConnectedTextureProperties.setActive(level, member, true);
-            }
-        }
-    }
-
-    /** Controller-only writer of the {@link FormedMachineBlock#FORMED} visual block-state property. */
-    private void writeFormedBlockState(ServerLevel level, boolean formed) {
-        BlockPos pos = machine().getBlockPos();
-        BlockState state = level.getBlockState(pos);
-        if (!state.hasProperty(FormedMachineBlock.FORMED) || state.getValue(FormedMachineBlock.FORMED) == formed) {
-            return;
-        }
-        level.setBlockAndUpdate(pos, state.setValue(FormedMachineBlock.FORMED, formed));
-    }
-
     private RecipeModifier memberFoldModifier(@Nullable RecipeLogic context) {
-        List<ServiceMatch<RecipeModifier>> memberModifiers = runtime.services(RecipeModifier.KEY, context);
-        return new RecipeModifier() {
-
-            @Override
-            public Component title() {
-                return TopoApiLang.UI_RECIPE_MODIFIER_MULTIBLOCK_NAME.getComponent();
-            }
-
-            @Override
-            public Component description() {
-                return TopoApiLang.UI_RECIPE_MODIFIER_MULTIBLOCK_DESC.getComponent();
-            }
-
-            @Override
-            public UIElement createDetailsUi() {
-                return MachineUiContainerTemplate.INSTANCE
-                        .createLcdData(LcdData.Orientation.VERTICAL)
-                        .addStaticEntry(
-                                TopoApiLang.UI_RECIPE_MODIFIER_ATTR_SCOPE.getComponent(),
-                                TopoApiLang.UI_RECIPE_MODIFIER_MULTIBLOCK_SCOPE.getComponent(),
-                                LcdData.LED_TEXT)
-                        .addStaticEntry(
-                                TopoApiLang.UI_RECIPE_MODIFIER_ATTR_EFFECT.getComponent(),
-                                TopoApiLang.UI_RECIPE_MODIFIER_MULTIBLOCK_EFFECT.getComponent(),
-                                LcdData.LED_RUNNING);
-            }
-
-            @Override
-            public @NonNull TopoRecipe modify(@NonNull TopoRecipe recipe) {
-                return foldMemberRecipeModifiers(recipe, memberModifiers);
-            }
-
-            @Override
-            public @NonNull TopoRecipe modify(
-                                              @NonNull TopoRecipe recipe, @Nullable MachineBlockEntity host) {
-                return foldMemberRecipeModifiers(recipe, memberModifiers);
-            }
-
-            @Override
-            public long parallelCap() {
-                return maxParallelCap(memberModifiers);
-            }
-        };
-    }
-
-    private TopoRecipe foldMemberRecipeModifiers(
-                                                 TopoRecipe recipe, List<ServiceMatch<RecipeModifier>> memberModifiers) {
-        TopoRecipe modified = recipe;
-        for (ServiceMatch<RecipeModifier> match : memberModifiers) {
-            modified = match.value().modify(modified, machine());
-        }
-        return modified;
-    }
-
-    private static long maxParallelCap(List<ServiceMatch<RecipeModifier>> modifiers) {
-        long cap = 1L;
-        for (ServiceMatch<RecipeModifier> match : modifiers) {
-            cap = Math.max(cap, match.value().parallelCap());
-        }
-        return cap;
+        return recipeModifiers.memberFoldModifier(context);
     }
 
     /** Resolves and caches the per-level services; cleared on unload, so the cache never spans levels. */
@@ -654,8 +537,7 @@ public final class MultiblockController extends MachineTicker {
             verifyInFlight.future().cancel(false);
             pendingVerify = null;
         }
-        formedOrientation = null;
-        formedRepeats = null;
+        formedShape = null;
         runtime.clearMembers();
     }
 
@@ -698,40 +580,5 @@ public final class MultiblockController extends MachineTicker {
                                        Orientation orientation,
                                        CompletableFuture<StructureEngine.Verification> future) {}
 
-    /** Live, read-only structure view over the server level — used for targeted single-cell re-tests. */
-    private static final class LiveStructureView implements StructureView {
-
-        private final ServerLevel level;
-        private final BlockPos controllerPos;
-
-        private LiveStructureView(ServerLevel level, BlockPos controllerPos) {
-            this.level = level;
-            this.controllerPos = controllerPos;
-        }
-
-        @Override
-        public BlockPos controllerPos() {
-            return controllerPos;
-        }
-
-        @Override
-        public @Nullable BlockState blockState(BlockPos worldPos) {
-            return StructureCaptures.captureCell(level, worldPos).state();
-        }
-
-        @Override
-        public Set<PartRole> roles(BlockPos worldPos) {
-            return StructureCaptures.captureCell(level, worldPos).roles();
-        }
-
-        @Override
-        public boolean isMember(BlockPos worldPos) {
-            return StructureCaptures.captureCell(level, worldPos).member();
-        }
-    }
-
-    public enum FormState {
-        UNFORMED,
-        FORMED
-    }
+    private record FormedShape(Orientation orientation, RepeatResolution repeats) {}
 }

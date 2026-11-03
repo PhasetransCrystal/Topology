@@ -21,19 +21,11 @@ import java.util.concurrent.CompletableFuture;
  *
  * <p>
  * Small structures stay on the synchronous path (lowest latency); the cell-count threshold is
- * tunable through the {@code oi.multiblock.asyncThreshold} system property (gametests lower it to
- * force the async path).
+ * tunable through {@link net.ptcrys.topo.Topology#config} MULTIBLOCK.asyncCellThreshold.
  */
 public final class AsyncStructureService {
 
-    private static final int DEFAULT_ASYNC_CELL_THRESHOLD = 2048;
-
     private AsyncStructureService() {}
-
-    /** Footprints at or above this many (maximal) cells recognize on the worker pool. */
-    public static int asyncCellThreshold() {
-        return Integer.getInteger("oi.multiblock.asyncThreshold", DEFAULT_ASYNC_CELL_THRESHOLD);
-    }
 
     /** Recognizes the captured views on the worker pool; same decision as the synchronous path. */
     public static CompletableFuture<Outcome> recognizeAsync(Captures captures, Blueprint blueprint) {
