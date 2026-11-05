@@ -105,6 +105,11 @@ public final class PropertyRules {
             return true;
         }
 
+        @Override
+        public List<Property<?>> governedProperties() {
+            return List.copyOf(properties);
+        }
+
         private BlockState rotate(Orientation o, BlockState s) {
             for (EnumProperty<Direction> property : properties) {
                 if (s.hasProperty(property)) {
@@ -146,6 +151,11 @@ public final class PropertyRules {
             return property.getPossibleValues().contains(transformed) ? s.setValue(property, transformed) : s;
         }
 
+        @Override
+        public List<Property<?>> governedProperties() {
+            return List.of(property);
+        }
+
         private static Direction.Axis transformAxis(Orientation o, Direction.Axis axis) {
             Direction positive = Direction.fromAxisAndDirection(axis, Direction.AxisDirection.POSITIVE);
             return o.apply(positive).getAxis();
@@ -167,6 +177,11 @@ public final class PropertyRules {
         @Override
         public boolean supports(Orientation o) {
             return o.apply(Direction.UP).getAxis() == Direction.Axis.Y;
+        }
+
+        @Override
+        public List<Property<?>> governedProperties() {
+            return List.of(property);
         }
 
         private BlockState transform(Orientation o, BlockState s) {

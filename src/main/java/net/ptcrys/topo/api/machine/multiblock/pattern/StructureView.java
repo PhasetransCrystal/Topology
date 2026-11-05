@@ -25,6 +25,11 @@ public interface StructureView {
     @Nullable
     BlockState blockState(BlockPos worldPos);
 
+    /** Whether {@code worldPos} could be read from a loaded chunk; false = unknown, not missing. */
+    default boolean isLoaded(BlockPos worldPos) {
+        return true;
+    }
+
     Set<PartRole> roles(BlockPos worldPos);
 
     /** Whether a machine member (part) occupies {@code worldPos}, recorded BE-free at snapshot time. */

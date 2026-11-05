@@ -152,7 +152,7 @@ public final class MultiblockClientDiagnosis {
                 countProblems++;
             }
         }
-        int totalCells = blueprint.cells().size();
+        int totalCells = result.matchedCount() + result.missingCount() + result.unloadedCount();
         int partCount = result.roleCounts().values().stream().mapToInt(Integer::intValue).sum();
         return new Report(
                 sample(all, displayMax),
@@ -230,7 +230,7 @@ public final class MultiblockClientDiagnosis {
         if (level == null) {
             return detected;
         }
-        Orientation orientation = orientationOf(controller);
+        Orientation orientation = blueprint.effectiveOrientation(orientationOf(controller));
         Orientation inverse = orientation.inverse();
         BlockPos origin = controller.getBlockPos();
         BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
@@ -262,7 +262,7 @@ public final class MultiblockClientDiagnosis {
             if (expected == null) {
                 return null;
             }
-            Orientation orientation = orientationOf(controller);
+            Orientation orientation = blueprint.effectiveOrientation(orientationOf(controller));
             for (PropertyRule rule : cell.rules()) {
                 if (rule.classification() == PropertyRule.Classification.COVARIANT) {
                     expected = rule.apply(orientation, expected);
@@ -314,7 +314,7 @@ public final class MultiblockClientDiagnosis {
         if (level == null) {
             return null;
         }
-        BlockPos worldPos = orientationOf(controller).apply(localPos, controller.getBlockPos());
+        BlockPos worldPos = blueprint.effectiveOrientation(orientationOf(controller)).apply(localPos, controller.getBlockPos());
         return level.isLoaded(worldPos) ? level.getBlockState(worldPos) : null;
     }
 
@@ -357,7 +357,7 @@ public final class MultiblockClientDiagnosis {
         Level level = Objects.requireNonNull(controller.getLevel(), "controller level");
         Orientation orientation = orientationOf(controller);
         long captureStart = System.nanoTime();
-        StructureView snapshot = StructureCaptures.capture(level, controller.getBlockPos(), blueprint, orientation);
+        StructureView snapshot = blueprint.supportsSnapshot() ? StructureCaptures.capture(level, controller.getBlockPos(), blueprint, orientation) : new MultiblockLiveView(level, controller.getBlockPos());
         long captureNanos = System.nanoTime() - captureStart;
         long scanStart = System.nanoTime();
         RecognitionResult result = StructureEngine.recognize(snapshot, blueprint, orientation);

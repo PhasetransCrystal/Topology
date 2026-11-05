@@ -26,9 +26,11 @@ import java.util.Objects;
  * @param formed        whether every cell matched and every capability count requirement is met
  * @param matchedCount  number of cells that matched
  * @param missingCount  total number of cells that failed to match (the sample below is bounded)
+ * @param unloadedCount number of footprint cells inside unloaded chunks; unknown, not missing
  * @param missingCells  a bounded sample of the cells that failed to match (diagnosis rows)
  * @param roleCounts    how many matched cells exposed each part capability
  * @param members       world positions of matched cells backed by a machine member (a part)
+ * @param modules       per-named-module match report; optional modules do not affect {@link #formed()}
  * @param repeats       the per-segment repeat counts chosen for this pass (reused by build/export)
  * @param failureReason typed engine-level refusal classification; {@link FailureReason#NONE} for
  *                      every result whose pass actually ran ({@link #formed()} semantics unchanged)
@@ -37,9 +39,11 @@ public record RecognitionResult(
                                 boolean formed,
                                 int matchedCount,
                                 int missingCount,
+                                int unloadedCount,
                                 List<MissingCell> missingCells,
                                 Map<PartRole, Integer> roleCounts,
                                 List<BlockPos> members,
+                                Map<String, ModuleReport> modules,
                                 RepeatResolution repeats,
                                 FailureReason failureReason) {
 
@@ -50,12 +54,16 @@ public record RecognitionResult(
         if (missingCount < 0) {
             throw new IllegalArgumentException("Missing cell count must be non-negative");
         }
+        if (unloadedCount < 0) {
+            throw new IllegalArgumentException("Unloaded cell count must be non-negative");
+        }
         missingCells = List.copyOf(Objects.requireNonNull(missingCells, "missing cells"));
         if (missingCells.size() > missingCount) {
             throw new IllegalArgumentException("Missing sample cannot exceed the missing count");
         }
         roleCounts = Map.copyOf(Objects.requireNonNull(roleCounts, "capability counts"));
         members = List.copyOf(Objects.requireNonNull(members, "members"));
+        modules = Map.copyOf(Objects.requireNonNull(modules, "module reports"));
         repeats = Objects.requireNonNull(repeats, "repeat resolution");
         failureReason = Objects.requireNonNull(failureReason, "failure reason");
         if (formed && failureReason != FailureReason.NONE) {
@@ -72,11 +80,48 @@ public record RecognitionResult(
                 false,
                 0,
                 0,
+                0,
                 List.of(),
                 Map.of(),
                 List.of(),
+                Map.of(),
                 repeats,
                 FailureReason.ORIENTATION_UNSUPPORTED);
+    }
+
+    /** Match status of one named blueprint module. */
+    public enum ModuleState {
+        ABSENT,
+        PARTIAL,
+        SATISFIED
+    }
+
+    /** Per-module result: required modules gate formation; optional modules are reported only. */
+    public record ModuleReport(String id, boolean required, int matched, int total) {
+
+        public ModuleReport {
+            if (id == null || id.isBlank()) {
+                throw new IllegalArgumentException("Module id must not be blank");
+            }
+            if (matched < 0 || total < 0 || matched > total) {
+                throw new IllegalArgumentException("Invalid module match counts: " + matched + "/" + total);
+            }
+        }
+
+        public boolean present() {
+            return matched > 0;
+        }
+
+        public boolean satisfied() {
+            return total > 0 && matched == total;
+        }
+
+        public ModuleState state() {
+            if (total == 0 || matched == 0) {
+                return ModuleState.ABSENT;
+            }
+            return matched == total ? ModuleState.SATISFIED : ModuleState.PARTIAL;
+        }
     }
 
     /**
@@ -92,7 +137,12 @@ public record RecognitionResult(
          * {@link Orientation} ({@link PropertyRule#supports(Orientation)} returned {@code false}), so
          * the pass was refused before comparing any cell.
          */
-        ORIENTATION_UNSUPPORTED
+        ORIENTATION_UNSUPPORTED,
+        /**
+         * At least one footprint cell lies in an unloaded chunk. The structure is unknown, not
+         * broken; callers must retain the current formation state and retry later.
+         */
+        CHUNK_UNLOADED
     }
 
     public record MissingCell(

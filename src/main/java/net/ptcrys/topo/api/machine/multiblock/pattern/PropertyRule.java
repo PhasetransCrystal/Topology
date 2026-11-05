@@ -86,6 +86,16 @@ public interface PropertyRule {
     }
 
     /**
+     * The block-state properties this rule's {@link #apply(Orientation, BlockState) transform}
+     * governs. Used by {@link Blueprint.Builder} to reject two {@link Classification#COVARIANT} rules
+     * on the same cell that would transform the same property twice. Rules that do not transform any
+     * property (for example {@code DERIVED} masks) return an empty collection.
+     */
+    default Collection<Property<?>> governedProperties() {
+        return List.of();
+    }
+
+    /**
      * The three property categories.
      *
      * <ul>

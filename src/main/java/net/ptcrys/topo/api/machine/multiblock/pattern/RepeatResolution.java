@@ -3,17 +3,13 @@ package net.ptcrys.topo.api.machine.multiblock.pattern;
 import java.util.Arrays;
 
 /**
- * The repeat count chosen for every blueprint segment during a single {@link StructureEngine} pass.
+ * The concrete copy count chosen for every {@link Blueprint.RepeatSection} during one recognition
+ * pass.
  *
  * <p>
- * A {@link Blueprint} is an ordered list of segments; each segment carries a
- * {@link Blueprint.RepeatRange}. The engine's grid walk picks one concrete count per segment
- * (between its range's {@code min} and {@code max}, greedy-maximal for optional copies) and records
- * it on the {@link RecognitionResult}, so the formed footprint and the targeted-invalidation math
- * agree on exactly the same expansion.
- *
- * <p>
- * Counts are indexed by segment position (the order segments were declared on the builder).
+ * Counts are indexed by section declaration order ({@link Blueprint#section(int)}). The engine
+ * resolves sections greedily in declaration order and records the chosen counts so the formed
+ * footprint, targeted invalidation, claims and export all agree on exactly the same layout.
  */
 public final class RepeatResolution {
 
@@ -23,9 +19,18 @@ public final class RepeatResolution {
         this.counts = counts.clone();
     }
 
-    /** The chosen repeat count for the segment at {@code segmentIndex}. */
-    public int count(int segmentIndex) {
-        return counts[segmentIndex];
+    /** The chosen copy count of section {@code sectionIndex}. */
+    public int count(int sectionIndex) {
+        return counts[sectionIndex];
+    }
+
+    public int size() {
+        return counts.length;
+    }
+
+    /** A defensive copy of the raw counts, for the layout engine's hot paths. */
+    int[] countsCopy() {
+        return counts.clone();
     }
 
     @Override

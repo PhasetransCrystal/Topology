@@ -5,6 +5,7 @@ import net.ptcrys.topo.api.machine.component.Attachment;
 import net.ptcrys.topo.api.machine.component.AttachmentType;
 import net.ptcrys.topo.api.machine.multiblock.pattern.Blueprint;
 
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -25,9 +26,15 @@ public final class MultiblockControllerMetadata implements Attachment {
             .attachmentType("multiblock_controller", MultiblockControllerMetadata.class);
 
     private final Blueprint blueprint;
+    private final List<MultiblockModule> modules;
 
     MultiblockControllerMetadata(Blueprint blueprint) {
+        this(blueprint, List.of());
+    }
+
+    MultiblockControllerMetadata(Blueprint blueprint, List<MultiblockModule> modules) {
         this.blueprint = Objects.requireNonNull(blueprint, "blueprint");
+        this.modules = List.copyOf(Objects.requireNonNull(modules, "multiblock modules"));
     }
 
     /** Only activates class initialization ({@link #TYPE} registers in the field initializer). */
@@ -37,6 +44,11 @@ public final class MultiblockControllerMetadata implements Attachment {
         return blueprint;
     }
 
+    /** Overlay blueprints attached to this controller, in declaration order. */
+    public List<MultiblockModule> modules() {
+        return modules;
+    }
+
     @Override
     public AttachmentType<MultiblockControllerMetadata> type() {
         return TYPE;
@@ -44,16 +56,16 @@ public final class MultiblockControllerMetadata implements Attachment {
 
     @Override
     public boolean equals(Object obj) {
-        return this == obj || obj instanceof MultiblockControllerMetadata other && blueprint.equals(other.blueprint);
+        return this == obj || obj instanceof MultiblockControllerMetadata other && blueprint.equals(other.blueprint) && modules.equals(other.modules);
     }
 
     @Override
     public int hashCode() {
-        return blueprint.hashCode();
+        return Objects.hash(blueprint, modules);
     }
 
     @Override
     public String toString() {
-        return "MultiblockControllerMetadata[blueprint=" + blueprint + "]";
+        return "MultiblockControllerMetadata[blueprint=" + blueprint + ", modules=" + modules + "]";
     }
 }

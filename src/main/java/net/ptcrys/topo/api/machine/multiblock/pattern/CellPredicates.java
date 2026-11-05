@@ -6,9 +6,11 @@ import net.ptcrys.topo.api.machine.multiblock.ability.PartRole;
 import net.ptcrys.topo.api.machine.multiblock.ability.PartRoleAttachment;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.Property;
 
 import org.jspecify.annotations.Nullable;
 
@@ -49,6 +51,50 @@ public final class CellPredicates {
      */
     public static CellPredicate block(Supplier<? extends Block> block) {
         return new LazyBlockPredicate(Objects.requireNonNull(block, "block supplier"));
+    }
+
+    /** Matches an air block (empty blueprint space that must remain clear). */
+    public static CellPredicate air() {
+        return AirPredicate.INSTANCE;
+    }
+
+    /** Matches any block in {@code tag}. */
+    public static CellPredicate blockTag(TagKey<Block> tag) {
+        return new BlockTagPredicate(Objects.requireNonNull(tag, "block tag"));
+    }
+
+    /** Matches an exact block state, including every property value. */
+    public static CellPredicate state(BlockState state) {
+        return new StatePredicate(Objects.requireNonNull(state, "block state"));
+    }
+
+    /** Matches a state carrying {@code property = value}. */
+    public static <T extends Comparable<T>> CellPredicate property(Property<T> property, T value) {
+        return new PropertyPredicate<>(Objects.requireNonNull(property, "property"), Objects.requireNonNull(value, "property value"));
+    }
+
+    /** Matches a cell occupied by any machine member (not necessarily a particular part role). */
+    public static CellPredicate member() {
+        return MemberPredicate.INSTANCE;
+    }
+
+    /** Matches a block that can be replaced (air, plants, snow layers, …). */
+    public static CellPredicate replaceable() {
+        return ReplaceablePredicate.INSTANCE;
+    }
+
+    /** Inverts a predicate. Capability candidates are intentionally not inherited. */
+    public static CellPredicate not(CellPredicate predicate) {
+        return new NotPredicate(Objects.requireNonNull(predicate, "predicate"));
+    }
+
+    /** Matches only when every predicate matches (logical AND). */
+    public static CellPredicate allOf(CellPredicate... predicates) {
+        Objects.requireNonNull(predicates, "cell predicates");
+        if (predicates.length < 2) {
+            throw new IllegalArgumentException("allOf needs at least two predicates");
+        }
+        return new AllOfPredicate(List.of(predicates));
     }
 
     /** Matches a placed part that exposes the given {@link PartRole} (strong key). */
@@ -128,6 +174,124 @@ public final class CellPredicates {
         @Override
         public List<ItemStack> candidates() {
             return List.of(new ItemStack(block()));
+        }
+    }
+
+    private enum AirPredicate implements CellPredicate {
+
+        INSTANCE;
+
+        @Override
+        public boolean test(@Nullable BlockState actual, @Nullable BlockState expected) {
+            return actual != null && actual.isAir();
+        }
+    }
+
+    private record BlockTagPredicate(TagKey<Block> tag) implements CellPredicate {
+
+        @Override
+        public boolean test(@Nullable BlockState actual, @Nullable BlockState expected) {
+            return actual != null && actual.is(tag);
+        }
+    }
+
+    private record StatePredicate(BlockState state) implements CellPredicate {
+
+        @Override
+        public boolean test(@Nullable BlockState actual, @Nullable BlockState expected) {
+            return actual == state;
+        }
+
+        @Override
+        public List<ItemStack> candidates() {
+            return List.of(new ItemStack(state.getBlock()));
+        }
+    }
+
+    private record PropertyPredicate<T extends Comparable<T>>(Property<T> property, T value) implements CellPredicate {
+
+        @Override
+        public boolean test(@Nullable BlockState actual, @Nullable BlockState expected) {
+            return actual != null && actual.hasProperty(property) && value.equals(actual.getValue(property));
+        }
+    }
+
+    private enum MemberPredicate implements CellPredicate {
+
+        INSTANCE;
+
+        @Override
+        public boolean test(StructureView view, BlockPos worldPos, Cell expected) {
+            return view.isMember(worldPos);
+        }
+
+        @Override
+        public boolean test(@Nullable BlockState actual, @Nullable BlockState expected) {
+            return false;
+        }
+    }
+
+    private enum ReplaceablePredicate implements CellPredicate {
+
+        INSTANCE;
+
+        @Override
+        public boolean test(@Nullable BlockState actual, @Nullable BlockState expected) {
+            return actual != null && actual.canBeReplaced();
+        }
+    }
+
+    private record NotPredicate(CellPredicate delegate) implements CellPredicate {
+
+        @Override
+        public boolean test(StructureView view, BlockPos worldPos, Cell expected) {
+            return !delegate.test(view, worldPos, expected);
+        }
+
+        @Override
+        public boolean test(@Nullable BlockState actual, @Nullable BlockState expected) {
+            return !delegate.test(actual, expected);
+        }
+    }
+
+    private record AllOfPredicate(List<CellPredicate> predicates) implements CellPredicate {
+
+        @Override
+        public boolean test(StructureView view, BlockPos worldPos, Cell expected) {
+            for (CellPredicate predicate : predicates) {
+                if (!predicate.test(view, worldPos, expected)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        @Override
+        public boolean test(@Nullable BlockState actual, @Nullable BlockState expected) {
+            for (CellPredicate predicate : predicates) {
+                if (!predicate.test(actual, expected)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        @Override
+        public List<PartRole> partRoles() {
+            List<PartRole> union = new ArrayList<>();
+            for (CellPredicate predicate : predicates) {
+                union.addAll(predicate.partRoles());
+            }
+            return List.copyOf(union);
+        }
+
+        @Override
+        public List<ItemStack> candidates() {
+            List<ItemStack> union = new ArrayList<>();
+            for (CellPredicate predicate : predicates) {
+                union.addAll(predicate.candidates());
+            }
+            return List.copyOf(union);
         }
     }
 

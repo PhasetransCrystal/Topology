@@ -60,6 +60,12 @@ public final class CompiledSnapshot implements StructureView {
     }
 
     @Override
+    public boolean isLoaded(BlockPos worldPos) {
+        int index = compiled.cellIndexOfWorld(worldPos, controllerPos);
+        return index >= 0 && states[index] != null;
+    }
+
+    @Override
     public Set<PartRole> roles(BlockPos worldPos) {
         Set<PartRole> set = capabilities.get(worldPos.asLong());
         return set == null ? Set.of() : set;

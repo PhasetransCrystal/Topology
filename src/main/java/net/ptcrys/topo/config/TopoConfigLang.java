@@ -124,6 +124,20 @@ public final class TopoConfigLang {
                         "默认：32 个单元格"
                 });
 
+        option("unloadedRetryIntervalTicks",
+                YELLOW + "Unloaded-chunk retry interval",
+                YELLOW + "未加载区块重试间隔",
+                new String[] {
+                        "Retry interval after a structure check reaches an unloaded chunk, in ticks.",
+                        "Unloaded chunks are unknown rather than broken; the controller keeps its state and retries later.",
+                        "Default: 20 ticks"
+                },
+                new String[] {
+                        "结构检测遇到未加载区块后的重试间隔（tick）。",
+                        "未加载区块不代表结构损坏；控制器会保持当前状态并在该间隔后重试。",
+                        "默认：20 ticks"
+                });
+
         option("structureExecutorThreads",
                 RED + "Structure check threads",
                 RED + "结构检测线程数",

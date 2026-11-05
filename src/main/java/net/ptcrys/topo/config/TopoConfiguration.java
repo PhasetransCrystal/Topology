@@ -94,6 +94,15 @@ public final class TopoConfiguration {
         public int maxChangedCellsPerNote = 32;
 
         @Configurable
+        @Configurable.Range(min = 5, max = 200)
+        @Configurable.Comment(value = {
+                "结构检测遇到未加载区块后的重试间隔（tick）。",
+                "未加载区块不代表结构损坏；控制器会保持当前状态并在该间隔后重试。",
+                "默认：20 ticks"
+        }, localize = true)
+        public int unloadedRetryIntervalTicks = 20;
+
+        @Configurable
         @Configurable.UpdateRestriction(UpdateRestrictions.GAME_RESTART)
         @Configurable.Range(min = 1, max = 16)
         @Configurable.Comment(value = {

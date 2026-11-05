@@ -146,7 +146,7 @@ public final class MultiblockClaimIndex {
         for (Map.Entry<BlockPos, Watch> entry : watchesByController.entrySet()) {
             Watch watch = entry.getValue();
             for (int i = 0; i < watch.regions().length; i++) {
-                if (watch.regions()[i].contains(cell) && watch.compiled()[i].containsWorld(cell, entry.getKey())) {
+                if (watch.regions()[i].contains(cell) && watch.compiled()[i].containsWorldAnyLayout(cell, entry.getKey())) {
                     if (controllers == null) {
                         controllers = new LinkedHashSet<>();
                     }
@@ -157,7 +157,7 @@ public final class MultiblockClaimIndex {
         }
         for (Map.Entry<BlockPos, Claim> entry : claimsByController.entrySet()) {
             Claim claim = entry.getValue();
-            if (claim.region().contains(cell) && claim.compiled().containsWorld(cell, entry.getKey())) {
+            if (claim.region().contains(cell) && claim.compiled().containsWorld(cell, entry.getKey(), claim.repeats())) {
                 if (controllers == null) {
                     controllers = new LinkedHashSet<>();
                 }
@@ -172,50 +172,26 @@ public final class MultiblockClaimIndex {
     private static boolean claimsOverlap(Claim a, Claim b) {
         Claim smaller = a.compiled().cellCapacity() <= b.compiled().cellCapacity() ? a : b;
         Claim larger = smaller == a ? b : a;
-        long[] offsets = smaller.compiled().captureOffsets();
+        boolean[] overlap = { false };
         BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
-        BlockPos origin = smaller.controllerPos();
-        for (long packed : offsets) {
-            cursor.set(
-                    origin.getX() + BlockPos.getX(packed),
-                    origin.getY() + BlockPos.getY(packed),
-                    origin.getZ() + BlockPos.getZ(packed));
-            if (larger.region().contains(cursor) && larger.compiled().containsWorld(cursor, larger.controllerPos())) {
-                return true;
+        smaller.compiled().forEachWorldPos(smaller.controllerPos(), smaller.repeats(), packed -> {
+            if (overlap[0]) {
+                return;
             }
-        }
-        return false;
+            cursor.set(BlockPos.getX(packed), BlockPos.getY(packed), BlockPos.getZ(packed));
+            if (larger.region().contains(cursor) && larger.compiled().containsWorld(cursor, larger.controllerPos(), larger.repeats())) {
+                overlap[0] = true;
+            }
+        });
+        return overlap[0];
     }
 
     /** Axis-aligned world-space box of a compiled footprint anchored at a controller. */
     public record Region(int minX, int minY, int minZ, int maxX, int maxY, int maxZ) {
 
         static Region of(CompiledBlueprint compiled, BlockPos controller) {
-            long[] offsets = compiled.captureOffsets();
-            int minX = Integer.MAX_VALUE;
-            int minY = Integer.MAX_VALUE;
-            int minZ = Integer.MAX_VALUE;
-            int maxX = Integer.MIN_VALUE;
-            int maxY = Integer.MIN_VALUE;
-            int maxZ = Integer.MIN_VALUE;
-            for (long packed : offsets) {
-                int x = BlockPos.getX(packed);
-                int y = BlockPos.getY(packed);
-                int z = BlockPos.getZ(packed);
-                minX = Math.min(minX, x);
-                minY = Math.min(minY, y);
-                minZ = Math.min(minZ, z);
-                maxX = Math.max(maxX, x);
-                maxY = Math.max(maxY, y);
-                maxZ = Math.max(maxZ, z);
-            }
-            return new Region(
-                    controller.getX() + minX,
-                    controller.getY() + minY,
-                    controller.getZ() + minZ,
-                    controller.getX() + maxX,
-                    controller.getY() + maxY,
-                    controller.getZ() + maxZ);
+            int[] bounds = compiled.worldBounds(controller);
+            return new Region(bounds[0], bounds[1], bounds[2], bounds[3], bounds[4], bounds[5]);
         }
 
         public boolean contains(BlockPos pos) {
