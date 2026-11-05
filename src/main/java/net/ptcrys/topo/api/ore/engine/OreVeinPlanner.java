@@ -1,5 +1,6 @@
 package net.ptcrys.topo.api.ore.engine;
 
+import net.ptcrys.topo.Topology;
 import net.ptcrys.topo.api.ore.OreEnvironment;
 import net.ptcrys.topo.api.ore.OreHostRule;
 import net.ptcrys.topo.api.ore.OrePlacement;
@@ -33,8 +34,6 @@ import java.util.Optional;
  */
 public final class OreVeinPlanner {
 
-    private static final long MAX_BLOCK_SCANS_PER_CHUNK = 262_144L;
-    private static final long MAX_CELL_CANDIDATES_PER_CHUNK = 65_536L;
     private static final long EXPOSURE_SALT = 0x6A09E667F3BCC909L;
     private static final Identifier VEIN_SELECT_SALT = IdHelper.topo("vein_select");
 
@@ -81,7 +80,7 @@ public final class OreVeinPlanner {
             int lastZ = lastOrigin(chunkPos.z() + searchChunks, gridSize);
             long columns = Math.max(0L, (long) (lastX - firstX) / gridSize + 1L);
             long rows = Math.max(0L, (long) (lastZ - firstZ) / gridSize + 1L);
-            if (columns * rows > MAX_CELL_CANDIDATES_PER_CHUNK) {
+            if (columns * rows > Math.max(64, Topology.config.ORE.maxCellCandidatesPerChunk)) {
                 throw new IllegalStateException(
                         "Ore vein " + gridVein.vein().id() + " enumerates " + columns * rows + " candidate cells per chunk; reduce radius/random offset or increase grid spacing");
             }
@@ -133,7 +132,7 @@ public final class OreVeinPlanner {
                 continue;
             }
             scans += (long) (maxX - minX + 1) * (maxY - minY + 1) * (maxZ - minZ + 1);
-            if (scans > MAX_BLOCK_SCANS_PER_CHUNK) {
+            if (scans > Math.max(1_024, Topology.config.ORE.maxBlockScansPerChunk)) {
                 throw new IllegalStateException("ore planning exceeded the per-chunk scan budget at " + chunkPos);
             }
             for (int y = minY; y <= maxY; y++) {

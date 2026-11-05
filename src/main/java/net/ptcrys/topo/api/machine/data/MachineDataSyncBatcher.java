@@ -1,5 +1,6 @@
 package net.ptcrys.topo.api.machine.data;
 
+import net.ptcrys.topo.Topology;
 import net.ptcrys.topo.api.machine.data.network.MachineDataBatchS2CPayload;
 
 import net.minecraft.core.RegistryAccess;
@@ -26,9 +27,6 @@ import java.util.function.Function;
 public final class MachineDataSyncBatcher {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MachineDataSyncBatcher.class);
-
-    /** Keep each custom payload well below the network frame limit. */
-    private static final long MAX_BATCH_BYTES = 256L * 1024L;
 
     private static final Set<MachineDataScope> CLIENT_DIRTY_DOMAINS = ConcurrentHashMap.newKeySet();
 
@@ -94,6 +92,7 @@ public final class MachineDataSyncBatcher {
         Map<P, List<MachineDataBatchS2CPayload.Entry>> entriesByPlayer = new LinkedHashMap<>();
         Map<P, Long> bytesByPlayer = new LinkedHashMap<>();
         List<PlayerBatch<P>> batches = new ArrayList<>();
+        long maxBatchBytes = Math.max(1L, Topology.config.MACHINES.dataSyncMaxBatchBytes);
         for (MachineDataScope domain : domains) {
             try {
                 List<P> players = playersByDomain.apply(domain);
@@ -119,7 +118,7 @@ public final class MachineDataSyncBatcher {
                     List<MachineDataBatchS2CPayload.Entry> entries = entriesByPlayer
                             .computeIfAbsent(player, ignored -> new ArrayList<>());
                     long currentBytes = bytesByPlayer.getOrDefault(player, 0L);
-                    if (!entries.isEmpty() && currentBytes + entryBytes > MAX_BATCH_BYTES) {
+                    if (!entries.isEmpty() && currentBytes + entryBytes > maxBatchBytes) {
                         batches.add(new PlayerBatch<>(player, new MachineDataBatchS2CPayload(entries)));
                         entries = new ArrayList<>();
                         entriesByPlayer.put(player, entries);

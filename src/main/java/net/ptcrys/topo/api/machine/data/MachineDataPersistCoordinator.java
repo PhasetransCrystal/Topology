@@ -1,5 +1,7 @@
 package net.ptcrys.topo.api.machine.data;
 
+import net.ptcrys.topo.Topology;
+
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -26,7 +28,6 @@ import java.util.Map;
  */
 final class MachineDataPersistCoordinator {
 
-    private static final long FAILED_SNAPSHOT_RECOVERY_INTERVAL_TICKS = 200L;
     private static final Map<ServerLevel, LevelState> LEVEL_STATES = new IdentityHashMap<>();
 
     private MachineDataPersistCoordinator() {}
@@ -77,7 +78,7 @@ final class MachineDataPersistCoordinator {
             LevelState state = entry.getValue();
             long gameTime = level.getGameTime();
             if (gameTime >= state.nextRecoveryGameTime) {
-                state.nextRecoveryGameTime = gameTime + FAILED_SNAPSHOT_RECOVERY_INTERVAL_TICKS;
+                state.nextRecoveryGameTime = gameTime + Math.max(20, Topology.config.MACHINES.persistRecoveryIntervalTicks);
                 recoverDroppedChunkMarks(level, state);
             }
         }

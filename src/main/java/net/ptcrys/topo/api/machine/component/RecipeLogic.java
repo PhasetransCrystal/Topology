@@ -1,5 +1,6 @@
 package net.ptcrys.topo.api.machine.component;
 
+import net.ptcrys.topo.Topology;
 import net.ptcrys.topo.api.api.lang.TopoApiLang;
 import net.ptcrys.topo.api.api.tick.TickHandle;
 import net.ptcrys.topo.api.machine.data.DataEnum;
@@ -35,13 +36,6 @@ public class RecipeLogic extends MachineTicker
             .service(MachineWorkView.KEY, (trait, unused) -> trait)
             .service(MachineWorkControl.KEY, (trait, unused) -> trait)
             .service(MachineResourceWake.KEY, (trait, unused) -> trait);
-
-    /**
-     * 停泊退避上限(tick):被证明"无事件不可能有进展"的停泊 tick 把自身 interval 逐步翻倍到此
-     * 封顶,与 ME 舱室 20-40t 节奏同档。资源内容变化/启停切换走事件唤醒(interval 立即回 1),
-     * 该上限只封顶无唤醒契约的来源(配方重载、RecipeCondition 翻转)的响应延迟。
-     */
-    public static final int PARKED_BACKOFF_MAX_INTERVAL = 20;
 
     private final List<TopoRecipeType<?>> recipeTypes;
     // Persist only: LDLib2 menu bindings sync these UI values while a screen is open, so recipe
@@ -242,9 +236,10 @@ public class RecipeLogic extends MachineTicker
      * pass {@code NoopTickHandle} and are unaffected.
      */
     private void backOffParkedTick(TickHandle handle) {
+        int maxInterval = Math.max(1, Topology.config.MACHINES.recipeLogicParkedBackoffMaxInterval);
         int interval = handle.interval();
-        if (interval < PARKED_BACKOFF_MAX_INTERVAL) {
-            handle.setInterval(Math.min(PARKED_BACKOFF_MAX_INTERVAL, interval * 2));
+        if (interval < maxInterval) {
+            handle.setInterval(Math.min(maxInterval, interval * 2));
         }
     }
 
@@ -287,7 +282,7 @@ public class RecipeLogic extends MachineTicker
      * Runs one state-machine step and reports whether it was a parked no-op: a tick whose early
      * return is proven to repeat until an external event (resource version bump, recipe-set
      * revision change, work-mode toggle) or a backoff-capped poll. Parked ticks decay the hub
-     * interval up to {@link #PARKED_BACKOFF_MAX_INTERVAL}; {@link #leaveBackoff()} is the event
+     * interval up to {@code MACHINES.recipeLogicParkedBackoffMaxInterval}; {@link #leaveBackoff()} is the event
      * side that snaps it back.
      */
     private boolean parkedThisTick() {

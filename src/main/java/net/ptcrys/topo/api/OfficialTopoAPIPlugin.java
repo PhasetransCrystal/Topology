@@ -9,6 +9,7 @@ import net.ptcrys.topo.api.machine.component.RecipeLogicMetadata;
 import net.ptcrys.topo.api.machine.component.RecipeModifierDisplay;
 import net.ptcrys.topo.api.machine.multiblock.MultiblockControllerMetadata;
 import net.ptcrys.topo.api.machine.multiblock.ability.PartRoleAttachment;
+import net.ptcrys.topo.config.TopoConfigLang;
 
 /** Official framework contributions. Uses the same typed points as dependent content plugins. */
 public final class OfficialTopoAPIPlugin extends TopoPlugin {
@@ -30,5 +31,6 @@ public final class OfficialTopoAPIPlugin extends TopoPlugin {
     @Override
     public void registerLang(LangDomainRegistration lang) {
         TopoApiLang.init();
+        TopoConfigLang.init();
     }
 }

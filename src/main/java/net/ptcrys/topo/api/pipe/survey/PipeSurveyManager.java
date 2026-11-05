@@ -1,5 +1,6 @@
 package net.ptcrys.topo.api.pipe.survey;
 
+import net.ptcrys.topo.Topology;
 import net.ptcrys.topo.api.api.lang.TopoApiLang;
 import net.ptcrys.topo.api.pipe.PipeSideRole;
 import net.ptcrys.topo.api.pipe.network.PipeLevelRuntime;
@@ -38,9 +39,6 @@ public final class PipeSurveyManager {
 
     /** 勘测车道数上限(分析与渲染共用)。 */
     public static final int MAX_LANES = 6;
-    /** 两次快照下发的最小间隔(tick),限频客户端轮询。 */
-    private static final int MIN_SEND_INTERVAL = 10;
-
     private static final Map<UUID, Survey> SURVEYS = new HashMap<>();
 
     /** 一名玩家的活动勘测;端点选择循环 A→B→重选 A。 */
@@ -128,7 +126,8 @@ public final class PipeSurveyManager {
             return;
         }
         long gameTime = player.level().getGameTime();
-        if (survey.lastSendGameTime != Long.MIN_VALUE && gameTime - survey.lastSendGameTime < MIN_SEND_INTERVAL) {
+        int minSendInterval = Math.max(1, Topology.config.PIPES.surveyMinSendIntervalTicks);
+        if (survey.lastSendGameTime != Long.MIN_VALUE && gameTime - survey.lastSendGameTime < minSendInterval) {
             return;
         }
         send(player, survey);
