@@ -62,7 +62,7 @@ public final class StructureEngine {
             return RecognitionResult.orientationUnsupported(blueprint.minRepeats());
         }
         CompiledBlueprint compiled = blueprint.compiled(orientation);
-        RecognizeTally tally = new RecognizeTally(compiled);
+        RecognizeTally tally = new RecognizeTally();
         RepeatResolution repeats = walk(view, compiled, tally);
         boolean formed = tally.unloadedCount == 0 && tally.missingCount == 0 && countsSatisfied(blueprint, tally.roleCounts);
         return new RecognitionResult(
@@ -73,115 +73,9 @@ public final class StructureEngine {
                 List.copyOf(tally.missingSample),
                 tally.roleCounts,
                 List.copyOf(tally.members),
-                Map.of(),
                 repeats,
+                tally.bounds(),
                 tally.unloadedCount > 0 ? RecognitionResult.FailureReason.CHUNK_UNLOADED : RecognitionResult.FailureReason.NONE);
-    }
-
-    /** Detection mode selecting the fast-fail maintenance pass or the full diagnostic pass. */
-    public enum CheckMode {
-        /** Stop at the first blocking mismatch; no members, module reports, or missing-cell sample. */
-        FAST_FAIL,
-        /** Visit the whole footprint and return diagnostics, members, and per-module reports. */
-        FULL
-    }
-
-    /** Result of evaluating one overlay blueprint ({@code matched/total} excludes its controller anchor). */
-    public record OverlayResult(int matched, int total, List<BlockPos> members, boolean unloaded) {
-
-        public OverlayResult {
-            if (matched < 0 || total < 0 || matched > total) {
-                throw new IllegalArgumentException("Invalid overlay match counts: " + matched + "/" + total);
-            }
-            members = List.copyOf(Objects.requireNonNull(members, "overlay members"));
-        }
-
-        public boolean satisfied() {
-            return total > 0 && matched == total && !unloaded;
-        }
-
-        public boolean present() {
-            return matched > 0;
-        }
-    }
-
-    /**
-     * Evaluates a module overlay against the same controller anchor and orientation as the main
-     * blueprint. Overlay cells may overlap main-body/module cells; the controller anchor cell of the
-     * overlay is ignored. Overlay blueprints use their minimum repeat resolution.
-     */
-    public static OverlayResult evaluateOverlay(
-                                                StructureView view,
-                                                Blueprint overlay,
-                                                Orientation orientation,
-                                                BlockPos controllerPos) {
-        Objects.requireNonNull(view, "structure view");
-        Objects.requireNonNull(overlay, "overlay blueprint");
-        Objects.requireNonNull(orientation, "orientation");
-        Objects.requireNonNull(controllerPos, "controller position");
-        if (!overlay.supports(orientation)) {
-            return new OverlayResult(0, Math.max(0, overlay.cells().size() - 1), List.of(), false);
-        }
-        Orientation effective = orientation.compose(overlay.frame());
-        int matched = 0;
-        int total = 0;
-        boolean unloaded = false;
-        List<BlockPos> members = new ArrayList<>();
-        for (Cell cell : overlay.cells()) {
-            if (cell.localPos().equals(BlockPos.ZERO)) {
-                continue;
-            }
-            total++;
-            BlockPos local = cell.localPos();
-            int wx = controllerPos.getX() + effective.transformX(local.getX(), local.getY(), local.getZ());
-            int wy = controllerPos.getY() + effective.transformY(local.getX(), local.getY(), local.getZ());
-            int wz = controllerPos.getZ() + effective.transformZ(local.getX(), local.getY(), local.getZ());
-            BlockPos world = new BlockPos(wx, wy, wz);
-            if (!view.isLoaded(world)) {
-                unloaded = true;
-                continue;
-            }
-            if (matchesCell(view, world, cell, effective)) {
-                matched++;
-                if (view.isMember(world)) {
-                    members.add(world);
-                }
-            }
-        }
-        return new OverlayResult(matched, total, List.copyOf(members), unloaded);
-    }
-
-    /** Public cell test with orientation folding, used by overlay modules. */
-    public static boolean matchesCell(StructureView view, BlockPos worldPos, Cell cell, Orientation orientation) {
-        Objects.requireNonNull(view, "structure view");
-        Objects.requireNonNull(worldPos, "world position");
-        Objects.requireNonNull(cell, "cell");
-        Objects.requireNonNull(orientation, "orientation");
-        return matches(view, worldPos, cell, orientExpected(cell, orientation));
-    }
-
-    /**
-     * Unified detection entry. {@link CheckMode#FAST_FAIL} is the upkeep pass; {@link CheckMode#FULL}
-     * is the formation/diagnosis pass. The FAST_FAIL result intentionally carries no diagnostics.
-     */
-    public static RecognitionResult check(StructureView view, Blueprint blueprint, Orientation orientation, CheckMode mode) {
-        Objects.requireNonNull(mode, "check mode");
-        if (mode == CheckMode.FULL) {
-            return recognize(view, blueprint, orientation);
-        }
-        Verification verification = verify(view, blueprint, orientation);
-        RecognitionResult.FailureReason reason = verification.unloaded() ? RecognitionResult.FailureReason.CHUNK_UNLOADED : RecognitionResult.FailureReason.NONE;
-        return new RecognitionResult(
-                verification.formed(),
-                0,
-                verification.formed() ? 0 : 1,
-                verification.unloaded() ? 1 : 0,
-                List.of(),
-                Map.of(),
-                List.of(),
-                Map.of(),
-                verification.repeats(),
-                reason);
     }
 
     /**
@@ -232,7 +126,7 @@ public final class StructureEngine {
             }
         }
         if (sectionsBeforeController) {
-            resolveSectionsBeforeController(view, compiled, counts);
+            resolveSectionsBeforeController(view, compiled, counts, tally);
         }
 
         BlockPos origin = view.controllerPos();
@@ -268,6 +162,9 @@ public final class StructureEngine {
                 if (!probeSectionCopy(view, compiled, brick, section, copy, shift, controllerDecl, controllerShift, origin, orientation, cursor, tally)) {
                     break;
                 }
+                if (!probeDependents(view, compiled, brick, section, brick.section(), copy + 1, counts, origin, orientation, cursor, tally)) {
+                    break;
+                }
                 walkSectionCopy(view, compiled, brick, section, copy, shift, controllerDecl, controllerShift, origin, orientation, cursor, tally);
                 counts[brick.section()] = copy + 1;
             }
@@ -283,7 +180,8 @@ public final class StructureEngine {
     private static void resolveSectionsBeforeController(
                                                         StructureView view,
                                                         CompiledBlueprint compiled,
-                                                        int[] counts) {
+                                                        int[] counts,
+                                                        Tally tally) {
         Blueprint blueprint = compiled.blueprint();
         List<Blueprint.Brick> bricks = compiled.bricks();
         int controllerBrick = compiled.controllerBrick();
@@ -306,7 +204,7 @@ public final class StructureEngine {
                     int[] controllerShift = blueprint.shiftOf(bricks.get(controllerBrick), counts);
                     // A section before the controller grows away from it: the new far copy is
                     // always copy 0 of the candidate layout, not the copy just appended.
-                    if (probeSectionCopy(view, compiled, brick, section, 0, shift, controllerDecl, controllerShift, origin, orientation, cursor, NoOpTally.INSTANCE)) {
+                    if (probeSectionCopy(view, compiled, brick, section, 0, shift, controllerDecl, controllerShift, origin, orientation, cursor, tally) && probeDependents(view, compiled, brick, section, brick.section(), copy + 1, counts, origin, orientation, cursor, tally)) {
                         changed = true;
                     } else {
                         counts[brick.section()] = copy;
@@ -331,15 +229,16 @@ public final class StructureEngine {
                 origin.getX() + orientation.transformX(lx, ly, lz),
                 origin.getY() + orientation.transformY(lx, ly, lz),
                 origin.getZ() + orientation.transformZ(lx, ly, lz));
-        if (!view.isLoaded(cursor)) {
+        StructureView.CellInfo info = view.cellInfo(cursor);
+        if (info == null) {
             tally.unloaded(cursor);
             return false;
         }
-        if (matchesCompiled(view, cursor, definition)) {
-            tally.matched(view, cursor, definition);
+        if (matchesCompiled(info, view, cursor, definition)) {
+            tally.matched(info, cursor, definition);
             return true;
         }
-        tally.mismatched(view, cursor, new BlockPos(lx, ly, lz), definition);
+        tally.mismatched(info, cursor, new BlockPos(lx, ly, lz), definition);
         return false;
     }
 
@@ -358,13 +257,12 @@ public final class StructureEngine {
                                            BlockPos.MutableBlockPos cursor,
                                            Tally tally) {
         CompiledBlueprint.CompiledDefinition[] definitions = compiled.definitions();
-        int axis = section.axis().ordinal();
         int offset = copy * section.stride();
         boolean allMatched = true;
         for (int k = 0; k < brick.cellCount(); k++) {
-            int lx = brick.xs()[k] + shift[0] - controllerDecl[0] - controllerShift[0] + (axis == 0 ? offset : 0);
-            int ly = brick.ys()[k] + shift[1] - controllerDecl[1] - controllerShift[1] + (axis == 1 ? offset : 0);
-            int lz = brick.zs()[k] + shift[2] - controllerDecl[2] - controllerShift[2] + (axis == 2 ? offset : 0);
+            int lx = brick.xs()[k] + shift[0] - controllerDecl[0] - controllerShift[0];
+            int ly = brick.ys()[k] + shift[1] - controllerDecl[1] - controllerShift[1] + offset;
+            int lz = brick.zs()[k] + shift[2] - controllerDecl[2] - controllerShift[2];
             if (!walkCell(view, orientation, origin, cursor, lx, ly, lz, definitions[brick.definitions()[k]], tally)) {
                 allMatched = false;
                 if (tally.shortCircuit()) {
@@ -390,25 +288,110 @@ public final class StructureEngine {
                                             BlockPos.MutableBlockPos cursor,
                                             Tally tally) {
         CompiledBlueprint.CompiledDefinition[] definitions = compiled.definitions();
-        int axis = section.axis().ordinal();
         int offset = copy * section.stride();
         for (int k = 0; k < brick.cellCount(); k++) {
-            int lx = brick.xs()[k] + shift[0] - controllerDecl[0] - controllerShift[0] + (axis == 0 ? offset : 0);
-            int ly = brick.ys()[k] + shift[1] - controllerDecl[1] - controllerShift[1] + (axis == 1 ? offset : 0);
-            int lz = brick.zs()[k] + shift[2] - controllerDecl[2] - controllerShift[2] + (axis == 2 ? offset : 0);
+            int lx = brick.xs()[k] + shift[0] - controllerDecl[0] - controllerShift[0];
+            int ly = brick.ys()[k] + shift[1] - controllerDecl[1] - controllerShift[1] + offset;
+            int lz = brick.zs()[k] + shift[2] - controllerDecl[2] - controllerShift[2];
             cursor.set(
                     origin.getX() + orientation.transformX(lx, ly, lz),
                     origin.getY() + orientation.transformY(lx, ly, lz),
                     origin.getZ() + orientation.transformZ(lx, ly, lz));
-            if (!view.isLoaded(cursor)) {
+            StructureView.CellInfo info = view.cellInfo(cursor);
+            if (info == null) {
                 tally.unloaded(cursor);
                 return false;
             }
-            if (!matchesCompiled(view, cursor, definitions[brick.definitions()[k]])) {
+            if (!matchesCompiled(info, view, cursor, definitions[brick.definitions()[k]])) {
                 return false;
             }
         }
         return true;
+    }
+
+    /**
+     * Validates the fixed cells that the candidate count would shift: a fixed cap directly beyond
+     * the section must still match at its new position. Only cells whose position depends solely on
+     * this section (and already-resolved earlier sections) are checked, so the probe stays sound when
+     * later sections are still unresolved. This prevents a cap that shares a block with the repeat
+     * unit from being mistaken for an extra copy.
+     */
+    private static boolean probeDependents(
+                                           StructureView view,
+                                           CompiledBlueprint compiled,
+                                           Blueprint.Brick sectionBrick,
+                                           Blueprint.RepeatSection section,
+                                           int sectionIndex,
+                                           int candidateCount,
+                                           int[] counts,
+                                           BlockPos origin,
+                                           Orientation orientation,
+                                           BlockPos.MutableBlockPos cursor,
+                                           Tally tally) {
+        Blueprint blueprint = compiled.blueprint();
+        int[] candidate = counts.clone();
+        candidate[sectionIndex] = candidateCount;
+        int[] controllerDecl = blueprint.controllerDecl();
+        int[] controllerShift = blueprint.shiftOf(blueprint.bricksInternal().get(compiled.controllerBrick()), candidate);
+        CompiledBlueprint.CompiledDefinition[] definitions = compiled.definitions();
+        boolean post = section.bandStart() >= 0;
+        boolean mismatch = false;
+        for (Blueprint.Brick brick : compiled.bricks()) {
+            if (brick.section() >= 0 || brick.cellCount() != 1) {
+                continue;
+            }
+            int y = brick.ys()[0];
+            if (post ? y < section.bandEnd() : y >= section.bandStart()) {
+                continue;
+            }
+            boolean otherDependency = false;
+            for (int dependency : brick.dependencies()) {
+                if (dependency != sectionIndex) {
+                    otherDependency = true;
+                    break;
+                }
+            }
+            if (otherDependency) {
+                continue;
+            }
+            int[] shift = blueprint.shiftOf(brick, candidate);
+            int lx = brick.xs()[0] + shift[0] - controllerDecl[0] - controllerShift[0];
+            int ly = brick.ys()[0] + shift[1] - controllerDecl[1] - controllerShift[1];
+            int lz = brick.zs()[0] + shift[2] - controllerDecl[2] - controllerShift[2];
+            cursor.set(
+                    origin.getX() + orientation.transformX(lx, ly, lz),
+                    origin.getY() + orientation.transformY(lx, ly, lz),
+                    origin.getZ() + orientation.transformZ(lx, ly, lz));
+            StructureView.CellInfo info = view.cellInfo(cursor);
+            if (info == null) {
+                tally.unloaded(cursor);
+                return false;
+            }
+            if (!matchesCompiled(info, view, cursor, definitions[brick.definitions()[0]])) {
+                mismatch = true;
+                break;
+            }
+        }
+        if (!mismatch) {
+            return true;
+        }
+        // The candidate tail position may still be the next copy of the section (a taller build):
+        // if the section's next copy matches there, keep growing instead of committing the cap.
+        int nextCopy = post ? candidateCount : 0;
+        int[] sectionShift = blueprint.shiftOf(sectionBrick, candidate);
+        return probeSectionCopy(
+                view,
+                compiled,
+                sectionBrick,
+                section,
+                nextCopy,
+                sectionShift,
+                controllerDecl,
+                controllerShift,
+                origin,
+                orientation,
+                cursor,
+                tally);
     }
 
     private static int[] minCountsOf(Blueprint blueprint) {
@@ -426,15 +409,23 @@ public final class StructureEngine {
      */
     public static boolean matchesCompiled(
                                           StructureView view, BlockPos worldPos, CompiledBlueprint.CompiledDefinition definition) {
+        StructureView.CellInfo info = view.cellInfo(worldPos);
+        return info != null && matchesCompiled(info, view, worldPos, definition);
+    }
+
+    private static boolean matchesCompiled(
+                                           StructureView.CellInfo info,
+                                           StructureView view,
+                                           BlockPos worldPos,
+                                           CompiledBlueprint.CompiledDefinition definition) {
         BlockState[] acceptable = definition.acceptable();
         if (acceptable == null) {
-            return matches(view, worldPos, definition.prototype(), definition.orientedExpected());
+            return matches(view, worldPos, definition.prototype(), definition.orientedExpected(), info.state());
         }
         if (!definition.prototype().predicate().test(view, worldPos, definition.prototype())) {
             return false;
         }
-        BlockState actual = view.blockState(worldPos);
-        return actual != null && CompiledBlueprint.acceptedState(acceptable, actual);
+        return CompiledBlueprint.acceptedState(acceptable, info.state());
     }
 
     /**
@@ -467,14 +458,14 @@ public final class StructureEngine {
                            StructureView view,
                            BlockPos worldPos,
                            Cell cell,
-                           @Nullable BlockState orientedExpected) {
+                           @Nullable BlockState orientedExpected,
+                           @Nullable BlockState actual) {
         if (!cell.predicate().test(view, worldPos, cell)) {
             return false;
         }
         if (orientedExpected == null) {
             return true;
         }
-        BlockState actual = view.blockState(worldPos);
         if (actual == null) {
             return false;
         }
@@ -528,13 +519,13 @@ public final class StructureEngine {
     // Tallies.
     // ------------------------------------------------------------------------------------------
 
-    private sealed interface Tally permits RecognizeTally, VerifyTally, NoOpTally {
+    private sealed interface Tally permits RecognizeTally, VerifyTally {
 
-        void matched(StructureView view, BlockPos worldPos, CompiledBlueprint.CompiledDefinition definition);
+        void matched(StructureView.CellInfo info, BlockPos worldPos, CompiledBlueprint.CompiledDefinition definition);
 
         void unloaded(BlockPos worldPos);
 
-        void mismatched(StructureView view, BlockPos worldPos, BlockPos localPos, CompiledBlueprint.CompiledDefinition definition);
+        void mismatched(StructureView.CellInfo info, BlockPos worldPos, BlockPos localPos, CompiledBlueprint.CompiledDefinition definition);
 
         boolean shortCircuit();
     }
@@ -547,20 +538,41 @@ public final class StructureEngine {
         private int matchedCount;
         private int missingCount;
         private int unloadedCount;
+        private int minX = Integer.MAX_VALUE;
+        private int minY = Integer.MAX_VALUE;
+        private int minZ = Integer.MAX_VALUE;
+        private int maxX = Integer.MIN_VALUE;
+        private int maxY = Integer.MIN_VALUE;
+        private int maxZ = Integer.MIN_VALUE;
 
-        private RecognizeTally(CompiledBlueprint compiled) {}
+        private RecognizeTally() {}
+
+        RecognitionResult.Bounds bounds() {
+            return minX > maxX ? RecognitionResult.Bounds.empty() : new RecognitionResult.Bounds(minX, minY, minZ, maxX, maxY, maxZ);
+        }
+
+        private void touch(BlockPos worldPos) {
+            minX = Math.min(minX, worldPos.getX());
+            minY = Math.min(minY, worldPos.getY());
+            minZ = Math.min(minZ, worldPos.getZ());
+            maxX = Math.max(maxX, worldPos.getX());
+            maxY = Math.max(maxY, worldPos.getY());
+            maxZ = Math.max(maxZ, worldPos.getZ());
+        }
 
         @Override
-        public void matched(StructureView view, BlockPos worldPos, CompiledBlueprint.CompiledDefinition definition) {
+        public void matched(StructureView.CellInfo info, BlockPos worldPos, CompiledBlueprint.CompiledDefinition definition) {
             matchedCount++;
-            BlockState actual = view.blockState(worldPos);
+            touch(worldPos);
+            BlockState actual = info.state();
             // Block-entity prune: capability/membership side tables only ever hold machine cells.
             if (actual != null && actual.hasBlockEntity()) {
-                for (PartRole capability : view.roles(worldPos)) {
+                for (PartRole capability : info.roles()) {
                     roleCounts.merge(capability, 1, Integer::sum);
                 }
-                if (view.isMember(worldPos)) {
-                    members.add(worldPos.immutable());
+                StructureView.Member member = info.member();
+                if (member != null) {
+                    members.add(member.pos());
                 }
             }
         }
@@ -572,11 +584,12 @@ public final class StructureEngine {
 
         @Override
         public void mismatched(
-                               StructureView view,
+                               StructureView.CellInfo info,
                                BlockPos worldPos,
                                BlockPos localPos,
                                CompiledBlueprint.CompiledDefinition definition) {
             missingCount++;
+            touch(worldPos);
             if (missingSample.size() < MISSING_SAMPLE_CAP) {
                 Cell prototype = definition.prototype();
                 missingSample.add(new RecognitionResult.MissingCell(
@@ -588,7 +601,7 @@ public final class StructureEngine {
                                 prototype.rules(),
                                 prototype.predicate(),
                                 prototype.maskedProperties()),
-                        view.blockState(worldPos)));
+                        info.state()));
             }
         }
 
@@ -611,15 +624,15 @@ public final class StructureEngine {
         }
 
         @Override
-        public void matched(StructureView view, BlockPos worldPos, CompiledBlueprint.CompiledDefinition definition) {
+        public void matched(StructureView.CellInfo info, BlockPos worldPos, CompiledBlueprint.CompiledDefinition definition) {
             if (counted.size() == 0) {
                 return;
             }
-            BlockState actual = view.blockState(worldPos);
+            BlockState actual = info.state();
             if (actual == null || !actual.hasBlockEntity()) {
                 return;
             }
-            for (PartRole capability : view.roles(worldPos)) {
+            for (PartRole capability : info.roles()) {
                 int ordinal = counted.ordinalOf(capability);
                 if (ordinal >= 0) {
                     countScratch[ordinal]++;
@@ -634,7 +647,7 @@ public final class StructureEngine {
 
         @Override
         public void mismatched(
-                               StructureView view,
+                               StructureView.CellInfo info,
                                BlockPos worldPos,
                                BlockPos localPos,
                                CompiledBlueprint.CompiledDefinition definition) {
@@ -646,30 +659,6 @@ public final class StructureEngine {
         @Override
         public boolean shortCircuit() {
             return true;
-        }
-    }
-
-    /** Probe-only tally used while resolving pre-controller counts. */
-    private enum NoOpTally implements Tally {
-
-        INSTANCE;
-
-        @Override
-        public void matched(StructureView view, BlockPos worldPos, CompiledBlueprint.CompiledDefinition definition) {}
-
-        @Override
-        public void unloaded(BlockPos worldPos) {}
-
-        @Override
-        public void mismatched(
-                               StructureView view,
-                               BlockPos worldPos,
-                               BlockPos localPos,
-                               CompiledBlueprint.CompiledDefinition definition) {}
-
-        @Override
-        public boolean shortCircuit() {
-            return false;
         }
     }
 }

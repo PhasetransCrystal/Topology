@@ -8,6 +8,7 @@ import net.ptcrys.topo.api.api.plugin.TopoPlugin;
 import net.ptcrys.topo.api.machine.component.RecipeLogicMetadata;
 import net.ptcrys.topo.api.machine.component.RecipeModifierDisplay;
 import net.ptcrys.topo.api.machine.multiblock.MultiblockControllerMetadata;
+import net.ptcrys.topo.api.machine.multiblock.ability.ExclusivePartAttachment;
 import net.ptcrys.topo.api.machine.multiblock.ability.PartRoleAttachment;
 import net.ptcrys.topo.config.TopoConfigLang;
 
@@ -26,6 +27,7 @@ public final class OfficialTopoAPIPlugin extends TopoPlugin {
         RecipeModifierDisplay.init();
         MultiblockControllerMetadata.init();
         PartRoleAttachment.init();
+        ExclusivePartAttachment.init();
     }
 
     @Override

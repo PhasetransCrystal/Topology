@@ -6,7 +6,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.state.BlockState;
 
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
@@ -25,14 +24,14 @@ public final class CompiledSnapshot implements StructureView {
     private final BlockPos controllerPos;
     private final BlockState[] states;
     private final Long2ObjectOpenHashMap<Set<PartRole>> capabilities;
-    private final LongOpenHashSet members;
+    private final Long2ObjectOpenHashMap<StructureView.Member> members;
 
     private CompiledSnapshot(
                              CompiledBlueprint compiled,
                              BlockPos controllerPos,
                              BlockState[] states,
                              Long2ObjectOpenHashMap<Set<PartRole>> capabilities,
-                             LongOpenHashSet members) {
+                             Long2ObjectOpenHashMap<StructureView.Member> members) {
         this.compiled = compiled;
         this.controllerPos = controllerPos.immutable();
         this.states = states;
@@ -54,6 +53,21 @@ public final class CompiledSnapshot implements StructureView {
     }
 
     @Override
+    public StructureView.@Nullable CellInfo cellInfo(BlockPos worldPos) {
+        int index = compiled.cellIndexOfWorld(worldPos, controllerPos);
+        if (index < 0) {
+            return null;
+        }
+        BlockState state = states[index];
+        if (state == null) {
+            return null;
+        }
+        long packed = worldPos.asLong();
+        Set<PartRole> roles = capabilities.get(packed);
+        return new StructureView.CellInfo(state, roles == null ? Set.of() : roles, members.get(packed));
+    }
+
+    @Override
     public @Nullable BlockState blockState(BlockPos worldPos) {
         int index = compiled.cellIndexOfWorld(worldPos, controllerPos);
         return index < 0 ? null : states[index];
@@ -72,8 +86,8 @@ public final class CompiledSnapshot implements StructureView {
     }
 
     @Override
-    public boolean isMember(BlockPos worldPos) {
-        return members.contains(worldPos.asLong());
+    public StructureView.@Nullable Member member(BlockPos worldPos) {
+        return members.get(worldPos.asLong());
     }
 
     public static final class Builder {
@@ -82,7 +96,7 @@ public final class CompiledSnapshot implements StructureView {
         private final BlockPos controllerPos;
         private final BlockState[] states;
         private final Long2ObjectOpenHashMap<Set<PartRole>> capabilities = new Long2ObjectOpenHashMap<>();
-        private final LongOpenHashSet members = new LongOpenHashSet();
+        private final Long2ObjectOpenHashMap<StructureView.Member> members = new Long2ObjectOpenHashMap<>();
 
         private Builder(CompiledBlueprint compiled, BlockPos controllerPos) {
             this.compiled = Objects.requireNonNull(compiled, "compiled blueprint");
@@ -91,10 +105,14 @@ public final class CompiledSnapshot implements StructureView {
         }
 
         /** Writes one captured cell; {@code state} null = unloaded chunk (recognized as not formed). */
-        public Builder put(int cellIndex, long packedWorldPos, @Nullable BlockState state, boolean machineMember) {
+        public Builder put(
+                           int cellIndex,
+                           long packedWorldPos,
+                           @Nullable BlockState state,
+                           StructureView.@Nullable Member member) {
             states[cellIndex] = state;
-            if (machineMember) {
-                members.add(packedWorldPos);
+            if (member != null) {
+                members.put(packedWorldPos, member);
             }
             return this;
         }

@@ -58,6 +58,32 @@ class StructureEngineTest {
     }
 
     @Test
+    void fixedCapThatSharesTheRepeatSymbolStopsGrowth() {
+        Blueprint blueprint = Blueprint.of()
+                .aisle("C@C")
+                .beginRepeatable(1, 4)
+                .aisle("CCC")
+                .endRepeatable()
+                .aisle("CCC")
+                .where('@', CellPredicates.controller())
+                .where('C', CellPredicates.block(Blocks.COPPER_BLOCK))
+                .build();
+        TestView view = new TestView();
+        view.put(new BlockPos(-1, 0, 0), Blocks.COPPER_BLOCK.defaultBlockState());
+        view.put(new BlockPos(1, 0, 0), Blocks.COPPER_BLOCK.defaultBlockState());
+        for (int y = 1; y <= 3; y++) {
+            for (int x = -1; x <= 1; x++) {
+                view.put(new BlockPos(x, y, 0), Blocks.COPPER_BLOCK.defaultBlockState());
+            }
+        }
+
+        RecognitionResult result = StructureEngine.recognize(view, blueprint, Orientations.IDENTITY);
+
+        assertTrue(result.formed());
+        assertEquals(2, result.repeats().count(0));
+    }
+
+    @Test
     void repeatableSegmentBelowControllerUsesInwardCounts() {
         Blueprint blueprint = Blueprint.of()
                 .beginRepeatable(1, 3)
@@ -75,6 +101,102 @@ class StructureEngineTest {
 
         assertTrue(result.formed());
         assertEquals(2, result.repeats().count(0));
+    }
+
+    @Test
+    void unloadedGrowthAreaBelowControllerIsUnknown() {
+        Blueprint blueprint = Blueprint.of()
+                .beginRepeatable(1, 3)
+                .aisle("C")
+                .endRepeatable()
+                .aisle("@")
+                .where('@', CellPredicates.controller())
+                .where('C', CellPredicates.block(Blocks.STONE))
+                .build();
+        TestView view = new TestView();
+        view.put(new BlockPos(0, -1, 0), Blocks.STONE.defaultBlockState());
+        view.setLoaded(new BlockPos(0, -2, 0), false);
+
+        RecognitionResult result = StructureEngine.recognize(view, blueprint, Orientations.IDENTITY);
+
+        assertFalse(result.formed());
+        assertEquals(1, result.unloadedCount());
+        assertEquals(RecognitionResult.FailureReason.CHUNK_UNLOADED, result.failureReason());
+    }
+
+    @Test
+    void snapshotViewRecognizesPartialRepeatTower() {
+        Blueprint blueprint = Blueprint.of()
+                .aisle("@")
+                .beginRepeatable(1, 4)
+                .aisle("I")
+                .endRepeatable()
+                .where('@', CellPredicates.controller())
+                .where('I', CellPredicates.block(Blocks.IRON_BLOCK))
+                .build();
+        CompiledBlueprint compiled = blueprint.compiled(Orientations.IDENTITY);
+        CompiledSnapshot.Builder builder = CompiledSnapshot.builder(compiled, BlockPos.ZERO);
+        builder.put(
+                compiled.cellIndexOfWorld(BlockPos.ZERO, BlockPos.ZERO),
+                BlockPos.ZERO.asLong(),
+                Blocks.AIR.defaultBlockState(),
+                null);
+        for (int y = 1; y <= 4; y++) {
+            BlockPos pos = new BlockPos(0, y, 0);
+            builder.put(
+                    compiled.cellIndexOfWorld(pos, BlockPos.ZERO),
+                    pos.asLong(),
+                    y <= 2 ? Blocks.IRON_BLOCK.defaultBlockState() : Blocks.AIR.defaultBlockState(),
+                    null);
+        }
+
+        RecognitionResult result = StructureEngine.recognize(builder.build(), blueprint, Orientations.IDENTITY);
+
+        assertTrue(result.formed());
+        assertEquals(2, result.repeats().count(0));
+    }
+
+    @Test
+    void repeatableTowerWithAirCoreAndCapFormsAtEveryHeight() {
+        Blueprint blueprint = Blueprint.of()
+                .aisle("F@F", "FFF", "FFF")
+                .beginRepeatable(1, 4)
+                .aisle("OOO", "O#O", "OOO")
+                .endRepeatable()
+                .aisle("OOO", "OTO", "OOO")
+                .where('@', CellPredicates.controller())
+                .where('#', CellPredicates.air())
+                .where('O', CellPredicates.block(Blocks.IRON_BLOCK))
+                .where('F', CellPredicates.block(Blocks.IRON_BLOCK))
+                .where('T', CellPredicates.block(Blocks.IRON_BLOCK))
+                .build();
+        for (int height = 1; height <= 4; height++) {
+            TestView view = new TestView();
+            for (int y = 0; y <= height + 1; y++) {
+                for (int row = 0; row < 3; row++) {
+                    for (int col = 0; col < 3; col++) {
+                        int x = col - 1;
+                        int z = row;
+                        boolean middle = x == 0 && z == 1;
+                        BlockState state;
+                        if (y == 0) {
+                            state = Blocks.IRON_BLOCK.defaultBlockState();
+                        } else if (middle) {
+                            state = y == height + 1 ? Blocks.IRON_BLOCK.defaultBlockState() : Blocks.AIR.defaultBlockState();
+                        } else {
+                            state = Blocks.IRON_BLOCK.defaultBlockState();
+                        }
+                        view.put(new BlockPos(x, y, z), state);
+                    }
+                }
+            }
+
+            RecognitionResult result = StructureEngine.recognize(view, blueprint, Orientations.IDENTITY);
+
+            assertTrue(result.formed(), "height " + height);
+            assertEquals(height, result.repeats().count(0), "height " + height);
+            assertEquals(new RecognitionResult.Bounds(-1, 0, 0, 1, height + 1, 2), result.bounds(), "height " + height);
+        }
     }
 
     @Test
@@ -179,28 +301,6 @@ class StructureEngineTest {
         assertTrue(result.formed());
         assertEquals(1, result.repeats().count(0));
         assertEquals(2, result.repeats().count(1));
-    }
-
-    @Test
-    void overlayModuleReportsMatchedAndMissingCells() {
-        Blueprint module = Blueprint.of()
-                .aisle("@M")
-                .where('@', CellPredicates.controller())
-                .where('M', CellPredicates.block(Blocks.STONE))
-                .build();
-        TestView missing = new TestView();
-        missing.put(new BlockPos(1, 0, 0), Blocks.AIR.defaultBlockState());
-        StructureEngine.OverlayResult absent = StructureEngine.evaluateOverlay(
-                missing, module, Orientations.IDENTITY, BlockPos.ZERO);
-        assertEquals(0, absent.matched());
-        assertEquals(1, absent.total());
-        assertFalse(absent.satisfied());
-
-        TestView present = new TestView();
-        present.put(new BlockPos(1, 0, 0), Blocks.STONE.defaultBlockState());
-        StructureEngine.OverlayResult satisfied = StructureEngine.evaluateOverlay(
-                present, module, Orientations.IDENTITY, BlockPos.ZERO);
-        assertTrue(satisfied.satisfied());
     }
 
     @Test

@@ -28,6 +28,15 @@ final class MultiblockLiveView implements StructureView {
     }
 
     @Override
+    public StructureView.@Nullable CellInfo cellInfo(BlockPos worldPos) {
+        if (level.isOutsideBuildHeight(worldPos)) {
+            return null;
+        }
+        StructureCaptures.CellState cell = StructureCaptures.captureCell(level, worldPos);
+        return cell.state() == null ? null : new StructureView.CellInfo(cell.state(), cell.roles(), cell.member());
+    }
+
+    @Override
     public @Nullable BlockState blockState(BlockPos worldPos) {
         return StructureCaptures.captureCell(level, worldPos).state();
     }
@@ -43,7 +52,7 @@ final class MultiblockLiveView implements StructureView {
     }
 
     @Override
-    public boolean isMember(BlockPos worldPos) {
+    public StructureView.@Nullable Member member(BlockPos worldPos) {
         return StructureCaptures.captureCell(level, worldPos).member();
     }
 }

@@ -8,6 +8,7 @@ import net.ptcrys.topo.api.machine.multiblock.ability.PartRole;
 import net.ptcrys.topo.api.machine.multiblock.ability.PartRoleAttachment;
 import net.ptcrys.topo.api.machine.multiblock.pattern.Blueprint;
 import net.ptcrys.topo.api.machine.multiblock.pattern.Cell;
+import net.ptcrys.topo.api.machine.multiblock.pattern.RepeatResolution;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -99,8 +100,14 @@ public final class BlueprintPreview {
 
     /** The ideal preview of {@code blueprint} for {@code controller} (its block, facing south). */
     public static BlueprintPreview of(Blueprint blueprint, MachineDefinition controller) {
+        return of(blueprint, controller, previewRepeats(blueprint));
+    }
+
+    /** The ideal preview at an explicit repeat resolution, so repeatable sections are rendered. */
+    public static BlueprintPreview of(Blueprint blueprint, MachineDefinition controller, RepeatResolution resolution) {
         Objects.requireNonNull(blueprint, "blueprint");
         Objects.requireNonNull(controller, "controller definition");
+        Objects.requireNonNull(resolution, "repeat resolution");
 
         Map<PartRole, Block> partBlocks = partBlocksByCapability();
         Map<PartRole, Blueprint.CountRequirement> requirements = blueprint.countRequirements();
@@ -112,7 +119,7 @@ public final class BlueprintPreview {
         }
 
         List<PreviewCell> cells = new ArrayList<>();
-        for (Cell cell : blueprint.cells()) {
+        for (Cell cell : blueprint.cells(resolution)) {
             if (cell.localPos().equals(BlockPos.ZERO)) {
                 BlockState state = controllerPreviewState(controller);
                 cells.add(new PreviewCell(
@@ -128,6 +135,18 @@ public final class BlueprintPreview {
             cells.add(new PreviewCell(cell.localPos(), state, candidatesOf(cell, requirements)));
         }
         return new BlueprintPreview(cells);
+    }
+
+    /**
+     * The display resolution of a blueprint: every repeat section appears at least once — its
+     * minimum copy count, floored to one so an optional section ({@code min == 0}) is still visible.
+     */
+    public static RepeatResolution previewRepeats(Blueprint blueprint) {
+        int[] counts = new int[blueprint.sectionCount()];
+        for (int i = 0; i < counts.length; i++) {
+            counts[i] = Math.max(1, blueprint.section(i).minCount());
+        }
+        return new RepeatResolution(counts);
     }
 
     /** Controller block facing the camera convention (south), formed-look left to the block's default. */

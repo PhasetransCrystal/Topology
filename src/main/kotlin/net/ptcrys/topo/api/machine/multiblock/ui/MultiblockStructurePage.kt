@@ -6,6 +6,7 @@ import net.ptcrys.topo.api.machine.MachineBlockEntity
 import net.ptcrys.topo.api.machine.multiblock.MultiblockClientDiagnosis
 import net.ptcrys.topo.api.machine.multiblock.MultiblockController
 import net.ptcrys.topo.api.machine.multiblock.pattern.Blueprint
+import net.ptcrys.topo.api.machine.multiblock.pattern.RepeatResolution
 import net.ptcrys.topo.api.machine.ui.LcdData
 import net.ptcrys.topo.api.machine.ui.MachineUiComponentStyle
 import net.ptcrys.topo.api.machine.ui.MachineUiComponentTemplate
@@ -66,9 +67,10 @@ object MultiblockStructurePage {
 
     @JvmStatic
     fun page(machine: MachineBlockEntity, controller: MultiblockController, blueprint: Blueprint, selection: Selection): UIElement {
-        val preview = BlueprintPreview.of(blueprint, machine.definition())
+        val resolution = controller.repeatResolution() ?: BlueprintPreview.previewRepeats(blueprint)
+        val preview = BlueprintPreview.of(blueprint, machine.definition(), resolution)
         val requiredBlocks = preview.blocks()
-        val builtBlocks = MultiblockClientDiagnosis.detectedBlocks(machine, blueprint)
+        val builtBlocks = MultiblockClientDiagnosis.detectedBlocks(machine, blueprint, resolution)
         val startWithBuilt = builtBlocks.isNotEmpty()
         val sceneBlocks = if (startWithBuilt) builtBlocks else requiredBlocks
         // The rendered core is always the FULL blueprint footprint: the as-built view of a partial
@@ -77,7 +79,7 @@ object MultiblockStructurePage {
         val scene = MultiblockScenePreview.scene(sceneBlocks, requiredBlocks.keys)
 
         val panelRef = arrayOfNulls<MultiblockScenePanel.Panel>(1)
-        val modeToggle = sceneModeToggle(machine, blueprint, requiredBlocks, startWithBuilt, builtBlocks, panelRef) {
+        val modeToggle = sceneModeToggle(machine, blueprint, resolution, requiredBlocks, startWithBuilt, builtBlocks, panelRef) {
             if (selection.current() != null) selection.select(null)
         }
         val panel = MultiblockScenePanel.of(scene, requiredBlocks.keys)
@@ -110,7 +112,8 @@ object MultiblockStructurePage {
      */
     @JvmStatic
     fun diagnosticsPanel(machine: MachineBlockEntity, controller: MultiblockController, blueprint: Blueprint, selection: Selection): UIElement {
-        val preview = BlueprintPreview.of(blueprint, machine.definition())
+        val resolution = controller.repeatResolution() ?: BlueprintPreview.previewRepeats(blueprint)
+        val preview = BlueprintPreview.of(blueprint, machine.definition(), resolution)
 
         // ① Formed LCD strip: "Formed Yes/No" left, "matched/total" flush right. The yes/no flag is
         // server-truth (S2C bound); the match counter is client-side diagnosis, refreshed below.
@@ -250,7 +253,7 @@ object MultiblockStructurePage {
             detailBody.addChild(detailHeaderRow(previewState, diagnosis))
             // Expected vs current, folded to the controller's actual orientation — the facing the
             // table shows is the one to place. Green = goal/met, amber = the value to fix.
-            MultiblockClientDiagnosis.expectedStateAt(machine, blueprint, offset)?.let { expected ->
+            MultiblockClientDiagnosis.expectedStateAt(machine, blueprint, resolution, offset)?.let { expected ->
                 val actual = MultiblockClientDiagnosis.foundBlockAt(machine, blueprint, offset)
                 val comparisons = PropertyDisplays.compare(expected, actual)
                 if (comparisons.isNotEmpty()) {
@@ -592,7 +595,7 @@ object MultiblockStructurePage {
 
     private fun tinted(text: Component, color: Int): MutableComponent = text.copy().withStyle { it.withColor(TextColor.fromRgb(color and 0xFFFFFF)) }
 
-    private fun sceneModeToggle(machine: MachineBlockEntity, blueprint: Blueprint, requiredBlocks: Map<BlockPos, BlockState>, startWithBuilt: Boolean, initialBuiltBlocks: Map<BlockPos, BlockState>, panelRef: Array<MultiblockScenePanel.Panel?>, beforeModeChange: () -> Unit): UIElement {
+    private fun sceneModeToggle(machine: MachineBlockEntity, blueprint: Blueprint, resolution: RepeatResolution, requiredBlocks: Map<BlockPos, BlockState>, startWithBuilt: Boolean, initialBuiltBlocks: Map<BlockPos, BlockState>, panelRef: Array<MultiblockScenePanel.Panel?>, beforeModeChange: () -> Unit): UIElement {
         val showingBuilt = booleanArrayOf(startWithBuilt)
         val lastBuilt = arrayOfNulls<Map<BlockPos, BlockState>>(1)
         if (startWithBuilt) lastBuilt[0] = initialBuiltBlocks
@@ -607,7 +610,7 @@ object MultiblockStructurePage {
             beforeModeChange()
             showingBuilt[0] = !showingBuilt[0]
             if (showingBuilt[0]) {
-                val built = MultiblockClientDiagnosis.detectedBlocks(machine, blueprint)
+                val built = MultiblockClientDiagnosis.detectedBlocks(machine, blueprint, resolution)
                 lastBuilt[0] = built
                 panelRef[0]?.swapBlocks(built, requiredBlocks.keys, false)
             } else {
@@ -626,7 +629,7 @@ object MultiblockStructurePage {
         button.addEventListener(UIEvents.TICK) {
             if (!showingBuilt[0]) return@addEventListener
             if (ticks[0]++ % REFRESH_INTERVAL_TICKS != 0) return@addEventListener
-            val built = MultiblockClientDiagnosis.detectedBlocks(machine, blueprint)
+            val built = MultiblockClientDiagnosis.detectedBlocks(machine, blueprint, resolution)
             if (built != lastBuilt[0]) {
                 lastBuilt[0] = built
                 panelRef[0]?.swapBlocks(built, requiredBlocks.keys, false)

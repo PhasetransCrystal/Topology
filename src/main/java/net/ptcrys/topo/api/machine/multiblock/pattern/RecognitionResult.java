@@ -30,8 +30,9 @@ import java.util.Objects;
  * @param missingCells  a bounded sample of the cells that failed to match (diagnosis rows)
  * @param roleCounts    how many matched cells exposed each part capability
  * @param members       world positions of matched cells backed by a machine member (a part)
- * @param modules       per-named-module match report; optional modules do not affect {@link #formed()}
  * @param repeats       the per-segment repeat counts chosen for this pass (reused by build/export)
+ * @param bounds        world-space bounds of the resolved layout (matched + missing cells); empty
+ *                      when the pass visited no cell
  * @param failureReason typed engine-level refusal classification; {@link FailureReason#NONE} for
  *                      every result whose pass actually ran ({@link #formed()} semantics unchanged)
  */
@@ -43,8 +44,8 @@ public record RecognitionResult(
                                 List<MissingCell> missingCells,
                                 Map<PartRole, Integer> roleCounts,
                                 List<BlockPos> members,
-                                Map<String, ModuleReport> modules,
                                 RepeatResolution repeats,
+                                Bounds bounds,
                                 FailureReason failureReason) {
 
     public RecognitionResult {
@@ -63,8 +64,8 @@ public record RecognitionResult(
         }
         roleCounts = Map.copyOf(Objects.requireNonNull(roleCounts, "capability counts"));
         members = List.copyOf(Objects.requireNonNull(members, "members"));
-        modules = Map.copyOf(Objects.requireNonNull(modules, "module reports"));
         repeats = Objects.requireNonNull(repeats, "repeat resolution");
+        bounds = Objects.requireNonNull(bounds, "bounds");
         failureReason = Objects.requireNonNull(failureReason, "failure reason");
         if (formed && failureReason != FailureReason.NONE) {
             throw new IllegalArgumentException("A formed result cannot carry an engine failure reason");
@@ -84,20 +85,58 @@ public record RecognitionResult(
                 List.of(),
                 Map.of(),
                 List.of(),
-                Map.of(),
                 repeats,
+                Bounds.empty(),
                 FailureReason.ORIENTATION_UNSUPPORTED);
     }
 
-    /** Match status of one named blueprint module. */
+    /**
+     * Axis-aligned integer bounds of a resolved layout. An <b>empty</b> bounds (no cell) is the
+     * inverted box {@code min == MAX, max == MIN}; {@link #empty()} detects it.
+     */
+    public record Bounds(int minX, int minY, int minZ, int maxX, int maxY, int maxZ) {
+
+        public static Bounds empty() {
+            return new Bounds(Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MIN_VALUE, Integer.MIN_VALUE, Integer.MIN_VALUE);
+        }
+
+        public boolean isEmpty() {
+            return minX > maxX;
+        }
+
+        /** The smallest box containing both {@code this} and {@code other}. */
+        public Bounds union(Bounds other) {
+            return new Bounds(
+                    Math.min(minX, other.minX),
+                    Math.min(minY, other.minY),
+                    Math.min(minZ, other.minZ),
+                    Math.max(maxX, other.maxX),
+                    Math.max(maxY, other.maxY),
+                    Math.max(maxZ, other.maxZ));
+        }
+    }
+
+    /** Match status of one named blueprint module; modules are binary (fully present or absent). */
     public enum ModuleState {
         ABSENT,
-        PARTIAL,
         SATISFIED
     }
 
-    /** Per-module result: required modules gate formation; optional modules are reported only. */
-    public record ModuleReport(String id, boolean required, int matched, int total) {
+    /**
+     * Per-module result. A module is either fully satisfied or considered absent; {@code matched} /
+     * {@code total} expose build progress for diagnostics only and never change the binary state.
+     * {@code blockedBy} lists unsatisfied prerequisites (empty when the module is only incomplete by
+     * its own cells). {@code repeats} is the module's resolved repeat count and {@code bounds} its
+     * resolved world-space bounds (empty when the module was not evaluated).
+     */
+    public record ModuleReport(
+                               String id,
+                               boolean satisfied,
+                               int matched,
+                               int total,
+                               List<String> blockedBy,
+                               RepeatResolution repeats,
+                               Bounds bounds) {
 
         public ModuleReport {
             if (id == null || id.isBlank()) {
@@ -106,21 +145,31 @@ public record RecognitionResult(
             if (matched < 0 || total < 0 || matched > total) {
                 throw new IllegalArgumentException("Invalid module match counts: " + matched + "/" + total);
             }
+            blockedBy = List.copyOf(Objects.requireNonNull(blockedBy, "blocked dependencies"));
+            repeats = Objects.requireNonNull(repeats, "module repeat resolution");
+            bounds = Objects.requireNonNull(bounds, "module bounds");
+            if (satisfied && (total == 0 || matched != total)) {
+                throw new IllegalArgumentException("A satisfied module must match a non-empty cell set");
+            }
         }
 
+        /** Modules are binary: only a fully satisfied module is present. */
         public boolean present() {
-            return matched > 0;
+            return satisfied;
         }
 
-        public boolean satisfied() {
+        /** Whether the module's own cells/counts are complete (prerequisites aside). */
+        public boolean configured() {
             return total > 0 && matched == total;
         }
 
+        /** Whether at least one prerequisite module is absent. */
+        public boolean blocked() {
+            return !blockedBy.isEmpty();
+        }
+
         public ModuleState state() {
-            if (total == 0 || matched == 0) {
-                return ModuleState.ABSENT;
-            }
-            return matched == total ? ModuleState.SATISFIED : ModuleState.PARTIAL;
+            return satisfied ? ModuleState.SATISFIED : ModuleState.ABSENT;
         }
     }
 

@@ -278,11 +278,21 @@ public final class CellPredicates {
 
         @Override
         public List<PartRole> partRoles() {
-            List<PartRole> union = new ArrayList<>();
+            // AND narrows the set of capabilities a single cell can carry: intersect the role sets
+            // that actually declare roles, ignoring branches that impose no capability constraint.
+            List<PartRole> intersection = null;
             for (CellPredicate predicate : predicates) {
-                union.addAll(predicate.partRoles());
+                List<PartRole> roles = predicate.partRoles();
+                if (roles.isEmpty()) {
+                    continue;
+                }
+                if (intersection == null) {
+                    intersection = new ArrayList<>(roles);
+                } else {
+                    intersection.retainAll(roles);
+                }
             }
-            return List.copyOf(union);
+            return intersection == null ? List.of() : List.copyOf(intersection);
         }
 
         @Override

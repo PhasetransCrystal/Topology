@@ -11,8 +11,10 @@ import net.minecraft.server.level.ServerLevel;
 
 import org.jspecify.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -51,24 +53,41 @@ public final class MultiblockClaimIndex {
     }
 
     /**
-     * Registers the watched region: one box + membership test per orientation. Watching is
-     * O(orientations), regardless of footprint size.
+     * Registers the watched region: one box + membership test per blueprint and orientation.
+     * Modules are independent blueprints anchored at the same controller and are watched alongside
+     * the main blueprint, so changes to module cells reach this controller without waiting for the
+     * backstop. Watching is O(blueprints × orientations), regardless of footprint size.
      */
     public void watch(BlockPos controllerPos, Blueprint blueprint, Orientation... orientations) {
+        watch(controllerPos, blueprint, List.of(), orientations);
+    }
+
+    /** Registers the main blueprint plus every module blueprint as watched regions. */
+    public void watch(
+                      BlockPos controllerPos,
+                      Blueprint blueprint,
+                      List<Blueprint> modules,
+                      Orientation... orientations) {
         Objects.requireNonNull(controllerPos, "controller position");
         Objects.requireNonNull(blueprint, "blueprint");
+        Objects.requireNonNull(modules, "module blueprints");
         Objects.requireNonNull(orientations, "orientations");
         if (orientations.length == 0) {
             throw new IllegalArgumentException("At least one orientation is required");
         }
         BlockPos controllerKey = controllerPos.immutable();
-        CompiledBlueprint[] compiled = new CompiledBlueprint[orientations.length];
-        Region[] regions = new Region[orientations.length];
-        for (int i = 0; i < orientations.length; i++) {
-            compiled[i] = blueprint.compiled(Objects.requireNonNull(orientations[i], "orientation"));
-            regions[i] = Region.of(compiled[i], controllerKey);
+        List<Part> parts = new ArrayList<>();
+        for (Orientation orientation : orientations) {
+            Objects.requireNonNull(orientation, "orientation");
+            CompiledBlueprint main = blueprint.compiled(orientation);
+            parts.add(new Part(main, Region.of(main, controllerKey)));
+            for (Blueprint module : modules) {
+                Objects.requireNonNull(module, "module blueprint");
+                CompiledBlueprint compiledModule = module.compiled(orientation);
+                parts.add(new Part(compiledModule, Region.of(compiledModule, controllerKey)));
+            }
         }
-        watchesByController.put(controllerKey, new Watch(compiled, regions));
+        watchesByController.put(controllerKey, new Watch(List.copyOf(parts)));
     }
 
     public void unwatch(BlockPos controllerPos) {
@@ -76,37 +95,78 @@ public final class MultiblockClaimIndex {
     }
 
     /**
-     * Claims the recognized footprint (blueprint × orientation × repeats anchored at the
-     * controller). Cell ownership is exclusive: conflicts are pre-screened by box intersection and
-     * decided by exact arithmetic membership over the smaller of the two footprints.
+     * Registers the recognized footprint for change routing. Claims are <b>not</b> exclusive by
+     * default: several machines may reuse the same structure or shared part. The controller's
+     * exclusive-part reservations are tracked separately; this call only records the region and the
+     * arithmetic membership test used to route a changed cell back to this controller.
      */
     public boolean tryClaim(
                             BlockPos controllerPos,
                             Blueprint blueprint,
                             Orientation orientation,
                             RepeatResolution repeats) {
+        return tryClaim(controllerPos, blueprint, orientation, repeats, Set.of());
+    }
+
+    /**
+     * Registers the recognized footprint and the exclusive part positions it holds. Claims remain
+     * shareable except for {@code exclusiveCells}: a cell already reserved by another formed machine
+     * is a conflict. Callers pre-check with {@link #conflictingExclusive} to decide whether the main
+     * structure or only a module must be dropped.
+     */
+    public boolean tryClaim(
+                            BlockPos controllerPos,
+                            Blueprint blueprint,
+                            Orientation orientation,
+                            RepeatResolution repeats,
+                            Set<BlockPos> exclusiveCells) {
         Objects.requireNonNull(controllerPos, "controller position");
         Objects.requireNonNull(blueprint, "blueprint");
         Objects.requireNonNull(orientation, "orientation");
         Objects.requireNonNull(repeats, "repeats");
+        Objects.requireNonNull(exclusiveCells, "exclusive cells");
         BlockPos controllerKey = controllerPos.immutable();
+        CompiledBlueprint compiled = blueprint.compiled(orientation);
         Claim claim = new Claim(
-                blueprint.compiled(orientation), controllerKey, repeats,
-                Region.of(blueprint.compiled(orientation), controllerKey));
+                compiled,
+                controllerKey,
+                repeats,
+                Region.of(compiled, controllerKey),
+                Set.copyOf(exclusiveCells));
+        claimsByController.put(controllerKey, claim);
+        return true;
+    }
+
+    /**
+     * Exclusive cells already reserved by another formed machine. The query excludes
+     * {@code controllerPos}, so a controller re-checking its own claim never conflicts with itself.
+     */
+    public Set<BlockPos> conflictingExclusive(BlockPos controllerPos, Set<BlockPos> exclusiveCells) {
+        Objects.requireNonNull(controllerPos, "controller position");
+        Objects.requireNonNull(exclusiveCells, "exclusive cells");
+        if (exclusiveCells.isEmpty()) {
+            return Set.of();
+        }
+        BlockPos controllerKey = controllerPos.immutable();
+        Set<BlockPos> conflicts = null;
         for (Map.Entry<BlockPos, Claim> entry : claimsByController.entrySet()) {
             if (entry.getKey().equals(controllerKey)) {
                 continue;
             }
-            Claim other = entry.getValue();
-            if (!claim.region().intersects(other.region())) {
+            Set<BlockPos> reserved = entry.getValue().exclusiveCells();
+            if (reserved.isEmpty()) {
                 continue;
             }
-            if (claimsOverlap(claim, other)) {
-                return false;
+            for (BlockPos cell : exclusiveCells) {
+                if (reserved.contains(cell)) {
+                    if (conflicts == null) {
+                        conflicts = new LinkedHashSet<>();
+                    }
+                    conflicts.add(cell);
+                }
             }
         }
-        claimsByController.put(controllerKey, claim);
-        return true;
+        return conflicts == null ? Set.of() : Set.copyOf(conflicts);
     }
 
     /**
@@ -126,8 +186,8 @@ public final class MultiblockClaimIndex {
             if (entry.getKey().equals(except)) {
                 continue;
             }
-            for (Region watched : entry.getValue().regions()) {
-                if (watched.intersects(region)) {
+            for (Part part : entry.getValue().parts()) {
+                if (part.region().intersects(region)) {
                     watchers.add(entry.getKey());
                     break;
                 }
@@ -144,9 +204,8 @@ public final class MultiblockClaimIndex {
         Objects.requireNonNull(cell, "cell");
         Set<BlockPos> controllers = null;
         for (Map.Entry<BlockPos, Watch> entry : watchesByController.entrySet()) {
-            Watch watch = entry.getValue();
-            for (int i = 0; i < watch.regions().length; i++) {
-                if (watch.regions()[i].contains(cell) && watch.compiled()[i].containsWorldAnyLayout(cell, entry.getKey())) {
+            for (Part part : entry.getValue().parts()) {
+                if (part.region().contains(cell) && part.compiled().containsWorldAnyLayout(cell, entry.getKey())) {
                     if (controllers == null) {
                         controllers = new LinkedHashSet<>();
                     }
@@ -168,24 +227,6 @@ public final class MultiblockClaimIndex {
         return controllers == null ? Set.of() : controllers;
     }
 
-    /** Exact overlap: walk the smaller footprint's cells, test the other's membership arithmetically. */
-    private static boolean claimsOverlap(Claim a, Claim b) {
-        Claim smaller = a.compiled().cellCapacity() <= b.compiled().cellCapacity() ? a : b;
-        Claim larger = smaller == a ? b : a;
-        boolean[] overlap = { false };
-        BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
-        smaller.compiled().forEachWorldPos(smaller.controllerPos(), smaller.repeats(), packed -> {
-            if (overlap[0]) {
-                return;
-            }
-            cursor.set(BlockPos.getX(packed), BlockPos.getY(packed), BlockPos.getZ(packed));
-            if (larger.region().contains(cursor) && larger.compiled().containsWorld(cursor, larger.controllerPos(), larger.repeats())) {
-                overlap[0] = true;
-            }
-        });
-        return overlap[0];
-    }
-
     /** Axis-aligned world-space box of a compiled footprint anchored at a controller. */
     public record Region(int minX, int minY, int minZ, int maxX, int maxY, int maxZ) {
 
@@ -203,11 +244,14 @@ public final class MultiblockClaimIndex {
         }
     }
 
-    private record Watch(CompiledBlueprint[] compiled, Region[] regions) {}
+    private record Part(CompiledBlueprint compiled, Region region) {}
+
+    private record Watch(List<Part> parts) {}
 
     private record Claim(
                          CompiledBlueprint compiled,
                          BlockPos controllerPos,
                          RepeatResolution repeats,
-                         Region region) {}
+                         Region region,
+                         Set<BlockPos> exclusiveCells) {}
 }

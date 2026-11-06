@@ -14,6 +14,7 @@ public final class ContentLang {
     public static final LangKey STRUCTURE_REQUIRED = TopoDemoPlugin.INSTANCE.lang().key("machine", "structure_required",
             "Complete the structure to process recipes", "完成结构后可处理配方");
     public static final LangKey VEIN_CATEGORY = TopoDemoPlugin.INSTANCE.lang().key("ore", "category", "Ore Deposits", "矿床");
+    public static final LangKey MULTIBLOCK_CATEGORY = TopoDemoPlugin.INSTANCE.lang().key("machine", "multiblock_category", "Multiblock Structures", "多方块结构");
     public static final LangKey RECIPE_DURATION = TopoDemoPlugin.INSTANCE.lang().key("recipe", "duration", "Duration: %s ticks", "耗时：%s tick");
 
     private ContentLang() {}

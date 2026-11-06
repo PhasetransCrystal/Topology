@@ -15,6 +15,7 @@ import net.ptcrys.topo.api.machine.multiblock.pattern.Orientation;
 import net.ptcrys.topo.api.machine.multiblock.pattern.Orientations;
 import net.ptcrys.topo.api.machine.multiblock.pattern.PropertyRule;
 import net.ptcrys.topo.api.machine.multiblock.pattern.RecognitionResult;
+import net.ptcrys.topo.api.machine.multiblock.pattern.RepeatResolution;
 import net.ptcrys.topo.api.machine.multiblock.pattern.StructureEngine;
 import net.ptcrys.topo.api.machine.multiblock.pattern.StructureView;
 import net.ptcrys.topo.api.machine.ui.MachineUiComponentStyle;
@@ -217,14 +218,15 @@ public final class MultiblockClientDiagnosis {
 
     /**
      * The as-built structure indexed by <b>blueprint-local</b> offsets (controller at
-     * {@link BlockPos#ZERO}): each cell's current world state read from the client level, rigidly
-     * folded back into the canonical frame — positions through the inverse orientation and the
-     * states' spatial properties through {@link Orientations#rotated(Orientation, BlockState)} with
-     * that same inverse — so the scene shows the build exactly as its canonical (south-facing) twin.
-     * A verbatim world state at a canonical-frame position would render every oriented block
-     * mis-rotated by the controller's yaw (flipped stair grooves, hidden controller front).
+     * {@link BlockPos#ZERO}) at {@code resolution}: each cell's current world state read from the
+     * client level, rigidly folded back into the canonical frame — positions through the inverse
+     * orientation and the states' spatial properties through
+     * {@link Orientations#rotated(Orientation, BlockState)} with that same inverse — so the scene
+     * shows the build exactly as its canonical (south-facing) twin. A verbatim world state at a
+     * canonical-frame position would render every oriented block mis-rotated by the controller's
+     * yaw (flipped stair grooves, hidden controller front).
      */
-    public static Map<BlockPos, BlockState> detectedBlocks(MachineBlockEntity controller, Blueprint blueprint) {
+    public static Map<BlockPos, BlockState> detectedBlocks(MachineBlockEntity controller, Blueprint blueprint, RepeatResolution resolution) {
         Level level = controller.getLevel();
         Map<BlockPos, BlockState> detected = new LinkedHashMap<>();
         if (level == null) {
@@ -234,7 +236,7 @@ public final class MultiblockClientDiagnosis {
         Orientation inverse = orientation.inverse();
         BlockPos origin = controller.getBlockPos();
         BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
-        for (Cell cell : blueprint.cells()) {
+        for (Cell cell : blueprint.cells(resolution)) {
             orientation.apply(cell.localPos(), origin, cursor);
             BlockState state = level.isLoaded(cursor) ? level.getBlockState(cursor) : null;
             if (state != null && !state.isAir()) {
@@ -253,8 +255,11 @@ public final class MultiblockClientDiagnosis {
      * (a satisfied cell never shows a facing "to fix"). {@code null} when the cell pins no state.
      */
     public static @Nullable BlockState expectedStateAt(
-                                                       MachineBlockEntity controller, Blueprint blueprint, BlockPos localPos) {
-        for (Cell cell : blueprint.cells()) {
+                                                       MachineBlockEntity controller,
+                                                       Blueprint blueprint,
+                                                       RepeatResolution resolution,
+                                                       BlockPos localPos) {
+        for (Cell cell : blueprint.cells(resolution)) {
             if (!cell.localPos().equals(localPos)) {
                 continue;
             }

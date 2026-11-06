@@ -1,12 +1,14 @@
 package net.ptcrys.topo.api.machine.multiblock;
 
 import net.ptcrys.topo.api.machine.MachineBlockEntity;
+import net.ptcrys.topo.api.machine.multiblock.ability.ExclusivePartAttachment;
 import net.ptcrys.topo.api.machine.multiblock.ability.PartRole;
 import net.ptcrys.topo.api.machine.multiblock.ability.PartRoleAttachment;
 import net.ptcrys.topo.api.machine.multiblock.pattern.Blueprint;
 import net.ptcrys.topo.api.machine.multiblock.pattern.CompiledBlueprint;
 import net.ptcrys.topo.api.machine.multiblock.pattern.CompiledSnapshot;
 import net.ptcrys.topo.api.machine.multiblock.pattern.Orientation;
+import net.ptcrys.topo.api.machine.multiblock.pattern.StructureView;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
@@ -69,16 +71,16 @@ public final class StructureCaptures {
                 chunkResolved = true;
             }
             if (chunk == null || level.isOutsideBuildHeight(cursor)) {
-                builder.put(cellIndex[i], cursor.asLong(), null, false);
+                builder.put(cellIndex[i], cursor.asLong(), null, null);
                 continue;
             }
             BlockState state = chunk.getBlockState(cursor);
             if (state.hasBlockEntity() && chunk.getBlockEntity(cursor) instanceof MachineBlockEntity machine) {
                 long packedWorld = cursor.asLong();
-                builder.put(cellIndex[i], packedWorld, state, true);
+                builder.put(cellIndex[i], packedWorld, state, new StructureView.Member(cursor, exclusive(machine)));
                 builder.roles(packedWorld, partRoles(machine));
             } else {
-                builder.put(cellIndex[i], cursor.asLong(), state, false);
+                builder.put(cellIndex[i], cursor.asLong(), state, null);
             }
         }
         return builder.build();
@@ -93,24 +95,29 @@ public final class StructureCaptures {
         return capabilities;
     }
 
+    /** Whether a member is registered as an exclusive part. */
+    static boolean exclusive(MachineBlockEntity machine) {
+        return !machine.definition().metadata(ExclusivePartAttachment.TYPE).isEmpty();
+    }
+
     /** Single-cell live read with the same member/capability semantics as a full capture. */
     static CellState captureCell(Level level, BlockPos worldPos) {
         if (!level.hasChunkAt(worldPos)) {
-            return new CellState(null, Set.of(), false);
+            return new CellState(null, Set.of(), null);
         }
         BlockState state = level.getBlockState(worldPos);
         BlockEntity blockEntity = state.hasBlockEntity() ? level.getBlockEntity(worldPos) : null;
         if (blockEntity instanceof MachineBlockEntity machine) {
-            return new CellState(state, partRoles(machine), true);
+            return new CellState(state, partRoles(machine), new StructureView.Member(worldPos, exclusive(machine)));
         }
-        return new CellState(state, Set.of(), false);
+        return new CellState(state, Set.of(), null);
     }
 
-    /** One captured cell: its state ({@code null} = unloaded), part capabilities, and membership. */
+    /** One captured cell: its state ({@code null} = unloaded), part capabilities, and member comment. */
     record CellState(
                      @Nullable BlockState state,
                      Set<PartRole> roles,
-                     boolean member) {
+                     StructureView.@Nullable Member member) {
 
         CellState {
             roles = Set.copyOf(Objects.requireNonNull(roles, "part roles"));

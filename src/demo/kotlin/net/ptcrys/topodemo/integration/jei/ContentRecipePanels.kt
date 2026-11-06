@@ -1,5 +1,10 @@
 package net.ptcrys.topodemo.integration.jei
 
+import net.ptcrys.topo.api.machine.MachineDefinition
+import net.ptcrys.topo.api.machine.multiblock.MultiblockControllerMetadata
+import net.ptcrys.topo.api.machine.multiblock.ui.BlueprintPreview
+import net.ptcrys.topo.api.machine.multiblock.ui.MultiblockScenePanel
+import net.ptcrys.topo.api.machine.multiblock.ui.MultiblockScenePreview
 import net.ptcrys.topo.api.machine.resource.RecipeRole
 import net.ptcrys.topo.api.machine.ui.recipe.RecipeUiLayout
 import net.ptcrys.topo.api.ore.OreVein
@@ -28,6 +33,7 @@ object ContentRecipePanels {
     const val WIDTH = 210
     const val RECIPE_HEIGHT = 90
     const val VEIN_HEIGHT = 140
+    const val MULTIBLOCK_HEIGHT = 180
 
     @JvmStatic
     fun recipe(type: TopoRecipeType<TopoRecipe>, recipe: TopoRecipe): ModularUI {
@@ -67,6 +73,23 @@ object ContentRecipePanels {
     fun vein(vein: OreVein): ModularUI {
         val root = root(VEIN_HEIGHT)
         root.addChild(OreVeinDisplays.require(vein.mode().id()).buildPreview(vein))
+        return modular(root)
+    }
+
+    /** The ideal (required) structure of one multiblock machine, rendered as the shared inspector scene. */
+    @JvmStatic
+    fun multiblock(definition: MachineDefinition): ModularUI {
+        val blueprint = definition.metadata(MultiblockControllerMetadata.TYPE).first().blueprint()
+        val preview = BlueprintPreview.of(blueprint, definition)
+        val scene = MultiblockScenePreview.scene(preview.blocks())
+        val sceneArea = MultiblockScenePanel.of(scene, preview.blocks().keys).build().sceneArea().apply {
+            layout {
+                it.width(WIDTH.toFloat())
+                it.height(MULTIBLOCK_HEIGHT.toFloat())
+            }
+        }
+        val root = root(MULTIBLOCK_HEIGHT)
+        root.addChild(sceneArea)
         return modular(root)
     }
 

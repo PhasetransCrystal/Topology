@@ -174,7 +174,7 @@ public final class BuiltinMachines {
             .component(MultiblockUi.mount(STRUCTURE_UI, CONTROLLER))
             .build();
 
-    /** Optional modules: module blueprints are overlaid on the same controller anchor. */
+    /** Optional modules: module blueprints are independent, overlaid on the same controller anchor. */
     public static final Blueprint OPTIONAL_MODULE_CORE = Blueprint.of()
             .aisle("@")
             .where('@', CellPredicates.controller())
@@ -198,22 +198,22 @@ public final class BuiltinMachines {
             .component(MultiblockController.mount(
                     CONTROLLER,
                     OPTIONAL_MODULE_CORE,
-                    MultiblockModule.optional("gold", GOLD_MODULE),
-                    MultiblockModule.optional("diamond", DIAMOND_MODULE)))
+                    MultiblockModule.of("gold", GOLD_MODULE),
+                    MultiblockModule.of("diamond", DIAMOND_MODULE)))
             .component(MultiblockUi.mount(STRUCTURE_UI, CONTROLLER))
             .build();
 
-    /** Required module (gold) plus an optional diamond module. */
-    public static final MachineDefinition REQUIRED_MODULE_MACHINE = MACHINE.machine("required_module_machine")
-            .displayName("Required Module Machine", "必需模块机器")
+    /** Diamond depends on gold; both are optional extensions of the same main blueprint. */
+    public static final MachineDefinition DEPENDENT_MODULE_MACHINE = MACHINE.machine("dependent_module_machine")
+            .displayName("Dependent Module Machine", "依赖模块机器")
             .creativeTab(BuiltinCreativeTabs.MACHINES.getKey())
             .render(BuiltinMachineTypes.CUBE.cube("block/diamond_block"))
             .block(FormedMachineBlock::new)
             .component(MultiblockController.mount(
                     CONTROLLER,
                     OPTIONAL_MODULE_CORE,
-                    MultiblockModule.required("gold", GOLD_MODULE),
-                    MultiblockModule.optional("diamond", DIAMOND_MODULE)))
+                    MultiblockModule.of("gold", GOLD_MODULE),
+                    MultiblockModule.of("diamond", DIAMOND_MODULE, "gold")))
             .component(MultiblockUi.mount(STRUCTURE_UI, CONTROLLER))
             .build();
 
