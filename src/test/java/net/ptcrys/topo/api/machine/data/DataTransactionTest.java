@@ -59,6 +59,30 @@ class DataTransactionTest {
     }
 
     @Test
+    void requirementsStayDistinctFromObservedFacts() {
+        var work = DataSnapshot.defaults(List.of(VALUE, DERIVED)).edit();
+        work.require(VALUE, 5);
+        assertTrue(work.required(VALUE));
+        assertFalse(work.assigned(VALUE));
+        assertEquals(5, work.get(VALUE));
+        assertEquals(5, work.requirement(VALUE));
+        work.set(VALUE, 6);
+        assertTrue(work.assigned(VALUE));
+        assertEquals(6, work.get(VALUE));
+        assertEquals(5, work.requirement(VALUE));
+        var frozen = work.snapshot();
+        assertTrue(frozen.required(VALUE));
+        assertTrue(frozen.assignedKeys().contains(VALUE));
+        assertEquals(6, frozen.get(VALUE));
+        assertEquals(5, frozen.requirement(VALUE));
+        var branch = work.fork();
+        assertEquals(5, branch.requirement(VALUE));
+        branch.require(VALUE, 5);
+        assertThrows(IllegalArgumentException.class, () -> branch.require(VALUE, 7));
+        assertThrows(IllegalArgumentException.class, () -> work.require(DataKey.immutable(Identifier.fromNamespaceAndPath("example", "undeclared"), Codec.INT, 0), 1));
+    }
+
+    @Test
     void schemaOrderIsStableAndConflictingNamesAreRejected() {
         var source = DataSnapshot.defaults(List.of(VALUE, DERIVED, VALUE));
         assertEquals(List.of(VALUE, DERIVED), new ArrayList<>(source.keys()));

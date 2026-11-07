@@ -64,8 +64,7 @@ public final class VanillaOreDatagenProvider implements DataProvider {
     }
 
     private CompletableFuture<?> writeOverride(CachedOutput cache, ConfiguredOverride override) {
-        Identifier sourceId = Identifier.fromNamespaceAndPath(
-                "minecraft", "worldgen/configured_feature/" + override.path() + ".json");
+        Identifier sourceId = Identifier.withDefaultNamespace("worldgen/configured_feature/" + override.path() + ".json");
         Resource resource = resources.getResource(sourceId).orElseThrow(() -> new IllegalStateException(
                 "missing vanilla configured feature " + sourceId));
         JsonObject root;

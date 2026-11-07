@@ -1,5 +1,6 @@
 package net.ptcrys.topo.api.machine.data;
 
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -9,12 +10,20 @@ public final class DataSnapshot {
 
     private final Map<DataKey<?>, Object> values;
     private final Set<DataKey<?>> assigned;
+    private final Map<DataKey<?>, Object> requirements;
 
     DataSnapshot(Map<DataKey<?>, Object> values, Set<DataKey<?>> assigned) {
+        this(values, assigned, Map.of());
+    }
+
+    DataSnapshot(Map<DataKey<?>, Object> values, Set<DataKey<?>> assigned, Map<DataKey<?>, Object> requirements) {
         this.assigned = Set.copyOf(assigned);
         Map<DataKey<?>, Object> copied = new LinkedHashMap<>();
         values.forEach((key, value) -> copied.put(key, copy(key, value)));
-        this.values = java.util.Collections.unmodifiableMap(copied);
+        this.values = Collections.unmodifiableMap(copied);
+        Map<DataKey<?>, Object> copiedRequirements = new LinkedHashMap<>();
+        requirements.forEach((key, value) -> copiedRequirements.put(key, copy(key, value)));
+        this.requirements = Collections.unmodifiableMap(copiedRequirements);
     }
 
     public static DataSnapshot defaults(Iterable<DataKey<?>> keys) {
@@ -25,11 +34,27 @@ public final class DataSnapshot {
             }
             values.put(key, key.initialValue());
         }
-        return new DataSnapshot(values, Set.of());
+        return new DataSnapshot(values, Set.of(), Map.of());
     }
 
     public Set<DataKey<?>> assignedKeys() {
         return assigned;
+    }
+
+    /** 调用方给定的配置要求；与已探测事实分开保存。 */
+    public Set<DataKey<?>> requiredKeys() {
+        return requirements.keySet();
+    }
+
+    public boolean required(DataKey<?> key) {
+        return requirements.containsKey(key);
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> T requirement(DataKey<T> key) {
+        Object value = requirements.get(key);
+        if (value == null) throw new IllegalArgumentException("No requirement for data key: " + key.id());
+        return key.copy((T) value);
     }
 
     public Set<DataKey<?>> keys() {
@@ -39,21 +64,27 @@ public final class DataSnapshot {
     @SuppressWarnings("unchecked")
     public <T> T get(DataKey<T> key) {
         if (!values.containsKey(key)) throw new IllegalArgumentException("Undeclared data key: " + key.id());
-        return key.copy((T) values.get(key));
+        Object observed = values.get(key);
+        Object value = assigned.contains(key) ? observed : requirements.getOrDefault(key, observed);
+        return key.copy((T) value);
     }
 
     @Override
     public boolean equals(Object other) {
-        return other instanceof DataSnapshot snapshot && values.equals(snapshot.values) && assigned.equals(snapshot.assigned);
+        return other instanceof DataSnapshot snapshot && values.equals(snapshot.values) && assigned.equals(snapshot.assigned) && requirements.equals(snapshot.requirements);
     }
 
     @Override
     public int hashCode() {
-        return java.util.Objects.hash(values, assigned);
+        return java.util.Objects.hash(values, assigned, requirements);
     }
 
     Map<DataKey<?>, Object> sharedValues() {
         return new LinkedHashMap<>(values);
+    }
+
+    Map<DataKey<?>, Object> sharedRequirements() {
+        return new LinkedHashMap<>(requirements);
     }
 
     public DataTransaction edit() {

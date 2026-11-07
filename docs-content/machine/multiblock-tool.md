@@ -12,9 +12,9 @@ sidebar_position: 7
 
 :::
 
-`StructureToolItem` 提供游戏内结构检测、失败报告、世界虚影和按配置补建。
+Demo 的 `StructureToolItem`（`topodemo:structure_tool`）提供游戏内结构检测、失败报告、世界虚影和按配置补建；
+框架保留 `StructureTool` 标记接口、`StructureToolManager` 会话能力、玩家配置页及虚影协议。
 蓝图、控制器朝向及叠加模块的定义见 [多方块蓝图](multiblock.md)。
-Demo 在装备创造栏注册了 `topodemo:structure_tool`（多方块结构工具）。
 
 ## 操作
 
@@ -24,8 +24,8 @@ Demo 在装备创造栏注册了 `topodemo:structure_tool`（多方块结构工�
 | 右键空气或其他方块 | 打开工具配置页 |
 | Shift + 右键多方块控制器 | 根据当前配置尝试补建选中的本体或模块，然后重新检测 |
 
-配置保存在当前工具物品上。文本字段需要点击“应用”；选择按钮点击后立即提交。
-服务端校验配置，换手或替换手持工具后，旧菜单不能修改另一件工具。
+配置保存到玩家数据并同步给该玩家；不同等级或物品的结构工具共享同一份配置，不写入物品栈。
+文本字段需要点击“应用”；选择按钮点击后立即提交。服务端校验配置，配置页绑定玩家而不是某一件工具。
 
 虚影模型保留方块贴图原色、原版与扩展染色及面亮度，仅添加透明度。
 线框表示状态：青色为缺失，红色为已有方块冲突，黄色为位置不可读取，紫色为候选状态无法确定。
@@ -80,8 +80,10 @@ Demo 在装备创造栏注册了 `topodemo:structure_tool`（多方块结构工�
 
 ## 接入与扩展
 
-为自己的物品注册 `StructureToolItem` 即可复用交互、配置页和虚影协议。
-Demo 的 `BuiltinTools` 与 `BuiltinToolPanels` 提供了物品及提示面板注册示例。
+物品实现空的 `StructureTool` 标记接口，只把 `use`／`useOn` 转给 `StructureToolManager`，需要配置页时调用
+`StructureToolConfigPage.open(player)`；配置页是玩家菜单，不绑定物品。虚影由 `StructureToolClient` 统一渲染。
+Demo 的 `src/demo/java/net/ptcrys/topodemo/api/equipment/common/StructureToolItem.java`
+只有交互转发，`BuiltinTools` 与 `BuiltinToolPanels` 提供物品及提示面板注册示例。
 工具通过 NeoForge 的 `onItemUseFirst` 在交互权限事件结束后处理，
 早于控制器激活和普通物品的放置捕获流程，无需额外注册 `MachineItemBehavior`。
 
@@ -120,6 +122,19 @@ StructureToolOptions.register(new StructureToolOptions.Option() {
 `normalize(...)` 在服务端校验并规范化输入，非法值应抛出 `IllegalArgumentException`。
 `configure(...)` 在服务端规划前执行，可按控制器、所选蓝图和模块序号调整重复次数、朝向或候选状态。
 候选状态采用世界朝向，不能绕过原蓝图的要求。
+
+若选项要参与结构检测，在 `require(...)` 中把配置值写入检测元数据工作区：
+
+```java
+public void require(StructureToolOptions.Context context, String value,
+                    DataTransaction metadata) {
+    StructureToolOptions.require(metadata, ExampleMetadata.CASING, value);
+}
+```
+
+键必须由蓝图通过 `CellBinding.metadata(...)` 声明，`StructureToolOptions.require(...)` 会跳过未声明的键。
+配置要求与探测事实分开保存：检测能力用 `metadata.required(key)`／`metadata.requirement(key)` 读取要求，
+只有 `metadata.set(...)` 写入的值才计入已探测事实。
 未识别的扩展配置会随工具数据保留。
 
 ## 边界与验证

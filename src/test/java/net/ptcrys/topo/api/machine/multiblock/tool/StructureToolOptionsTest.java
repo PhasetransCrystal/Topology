@@ -1,8 +1,12 @@
 package net.ptcrys.topo.api.machine.multiblock.tool;
 
+import net.ptcrys.topo.api.machine.data.DataKey;
+import net.ptcrys.topo.api.machine.data.DataSnapshot;
+
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 
+import com.mojang.serialization.Codec;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -24,6 +28,39 @@ class StructureToolOptionsTest {
         assertThrows(IllegalArgumentException.class, () -> StructureToolOptions.validate(repeats, "1,-1"));
         assertThrows(IllegalArgumentException.class, () -> StructureToolOptions.validate(repeats, "0".repeat(257)));
         assertThrows(UnsupportedOperationException.class, () -> StructureToolOptions.all().clear());
+    }
+
+    @Test
+    void extensionOptionsCanWriteDetectionRequirements() {
+        var tier = DataKey.immutable(Identifier.fromNamespaceAndPath("topo_test", "required_tier"), Codec.INT, -1);
+        var option = new StructureToolOptions.Option() {
+
+            public Identifier id() {
+                return Identifier.fromNamespaceAndPath("topo_test", "tier");
+            }
+
+            public Component label() {
+                return Component.literal("Tier");
+            }
+
+            public String defaultValue() {
+                return "2";
+            }
+
+            public String normalize(String value) {
+                return Integer.toString(Integer.parseInt(value.trim()));
+            }
+
+            public void require(StructureToolOptions.Context context, String value, net.ptcrys.topo.api.machine.data.DataTransaction metadata) {
+                StructureToolOptions.require(metadata, tier, Integer.parseInt(value));
+            }
+        };
+        StructureToolOptions.register(option);
+        var metadata = DataSnapshot.defaults(List.of(tier)).edit();
+        option.require(null, "2", metadata);
+        assertTrue(metadata.required(tier));
+        assertEquals(2, metadata.get(tier));
+        assertFalse(metadata.assigned(tier));
     }
 
     @Test

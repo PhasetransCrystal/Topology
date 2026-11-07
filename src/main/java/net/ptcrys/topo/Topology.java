@@ -9,7 +9,9 @@ import net.ptcrys.topo.api.api.visual.CtmClientInit;
 import net.ptcrys.topo.api.machine.data.MachineDataSyncBatcher;
 import net.ptcrys.topo.api.machine.data.network.MachineDataNetworking;
 import net.ptcrys.topo.api.machine.multiblock.MultiblockChangeWatcher;
+import net.ptcrys.topo.api.machine.multiblock.tool.StructureToolConfigPage;
 import net.ptcrys.topo.api.machine.multiblock.tool.StructureToolNetworking;
+import net.ptcrys.topo.api.machine.multiblock.tool.StructureToolOptions;
 import net.ptcrys.topo.api.pipe.network.PipeNetworkEngine;
 import net.ptcrys.topo.api.pipe.survey.PipeSurveyNetworking;
 import net.ptcrys.topo.api.recipe.search.TopoRecipeSearchEvents;
@@ -52,6 +54,8 @@ public class Topology {
         TopoAsyncExecutors.register();
         TopoRecipeSearchEvents.register(modEventBus);
         MultiblockChangeWatcher.register();
+        StructureToolOptions.register(modEventBus);
+        StructureToolConfigPage.register();
         StructureToolNetworking.register(modEventBus);
         StructureToolClient.register();
         PipeNetworkEngine.register();

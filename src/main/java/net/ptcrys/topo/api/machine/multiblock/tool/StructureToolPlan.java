@@ -54,7 +54,7 @@ public record StructureToolPlan(List<Target> targets, Map<Block, Integer> materi
         }
     }
 
-    /** inventory 返回候选方块的可用数量；创造模式可返回 Integer.MAX_VALUE。任何现有非空气位置均不会进入放置集合。 */
+    /** 未携带调用方配置要求的便捷入口；工具路径使用带元数据快照的重载。任何现有非空气位置均不会进入放置集合。 */
     public static StructureToolPlan create(StructureView world, Blueprint blueprint, StructureToolOptions.Settings settings, ToIntFunction<Block> inventory) {
         DataSnapshot source = StructureEngine.recognize(world, blueprint, settings.orientation(), settings.repeats()).metadata();
         return create(world, blueprint, settings, inventory, source);

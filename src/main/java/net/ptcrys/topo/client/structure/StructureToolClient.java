@@ -52,7 +52,7 @@ public final class StructureToolClient {
     }
 
     private static boolean holding(Minecraft minecraft) {
-        return minecraft.player != null && (minecraft.player.getItemInHand(InteractionHand.MAIN_HAND).getItem() instanceof StructureToolItem || minecraft.player.getItemInHand(InteractionHand.OFF_HAND).getItem() instanceof StructureToolItem);
+        return minecraft.player != null && (minecraft.player.getItemInHand(InteractionHand.MAIN_HAND).getItem() instanceof StructureTool || minecraft.player.getItemInHand(InteractionHand.OFF_HAND).getItem() instanceof StructureTool);
     }
 
     private static void tick(ClientTickEvent.Post event) {

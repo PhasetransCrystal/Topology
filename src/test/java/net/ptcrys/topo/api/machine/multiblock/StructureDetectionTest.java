@@ -43,6 +43,20 @@ class StructureDetectionTest {
     }
 
     @Test
+    void callerRequirementsReachDetectionWithoutBecomingObservedFacts() {
+        DataKey<Integer> tier = DataKey.immutable(Identifier.fromNamespaceAndPath("example", "required_tier"), Codec.INT, -1);
+        CellPredicate<DataKey<Integer>> configured = (key, context, metadata) -> metadata.required(key) && metadata.requirement(key) == 2 ? CellResult.pass() : CellResult.fail(Identifier.fromNamespaceAndPath("example", "missing_tier"), Map.of("tier", "2"), Map.of("tier", String.valueOf(metadata.required(key) ? metadata.requirement(key).intValue() : -1)));
+        Blueprint blueprint = Blueprint.of().aisle("@T").where('T', CellBinding.of(configured, tier).metadata(tier)).build();
+        var source = StructureMetadata.defaults(List.of(blueprint)).edit();
+        source.require(tier, 2);
+        var result = StructureEngine.recognize(new World(), blueprint, Orientations.IDENTITY, source, "body");
+        assertTrue(result.formed());
+        assertTrue(result.metadata().required(tier));
+        assertFalse(result.metadata().assignedKeys().contains(tier));
+        assertEquals(2, result.metadata().requirement(tier));
+    }
+
+    @Test
     void bodyAndModulesShareFactsAcrossAll24RotationsAndMirrors() {
         Blueprint body = chamber();
         Blueprint extension = Blueprint.of().aisle("M@").where('M', observed(BLOCK)).build();

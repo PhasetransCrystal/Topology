@@ -11,6 +11,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -35,14 +36,14 @@ public final class StructureToolManager {
     }
 
     /** 返回是否处理了控制器交互；非控制器返回 false，由物品打开配置页。 */
-    public static boolean use(ServerPlayer player, InteractionHand hand, BlockPos anchor, boolean build, Direction face) {
-        return inspect(player, hand, anchor, build, face, true);
+    public static boolean use(Player player, InteractionHand hand, BlockPos anchor, boolean build, Direction face) {
+        return player instanceof ServerPlayer server && inspect(server, hand, anchor, build, face, true);
     }
 
     private static boolean inspect(ServerPlayer player, InteractionHand hand, BlockPos anchor, boolean build, Direction face, boolean announce) {
         var level = player.level();
         ItemStack stack = player.getItemInHand(hand);
-        if (!(stack.getItem() instanceof StructureToolItem)) return false;
+        if (!(stack.getItem() instanceof StructureTool)) return false;
         if (player.isSpectator() || !player.mayInteract(level, anchor) || player.distanceToSqr(net.minecraft.world.phys.Vec3.atCenterOf(anchor)) > 128 * 128 || !level.hasChunkAt(anchor)) {
             reject(player, anchor, TopoApiLang.TOOL_STRUCTURE_DENIED.getComponent());
             return true;
@@ -50,7 +51,7 @@ public final class StructureToolManager {
         if (!(level.getBlockEntity(anchor) instanceof MachineBlockEntity machine)) return false;
         var metadata = machine.definition().metadata(MultiblockControllerMetadata.TYPE);
         if (metadata.isEmpty()) return false;
-        int module = StructureToolOptions.module(stack);
+        int module = StructureToolOptions.module(player);
         if (module > metadata.getFirst().modules().size()) {
             reject(player, anchor, TopoApiLang.TOOL_STRUCTURE_MODULE_RANGE.getComponent(module, metadata.getFirst().modules().size()));
             return true;
@@ -62,14 +63,18 @@ public final class StructureToolManager {
         }
         Orientation primary = machine.getBlockState().hasProperty(OrientedMachineBlock.FACING) ? Orientations.forFacing(machine.getBlockState().getValue(OrientedMachineBlock.FACING)) : Orientations.IDENTITY;
         try {
-            var settings = StructureToolOptions.configure(new StructureToolOptions.Context(player, machine, blueprint, module), stack, primary);
+            var context = new StructureToolOptions.Context(player, machine, blueprint, module);
+            var settings = StructureToolOptions.configure(context, player, primary);
             StructureView view = new AuthorizedView(player, new MultiblockLiveView(level, anchor));
             // 工具严格使用配置的镜像和重复次数；本体运行时的自动识别不能覆盖施工目标。
             Blueprint body = metadata.getFirst().blueprint();
             List<Blueprint> definitions = new ArrayList<>(List.of(body));
             metadata.getFirst().modules().forEach(spec -> definitions.add(spec.blueprint()));
+            var detectionMetadata = StructureMetadata.defaults(definitions).edit();
+            StructureToolOptions.configureMetadata(context, player, detectionMetadata);
+            var detectionSource = detectionMetadata.snapshot();
             var bodyOutcome = StructureDetection.detect((definition, transform) -> view, body, metadata.getFirst().modules(), primary,
-                    net.ptcrys.topo.api.machine.multiblock.pattern.StructureMetadata.defaults(definitions), false);
+                    detectionSource, false);
             Map<Item, Integer> inventory = new IdentityHashMap<>();
             if (!player.hasInfiniteMaterials()) for (int slot = 0; slot < player.getInventory().getContainerSize(); slot++) {
                 ItemStack supply = player.getInventory().getItem(slot);
@@ -83,7 +88,7 @@ public final class StructureToolManager {
                 player.sendSystemMessage(placement.failure() == null ? TopoApiLang.TOOL_STRUCTURE_BUILT.getComponent(placement.placed(), remaining) : placement.failure());
                 plan = StructureToolPlan.create(view, blueprint, settings, block -> Integer.MAX_VALUE, plan.metadata());
                 bodyOutcome = StructureDetection.detect((definition, transform) -> view, body, metadata.getFirst().modules(), primary,
-                        net.ptcrys.topo.api.machine.multiblock.pattern.StructureMetadata.defaults(definitions), false);
+                        detectionSource, false);
             }
             var targetResult = StructureEngine.recognize(view, blueprint, settings.orientation(), settings.repeats(), plan.metadata().verify(), "body");
             var result = module == 0 ? bodyOutcome.result() : StructureEngine.recognize(view, blueprint, bodyOutcome.orientation(), bodyOutcome.metadata().verify(), "module/" + metadata.getFirst().modules().get(module - 1).id());
@@ -243,7 +248,7 @@ public final class StructureToolManager {
     public static void refresh(ServerPlayer player) {
         Session session = SESSIONS.get(player.getUUID());
         if (session == null) return;
-        if (!session.dimension().equals(player.level().dimension().identifier()) || !(player.getItemInHand(session.hand()).getItem() instanceof StructureToolItem) || player.distanceToSqr(net.minecraft.world.phys.Vec3.atCenterOf(session.anchor())) > 128 * 128) {
+        if (!session.dimension().equals(player.level().dimension().identifier()) || !(player.getItemInHand(session.hand()).getItem() instanceof StructureTool) || player.distanceToSqr(net.minecraft.world.phys.Vec3.atCenterOf(session.anchor())) > 128 * 128) {
             forget(player.getUUID());
             return;
         }

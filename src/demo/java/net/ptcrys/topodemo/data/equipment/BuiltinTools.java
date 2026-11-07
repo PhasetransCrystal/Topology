@@ -2,9 +2,9 @@ package net.ptcrys.topodemo.data.equipment;
 
 import net.ptcrys.registrylib.util.TextureRef;
 import net.ptcrys.registrylib.util.entry.ItemEntry;
-import net.ptcrys.topo.api.machine.multiblock.tool.StructureToolItem;
 import net.ptcrys.topodemo.TopoDemo;
 import net.ptcrys.topodemo.api.equipment.common.PipeSurveyorItem;
+import net.ptcrys.topodemo.api.equipment.common.StructureToolItem;
 import net.ptcrys.topodemo.data.BuiltinCreativeTabs;
 
 import net.minecraft.world.item.Item;
