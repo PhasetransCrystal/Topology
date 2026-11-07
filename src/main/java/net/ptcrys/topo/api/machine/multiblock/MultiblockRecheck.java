@@ -1,9 +1,13 @@
 package net.ptcrys.topo.api.machine.multiblock;
 
 import net.ptcrys.topo.Topology;
+import net.ptcrys.topo.api.api.async.TopoAsyncExecutors;
 import net.ptcrys.topo.api.machine.MachineBlockEntity;
 import net.ptcrys.topo.api.machine.OrientedMachineBlock;
+import net.ptcrys.topo.api.machine.data.DataSnapshot;
+import net.ptcrys.topo.api.machine.data.DataTransaction;
 import net.ptcrys.topo.api.machine.multiblock.pattern.Blueprint;
+import net.ptcrys.topo.api.machine.multiblock.pattern.BlueprintLayout;
 import net.ptcrys.topo.api.machine.multiblock.pattern.CompiledBlueprint;
 import net.ptcrys.topo.api.machine.multiblock.pattern.CompiledSnapshot;
 import net.ptcrys.topo.api.machine.multiblock.pattern.Orientation;
@@ -11,6 +15,7 @@ import net.ptcrys.topo.api.machine.multiblock.pattern.Orientations;
 import net.ptcrys.topo.api.machine.multiblock.pattern.RecognitionResult;
 import net.ptcrys.topo.api.machine.multiblock.pattern.RepeatResolution;
 import net.ptcrys.topo.api.machine.multiblock.pattern.StructureEngine;
+import net.ptcrys.topo.api.machine.multiblock.pattern.StructureMetadata;
 import net.ptcrys.topo.api.machine.multiblock.pattern.StructureView;
 
 import net.minecraft.core.BlockPos;
@@ -22,7 +27,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -32,14 +36,9 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * The recheck pipeline — the whole {@code snapshot → recognize → claim → apply → publish} template,
- * plus upkeep verify, targeted invalidation, async submission and the fail-closed recovery. It is a
- * plain collaborator (the machine system's component pattern: heavy logic sits beside the thin
- * {@link MultiblockController} component) holding the machine and the shared {@link MultiblockState}.
- *
- * <p>
- * Fail-closed: any step failure logs, forces the unformed state and releases this controller's
- * claims, so a broken recheck can never crash the tick or leave a stale {@code FORMED} block state.
+ * 控制器的检测协调器：采集、整体识别、独占预留、元数据提交与成员接入，另提供周期和定点校验。
+ * 工作线程仅处理快照，世界线程核对提交代次、当前朝向与变更标记后应用结果。
+ * 未知保留旧状态，异常则释放预留并解体；业务能力由组件组合，不要求继承控制器。
  */
 final class MultiblockRecheck {
 
@@ -51,6 +50,7 @@ final class MultiblockRecheck {
     private final Map<String, MultiblockModule> modulesById;
     private final FormedRuntime runtime;
     private final MultiblockState state;
+    private final StructureMetadata metadata;
 
     /** Last footprint registration, so an unchanged (orientation, mirror) pair skips the watch rebuild. */
     private @Nullable MultiblockClaimIndex watchedClaims;
@@ -66,6 +66,7 @@ final class MultiblockRecheck {
     private long submissionCounter;
     /** Earliest game time at which an unloaded-chunk retry may run. */
     private long retryAfterGameTime;
+    private boolean freshProbe;
 
     MultiblockRecheck(
                       MachineBlockEntity machine,
@@ -73,7 +74,8 @@ final class MultiblockRecheck {
                       List<MultiblockModule> moduleSpecs,
                       Map<String, MultiblockModule> modulesById,
                       FormedRuntime runtime,
-                      MultiblockState state) {
+                      MultiblockState state, StructureMetadata metadata) {
+        this.metadata = metadata;
         this.machine = Objects.requireNonNull(machine, "machine");
         this.blueprint = Objects.requireNonNull(blueprint, "blueprint");
         this.moduleSpecs = Objects.requireNonNull(moduleSpecs, "module specs");
@@ -136,49 +138,31 @@ final class MultiblockRecheck {
             return;
         }
         forceFullRecheck = false;
-        if (blueprint.supportsSnapshot() && blueprint.maxCellCount() >= Topology.config.MULTIBLOCK.asyncCellThreshold) {
-            submitAsyncRecheck(services);
+        if (blueprint.supportsSnapshot() && moduleSpecs.stream().allMatch(module -> module.blueprint().supportsSnapshot()) && blueprint.maxCellCount() >= Topology.config.MULTIBLOCK.asyncCellThreshold) {
+            try {
+                submitAsyncRecheck(level, services);
+            } catch (Exception failure) {
+                failClosed(level, services, failure);
+            }
         } else {
             recheck(level);
         }
     }
 
-    /**
-     * The synchronous recheck template: snapshot → recognize → claim → apply → publish. The mirror
-     * twin is lazy here — captured and recognized only after the primary pass failed — unlike the
-     * async path, whose worker cannot call back to the main thread for a second capture.
-     */
+    /** 同步检测整个结构，两个镜像各有隔离工作区，本体与模块共同确定最终变换。 */
     private void recheck(ServerLevel level) {
         MultiblockLevelBinder.Services services = services(level);
         try {
             Orientation orientation = orientationFromBlockState(machine.getBlockState());
             watchFootprint(services.claims(), orientation);
-            boolean snapshotLayout = blueprint.supportsSnapshot();
-            CompiledSnapshot primary = snapshotLayout ? services.claims().snapshot(machine.getBlockPos(), blueprint, orientation) : null;
-            StructureView primaryView = primary != null ? primary : new MultiblockLiveView(level, machine.getBlockPos());
-            AsyncStructureService.Outcome outcome = new AsyncStructureService.Outcome(
-                    StructureEngine.recognize(primaryView, blueprint, orientation), orientation);
-            if (outcome.result().failureReason() == RecognitionResult.FailureReason.CHUNK_UNLOADED) {
+            StructureDetection.Outcome outcome = StructureDetection.detect(
+                    (definition, transform) -> definition.supportsSnapshot() ? StructureCaptures.capture(level, machine.getBlockPos(), definition, transform) : new MultiblockLiveView(level, machine.getBlockPos()),
+                    blueprint, moduleSpecs, orientation, detectionSource(), verifyingBaseline());
+            if (StructureDetection.unknown(outcome)) {
                 deferUnloaded(services);
                 return;
             }
-            if (!outcome.result().formed() && blueprint.allowMirror()) {
-                Orientation mirrored = Orientations.mirrorOf(orientation);
-                StructureView mirrorView = snapshotLayout ? services.claims().snapshot(machine.getBlockPos(), blueprint, mirrored) : new MultiblockLiveView(level, machine.getBlockPos());
-                RecognitionResult mirrorResult = StructureEngine.recognize(mirrorView, blueprint, mirrored);
-                if (mirrorResult.failureReason() == RecognitionResult.FailureReason.CHUNK_UNLOADED) {
-                    deferUnloaded(services);
-                    return;
-                }
-                if (mirrorResult.formed()) {
-                    outcome = new AsyncStructureService.Outcome(mirrorResult, mirrored);
-                }
-            }
-            MultiblockModuleEvaluator.Evaluation moduleEvaluation = evaluateModules(level, outcome.orientation());
-            if (moduleEvaluation.unloaded()) {
-                deferUnloaded(services);
-                return;
-            }
+            MultiblockModuleEvaluator.Evaluation moduleEvaluation = outcome.modules();
             boolean formed = outcome.result().formed();
             ClaimResult claimResult = claim(level, services, formed, outcome, moduleEvaluation);
             apply(level, claimResult.formed(), outcome, claimResult.modules());
@@ -188,38 +172,41 @@ final class MultiblockRecheck {
         }
     }
 
-    /** Main-thread snapshot, worker recognition; the verdict commits on a later tick with staleness checks. */
-    private void submitAsyncRecheck(MultiblockLevelBinder.Services services) {
+    /** 世界线程采集快照，工作线程计算；后续 tick 通过过期检查才允许提交。 */
+    private void submitAsyncRecheck(ServerLevel level, MultiblockLevelBinder.Services services) {
         Orientation orientation = orientationFromBlockState(machine.getBlockState());
-        AsyncStructureService.Captures captures = snapshot(services.claims(), orientation);
+        StructureDetection.Views captures = snapshot(level, services.claims(), orientation);
+        DataSnapshot source = detectionSource();
+        boolean verifying = verifyingBaseline();
         long submissionId = ++submissionCounter;
         pending = new PendingRecognition(
                 submissionId,
                 orientation,
-                AsyncStructureService.recognizeAsync(captures, blueprint));
+                CompletableFuture.supplyAsync(() -> StructureDetection.detect(captures, blueprint, moduleSpecs, orientation, source, verifying), TopoAsyncExecutors.structureExecutor()));
     }
 
-    /**
-     * Upkeep verify for a formed structure: captures the formed orientation only and runs the
-     * zero-allocation {@link StructureEngine#verify} — synchronously under the async threshold, on
-     * the worker pool above it. An intact verdict retains everything as-is; anything else escalates
-     * to the full recognize path on the next tick.
-     */
+    /** 周期检查只读取已确认元数据和成型朝向，失败再进入完整重检；未知延后处理。 */
     private void upkeepVerify(ServerLevel level, MultiblockLevelBinder.Services services) {
         try {
             MultiblockState.FormedShape shape = Objects.requireNonNull(state.formedShape);
             Orientation orientation = shape.orientation();
-            watchFootprint(services.claims(), orientationFromBlockState(machine.getBlockState()));
-            StructureView capture = blueprint.supportsSnapshot() ? services.claims().snapshot(machine.getBlockPos(), blueprint, orientation) : new MultiblockLiveView(level, machine.getBlockPos());
-            if (blueprint.supportsSnapshot() && blueprint.maxCellCount() >= Topology.config.MULTIBLOCK.asyncCellThreshold) {
+            Orientation controllerOrientation = orientationFromBlockState(machine.getBlockState());
+            if (!formedOrientationMatches(orientation, controllerOrientation)) {
+                recheck(level);
+                return;
+            }
+            watchFootprint(services.claims(), controllerOrientation);
+            StructureView capture = blueprint.supportsSnapshot() ? StructureCaptures.capture(level, machine.getBlockPos(), blueprint, orientation) : new MultiblockLiveView(level, machine.getBlockPos());
+            if (blueprint.supportsSnapshot() && moduleSpecs.stream().allMatch(module -> module.blueprint().supportsSnapshot()) && blueprint.maxCellCount() >= Topology.config.MULTIBLOCK.asyncCellThreshold) {
                 long submissionId = ++submissionCounter;
                 pendingVerify = new PendingVerification(
                         submissionId,
                         orientation,
-                        AsyncStructureService.verifyAsync((CompiledSnapshot) capture, blueprint));
+                        controllerOrientation,
+                        AsyncStructureService.verifyAsync((CompiledSnapshot) capture, blueprint, metadata.snapshot()));
                 return;
             }
-            StructureEngine.Verification verification = StructureEngine.verify(capture, blueprint, orientation);
+            StructureEngine.Verification verification = StructureEngine.verify(capture, blueprint, orientation, metadata.snapshot().verify());
             if (verification.unloaded()) {
                 deferUnloaded(services);
                 return;
@@ -259,7 +246,7 @@ final class MultiblockRecheck {
         try {
             StructureEngine.Verification verification = inFlight.future().join();
             MultiblockState.FormedShape shape = state.formedShape;
-            boolean stale = inFlight.submissionId() != submissionCounter || shape == null || !inFlight.orientation().equals(shape.orientation()) || services.rechecks().isDirty(machine.getBlockPos());
+            boolean stale = inFlight.submissionId() != submissionCounter || shape == null || !inFlight.orientation().equals(shape.orientation()) || !inFlight.controllerOrientation().equals(orientationFromBlockState(machine.getBlockState())) || services.rechecks().isDirty(machine.getBlockPos());
             if (stale) {
                 // The world (or the controller) moved on while the verdict was in flight; rerun.
                 services.rechecks().markDirty(machine.getBlockPos());
@@ -282,11 +269,7 @@ final class MultiblockRecheck {
         }
         pending = null;
         try {
-            AsyncStructureService.Outcome outcome = inFlight.future().join();
-            if (outcome.result().failureReason() == RecognitionResult.FailureReason.CHUNK_UNLOADED) {
-                deferUnloaded(services);
-                return;
-            }
+            StructureDetection.Outcome outcome = inFlight.future().join();
             Orientation current = orientationFromBlockState(machine.getBlockState());
             boolean stale = inFlight.submissionId() != submissionCounter || !inFlight.orientation().equals(current) || services.rechecks().isDirty(machine.getBlockPos());
             if (stale) {
@@ -294,11 +277,11 @@ final class MultiblockRecheck {
                 services.rechecks().markDirty(machine.getBlockPos());
                 return;
             }
-            MultiblockModuleEvaluator.Evaluation moduleEvaluation = evaluateModules(level, outcome.orientation());
-            if (moduleEvaluation.unloaded()) {
+            if (StructureDetection.unknown(outcome)) {
                 deferUnloaded(services);
                 return;
             }
+            MultiblockModuleEvaluator.Evaluation moduleEvaluation = outcome.modules();
             boolean formed = outcome.result().formed();
             ClaimResult claimResult = claim(level, services, formed, outcome, moduleEvaluation);
             apply(level, claimResult.formed(), outcome, claimResult.modules());
@@ -308,30 +291,36 @@ final class MultiblockRecheck {
         }
     }
 
-    /**
-     * Snapshot step for the async path: refreshes the watched footprint and captures the dense
-     * view(s) recognition consumes — the primary orientation, plus its mirror twin when the
-     * blueprint allows mirroring. The mirror is captured eagerly here because the worker thread can
-     * never call back to the main thread for a second capture; the synchronous path captures it
-     * lazily instead.
-     */
-    private AsyncStructureService.Captures snapshot(MultiblockClaimIndex claims, Orientation orientation) {
+    /** 世界线程采集本体与全部模块的两个整体变换，工作线程不会再访问世界。 */
+    private StructureDetection.Views snapshot(ServerLevel level, MultiblockClaimIndex claims, Orientation orientation) {
         watchFootprint(claims, orientation);
-        CompiledSnapshot primary = claims.snapshot(machine.getBlockPos(), blueprint, orientation);
-        CompiledSnapshot mirrored = blueprint.allowMirror() ? claims.snapshot(machine.getBlockPos(), blueprint, Orientations.mirrorOf(orientation)) : null;
-        return new AsyncStructureService.Captures(primary, mirrored);
+        Map<Blueprint, Map<Orientation, CompiledSnapshot>> captures = new LinkedHashMap<>();
+        List<Blueprint> definitions = new ArrayList<>(List.of(blueprint));
+        definitions.addAll(moduleBlueprints());
+        for (Blueprint definition : definitions) {
+            captures.put(definition, Map.of(
+                    orientation, StructureCaptures.capture(level, machine.getBlockPos(), definition, orientation),
+                    orientation.mirrored(), StructureCaptures.capture(level, machine.getBlockPos(), definition, orientation.mirrored())));
+        }
+        Map<Blueprint, Map<Orientation, CompiledSnapshot>> immutable = Map.copyOf(captures);
+        return (definition, transform) -> Objects.requireNonNull(immutable.get(definition).get(transform));
     }
 
-    /**
-     * Evaluates every module as an independent blueprint. Modules are optional: their formation
-     * never gates the main structure. A module is satisfied only when its own cells/counts are
-     * complete and every prerequisite module is satisfied; partial or blocked modules are absent.
-     */
-    private MultiblockModuleEvaluator.Evaluation evaluateModules(ServerLevel level, Orientation orientation) {
-        return MultiblockModuleEvaluator.evaluateOverlays(
-                new MultiblockLiveView(level, machine.getBlockPos()),
-                moduleSpecs,
-                orientation);
+    private DataSnapshot detectionSource() {
+        return freshProbe ? metadata.defaults() : metadata.snapshot();
+    }
+
+    private boolean verifyingBaseline() {
+        return !freshProbe && metadata.snapshot().assignedKeys().contains(StructureMetadata.ORIENTATION);
+    }
+
+    /** 显式开始新探测周期，未知或在途期间仍保留旧的正式元数据，只有完整提交才替换。 */
+    void requestProbe(ServerLevel level) {
+        cancelPending();
+        freshProbe = true;
+        forceFullRecheck = true;
+        retryAfterGameTime = 0;
+        markDirty(level);
     }
 
     /**
@@ -345,7 +334,7 @@ final class MultiblockRecheck {
                               ServerLevel level,
                               MultiblockLevelBinder.Services services,
                               boolean formed,
-                              AsyncStructureService.Outcome outcome,
+                              StructureDetection.Outcome outcome,
                               MultiblockModuleEvaluator.Evaluation moduleEvaluation) {
         if (!formed) {
             releaseClaimsAndWakeWatchers(services);
@@ -357,18 +346,23 @@ final class MultiblockRecheck {
             releaseClaimsAndWakeWatchers(services);
             return new ClaimResult(false, moduleEvaluation);
         }
-        MultiblockModuleEvaluator.Evaluation adjustedModules = resolveModuleExclusiveConflicts(view, moduleEvaluation, services.claims());
+        MultiblockModuleEvaluator.Evaluation adjustedModules = MultiblockModuleEvaluator.evaluateOverlays(
+                definition -> view, moduleSpecs, outcome.orientation(),
+                verifyingBaseline() ? outcome.result().metadata().verify() : outcome.result().metadata().edit(),
+                members -> services.claims().conflictingExclusive(machine.getBlockPos(), exclusiveCells(view, members)).isEmpty());
         Set<BlockPos> allExclusive = new LinkedHashSet<>(mainExclusive);
         allExclusive.addAll(exclusiveCells(view, adjustedModules.members()));
-        if (!services.claims().tryClaim(
+        MultiblockClaimIndex.ClaimUpdate update = services.claims().tryClaim(
                 machine.getBlockPos(),
                 blueprint,
                 outcome.orientation(),
                 outcome.result().repeats(),
-                allExclusive)) {
+                allExclusive);
+        if (!update.accepted()) {
             releaseClaimsAndWakeWatchers(services);
             return new ClaimResult(false, adjustedModules);
         }
+        if (update.released() != null) wakeWatchers(services, update.released());
         return new ClaimResult(true, adjustedModules);
     }
 
@@ -383,62 +377,6 @@ final class MultiblockRecheck {
         return exclusive;
     }
 
-    /**
-     * Drops modules whose exclusive parts are already held by another formed machine. Dropping a
-     * prerequisite propagates to its dependents; the module report stays usable for diagnostics
-     * ({@code matched/total}) but the module becomes absent.
-     */
-    private MultiblockModuleEvaluator.Evaluation resolveModuleExclusiveConflicts(
-                                                                                 StructureView view,
-                                                                                 MultiblockModuleEvaluator.Evaluation evaluation,
-                                                                                 MultiblockClaimIndex claims) {
-        if (moduleSpecs.isEmpty()) {
-            return evaluation;
-        }
-        Map<String, MultiblockModule> byId = new LinkedHashMap<>();
-        for (MultiblockModule module : moduleSpecs) {
-            byId.put(module.id(), module);
-        }
-        Map<String, RecognitionResult.ModuleReport> computed = new LinkedHashMap<>();
-        Map<String, Boolean> satisfiedById = new HashMap<>();
-        Map<String, List<BlockPos>> keptMembers = new LinkedHashMap<>();
-        List<BlockPos> members = new ArrayList<>();
-        for (String id : evaluation.order()) {
-            MultiblockModule module = byId.get(id);
-            RecognitionResult.ModuleReport report = evaluation.reports().get(id);
-            if (module == null || report == null) {
-                continue;
-            }
-            List<String> blockedBy = new ArrayList<>();
-            for (String dependency : module.dependencies()) {
-                if (!satisfiedById.getOrDefault(dependency, false)) {
-                    blockedBy.add(dependency);
-                }
-            }
-            boolean satisfied = report.satisfied() && blockedBy.isEmpty();
-            if (satisfied) {
-                List<BlockPos> moduleMembers = evaluation.membersByModule().getOrDefault(id, List.of());
-                if (!claims.conflictingExclusive(machine.getBlockPos(), exclusiveCells(view, moduleMembers)).isEmpty()) {
-                    satisfied = false;
-                    blockedBy = List.of();
-                } else {
-                    keptMembers.put(id, moduleMembers);
-                    members.addAll(moduleMembers);
-                }
-            }
-            computed.put(id, new RecognitionResult.ModuleReport(id, satisfied, report.matched(), report.total(), blockedBy, report.repeats(), report.bounds()));
-            satisfiedById.put(id, satisfied);
-        }
-        Map<String, RecognitionResult.ModuleReport> reports = new LinkedHashMap<>();
-        for (MultiblockModule module : moduleSpecs) {
-            RecognitionResult.ModuleReport report = computed.get(module.id());
-            if (report != null) {
-                reports.put(module.id(), report);
-            }
-        }
-        return new MultiblockModuleEvaluator.Evaluation(reports, List.copyOf(members), keptMembers, evaluation.order(), evaluation.unloaded());
-    }
-
     /** Claim outcome: whether the machine formed and the module reports after exclusive conflicts. */
     private record ClaimResult(boolean formed, MultiblockModuleEvaluator.Evaluation modules) {}
 
@@ -446,12 +384,16 @@ final class MultiblockRecheck {
     private void apply(
                        ServerLevel level,
                        boolean formed,
-                       AsyncStructureService.Outcome outcome,
+                       StructureDetection.Outcome outcome,
                        MultiblockModuleEvaluator.Evaluation moduleEvaluation) {
         if (!formed) {
+            boolean hadBaseline = metadata.snapshot().assignedKeys().contains(StructureMetadata.ORIENTATION);
             clearFormed(level);
+            freshProbe = false;
+            if (hadBaseline) services(level).rechecks().markDirty(machine.getBlockPos());
             return;
         }
+        freshProbe = false;
         boolean wasFormed = state.formedShape != null;
         Map<String, RecognitionResult.ModuleReport> previousModules = state.modules;
         RecognitionResult result = outcome.result();
@@ -474,6 +416,13 @@ final class MultiblockRecheck {
         }
         state.formedShape = new MultiblockState.FormedShape(outcome.orientation(), result.repeats(), bounds, Map.copyOf(moduleRepeats));
         state.modules = moduleEvaluation.reports();
+        DataTransaction confirmed = moduleEvaluation.metadata().edit();
+        Map<String, List<Integer>> repeats = new LinkedHashMap<>();
+        repeats.put("body", java.util.Arrays.stream(result.repeats().countsCopy()).boxed().toList());
+        moduleRepeats.forEach((id, value) -> repeats.put("module/" + id, java.util.Arrays.stream(value.countsCopy()).boxed().toList()));
+        confirmed.set(StructureMetadata.ORIENTATION, Orientations.all().indexOf(outcome.orientation()));
+        confirmed.set(StructureMetadata.REPEATS, Map.copyOf(repeats));
+        metadata.commit(confirmed.snapshot());
         MultiblockVisuals.writeMemberCtmActive(level, previousMembers, runtime.memberPositions());
         if (!wasFormed || !previousModules.equals(state.modules)) {
             machine.machineComponents().noteResourceContentChanged();
@@ -481,13 +430,14 @@ final class MultiblockRecheck {
         }
     }
 
-    /** Clears all formed runtime state and publishes the unformed transition exactly once. */
+    /** 清空成型运行时和有效元数据，并发布一次解体变更。 */
     private void clearFormed(ServerLevel level) {
         boolean wasFormed = state.formedShape != null;
         List<BlockPos> previousMembers = runtime.memberPositions();
         runtime.clearMembers();
         state.formedShape = null;
         state.modules = Map.of();
+        metadata.invalidate();
         MultiblockVisuals.writeMemberCtmActive(level, previousMembers, List.of());
         if (wasFormed) {
             machine.machineComponents().noteResourceContentChanged();
@@ -509,38 +459,31 @@ final class MultiblockRecheck {
     private TargetedVerdict targetedRecheck(ServerLevel level, Set<BlockPos> changedCells) {
         MultiblockState.FormedShape shape = Objects.requireNonNull(state.formedShape);
         Orientation orientation = shape.orientation();
+        if (!formedOrientationMatches(orientation, orientationFromBlockState(machine.getBlockState()))) return TargetedVerdict.ESCALATE;
         BlockPos controllerPos = machine.getBlockPos();
         CompiledBlueprint mainCompiled = blueprint.compiled(orientation);
+        BlueprintLayout mainLayout = blueprint.layout(shape.repeats());
         MultiblockLiveView view = new MultiblockLiveView(level, controllerPos);
         for (BlockPos changed : changedCells) {
             if (!view.isLoaded(changed)) {
                 return TargetedVerdict.ESCALATE;
             }
             // Main blueprint: a mismatch unforms immediately; the growth area forces a full recognize.
-            int mainIndex = mainCompiled.cellIndexOfWorld(changed, controllerPos, shape.repeats());
+            int mainIndex = mainCompiled.cellIndexOfWorld(changed, controllerPos, mainLayout);
             if (mainIndex >= 0) {
-                if (!StructureEngine.matchesCompiled(view, changed, mainCompiled.definitionAt(mainIndex))) {
+                var cellResult = StructureEngine.evaluateCompiled(view, changed, mainCompiled.definitionAt(mainIndex), metadata.snapshot().verify());
+                if (cellResult.status() == net.ptcrys.topo.api.machine.multiblock.pattern.CellResult.Status.UNKNOWN) return TargetedVerdict.ESCALATE;
+                if (!cellResult.passed()) {
                     return TargetedVerdict.BROKEN;
                 }
+                // 状态仍匹配也可能发生部件替换或角色变化，必须刷新成员、计数及独占预留。
+                if (!blueprint.countRequirements().isEmpty() || view.member(changed) != null || !view.roles(changed).isEmpty() || runtime.memberPositions().contains(changed)) return TargetedVerdict.ESCALATE;
             } else if (mainCompiled.containsWorldAnyLayout(changed, controllerPos)) {
                 return TargetedVerdict.ESCALATE; // A change can grow the repeat layout.
             }
-            // Satisfied modules: a mismatch only loses that module (main stays formed), so escalate to
-            // a full recognize rather than unform; their growth areas escalate the same way.
-            for (Map.Entry<String, RepeatResolution> entry : shape.moduleRepeats().entrySet()) {
-                MultiblockModule module = modulesById.get(entry.getKey());
-                if (module == null) {
-                    continue;
-                }
-                CompiledBlueprint moduleCompiled = module.blueprint().compiled(orientation);
-                int moduleIndex = moduleCompiled.cellIndexOfWorld(changed, controllerPos, entry.getValue());
-                if (moduleIndex >= 0) {
-                    if (!StructureEngine.matchesCompiled(view, changed, moduleCompiled.definitionAt(moduleIndex))) {
-                        return TargetedVerdict.ESCALATE;
-                    }
-                } else if (moduleCompiled.containsWorldAnyLayout(changed, controllerPos)) {
-                    return TargetedVerdict.ESCALATE;
-                }
+            // 缺失模块也监听完整可能占地；补齐最后一个方块必须在本轮重新求值。
+            for (MultiblockModule module : moduleSpecs) {
+                if (module.blueprint().compiled(orientation).containsWorldAnyLayout(changed, controllerPos)) return TargetedVerdict.ESCALATE;
             }
         }
         return TargetedVerdict.RETAINED;
@@ -551,6 +494,7 @@ final class MultiblockRecheck {
      * publishes the unformed state this tick — the full diagnostic recheck runs on the re-mark.
      */
     private void unformNow(ServerLevel level, MultiblockLevelBinder.Services services) {
+        cancelPending();
         releaseClaimsAndWakeWatchers(services);
         clearFormed(level);
         publish(level, false);
@@ -566,8 +510,8 @@ final class MultiblockRecheck {
                 "Multiblock recheck failed for controller at {}; forcing unformed (fail-closed)",
                 machine.getBlockPos(),
                 failure);
+        cancelPending();
         try {
-            pending = null;
             releaseClaimsAndWakeWatchers(services);
             clearFormed(level);
             publish(level, false);
@@ -602,26 +546,22 @@ final class MultiblockRecheck {
         if (freed == null) {
             return;
         }
+        wakeWatchers(services, freed);
+    }
+
+    private void wakeWatchers(MultiblockLevelBinder.Services services, MultiblockClaimIndex.Region freed) {
         for (BlockPos watcher : services.claims().watchersIntersecting(freed, machine.getBlockPos())) {
             services.rechecks().markDirty(watcher);
         }
     }
 
-    /**
-     * Registers the watched footprint for the given orientation (plus its mirror when allowed). The
-     * (orientation, mirror) pair fully determines the watched cell set, so an unchanged pair against
-     * the same {@link MultiblockClaimIndex} skips the rebuild.
-     */
+    /** 同时监听控制器主朝向和镜像的可能占地；同一索引和朝向下复用已有监听，不重复建立位置集合。 */
     private void watchFootprint(MultiblockClaimIndex claims, Orientation orientation) {
         if (claims == watchedClaims && orientation.equals(watchedOrientation)) {
             return;
         }
         List<Blueprint> moduleBlueprints = moduleBlueprints();
-        if (blueprint.allowMirror()) {
-            claims.watch(machine.getBlockPos(), blueprint, moduleBlueprints, orientation, Orientations.mirrorOf(orientation));
-        } else {
-            claims.watch(machine.getBlockPos(), blueprint, moduleBlueprints, orientation);
-        }
+        claims.watch(machine.getBlockPos(), blueprint, moduleBlueprints, orientation, Orientations.mirrorOf(orientation));
         watchedClaims = claims;
         watchedOrientation = orientation;
     }
@@ -663,18 +603,22 @@ final class MultiblockRecheck {
             cachedServices = null;
             level.invalidateCapabilities(machine.getBlockPos());
         }
-        PendingRecognition inFlight = pending;
-        if (inFlight != null) {
-            inFlight.future().cancel(false);
-            pending = null;
-        }
-        PendingVerification verifyInFlight = pendingVerify;
-        if (verifyInFlight != null) {
-            verifyInFlight.future().cancel(false);
-            pendingVerify = null;
-        }
+        cancelPending();
         state.formedShape = null;
         state.modules = Map.of();
+    }
+
+    /** 失效所有在途结果；即使工作线程已经完成，也不允许其恢复已解体的机器。 */
+    private void cancelPending() {
+        submissionCounter++;
+        if (pending != null) pending.future().cancel(false);
+        if (pendingVerify != null) pendingVerify.future().cancel(false);
+        pending = null;
+        pendingVerify = null;
+    }
+
+    private boolean formedOrientationMatches(Orientation formed, Orientation current) {
+        return formed.equals(current) || formed.equals(current.mirrored());
     }
 
     /** Resolves and caches the per-level services; cleared on unload, so the cache never spans levels. */
@@ -703,10 +647,11 @@ final class MultiblockRecheck {
     private record PendingRecognition(
                                       long submissionId,
                                       Orientation orientation,
-                                      CompletableFuture<AsyncStructureService.Outcome> future) {}
+                                      CompletableFuture<StructureDetection.Outcome> future) {}
 
     private record PendingVerification(
                                        long submissionId,
                                        Orientation orientation,
+                                       Orientation controllerOrientation,
                                        CompletableFuture<StructureEngine.Verification> future) {}
 }

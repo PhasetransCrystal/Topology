@@ -1,6 +1,7 @@
 package net.ptcrys.topo.api.machine.multiblock.ui
 
 import net.ptcrys.topo.api.api.lang.TopoApiLang
+import net.ptcrys.topo.api.machine.multiblock.ability.PartRole
 import net.ptcrys.topo.api.machine.ui.MachineUiComponentStyle
 import net.ptcrys.topo.api.machine.ui.MachineUiContainerTemplate
 import net.ptcrys.topo.api.machine.ui.MachineUiLayout
@@ -208,10 +209,10 @@ object MultiblockPreviewBlockList {
     }
 
     private fun aggregate(preview: BlueprintPreview): List<AggGroup> {
-        val acc = LinkedHashMap<List<Item>, Acc>()
+        val acc = LinkedHashMap<List<CandidateSignature>, Acc>()
         for ((pos, candidates) in preview.candidatesByCell()) {
             if (candidates.isEmpty()) continue
-            val key = candidates.map { it.item().item }
+            val key = candidates.map { CandidateSignature(it.item().item, it.role(), it.min(), it.max()) }
             val group = acc.getOrPut(key) { Acc(candidates) }
             group.count++
             group.cells.add(pos)
@@ -220,6 +221,8 @@ object MultiblockPreviewBlockList {
     }
 
     private data class AggGroup(val candidates: List<BlueprintPreview.Candidate>, val count: Int, val cells: List<BlockPos>)
+
+    private data class CandidateSignature(val item: Item, val role: PartRole?, val min: Int, val max: Int)
 
     private class Acc(val candidates: List<BlueprintPreview.Candidate>, var count: Int = 0, val cells: MutableList<BlockPos> = ArrayList())
 

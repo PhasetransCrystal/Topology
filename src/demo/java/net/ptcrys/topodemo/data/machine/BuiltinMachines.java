@@ -8,6 +8,7 @@ import net.ptcrys.topo.api.machine.multiblock.MultiblockModule;
 import net.ptcrys.topo.api.machine.multiblock.MultiblockUi;
 import net.ptcrys.topo.api.machine.multiblock.pattern.Blueprint;
 import net.ptcrys.topo.api.machine.multiblock.pattern.CellPredicates;
+import net.ptcrys.topo.api.machine.multiblock.pattern.PropertyRules;
 import net.ptcrys.topo.api.machine.resource.PortAccess;
 import net.ptcrys.topodemo.api.machine.BuiltinMachineTypes;
 import net.ptcrys.topodemo.api.machine.common.ItemPort;
@@ -21,7 +22,7 @@ import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
-/** A standalone grinder, two role-bearing buses, a storage buffer and a bus-fed alloying multiblock. */
+/** 单方块设备、输入输出部件，以及最小尺寸不低于 4×4×6 的多方块验收机器。 */
 public final class BuiltinMachines {
 
     private static final MachineDomainRegistration MACHINE = TopoDemoPlugin.INSTANCE.machine();
@@ -51,31 +52,52 @@ public final class BuiltinMachines {
             .creativeTab(BuiltinCreativeTabs.MACHINES.getKey()).render(BuiltinMachineTypes.CUBE.cube("block/dropper_front"))
             .component(ItemPort.mount(ItemPort.OUTPUT, 3, PortAccess.output()).role(BuiltinMachineTypes.OUTPUT)).build();
 
-    // Three-wide, two-high, one-deep. @ is the controller; input/output buses supply recipe IO.
+    // 4×4×6 合金炉；输入输出总线各一个，内腔保持空气。
     public static final Blueprint ALLOY_BLUEPRINT = Blueprint.of()
-            .aisle("CCC", "I@O")
-            .aisle("CCC", "CCC")
-            .where('@', CellPredicates.controller())
+            .aisle("CCCC", "CCCC", "CCCC", "CCCC")
+            .aisle("C@IC", "C##C", "C##C", "COCC")
+            .aisle("CCCC", "C##C", "C##C", "CCCC")
+            .aisle("CCCC", "C##C", "C##C", "CCCC")
+            .aisle("CCCC", "C##C", "C##C", "CCCC")
+            .aisle("CCCC", "CCCC", "CCCC", "CCCC")
             .where('I', CellPredicates.role(BuiltinMachineTypes.INPUT))
             .where('O', CellPredicates.role(BuiltinMachineTypes.OUTPUT))
-            .where('C', CellPredicates.block(Blocks.IRON_BLOCK, Blocks.COPPER_BLOCK)).build();
+            .where('C', CellPredicates.block(Blocks.IRON_BLOCK, Blocks.COPPER_BLOCK))
+            .count(BuiltinMachineTypes.INPUT, 1, 1)
+            .count(BuiltinMachineTypes.OUTPUT, 1, 1)
+            .build();
 
-    // --- Multiblock structure test machines ------------------------------------------------
-    // These intentionally carry no recipe logic: they exist to exercise repeat/module/predicate
-    // combinations in-game. Each uses the standard formed controller block and structure UI.
+    // 结构验收机器使用标准控制器和结构页，可在游戏内检查预览、重复段及模块。
 
-    /** Trailing repeat plus a fixed cap: the cap shifts with the resolved count. */
+    /** 5×5×6～12 组合塔：下重复段、双层上重复组、移动顶盖、可选横梁和方向规则。 */
     public static final Blueprint REPEATABLE_BLUEPRINT = Blueprint.of()
-            .aisle("F@F", "FFF", "FFF")
-            .beginRepeatable(1, 4)
-            .aisle("OOO", "O#O", "OOO")
+            .aisle("SSSSS", "SSSSS", "SSSSS", "SSSSS", "SSSSS")
+            .beginRepeatable(1, 2)
+            .aisle("CCCCC", "C###C", "C###C", "C###C", "CCCCC")
             .endRepeatable()
-            .aisle("OOO", "OTO", "OOO")
-            .where('@', CellPredicates.controller())
-            .where('#', CellPredicates.air())
-            .where('O', CellPredicates.anyOf(CellPredicates.block(Blocks.IRON_BLOCK), CellPredicates.role(BuiltinMachineTypes.OUTPUT)))
-            .where('F', CellPredicates.anyOf(CellPredicates.block(Blocks.IRON_BLOCK), CellPredicates.role(BuiltinMachineTypes.INPUT)))
-            .where('T', CellPredicates.block(Blocks.IRON_BLOCK))
+            .aisle("C@ICC", "C###C", "C###C", "C###C", "CCOCC")
+            .beginRepeatable(1, 3)
+            .aisle("CCCCC", "C###C", "C#D#C", "C###C", "CCCCC")
+            .aisle("GGGGG", "G###G", "G###G", "G###G", "GGGGG")
+            .endRepeatable()
+            .aisle("TTTTT", "T###T", "T###T", "T###T", "TTTTT")
+            .beginRepeatable(0, 1)
+            .aisle("  L  ", "  L  ", "  L  ", "  L  ", "  L  ")
+            .endRepeatable()
+            .where('S', Blocks.STONE_BRICKS)
+            .where('C', Blocks.COPPER_BLOCK)
+            .where('G', Blocks.GLASS)
+            .where('T', Blocks.GOLD_BLOCK)
+            .where('I', CellPredicates.role(BuiltinMachineTypes.INPUT))
+            .where('O', CellPredicates.role(BuiltinMachineTypes.OUTPUT))
+            .where('D', Blocks.DISPENSER,
+                    Blocks.DISPENSER.defaultBlockState().setValue(BlockStateProperties.FACING, Direction.EAST),
+                    PropertyRules.direction(BlockStateProperties.FACING))
+            .where('L', Blocks.OAK_LOG,
+                    Blocks.OAK_LOG.defaultBlockState().setValue(BlockStateProperties.AXIS, Direction.Axis.X),
+                    PropertyRules.axis(BlockStateProperties.AXIS))
+            .count(BuiltinMachineTypes.INPUT, 1, 1)
+            .count(BuiltinMachineTypes.OUTPUT, 1, 1)
             .build();
 
     public static final MachineDefinition REPEATABLE_TOWER = MACHINE.machine("repeatable_tower")
@@ -87,18 +109,21 @@ public final class BuiltinMachines {
             .component(MultiblockUi.mount(STRUCTURE_UI, CONTROLLER))
             .build();
 
-    /** @12 / @112 / @1112: one repeatable layer and an optional empty cap layer. */
+    /** 最小 4×4×6；实心底座上方为 2～4 层铁壳，最上方可选一层金壳。 */
     public static final Blueprint LAYERED_BLUEPRINT = Blueprint.of()
-            .aisle("@")
-            .beginRepeatable(1, 4)
-            .aisle("1")
+            .aisle("F@FF", "FFFF", "FFFF", "FFFF")
+            .aisle("FFFF", "FFFF", "FFFF", "FFFF")
+            .aisle("FFFF", "FFFF", "FFFF", "FFFF")
+            .aisle("FFFF", "FFFF", "FFFF", "FFFF")
+            .beginRepeatable(2, 4)
+            .aisle("IIII", "I##I", "I##I", "IIII")
             .endRepeatable()
             .beginRepeatable(0, 1)
-            .aisle("2")
+            .aisle("TTTT", "T##T", "T##T", "TTTT")
             .endRepeatable()
-            .where('@', CellPredicates.controller())
-            .where('1', CellPredicates.block(Blocks.IRON_BLOCK))
-            .where('2', CellPredicates.block(Blocks.GOLD_BLOCK))
+            .where('F', Blocks.STONE_BRICKS)
+            .where('I', Blocks.IRON_BLOCK)
+            .where('T', Blocks.GOLD_BLOCK)
             .build();
 
     public static final MachineDefinition LAYERED_TOWER = MACHINE.machine("layered_tower")
@@ -110,15 +135,16 @@ public final class BuiltinMachines {
             .component(MultiblockUi.mount(STRUCTURE_UI, CONTROLLER))
             .build();
 
-    /** The blueprint frame rotates the canonical layer stack onto the local X axis. */
+    /** 最小 6×4×4；frame 将堆叠轴转到控制器局部 X 轴。 */
     public static final Blueprint AXIS_BLUEPRINT = Blueprint.of()
             .frame(Direction.EAST, Direction.SOUTH)
-            .aisle("@")
-            .beginRepeatable(1, 3)
-            .aisle("I")
+            .aisle("F@FF", "FFFF", "FFFF", "FFFF")
+            .aisle("FFFF", "FFFF", "FFFF", "FFFF")
+            .beginRepeatable(4, 8)
+            .aisle("IIII", "I##I", "I##I", "IIII")
             .endRepeatable()
-            .where('@', CellPredicates.controller())
-            .where('I', CellPredicates.block(Blocks.IRON_BLOCK))
+            .where('F', Blocks.STONE_BRICKS)
+            .where('I', Blocks.IRON_BLOCK)
             .build();
 
     public static final MachineDefinition AXIS_TOWER = MACHINE.machine("axis_tower")
@@ -130,18 +156,19 @@ public final class BuiltinMachines {
             .component(MultiblockUi.mount(STRUCTURE_UI, CONTROLLER))
             .build();
 
-    /** Two distinct layers repeat as one group, followed by a fixed cap. */
+    /** 最小 4×4×7；铁壳和铜壳两层为一个重复组，后接随组数移动的实心金顶。 */
     public static final Blueprint GROUPED_BLUEPRINT = Blueprint.of()
-            .aisle("@")
-            .beginRepeatable(1, 3)
-            .aisle("A")
-            .aisle("B")
+            .aisle("F@FF", "FFFF", "FFFF", "FFFF")
+            .aisle("FFFF", "FFFF", "FFFF", "FFFF")
+            .beginRepeatable(2, 4)
+            .aisle("AAAA", "A##A", "A##A", "AAAA")
+            .aisle("BBBB", "B##B", "B##B", "BBBB")
             .endRepeatable()
-            .aisle("C")
-            .where('@', CellPredicates.controller())
-            .where('A', CellPredicates.block(Blocks.IRON_BLOCK))
-            .where('B', CellPredicates.block(Blocks.COPPER_BLOCK))
-            .where('C', CellPredicates.block(Blocks.GOLD_BLOCK))
+            .aisle("TTTT", "TTTT", "TTTT", "TTTT")
+            .where('F', Blocks.STONE_BRICKS)
+            .where('A', Blocks.IRON_BLOCK)
+            .where('B', Blocks.COPPER_BLOCK)
+            .where('T', Blocks.GOLD_BLOCK)
             .build();
 
     public static final MachineDefinition GROUPED_TOWER = MACHINE.machine("grouped_tower")
@@ -153,16 +180,16 @@ public final class BuiltinMachines {
             .component(MultiblockUi.mount(STRUCTURE_UI, CONTROLLER))
             .build();
 
-    /** Interior repeat: a repeatable middle aisle shifts a fixed cap, forcing the live-view path. */
+    /** 最小 4×4×6；铜壳中段可变长，实心金顶随之移动，走实时视图检测。 */
     public static final Blueprint VARIABLE_BLUEPRINT = Blueprint.of()
-            .aisle("C@C")
-            .beginRepeatable(1, 4)
-            .aisle("CCC")
+            .aisle("C@CC", "CCCC", "CCCC", "CCCC")
+            .aisle("CCCC", "CCCC", "CCCC", "CCCC")
+            .beginRepeatable(3, 7)
+            .aisle("CCCC", "C##C", "C##C", "CCCC")
             .endRepeatable()
-            .aisle("TTT")
-            .where('@', CellPredicates.controller())
-            .where('C', CellPredicates.block(Blocks.COPPER_BLOCK))
-            .where('T', CellPredicates.block(Blocks.GOLD_BLOCK))
+            .aisle("TTTT", "TTTT", "TTTT", "TTTT")
+            .where('C', Blocks.COPPER_BLOCK)
+            .where('T', Blocks.GOLD_BLOCK)
             .build();
 
     public static final MachineDefinition VARIABLE_TOWER = MACHINE.machine("variable_tower")
@@ -174,20 +201,33 @@ public final class BuiltinMachines {
             .component(MultiblockUi.mount(STRUCTURE_UI, CONTROLLER))
             .build();
 
-    /** Optional modules: module blueprints are independent, overlaid on the same controller anchor. */
+    /** 主体和左右舱体均为 4×4×6；模块只共享 @ 锚点，用空格跳过主体。 */
     public static final Blueprint OPTIONAL_MODULE_CORE = Blueprint.of()
-            .aisle("@")
-            .where('@', CellPredicates.controller())
+            .aisle("C@CC", "CCCC", "CCCC", "CCCC")
+            .aisle("CCCC", "C##C", "C##C", "CCCC")
+            .aisle("CCCC", "C##C", "C##C", "CCCC")
+            .aisle("CCCC", "C##C", "C##C", "CCCC")
+            .aisle("CCCC", "C##C", "C##C", "CCCC")
+            .aisle("CCCC", "CCCC", "CCCC", "CCCC")
+            .where('C', Blocks.IRON_BLOCK)
             .build();
     public static final Blueprint GOLD_MODULE = Blueprint.of()
-            .aisle("@M")
-            .where('@', CellPredicates.controller())
-            .where('M', CellPredicates.block(Blocks.GOLD_BLOCK))
+            .aisle(" @    MMMM", "      MMMM", "      MMMM", "      MMMM")
+            .aisle("      MMMM", "      M##M", "      M##M", "      MMMM")
+            .aisle("      MMMM", "      M##M", "      M##M", "      MMMM")
+            .aisle("      MMMM", "      M##M", "      M##M", "      MMMM")
+            .aisle("      MMMM", "      M##M", "      M##M", "      MMMM")
+            .aisle("      MMMM", "      MMMM", "      MMMM", "      MMMM")
+            .where('M', Blocks.GOLD_BLOCK)
             .build();
     public static final Blueprint DIAMOND_MODULE = Blueprint.of()
-            .aisle("N@")
-            .where('@', CellPredicates.controller())
-            .where('N', CellPredicates.block(Blocks.DIAMOND_BLOCK))
+            .aisle("NNNN    @ ", "NNNN      ", "NNNN      ", "NNNN      ")
+            .aisle("NNNN      ", "N##N      ", "N##N      ", "NNNN      ")
+            .aisle("NNNN      ", "N##N      ", "N##N      ", "NNNN      ")
+            .aisle("NNNN      ", "N##N      ", "N##N      ", "NNNN      ")
+            .aisle("NNNN      ", "N##N      ", "N##N      ", "NNNN      ")
+            .aisle("NNNN      ", "NNNN      ", "NNNN      ", "NNNN      ")
+            .where('N', Blocks.DIAMOND_BLOCK)
             .build();
 
     public static final MachineDefinition OPTIONAL_MODULE_MACHINE = MACHINE.machine("optional_module_machine")
@@ -203,7 +243,7 @@ public final class BuiltinMachines {
             .component(MultiblockUi.mount(STRUCTURE_UI, CONTROLLER))
             .build();
 
-    /** Diamond depends on gold; both are optional extensions of the same main blueprint. */
+    /** 左侧钻石舱依赖右侧金舱；两者都完整时才启用钻石模块。 */
     public static final MachineDefinition DEPENDENT_MODULE_MACHINE = MACHINE.machine("dependent_module_machine")
             .displayName("Dependent Module Machine", "依赖模块机器")
             .creativeTab(BuiltinCreativeTabs.MACHINES.getKey())
@@ -217,17 +257,19 @@ public final class BuiltinMachines {
             .component(MultiblockUi.mount(STRUCTURE_UI, CONTROLLER))
             .build();
 
-    /** Predicate combination: air, exact state, property, block tag, allOf/not. */
+    /** 4×4×6 谓词验收舱：空气、精确状态、未点燃熔炉、方块标签及组合谓词。 */
     public static final Blueprint PREDICATE_BLUEPRINT = Blueprint.of()
-            .aisle("@ASLTP")
-            .where('@', CellPredicates.controller())
-            .where('A', CellPredicates.air())
+            .aisle("C@CC", "CCCC", "CCCC", "CCCC")
+            .aisle("CCCC", "C##C", "C##C", "CCCC")
+            .aisle("CCCC", "CSTC", "C##C", "CCCC")
+            .aisle("CCCC", "CLPC", "C##C", "CCCC")
+            .aisle("CCCC", "C##C", "C##C", "CCCC")
+            .aisle("CCCC", "CCCC", "CCCC", "CCCC")
+            .where('C', Blocks.STONE_BRICKS)
             .where('S', CellPredicates.state(Blocks.STONE.defaultBlockState()))
-            .where('L', CellPredicates.property(BlockStateProperties.LIT, false))
+            .where('L', CellPredicates.allOf(CellPredicates.block(Blocks.FURNACE), CellPredicates.property(BlockStateProperties.LIT, false)))
             .where('T', CellPredicates.blockTag(BlockTags.BASE_STONE_OVERWORLD))
-            .where('P', CellPredicates.allOf(
-                    CellPredicates.not(CellPredicates.air()),
-                    CellPredicates.block(Blocks.STONE)))
+            .where('P', CellPredicates.allOf(CellPredicates.not(CellPredicates.air()), CellPredicates.block(Blocks.ANDESITE)))
             .build();
 
     public static final MachineDefinition PREDICATE_MACHINE = MACHINE.machine("predicate_machine")

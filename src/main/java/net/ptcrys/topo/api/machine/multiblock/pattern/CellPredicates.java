@@ -2,384 +2,179 @@ package net.ptcrys.topo.api.machine.multiblock.pattern;
 
 import net.ptcrys.topo.api.machine.MachineDefinition;
 import net.ptcrys.topo.api.machine.Machines;
+import net.ptcrys.topo.api.machine.data.DataKey;
 import net.ptcrys.topo.api.machine.multiblock.ability.PartRole;
 import net.ptcrys.topo.api.machine.multiblock.ability.PartRoleAttachment;
 
-import net.minecraft.core.BlockPos;
 import net.minecraft.tags.TagKey;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.Property;
-
-import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
 
-/**
- * Factories for the built-in {@link CellPredicate} kinds. These return small immutable
- * implementations directly; predicates are plain values referenced from blueprint declarations,
- * never registry entries.
- *
- * <p>
- * {@link #controller()} and {@link #role(PartRole)} resolve against the immutable
- * {@link StructureView}: no world or block entity lookups happen inside predicates.
- */
+/** 内置检测算法与 Cell 内容声明工厂。算法为无绑定、可重入的实例，具体内容保存在返回的 CellBinding 中。 */
 public final class CellPredicates {
 
     private CellPredicates() {}
 
-    /** Marks the controller origin cell ({@code '@'}); the origin is located structurally. */
-    public static CellPredicate controller() {
-        return ControllerPredicate.INSTANCE;
+    private enum Unit {
+        INSTANCE
     }
 
-    /** Matches any of the given blocks by block identity. */
-    public static CellPredicate block(Block... blocks) {
-        Objects.requireNonNull(blocks, "blocks");
-        return new BlockPredicate(List.of(blocks));
+    private static CellResult result(boolean matches, String reason, Object expected, CellContext context) {
+        if (matches) return CellResult.pass();
+        if (context.actual() == null) return CellResult.unknown();
+        return CellResult.failure(context.actual() == null || context.actual().isAir() ? "empty" : reason, expected, context.actual());
     }
 
-    /**
-     * Matches a lazily-resolved block by identity. Blueprints are built during bootstrap, before the
-     * block registry event has constructed modded blocks, so a blueprint cell referencing a mod block
-     * passes its registry entry ({@code DENSE_STRUCTURE_CASING} is a {@code Supplier<Block>}) and resolution
-     * happens on first recognition/candidate query — long after registration.
-     */
-    public static CellPredicate block(Supplier<? extends Block> block) {
-        return new LazyBlockPredicate(Objects.requireNonNull(block, "block supplier"));
-    }
-
-    /** Matches an air block (empty blueprint space that must remain clear). */
-    public static CellPredicate air() {
-        return AirPredicate.INSTANCE;
-    }
-
-    /** Matches any block in {@code tag}. */
-    public static CellPredicate blockTag(TagKey<Block> tag) {
-        return new BlockTagPredicate(Objects.requireNonNull(tag, "block tag"));
-    }
-
-    /** Matches an exact block state, including every property value. */
-    public static CellPredicate state(BlockState state) {
-        return new StatePredicate(Objects.requireNonNull(state, "block state"));
-    }
-
-    /** Matches a state carrying {@code property = value}. */
-    public static <T extends Comparable<T>> CellPredicate property(Property<T> property, T value) {
-        return new PropertyPredicate<>(Objects.requireNonNull(property, "property"), Objects.requireNonNull(value, "property value"));
-    }
-
-    /** Matches a cell occupied by any machine member (not necessarily a particular part role). */
-    public static CellPredicate member() {
-        return MemberPredicate.INSTANCE;
-    }
-
-    /** Matches a block that can be replaced (air, plants, snow layers, …). */
-    public static CellPredicate replaceable() {
-        return ReplaceablePredicate.INSTANCE;
-    }
-
-    /** Inverts a predicate. Capability candidates are intentionally not inherited. */
-    public static CellPredicate not(CellPredicate predicate) {
-        return new NotPredicate(Objects.requireNonNull(predicate, "predicate"));
-    }
-
-    /** Matches only when every predicate matches (logical AND). */
-    public static CellPredicate allOf(CellPredicate... predicates) {
-        Objects.requireNonNull(predicates, "cell predicates");
-        if (predicates.length < 2) {
-            throw new IllegalArgumentException("allOf needs at least two predicates");
-        }
-        return new AllOfPredicate(List.of(predicates));
-    }
-
-    /** Matches a placed part that exposes the given {@link PartRole} (strong key). */
-    public static CellPredicate role(PartRole capability) {
-        return new CapabilityPredicate(Objects.requireNonNull(capability, "part capability"));
-    }
-
-    /**
-     * Matches when <b>any</b> of the given predicates matches (logical OR). Capability candidates and
-     * {@link CellPredicate#partRoles()} are the union of all branches, so blueprint count
-     * validation and JEI display see every alternative — the classic "casing or hatch" wall cell.
-     */
-    public static CellPredicate anyOf(CellPredicate... predicates) {
-        Objects.requireNonNull(predicates, "cell predicates");
-        if (predicates.length < 2) {
-            throw new IllegalArgumentException("anyOf needs at least two alternatives");
-        }
-        return new AnyOfPredicate(List.of(predicates));
-    }
-
-    private enum ControllerPredicate implements CellPredicate {
-
-        INSTANCE;
-
-        @Override
-        public boolean test(StructureView view, BlockPos worldPos, Cell expected) {
-            return view.isController(worldPos);
-        }
-
-        @Override
-        public boolean test(@Nullable BlockState actual, @Nullable BlockState expected) {
-            return true;
-        }
-    }
-
-    private record BlockPredicate(List<Block> blocks) implements CellPredicate {
-
-        @Override
-        public boolean test(@Nullable BlockState actual, @Nullable BlockState expected) {
-            return actual != null && blocks.contains(actual.getBlock());
-        }
-
-        @Override
-        public List<ItemStack> candidates() {
-            List<ItemStack> stacks = new ArrayList<>(blocks.size());
-            for (Block block : blocks) {
-                stacks.add(new ItemStack(block));
+    private static final CellPredicate<Unit> CONTROLLER = (input, context, metadata) -> result(context.controller(), "controller", "controller", context);
+    private static final CellPredicate<List<Block>> BLOCK = (blocks, context, metadata) -> result(context.actual() != null && blocks.contains(context.actual().getBlock()), "block", blocks, context);
+    private static final CellPredicate<Supplier<? extends Block>> LAZY_BLOCK = (supplier, context, metadata) -> BLOCK.evaluate(List.of(Objects.requireNonNull(supplier.get())), context, metadata);
+    private static final CellPredicate<Unit> AIR = (input, context, metadata) -> result(context.actual() != null && context.actual().isAir(), "block", "air", context);
+    private static final CellPredicate<TagKey<Block>> TAG = (tag, context, metadata) -> result(context.actual() != null && context.actual().is(tag), "block", tag, context);
+    private static final CellPredicate<BlockState> STATE = (state, context, metadata) -> result(context.actual() == state, context.actual() != null && context.actual().getBlock() == state.getBlock() ? "property" : "block", state, context);
+    private static final CellPredicate<PropertyValue<?>> PROPERTY = (input, context, metadata) -> result(input.matches(context.actual()), "property", input, context);
+    private static final CellPredicate<Unit> MEMBER = (input, context, metadata) -> result(context.info().isMember(), "member", "machine member", context);
+    private static final CellPredicate<Unit> REPLACEABLE = (input, context, metadata) -> result(context.actual() != null && context.actual().canBeReplaced(), "block", "replaceable", context);
+    private static final CellPredicate<PartRole> ROLE = (role, context, metadata) -> result(context.info().roles().contains(role), "role", role.id(), context);
+    private static final CellPredicate<CellBinding> NOT = (binding, context, metadata) -> {
+        CellResult child = binding.evaluate(context, metadata.fork());
+        return child.status() == CellResult.Status.UNKNOWN ? child : child.passed() ? CellResult.failure("not", "not matching", context.actual()) : CellResult.pass();
+    };
+    private static final CellPredicate<List<CellBinding>> ALL = (bindings, context, metadata) -> {
+        List<CellResult> issues = new ArrayList<>();
+        for (CellBinding binding : bindings) {
+            CellResult child = binding.evaluate(context, metadata);
+            if (!child.passed()) {
+                issues.add(child);
             }
-            return stacks;
         }
+        if (issues.isEmpty()) return CellResult.pass();
+        boolean failed = issues.stream().anyMatch(issue -> issue.status() == CellResult.Status.FAIL);
+        return CellResult.combine("all", failed ? CellResult.Status.FAIL : CellResult.Status.UNKNOWN, issues);
+    };
+    private static final CellPredicate<List<CellBinding>> ANY = (bindings, context, metadata) -> {
+        List<CellResult> issues = new ArrayList<>();
+        for (CellBinding binding : bindings) {
+            CellResult child = binding.evaluate(context, metadata);
+            if (child.passed()) return child;
+            issues.add(child);
+        }
+        return CellResult.combine("any", issues.stream().anyMatch(issue -> issue.status() == CellResult.Status.UNKNOWN) ? CellResult.Status.UNKNOWN : CellResult.Status.FAIL, issues);
+    };
+
+    /** @ 自动使用的位置锚点检测。 */
+    public static CellBinding controller() {
+        return CellBinding.of(CONTROLLER, Unit.INSTANCE);
     }
 
-    private static final class LazyBlockPredicate implements CellPredicate {
-
-        private final Supplier<? extends Block> supplier;
-        /** Resolved on first query; registries are frozen well before recognition runs. */
-        private volatile @Nullable Block resolved;
-
-        private LazyBlockPredicate(Supplier<? extends Block> supplier) {
-            this.supplier = supplier;
-        }
-
-        private Block block() {
-            Block block = resolved;
-            if (block == null) {
-                block = Objects.requireNonNull(supplier.get(), "lazily-resolved blueprint block");
-                resolved = block;
-            }
-            return block;
-        }
-
-        @Override
-        public boolean test(@Nullable BlockState actual, @Nullable BlockState expected) {
-            return actual != null && actual.getBlock() == block();
-        }
-
-        @Override
-        public List<ItemStack> candidates() {
-            return List.of(new ItemStack(block()));
-        }
+    /** 方块集合是 Cell 的声明输入，不保存在检测算法中。 */
+    public static CellBinding block(Block... blocks) {
+        List<Block> content = List.of(blocks);
+        return CellBinding.of(BLOCK, content).candidates(() -> content);
     }
 
-    private enum AirPredicate implements CellPredicate {
-
-        INSTANCE;
-
-        @Override
-        public boolean test(@Nullable BlockState actual, @Nullable BlockState expected) {
-            return actual != null && actual.isAir();
-        }
+    /** 延迟读取注册内容；供应者必须在注册完成后稳定且可并发读取。 */
+    public static CellBinding block(Supplier<? extends Block> supplier) {
+        var content = new LazyBlock(Objects.requireNonNull(supplier));
+        return CellBinding.of(LAZY_BLOCK, content).candidates(() -> List.of(content.get()));
     }
 
-    private record BlockTagPredicate(TagKey<Block> tag) implements CellPredicate {
-
-        @Override
-        public boolean test(@Nullable BlockState actual, @Nullable BlockState expected) {
-            return actual != null && actual.is(tag);
-        }
+    public static CellBinding air() {
+        return CellBinding.of(AIR, Unit.INSTANCE);
     }
 
-    private record StatePredicate(BlockState state) implements CellPredicate {
-
-        @Override
-        public boolean test(@Nullable BlockState actual, @Nullable BlockState expected) {
-            return actual == state;
-        }
-
-        @Override
-        public List<ItemStack> candidates() {
-            return List.of(new ItemStack(state.getBlock()));
-        }
+    public static CellBinding blockTag(TagKey<Block> tag) {
+        return CellBinding.of(TAG, tag);
     }
 
-    private record PropertyPredicate<T extends Comparable<T>>(Property<T> property, T value) implements CellPredicate {
-
-        @Override
-        public boolean test(@Nullable BlockState actual, @Nullable BlockState expected) {
-            return actual != null && actual.hasProperty(property) && value.equals(actual.getValue(property));
-        }
+    public static CellBinding state(BlockState state) {
+        return CellBinding.of(STATE, state).candidates(() -> List.of(state.getBlock()));
     }
 
-    private enum MemberPredicate implements CellPredicate {
-
-        INSTANCE;
-
-        @Override
-        public boolean test(StructureView view, BlockPos worldPos, Cell expected) {
-            return view.isMember(worldPos);
-        }
-
-        @Override
-        public boolean test(@Nullable BlockState actual, @Nullable BlockState expected) {
-            return false;
-        }
+    public static <T extends Comparable<T>> CellBinding property(Property<T> property, T value) {
+        return CellBinding.of(PROPERTY, new PropertyValue<>(property, value));
     }
 
-    private enum ReplaceablePredicate implements CellPredicate {
-
-        INSTANCE;
-
-        @Override
-        public boolean test(@Nullable BlockState actual, @Nullable BlockState expected) {
-            return actual != null && actual.canBeReplaced();
-        }
+    public static CellBinding member() {
+        return CellBinding.of(MEMBER, Unit.INSTANCE);
     }
 
-    private record NotPredicate(CellPredicate delegate) implements CellPredicate {
-
-        @Override
-        public boolean test(StructureView view, BlockPos worldPos, Cell expected) {
-            return !delegate.test(view, worldPos, expected);
-        }
-
-        @Override
-        public boolean test(@Nullable BlockState actual, @Nullable BlockState expected) {
-            return !delegate.test(actual, expected);
-        }
+    public static CellBinding replaceable() {
+        return CellBinding.of(REPLACEABLE, Unit.INSTANCE);
     }
 
-    private record AllOfPredicate(List<CellPredicate> predicates) implements CellPredicate {
-
-        @Override
-        public boolean test(StructureView view, BlockPos worldPos, Cell expected) {
-            for (CellPredicate predicate : predicates) {
-                if (!predicate.test(view, worldPos, expected)) {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        @Override
-        public boolean test(@Nullable BlockState actual, @Nullable BlockState expected) {
-            for (CellPredicate predicate : predicates) {
-                if (!predicate.test(actual, expected)) {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        @Override
-        public List<PartRole> partRoles() {
-            // AND narrows the set of capabilities a single cell can carry: intersect the role sets
-            // that actually declare roles, ignoring branches that impose no capability constraint.
-            List<PartRole> intersection = null;
-            for (CellPredicate predicate : predicates) {
-                List<PartRole> roles = predicate.partRoles();
-                if (roles.isEmpty()) {
-                    continue;
-                }
-                if (intersection == null) {
-                    intersection = new ArrayList<>(roles);
-                } else {
-                    intersection.retainAll(roles);
-                }
-            }
-            return intersection == null ? List.of() : List.copyOf(intersection);
-        }
-
-        @Override
-        public List<ItemStack> candidates() {
-            List<ItemStack> union = new ArrayList<>();
-            for (CellPredicate predicate : predicates) {
-                union.addAll(predicate.candidates());
-            }
-            return List.copyOf(union);
-        }
+    /** 取反子分支始终丢弃写入，未知不会变成成功。 */
+    public static CellBinding not(CellBinding binding) {
+        return CellBinding.of(NOT, binding).metadata(binding.metadataKeys().toArray(DataKey<?>[]::new));
     }
 
-    private record CapabilityPredicate(PartRole capability) implements CellPredicate {
+    public static CellBinding allOf(CellBinding... bindings) {
+        return combine(true, bindings);
+    }
 
-        @Override
-        public boolean test(StructureView view, BlockPos worldPos, Cell expected) {
-            return view.hasCapability(worldPos, capability);
-        }
+    public static CellBinding anyOf(CellBinding... bindings) {
+        return combine(false, bindings);
+    }
 
-        @Override
-        public boolean test(@Nullable BlockState actual, @Nullable BlockState expected) {
-            return actual != null && expected != null && actual.getBlock() == expected.getBlock();
-        }
-
-        @Override
-        public List<PartRole> partRoles() {
-            return List.of(capability);
-        }
-
-        /**
-         * Every registered part machine carrying this capability, in registration order — resolved
-         * at query time (UI/JEI), long after the machine registry froze, so the listing always
-         * reflects the final content set.
-         */
-        @Override
-        public List<ItemStack> candidates() {
-            List<ItemStack> stacks = new ArrayList<>();
+    public static CellBinding role(PartRole role) {
+        return CellBinding.of(ROLE, role).roles(List.of(role)).candidates(() -> {
+            List<Block> blocks = new ArrayList<>();
             for (MachineDefinition definition : Machines.registered()) {
-                for (PartRoleAttachment metadata : definition.metadata(PartRoleAttachment.TYPE)) {
-                    if (metadata.role() == capability) {
-                        stacks.add(new ItemStack(definition.registeredBlock().get()));
+                for (PartRoleAttachment attachment : definition.metadata(PartRoleAttachment.TYPE)) {
+                    if (attachment.role() == role) {
+                        blocks.add(definition.registeredBlock().get());
                         break;
                     }
                 }
             }
-            return stacks;
+            return List.copyOf(blocks);
+        });
+    }
+
+    private static CellBinding combine(boolean all, CellBinding[] bindings) {
+        if (bindings.length < 2) throw new IllegalArgumentException("Combination needs at least two bindings");
+        List<CellBinding> children = List.of(bindings);
+        List<PartRole> roles = children.stream().flatMap(child -> child.partRoles().stream()).distinct().toList();
+        return CellBinding.of(all ? ALL : ANY, children).roles(roles.stream().distinct().toList())
+                .metadata(children.stream().flatMap(child -> child.metadataKeys().stream()).distinct().toArray(DataKey<?>[]::new))
+                .candidates(() -> children.stream().flatMap(child -> child.candidateBlocks().stream()).distinct().toList());
+    }
+
+    /** 注册内容的惰性缓存属于声明输入，不放入复用算法；volatile 发布保证快照工作线程读取同一方块。 */
+    private static final class LazyBlock implements Supplier<Block> {
+
+        private final Supplier<? extends Block> source;
+        private volatile Block cached;
+
+        LazyBlock(Supplier<? extends Block> source) {
+            this.source = source;
+        }
+
+        @Override
+        public Block get() {
+            Block result = cached;
+            if (result == null) {
+                result = Objects.requireNonNull(source.get(), "blueprint block");
+                cached = result;
+            }
+            return result;
         }
     }
 
-    private record AnyOfPredicate(List<CellPredicate> alternatives) implements CellPredicate {
+    private record PropertyValue<T extends Comparable<T>>(Property<T> property, T value) {
 
-        @Override
-        public boolean test(StructureView view, BlockPos worldPos, Cell expected) {
-            for (CellPredicate alternative : alternatives) {
-                if (alternative.test(view, worldPos, expected)) {
-                    return true;
-                }
-            }
-            return false;
+        PropertyValue {
+            Objects.requireNonNull(property);
+            Objects.requireNonNull(value);
         }
 
-        @Override
-        public boolean test(@Nullable BlockState actual, @Nullable BlockState expected) {
-            for (CellPredicate alternative : alternatives) {
-                if (alternative.test(actual, expected)) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        @Override
-        public List<PartRole> partRoles() {
-            List<PartRole> union = new ArrayList<>();
-            for (CellPredicate alternative : alternatives) {
-                union.addAll(alternative.partRoles());
-            }
-            return List.copyOf(union);
-        }
-
-        @Override
-        public List<ItemStack> candidates() {
-            List<ItemStack> union = new ArrayList<>();
-            for (CellPredicate alternative : alternatives) {
-                union.addAll(alternative.candidates());
-            }
-            return List.copyOf(union);
+        boolean matches(BlockState state) {
+            return state != null && state.hasProperty(property) && value.equals(state.getValue(property));
         }
     }
 }

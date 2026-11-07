@@ -3,8 +3,10 @@ package net.ptcrys.topo.api.machine.multiblock;
 import net.ptcrys.topo.api.machine.multiblock.ability.PartRole;
 import net.ptcrys.topo.api.machine.multiblock.pattern.Blueprint;
 import net.ptcrys.topo.api.machine.multiblock.pattern.CellPredicates;
+import net.ptcrys.topo.api.machine.multiblock.pattern.Orientation;
 import net.ptcrys.topo.api.machine.multiblock.pattern.Orientations;
 import net.ptcrys.topo.api.machine.multiblock.pattern.RecognitionResult;
+import net.ptcrys.topo.api.machine.multiblock.pattern.StructureEngine;
 import net.ptcrys.topo.api.machine.multiblock.pattern.StructureView;
 
 import net.minecraft.core.BlockPos;
@@ -28,12 +30,10 @@ class MultiblockModuleEvaluationTest {
 
     private static final Blueprint GOLD = Blueprint.of()
             .aisle("@M")
-            .where('@', CellPredicates.controller())
             .where('M', CellPredicates.block(Blocks.GOLD_BLOCK))
             .build();
     private static final Blueprint DIAMOND = Blueprint.of()
             .aisle("N@")
-            .where('@', CellPredicates.controller())
             .where('N', CellPredicates.block(Blocks.DIAMOND_BLOCK))
             .build();
 
@@ -60,7 +60,6 @@ class MultiblockModuleEvaluationTest {
     void partialModuleIsConsideredAbsent() {
         Blueprint twoCells = Blueprint.of()
                 .aisle("@MM")
-                .where('@', CellPredicates.controller())
                 .where('M', CellPredicates.block(Blocks.GOLD_BLOCK))
                 .build();
         TestView partial = new TestView();
@@ -99,7 +98,6 @@ class MultiblockModuleEvaluationTest {
     void modulesMayOverlapEachOther() {
         Blueprint sameCell = Blueprint.of()
                 .aisle("@M")
-                .where('@', CellPredicates.controller())
                 .where('M', CellPredicates.block(Blocks.GOLD_BLOCK))
                 .build();
         TestView view = new TestView();
@@ -118,7 +116,6 @@ class MultiblockModuleEvaluationTest {
                 .beginRepeatable(1, 3)
                 .aisle("M")
                 .endRepeatable()
-                .where('@', CellPredicates.controller())
                 .where('M', CellPredicates.block(Blocks.GOLD_BLOCK))
                 .build();
         TestView view = new TestView();
@@ -139,6 +136,74 @@ class MultiblockModuleEvaluationTest {
         view.setLoaded(new BlockPos(1, 0, 0), false);
         MultiblockModuleEvaluator.Evaluation evaluation = evaluate(view, MultiblockModule.of("gold", GOLD));
         assertTrue(evaluation.unloaded());
+    }
+
+    @Test
+    void largeDependentChambersRecognizeInDependencyOrderAtEveryRotation() {
+        Blueprint gold = largeChamber(true);
+        Blueprint diamond = largeChamber(false);
+        List<MultiblockModule> modules = List.of(MultiblockModule.of("diamond", diamond, "gold"), MultiblockModule.of("gold", gold));
+        for (Orientation rotation : Orientations.rotations()) {
+            TestView view = new TestView();
+            buildChamber(view, rotation, true, 3);
+            buildChamber(view, rotation, false, 2);
+            MultiblockModuleEvaluator.Evaluation result = MultiblockModuleEvaluator.evaluateOverlays(view, modules, rotation);
+            assertEquals(List.of("gold", "diamond"), result.order());
+            assertTrue(result.reports().get("gold").satisfied());
+            assertTrue(result.reports().get("diamond").satisfied());
+            assertEquals(200, result.reports().get("gold").total());
+            assertEquals(150, result.reports().get("diamond").total());
+            assertEquals(3, result.reports().get("gold").repeats().count(0));
+            assertEquals(2, result.reports().get("diamond").repeats().count(0));
+            BlockPos damaged = rotation.apply(new BlockPos(9, 0, 4), BlockPos.ZERO);
+            view.put(damaged, Blocks.AIR.defaultBlockState());
+            MultiblockModuleEvaluator.Evaluation broken = MultiblockModuleEvaluator.evaluateOverlays(view, modules, rotation);
+            assertFalse(broken.reports().get("gold").satisfied());
+            RecognitionResult.ModuleReport blocked = broken.reports().get("diamond");
+            assertFalse(blocked.satisfied());
+            assertEquals(List.of("gold"), blocked.blockedBy());
+            assertEquals(150, blocked.matched());
+            assertTrue(StructureEngine.recognize(view, diamond, rotation).formed());
+        }
+    }
+
+    @Test
+    void unknownGrowthBeyondLargeChamberDoesNotInflateResolvedModuleTotal() {
+        TestView view = new TestView();
+        buildChamber(view, Orientations.IDENTITY, true, 2);
+        // 第三个重复组的第一个位置未知，已确定布局仍只有 150 个模块单元格。
+        view.setLoaded(new BlockPos(5, 6, 0), false);
+        MultiblockModuleEvaluator.Evaluation result = evaluate(view, MultiblockModule.of("gold", largeChamber(true)));
+        assertTrue(result.unloaded());
+        assertFalse(result.reports().get("gold").satisfied());
+        assertEquals(150, result.reports().get("gold").total());
+        assertEquals(150, result.reports().get("gold").matched());
+    }
+
+    private static Blueprint largeChamber(boolean right) {
+        String full = right ? "     MMMMM" : "NNNNN     ";
+        String hollow = right ? "     M###M" : "N###N     ";
+        String anchor = right ? "@    MMMMM" : "NNNNN    @";
+        return Blueprint.of().aisle(anchor, full, full, full, full)
+                .aisle(full, full, full, full, full)
+                .beginRepeatable(2, 4)
+                .aisle(full, hollow, hollow, hollow, full)
+                .aisle(full, hollow, hollow, hollow, full)
+                .endRepeatable()
+                .where(right ? 'M' : 'N', right ? Blocks.GOLD_BLOCK : Blocks.DIAMOND_BLOCK)
+                .build();
+    }
+
+    private static void buildChamber(TestView view, Orientation rotation, boolean right, int groups) {
+        for (int x = 0; x < 5; x++) {
+            for (int y = 0; y < 2 + 2 * groups; y++) {
+                for (int z = 0; z < 5; z++) {
+                    boolean air = y >= 2 && x > 0 && x < 4 && z > 0 && z < 4;
+                    view.put(rotation.apply(new BlockPos(right ? x + 5 : x - 9, y, z), BlockPos.ZERO),
+                            air ? Blocks.AIR.defaultBlockState() : (right ? Blocks.GOLD_BLOCK : Blocks.DIAMOND_BLOCK).defaultBlockState());
+                }
+            }
+        }
     }
 
     private static MultiblockModuleEvaluator.Evaluation evaluate(TestView view, MultiblockModule... modules) {
@@ -170,7 +235,8 @@ class MultiblockModuleEvaluationTest {
 
         @Override
         public @Nullable BlockState blockState(BlockPos worldPos) {
-            return states.get(worldPos);
+            // 此测试世界的未存储位置是已加载空气；null 专门表示未提供状态事实。
+            return states.getOrDefault(worldPos, Blocks.AIR.defaultBlockState());
         }
 
         @Override

@@ -12,11 +12,9 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * Dense, block-entity-free point-in-time view of one compiled footprint — the million-cell
- * snapshot. States live in a flat array indexed by the blueprint's canonical cell index; position
- * lookups go through {@link CompiledBlueprint#cellIndexOfWorld} (pure integer math), so neither
- * capture nor recognition touches a per-cell hash map. Capabilities and machine-membership are
- * sparse side tables — only part cells (a handful of hatches in a million casings) pay an entry.
+ * 一个时点的稳定蓝图快照，不持有世界或方块实体。
+ * 状态按最大布局中的稳定编号存储，位置通过 BlueprintLayout 反查；角色和成员以稀疏表保存。
+ * 发布后只读，可以跨线程检测；构建器移交数据所有权后立即失效。
  */
 public final class CompiledSnapshot implements StructureView {
 
@@ -95,37 +93,58 @@ public final class CompiledSnapshot implements StructureView {
         private final CompiledBlueprint compiled;
         private final BlockPos controllerPos;
         private final BlockState[] states;
+        private boolean built;
         private final Long2ObjectOpenHashMap<Set<PartRole>> capabilities = new Long2ObjectOpenHashMap<>();
         private final Long2ObjectOpenHashMap<StructureView.Member> members = new Long2ObjectOpenHashMap<>();
 
         private Builder(CompiledBlueprint compiled, BlockPos controllerPos) {
             this.compiled = Objects.requireNonNull(compiled, "compiled blueprint");
             this.controllerPos = Objects.requireNonNull(controllerPos, "controller position").immutable();
+            if (!compiled.blueprint().supportsSnapshot()) {
+                throw new IllegalArgumentException("A moving layout must be read through a live structure view");
+            }
             this.states = new BlockState[compiled.cellCapacity()];
         }
 
-        /** Writes one captured cell; {@code state} null = unloaded chunk (recognized as not formed). */
+        /** 写入一个采集位置；state 为 null 表示未加载。位置必须与稳定编号对应，成员必须属于同一已加载位置；覆盖写入会清除原角色和成员。 */
         public Builder put(
                            int cellIndex,
                            long packedWorldPos,
                            @Nullable BlockState state,
                            StructureView.@Nullable Member member) {
-            states[cellIndex] = state;
-            if (member != null) {
-                members.put(packedWorldPos, member);
+            ensureOpen();
+            Objects.checkIndex(cellIndex, states.length);
+            if (compiled.cellIndexOfWorld(BlockPos.of(packedWorldPos), controllerPos) != cellIndex) {
+                throw new IllegalArgumentException("Snapshot position does not match its cell index");
             }
+            if (member != null && (state == null || member.pos().asLong() != packedWorldPos)) {
+                throw new IllegalArgumentException("Snapshot member does not match the captured cell");
+            }
+            states[cellIndex] = state;
+            capabilities.remove(packedWorldPos);
+            if (member == null) members.remove(packedWorldPos);
+            else members.put(packedWorldPos, member);
             return this;
         }
 
         public Builder roles(long packedWorldPos, Set<PartRole> caps) {
-            if (!caps.isEmpty()) {
-                capabilities.put(packedWorldPos, Set.copyOf(caps));
-            }
+            ensureOpen();
+            int index = compiled.cellIndexOfWorld(BlockPos.of(packedWorldPos), controllerPos);
+            if (index < 0 || states[index] == null) throw new IllegalArgumentException("Roles require a loaded snapshot cell");
+            if (caps.isEmpty()) capabilities.remove(packedWorldPos);
+            else capabilities.put(packedWorldPos, Set.copyOf(caps));
             return this;
         }
 
+        /** 发布后移交数组和稀疏表的所有权，构建器随即失效，避免复制百万格快照。 */
         public CompiledSnapshot build() {
+            ensureOpen();
+            built = true;
             return new CompiledSnapshot(compiled, controllerPos, states, capabilities, members);
+        }
+
+        private void ensureOpen() {
+            if (built) throw new IllegalStateException("Snapshot builder has already published its data");
         }
     }
 }

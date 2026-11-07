@@ -9,10 +9,14 @@ import net.ptcrys.topo.api.api.visual.CtmClientInit;
 import net.ptcrys.topo.api.machine.data.MachineDataSyncBatcher;
 import net.ptcrys.topo.api.machine.data.network.MachineDataNetworking;
 import net.ptcrys.topo.api.machine.multiblock.MultiblockChangeWatcher;
+import net.ptcrys.topo.api.machine.multiblock.tool.StructureToolNetworking;
 import net.ptcrys.topo.api.pipe.network.PipeNetworkEngine;
+import net.ptcrys.topo.api.pipe.survey.PipeSurveyNetworking;
 import net.ptcrys.topo.api.recipe.search.TopoRecipeSearchEvents;
 import net.ptcrys.topo.client.debug.JeiLookupProbe;
 import net.ptcrys.topo.client.debug.TooltipProbe;
+import net.ptcrys.topo.client.structure.StructureToolClient;
+import net.ptcrys.topo.client.survey.PipeSurveyClientRenderer;
 import net.ptcrys.topo.config.TopoConfiguration;
 
 import net.neoforged.bus.api.EventPriority;
@@ -48,9 +52,11 @@ public class Topology {
         TopoAsyncExecutors.register();
         TopoRecipeSearchEvents.register(modEventBus);
         MultiblockChangeWatcher.register();
+        StructureToolNetworking.register(modEventBus);
+        StructureToolClient.register();
         PipeNetworkEngine.register();
-        net.ptcrys.topo.api.pipe.survey.PipeSurveyNetworking.register(modEventBus);
-        net.ptcrys.topo.client.survey.PipeSurveyClientRenderer.register();
+        PipeSurveyNetworking.register(modEventBus);
+        PipeSurveyClientRenderer.register();
         TickHeartbeat.register(modEventBus);
         TooltipProbe.register();
         JeiLookupProbe.register();

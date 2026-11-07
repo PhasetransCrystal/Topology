@@ -2,8 +2,6 @@ package net.ptcrys.topodemo.integration.jei;
 
 import net.ptcrys.topo.api.api.plugin.PluginIds;
 import net.ptcrys.topo.api.machine.MachineDefinition;
-import net.ptcrys.topo.api.machine.Machines;
-import net.ptcrys.topo.api.machine.multiblock.MultiblockControllerMetadata;
 import net.ptcrys.topo.api.machine.ui.recipe.XeiRecipeLookup;
 import net.ptcrys.topo.api.ore.OreVein;
 import net.ptcrys.topo.api.recipe.TopoRecipe;
@@ -36,20 +34,7 @@ public final class ContentJeiPlugin implements IModPlugin {
 
     private static final IRecipeType<OreVein> ORE = IRecipeType.create(
             PluginIds.id(TopoDemoPlugin.INSTANCE, "ore_deposits"), OreVein.class);
-    private static final IRecipeType<MachineDefinition> MULTIBLOCK = IRecipeType.create(
-            PluginIds.id(TopoDemoPlugin.INSTANCE, "multiblock"), MachineDefinition.class);
     private List<RecipeCategory> recipes = List.of();
-
-    /** Every registered machine that declares a multiblock controller — the structure previews. */
-    private static List<MachineDefinition> multiblockDefinitions() {
-        List<MachineDefinition> multiblocks = new ArrayList<>();
-        for (MachineDefinition definition : Machines.registered()) {
-            if (!definition.metadata(MultiblockControllerMetadata.TYPE).isEmpty()) {
-                multiblocks.add(definition);
-            }
-        }
-        return List.copyOf(multiblocks);
-    }
 
     private record RecipeCategory(TopoRecipeType<TopoRecipe> topo, IRecipeType<TopoRecipe> jei, MachineDefinition station) {
 
@@ -75,9 +60,6 @@ public final class ContentJeiPlugin implements IModPlugin {
         }
         registration.addRecipeCategories(new ContentCategory<>(ORE, ContentLang.VEIN_CATEGORY.getComponent(),
                 new ItemStack(Items.COPPER_ORE), ContentRecipePanels.VEIN_HEIGHT, ContentRecipePanels::vein, gui));
-        registration.addRecipeCategories(new ContentCategory<>(MULTIBLOCK, ContentLang.MULTIBLOCK_CATEGORY.getComponent(),
-                new ItemStack(BuiltinMachines.REPEATABLE_TOWER.registeredBlock().get()), ContentRecipePanels.MULTIBLOCK_HEIGHT,
-                ContentRecipePanels::multiblock, gui));
     }
 
     @Override
@@ -92,16 +74,12 @@ public final class ContentJeiPlugin implements IModPlugin {
             registration.addRecipes(category.jei(), new ArrayList<>(visible));
         }
         registration.addRecipes(ORE, List.of(BuiltinVeins.COPPER, BuiltinVeins.COPPER_TIN));
-        registration.addRecipes(MULTIBLOCK, multiblockDefinitions());
     }
 
     @Override
     public void registerRecipeCatalysts(IRecipeCatalystRegistration registration) {
         for (var category : recipes)
             registration.addCraftingStation(category.jei(), category.station().registeredBlock().get());
-        for (MachineDefinition definition : multiblockDefinitions()) {
-            registration.addRecipeCatalyst(new ItemStack(definition.registeredBlock().get()), MULTIBLOCK);
-        }
     }
 
     @Override

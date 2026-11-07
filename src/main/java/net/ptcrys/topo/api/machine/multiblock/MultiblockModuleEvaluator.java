@@ -1,10 +1,13 @@
 package net.ptcrys.topo.api.machine.multiblock;
 
+import net.ptcrys.topo.api.machine.data.DataSnapshot;
+import net.ptcrys.topo.api.machine.data.DataTransaction;
 import net.ptcrys.topo.api.machine.multiblock.pattern.Blueprint;
 import net.ptcrys.topo.api.machine.multiblock.pattern.Orientation;
 import net.ptcrys.topo.api.machine.multiblock.pattern.RecognitionResult;
 import net.ptcrys.topo.api.machine.multiblock.pattern.RepeatResolution;
 import net.ptcrys.topo.api.machine.multiblock.pattern.StructureEngine;
+import net.ptcrys.topo.api.machine.multiblock.pattern.StructureMetadata;
 import net.ptcrys.topo.api.machine.multiblock.pattern.StructureView;
 
 import net.minecraft.core.BlockPos;
@@ -17,32 +20,37 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
- * Pure, block-entity-free module evaluation shared by the controller and tests. Each module is
- * recognized by the same {@link StructureEngine} as the main structure; the controller cell is the
- * module anchor and is excluded from the reported matched/total. Modules may overlap the main
- * blueprint and each other. The class is deliberately a stateless collaborator (the machine system's
- * component pattern: heavy logic lives beside a thin component), so a unit test needs no level.
+ * 无世界副作用的模块求值器。每个模块都使用 StructureEngine 识别，控制器 @ 作为共用锚点，但不计入模块匹配数和总数。
+ * 模块可重叠，按依赖拓扑顺序求值；输入视图的线程约束与检测引擎相同。
  */
 public final class MultiblockModuleEvaluator {
 
     private MultiblockModuleEvaluator() {}
 
     /**
-     * Evaluates every module for one orientation in dependency order. A module is {@code satisfied}
-     * only when its own cells match <b>and</b> every dependency is satisfied; a partial or blocked
-     * module is reported {@code ABSENT}. Unloaded cells mark the pass {@link Evaluation#unloaded()}.
+     * 在同一控制器朝向下求值所有模块。自身完整且依赖满足才接入；部分或被依赖阻塞的模块为缺失。
+     * 总数来自实际解析布局，不包含额外增长探测位置；任一未加载探测使 Evaluation.unloaded 为真。
      */
     public static Evaluation evaluateOverlays(
                                               StructureView view,
                                               List<MultiblockModule> moduleSpecs,
                                               Orientation orientation) {
+        return evaluateOverlays(blueprint -> view, moduleSpecs, orientation, StructureMetadata.defaults(moduleSpecs.stream().map(MultiblockModule::blueprint).toList()).edit(), members -> true);
+    }
+
+    /** 本体与模块共享元数据；可选模块失败、依赖阻塞或不能接入时，整份模块写入回滚。 */
+    public static Evaluation evaluateOverlays(Function<Blueprint, StructureView> views, List<MultiblockModule> moduleSpecs,
+                                              Orientation orientation, DataTransaction metadata, Predicate<List<BlockPos>> canAttach) {
         if (moduleSpecs.isEmpty()) {
-            return new Evaluation(Map.of(), List.of(), Map.of(), List.of(), false);
+            return new Evaluation(Map.of(), List.of(), Map.of(), List.of(), false, metadata.snapshot(), Map.of());
         }
         List<MultiblockModule> ordered = topologicalOrder(moduleSpecs);
         Map<String, RecognitionResult.ModuleReport> computed = new LinkedHashMap<>();
+        Map<String, RecognitionResult> results = new LinkedHashMap<>();
         Map<String, Boolean> satisfiedById = new HashMap<>();
         Map<String, List<BlockPos>> membersByModule = new LinkedHashMap<>();
         List<BlockPos> members = new ArrayList<>();
@@ -55,31 +63,17 @@ public final class MultiblockModuleEvaluator {
                     blockedBy.add(dependency);
                 }
             }
-            RecognitionResult result = null;
-            boolean ownFormed = false;
-            if (!(orientation.mirror() && !moduleBlueprint.allowMirror())) {
-                result = StructureEngine.recognize(view, moduleBlueprint, orientation);
-                if (result.failureReason() == RecognitionResult.FailureReason.CHUNK_UNLOADED) {
-                    unloaded = true;
-                }
-                ownFormed = result.formed();
-            }
-            int matched;
-            int total;
-            RepeatResolution moduleRepeats;
-            RecognitionResult.Bounds moduleBounds;
-            if (result == null) {
-                matched = 0;
-                total = Math.max(0, moduleBlueprint.cellCount(moduleBlueprint.minRepeats()) - 1);
-                moduleRepeats = moduleBlueprint.minRepeats();
-                moduleBounds = RecognitionResult.Bounds.empty();
-            } else {
-                matched = Math.max(0, result.matchedCount() - 1);
-                total = Math.max(0, result.matchedCount() + result.missingCount() + result.unloadedCount() - 1);
-                moduleRepeats = result.repeats();
-                moduleBounds = result.bounds();
-            }
-            boolean satisfied = ownFormed && blockedBy.isEmpty();
+            DataTransaction branch = metadata.fork();
+            RecognitionResult result = StructureEngine.recognize(views.apply(moduleBlueprint), moduleBlueprint, orientation, branch, "module/" + module.id());
+            results.put(module.id(), result);
+            if (result.unknown()) unloaded = true;
+            boolean ownFormed = result.formed();
+            int matched = Math.max(0, result.matchedCount() - 1);
+            int total = Math.max(0, moduleBlueprint.cellCount(result.repeats()) - 1);
+            RepeatResolution moduleRepeats = result.repeats();
+            RecognitionResult.Bounds moduleBounds = result.bounds();
+            boolean satisfied = ownFormed && blockedBy.isEmpty() && canAttach.test(result.members());
+            if (satisfied) metadata.accept(branch);
             computed.put(module.id(), new RecognitionResult.ModuleReport(module.id(), satisfied, matched, total, blockedBy, moduleRepeats, moduleBounds));
             satisfiedById.put(module.id(), satisfied);
             if (satisfied) {
@@ -93,10 +87,10 @@ public final class MultiblockModuleEvaluator {
             reports.put(module.id(), computed.get(module.id()));
         }
         List<String> order = ordered.stream().map(MultiblockModule::id).toList();
-        return new Evaluation(reports, List.copyOf(members), membersByModule, order, unloaded);
+        return new Evaluation(reports, List.copyOf(members), membersByModule, order, unloaded, metadata.snapshot(), results);
     }
 
-    /** Validates ids, dependency references and cycles; called at machine-definition time. */
+    /** 在挂载时校验重复 ID、未知依赖和依赖环。 */
     public static void validateGraph(List<MultiblockModule> moduleSpecs) {
         topologicalOrder(moduleSpecs);
     }
@@ -142,13 +136,19 @@ public final class MultiblockModuleEvaluator {
         ordered.add(module);
     }
 
-    /** Result of evaluating every module for one orientation. */
+    /** 全部模块的不可变求值结果。 */
     public record Evaluation(
                              Map<String, RecognitionResult.ModuleReport> reports,
                              List<BlockPos> members,
                              Map<String, List<BlockPos>> membersByModule,
                              List<String> order,
-                             boolean unloaded) {
+                             boolean unloaded, DataSnapshot metadata,
+                             Map<String, RecognitionResult> results) {
+
+        public Evaluation(Map<String, RecognitionResult.ModuleReport> reports, List<BlockPos> members,
+                          Map<String, List<BlockPos>> membersByModule, List<String> order, boolean unloaded, DataSnapshot metadata) {
+            this(reports, members, membersByModule, order, unloaded, metadata, Map.of());
+        }
 
         public Evaluation {
             reports = Map.copyOf(Objects.requireNonNull(reports, "module reports"));
@@ -159,6 +159,7 @@ public final class MultiblockModuleEvaluator {
             }
             membersByModule = Map.copyOf(moduleMembers);
             order = List.copyOf(Objects.requireNonNull(order, "module order"));
+            results = Map.copyOf(Objects.requireNonNull(results, "module results"));
         }
     }
 }

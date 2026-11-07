@@ -8,20 +8,8 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * One optional overlay blueprint on a multiblock controller.
- *
- * <p>
- * A module is an <b>independent blueprint</b> anchored at the main controller's {@code @}: it uses the
- * full blueprint DSL (frame, repeat sections, predicates, count requirements) and is recognized by
- * the same {@link net.ptcrys.topo.api.machine.multiblock.pattern.StructureEngine} as the main
- * structure. Modules may overlap the main blueprint and each other; their dimensions do not need to
- * match.
- *
- * <p>
- * Every module is optional: it never gates the main structure. A module is either fully satisfied or
- * considered absent (a partial build counts as absent). {@link #dependencies()} are presence
- * prerequisites: a module can only be satisfied when every dependency is satisfied. The controller
- * connects a module's machine parts only when the module and all its prerequisites are satisfied.
+ * 共用控制器锚点的可选叠加蓝图。可独立使用 frame、重复组、谓词和数量约束，允许与主体或其他模块重叠，尺寸无需一致。
+ * 只有自身完整且所有依赖均满足时才接入成员；部分搭建或依赖缺失均视为模块缺失，不阻止主体成型。
  */
 public record MultiblockModule(String id, Blueprint blueprint, List<String> dependencies) {
 
@@ -44,13 +32,13 @@ public record MultiblockModule(String id, Blueprint blueprint, List<String> depe
                         "Multiblock module '" + id + "' declares dependency '" + dependency + "' more than once");
             }
         }
-        if (blueprint.cells().size() <= 1 && blueprint.sectionCount() == 0) {
+        if (blueprint.cellCount(blueprint.minRepeats()) <= 1 && blueprint.sectionCount() == 0) {
             throw new IllegalArgumentException(
                     "Multiblock module '" + id + "' must contain cells besides its controller anchor");
         }
     }
 
-    /** An optional module blueprint that depends on the given module ids. */
+    /** 声明一个可选模块，并指定其依赖的模块 ID。 */
     public static MultiblockModule of(String id, Blueprint blueprint, String... dependsOn) {
         return new MultiblockModule(id, blueprint, List.of(dependsOn));
     }

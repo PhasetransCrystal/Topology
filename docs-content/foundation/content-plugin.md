@@ -19,6 +19,9 @@ title: 内容注册实作
 | 具体内容 | 材料参数、机器组合、管道、矿脉和具体配方 | `src/demo/java/net/ptcrys/topodemo/data/` |
 | 外部适配 | 可选模组接入、JEI 展示、其他插件的内容桥接 | `src/demo/java/net/ptcrys/topodemo/integration/` |
 
+多方块结构的 JEI 展示由 Topo 统一提供：框架收集所有已注册的多方块控制器，内容模组无需再次注册结构分类。
+Demo 的 JEI 接入只负责自身生产配方和矿脉展示；结构预览的查询与工作方块栏见[多方块蓝图](../machine/multiblock.md#机器结构页与结构示例)。
+
 TopoDemo 在构造期登记 `TopoDemoApiPlugin` 与 `TopoDemoPlugin`，二者共用 `TopoDemo.REGISTRY`。
 拆成两个插件便于组织代码；初始化时机仍由各钩子决定。
 跨插件依赖按所属模组的依赖关系隐式确认，不再添加 Plugin 依赖配置；

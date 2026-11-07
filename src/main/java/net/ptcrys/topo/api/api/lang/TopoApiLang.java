@@ -30,7 +30,38 @@ public final class TopoApiLang {
             "等待输出空间");
     public static final LangKey UI_RECIPE_STATE_MISSING_ACTIVE_RECIPE = LANG.key("ui", "recipe.state.missing_active_recipe", "Recipe missing", "配方缺失");
 
+    public static final LangKey TOOL_STRUCTURE_ENABLED = LANG.key("equipment", "structure_tool.enabled", "Enabled", "开启");
+    public static final LangKey TOOL_STRUCTURE_DISABLED = LANG.key("equipment", "structure_tool.disabled", "Disabled", "关闭");
+    // 多方块结构工具
+    public static final LangKey TOOL_STRUCTURE_TITLE = LANG.key("equipment", "structure_tool.title", "Multiblock Structure Tool", "多方块结构工具");
+    public static final LangKey TOOL_STRUCTURE_MODULE = LANG.key("equipment", "structure_tool.module", "Module index (0 = body)", "模块序号（0 为本体）");
+    public static final LangKey TOOL_STRUCTURE_REPEATS = LANG.key("equipment", "structure_tool.repeats", "Repeat counts (comma separated; blank = minimum)", "重复次数（逗号分隔，留空取最小）");
+    public static final LangKey TOOL_STRUCTURE_MIRROR = LANG.key("equipment", "structure_tool.mirror", "Placement mirror", "放置镜像");
+    public static final LangKey TOOL_STRUCTURE_CONFIG_HINT = LANG.key("equipment", "structure_tool.config_hint", "Modules follow controller declaration order", "模块按控制器声明顺序从 1 编号");
+    public static final LangKey TOOL_STRUCTURE_APPLY = LANG.key("equipment", "structure_tool.apply", "Apply", "应用");
+    public static final LangKey TOOL_STRUCTURE_INVALID_VALUE = LANG.key("equipment", "structure_tool.invalid_value", "Invalid value for %s", "%s 的配置值无效");
+    public static final LangKey TOOL_STRUCTURE_DENIED = LANG.key("equipment", "structure_tool.denied", "Structure operation is not permitted here", "此处不允许进行结构操作");
+    public static final LangKey TOOL_STRUCTURE_DENIED_AT = LANG.key("equipment", "structure_tool.denied_at", "Cannot place at %s (permission, border or collision)", "无法在 %s 放置（权限、边界或碰撞）");
+    public static final LangKey TOOL_STRUCTURE_OBSTRUCTED = LANG.key("equipment", "structure_tool.obstructed", "Placement blocked by %s structure problems; no blocks placed", "存在 %s 处结构问题，未放置任何方块");
+    public static final LangKey TOOL_STRUCTURE_NO_ITEM = LANG.key("equipment", "structure_tool.no_item", "No placeable item for %s", "%s 没有可用的放置物品");
+    public static final LangKey TOOL_STRUCTURE_MATERIALS = LANG.key("equipment", "structure_tool.materials", "No usable materials for the remaining structure in player inventory", "背包中没有可用于剩余结构的材料");
+    public static final LangKey TOOL_STRUCTURE_CHANGED = LANG.key("equipment", "structure_tool.changed", "Structure changed during placement; operation rolled back", "放置期间结构发生变化，操作已回滚");
+    public static final LangKey TOOL_STRUCTURE_BUILT = LANG.key("equipment", "structure_tool.built", "Placed %s blocks; %s still missing", "本次放置 %s 个方块，仍缺 %s 个");
+    public static final LangKey TOOL_STRUCTURE_MODULE_RANGE = LANG.key("equipment", "structure_tool.module_range", "Module %s does not exist; this controller has %s modules", "模块 %s 不存在，此控制器有 %s 个模块");
+    public static final LangKey TOOL_STRUCTURE_LIMIT = LANG.key("equipment", "structure_tool.limit", "Structure exceeds the tool limit of %s cells", "结构超过工具支持的 %s 个位置上限");
+    public static final LangKey TOOL_STRUCTURE_CONFIG_ERROR = LANG.key("equipment", "structure_tool.config_error", "Cannot apply tool configuration: %s", "无法应用工具配置：%s");
+    public static final LangKey TOOL_STRUCTURE_EXCLUSIVE = LANG.key("equipment", "structure_tool.exclusive", "Exclusive parts are reserved by another controller", "独占部件已被其他控制器预留");
+    public static final LangKey TOOL_STRUCTURE_BODY = LANG.key("equipment", "structure_tool.body", "Controller body is not formed", "控制器本体尚未成型");
+    public static final LangKey TOOL_STRUCTURE_DEPENDENCIES = LANG.key("equipment", "structure_tool.dependencies", "Missing module dependencies: %s", "缺少模块依赖：%s");
+    public static final LangKey TOOL_STRUCTURE_FORMED = LANG.key("equipment", "structure_tool.formed", "Module %s: formed (%s/%s)", "模块 %s：实际结构满足成型条件（%s/%s）");
+    public static final LangKey TOOL_STRUCTURE_FAILED = LANG.key("equipment", "structure_tool.failed", "Module %s: not formed (%s/%s)", "模块 %s：实际结构未成型（%s/%s）");
+    public static final LangKey TOOL_STRUCTURE_TARGET = LANG.key("equipment", "structure_tool.target", "Build target: %s/%s; repeats %s; mirror %s", "施工目标：%s/%s；重复次数 %s；镜像%s");
+    public static final LangKey TOOL_STRUCTURE_MISSING = LANG.key("equipment", "structure_tool.missing", "At %s: expected %s; actual %s", "位置 %s：需要 %s；实际 %s");
+    public static final LangKey TOOL_STRUCTURE_ROLE = LANG.key("equipment", "structure_tool.role", "%s: %s (required %s..%s)", "%s：%s（需要 %s～%s）");
+
     // --- Multiblock structure diagnosis ------------------------------------------------------
+
+    public static final LangKey UI_MULTIBLOCK_CATEGORY = LANG.key("ui", "multiblock.category", "Multiblock Structures", "多方块结构");
 
     public static final LangKey UI_MULTIBLOCK_NONE = LANG.key("ui", "multiblock.none", "None", "无");
     public static final LangKey UI_MULTIBLOCK_DIAGNOSE_NEED = LANG.key(
@@ -68,6 +99,14 @@ public final class TopoApiLang {
             "multiblock.diagnose.all_met",
             "All cells match",
             "全部匹配");
+    public static final LangKey UI_MULTIBLOCK_DIAGNOSE_UNLOADED = LANG.key(
+            "ui", "multiblock.diagnose.unloaded", "Waiting for chunks", "等待区块加载");
+    public static final LangKey UI_MULTIBLOCK_DIAGNOSE_UNLOADED_COUNT = LANG.key(
+            "ui", "multiblock.diagnose.unloaded_count", "%s positions cannot be read yet", "%s 个位置尚未加载，暂时无法完成检测");
+    public static final LangKey UI_MULTIBLOCK_DIAGNOSE_UNSUPPORTED = LANG.key(
+            "ui", "multiblock.diagnose.unsupported", "Orientation unavailable", "此朝向不可用");
+    public static final LangKey UI_MULTIBLOCK_DIAGNOSE_UNSUPPORTED_DETAIL = LANG.key(
+            "ui", "multiblock.diagnose.unsupported_detail", "Some required block states cannot face this direction", "部分要求的方块状态无法朝向此方向");
     public static final LangKey UI_MULTIBLOCK_DIAGNOSE_MORE = LANG.key(
             "ui",
             "multiblock.diagnose.more",
@@ -88,6 +127,8 @@ public final class TopoApiLang {
             "multiblock.diagnose.empty",
             "Empty cell",
             "空格");
+    public static final LangKey UI_MULTIBLOCK_DIAGNOSE_CONSTRAINT = LANG.key("ui", "multiblock.diagnose.constraint", "Cell constraint failed", "单元约束不满足");
+    public static final LangKey UI_MULTIBLOCK_DIAGNOSE_UNKNOWN = LANG.key("ui", "multiblock.diagnose.unknown", "Detection pending", "检测事实尚未就绪");
     public static final LangKey UI_MULTIBLOCK_DIAGNOSE_WRONG_BLOCK = LANG.key(
             "ui",
             "multiblock.diagnose.wrong_block",
@@ -168,6 +209,13 @@ public final class TopoApiLang {
             "multiblock.preview.reset",
             "Reset view",
             "重置视角");
+    public static final LangKey UI_MULTIBLOCK_PREVIEW_EXPAND = LANG.key("ui", "multiblock.preview.expand", "Expand preview", "放大预览");
+    public static final LangKey UI_MULTIBLOCK_PREVIEW_ROTATABLE = LANG.key("ui", "multiblock.preview.rotatable", "Drag to rotate", "拖动旋转");
+    public static final LangKey UI_MULTIBLOCK_PREVIEW_ALL_MODULES = LANG.key("ui", "multiblock.preview.all_modules", "Body + all modules", "本体与全部模块");
+    public static final LangKey UI_MULTIBLOCK_PREVIEW_BODY = LANG.key("ui", "multiblock.preview.body", "0: Body", "0：本体");
+    public static final LangKey UI_MULTIBLOCK_PREVIEW_REPEAT_MORE = LANG.key("ui", "multiblock.preview.repeat_more", "Increase repeat count", "增加重复次数");
+    public static final LangKey UI_MULTIBLOCK_PREVIEW_REPEAT_LESS = LANG.key("ui", "multiblock.preview.repeat_less", "Decrease repeat count", "减少重复次数");
+    public static final LangKey UI_MULTIBLOCK_PREVIEW_REPEAT = LANG.key("ui", "multiblock.preview.repeat", "%s / section %s: %s", "%s／重复段 %s：%s");
     public static final LangKey UI_MULTIBLOCK_SCENE_SWITCH_TO_REQUIRED = LANG.key(
             "ui",
             "multiblock.scene.switch_to_required",

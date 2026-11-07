@@ -16,6 +16,7 @@ dependencies {
     implementation("dev.toma.configuration:configuration-neoforge:${configuration_version}")
 
     //https://maven.blamejared.com/mezz/jei/jei-26.1.2-neoforge
+    compileOnly "mezz.jei:jei-${minecraft_version}-gui:${jei_version}"
     compileOnly "mezz.jei:jei-${minecraft_version}-common-api:${jei_version}"
     compileOnly "mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}"
     runtimeOnly "mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}"

@@ -57,6 +57,8 @@ const sidebars: SidebarsConfig = {
         'machine/machine-resource',
         'machine/multiblock-ability',
         'machine/multiblock',
+        'machine/multiblock-tool',
+        'machine/multiblock-design',
         'machine/machine-ui',
       ],
     },

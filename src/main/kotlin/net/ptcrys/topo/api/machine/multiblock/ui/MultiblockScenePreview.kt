@@ -19,9 +19,8 @@ object MultiblockScenePreview {
     fun scene(blocks: Map<BlockPos, BlockState>): InspectorScene = scene(blocks, blocks.keys)
 
     /**
-     * [renderedPositions] is the scene's permanent cell universe — pass the full blueprint footprint
-     * even when [blocks] only covers part of it (the as-built view of a half-built structure), so a
-     * later [InspectorScene.setBlocks] swap can light up cells that started empty.
+     * [renderedPositions] 为初始完整布局（包含空气），不受当前实建方块数量影响。
+     * 布局增长、收缩或模块改变后，通过 [MultiblockScenePanel.Panel.swapBlocks] 同步替换范围。
      */
     @JvmStatic
     fun scene(blocks: Map<BlockPos, BlockState>, renderedPositions: Collection<BlockPos>): InspectorScene {

@@ -11,13 +11,13 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.Set;
 
-/** Live, read-only structure view over a level; used by synchronous and diagnosis passes. */
-final class MultiblockLiveView implements StructureView {
+/** 世界线程上的只读结构视图，供同步检测、诊断和放置规划共用；不会主动加载区块。 */
+public final class MultiblockLiveView implements StructureView {
 
     private final Level level;
     private final BlockPos controllerPos;
 
-    MultiblockLiveView(Level level, BlockPos controllerPos) {
+    public MultiblockLiveView(Level level, BlockPos controllerPos) {
         this.level = level;
         this.controllerPos = controllerPos;
     }

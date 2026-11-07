@@ -2,6 +2,7 @@ package net.ptcrys.topo.api.machine.multiblock.pattern;
 
 import net.ptcrys.topo.api.machine.FormedMachineBlock;
 import net.ptcrys.topo.api.machine.OrientedActiveMachineBlock;
+import net.ptcrys.topo.api.machine.data.DataKey;
 import net.ptcrys.topo.api.machine.multiblock.ability.PartRole;
 
 import net.minecraft.core.BlockPos;
@@ -26,86 +27,40 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 /**
- * Immutable description of a multiblock structure: an ordered stack of layers in the controller's
- * canonical frame.
- *
- * <h2>Layers</h2>
- *
- * A blueprint is built from {@link Builder#aisle aisle} layers. Each layer is a rectangular grid:
- * characters run along canonical {@code +X}, rows along canonical {@code +Z}, and layers stack along
- * canonical {@code +Y}. The {@code '@'} cell is the controller anchor and defines the origin; the
- * whole declaration is normalized so {@code '@'} becomes {@code (0, 0, 0)}. An {@code aisle} may be
- * empty (all spaces), which simply reserves a layer.
- *
- * <h2>Frame</h2>
- *
- * {@link Builder#frame} rotates the whole blueprint relative to {@code '@'}: it maps canonical
- * {@code +Y} onto {@code up}, canonical {@code +Z} onto {@code front}, and canonical {@code +X} onto
- * {@code up × front}. The frame is a proper rotation (24 choices), applied after the canonical
- * layout and before the machine orientation. Blueprint cells are always authored in canonical
- * coordinates, so {@code aisle} stays an X×Z grid regardless of the frame.
- *
- * <h2>Repeat sections</h2>
- *
- * A repeat section ({@link Builder#repeat} or {@link Builder#beginRepeatable}) is a contiguous run of
- * layers copied as a unit along canonical {@code +Y}. Its thickness is the number of layers it
- * contains; copy {@code i} is placed {@code i * thickness} layers further from the controller, and
- * layers beyond the section on that side shift by {@code (count - 1) * thickness}. Sections cannot
- * nest, cannot contain the controller layer, and may appear before or after the controller.
- *
- * <h2>Recognition</h2>
- *
- * {@link RepeatResolution} holds one concrete copy count per section. {@link #cells(RepeatResolution)}
- * materializes the canonical layout; the recognition engine walks it through
- * {@link CompiledBlueprint}. Section counts are resolved from the controller outward: mandatory
- * copies are matched first, then additional copies are probed until the first one that does not
- * fully match.
- *
+ * 不可变的多方块蓝图，使用以控制器 {@code @} 为原点的局部坐标系。
+ * {@link Builder#aisle} 声明 XZ 字符层，连续层沿声明 +Y 堆叠；{@link Builder#frame} 将整个声明旋转到控制器局部坐标。
+ * 有效旋转为控制器朝向与 frame 的复合，共支持 24 种正交旋转，并可显式启用镜像。
  * <p>
- * {@link #supportsSnapshot()} reports whether every cell's controller-relative position is
- * independent of every resolved count. Only such <b>frame-stable</b> blueprints may be recognized
- * through a dense max-footprint snapshot; unstable layouts use a live view.
- *
- * <h2>Directional blocks</h2>
- *
- * A cell may pin a canonical (pre-orientation) expected state together with
- * {@link PropertyRule}s. The recognition engine folds {@link PropertyRule.Classification#COVARIANT}
- * rules forward through the effective orientation (machine orientation composed with the blueprint
- * frame) before comparing, masks {@link PropertyRule#maskedProperties() masked} properties, and
- * accepts alternate encodings. A blueprint whose rules cannot represent an orientation reports
- * {@link RecognitionResult.FailureReason#ORIENTATION_UNSUPPORTED} instead of silently matching.
+ * {@code @} 自动表示控制器，{@code #} 自动表示空气，空格忽略位置。其他字符通过 where 绑定谓词及可选的规范状态、属性规则。
+ * 连续多层可作为一个重复组；解析出的副本数由 {@link RepeatResolution} 保存，后续内容随副本数推移。
+ * 具体位置统一由 {@link BlueprintLayout} 计算，检测、预览、占地与反查使用相同布局。
+ * 位置随重复计数变化的蓝图须使用实时视图；稳定布局可使用最大占地的不可变快照。
  */
 public final class Blueprint {
 
+    private static final char AIR_SYMBOL = '#';
     private static final char CONTROLLER_SYMBOL = '@';
     private static final PropertyRule[] NO_RULES = new PropertyRule[0];
     private static final long NO_DECLARED_CELL = -1L;
 
-    /**
-     * Machine block-state properties that flip at runtime (multiblock formed flag, recipe active
-     * flag). Pinning them in an expected state would unform/reform structures as they run, so
-     * {@code build()} rejects them unless a derived rule on the same cell masks them out.
-     */
+    /** 会随机器运行改变的属性。固定规范状态必须屏蔽这些属性，防止机器启动时被误判解体。 */
     private static final List<Property<?>> RUNTIME_MACHINE_STATE_PROPERTIES = List.of(FormedMachineBlock.FORMED, OrientedActiveMachineBlock.ACTIVE);
 
-    private final List<DeclaredCell> cells;
     private final List<Brick> bricks;
     private final List<RepeatSection> sections;
     private final Map<Character, CellDefinition> definitions;
     private final List<Character> symbolOrder;
-    private final int controllerCell;
     private final int controllerBrick;
     private final int[] controllerDecl;
     private final Orientation frame;
     private final boolean frameStable;
     private final int maxCellCount;
     private final Map<PartRole, CountRequirement> countRequirements;
-    private final boolean allowMirror;
     private final Long2LongOpenHashMap declaredRefs;
     private final Set<PropertyRule> orientationSensitiveRules;
     private final Map<Orientation, Boolean> orientationSupport = new ConcurrentHashMap<>();
     private final Map<Orientation, CompiledBlueprint> compiled = new ConcurrentHashMap<>();
-    /** Lazily materialized minimum-layout cell list — UI/preview/module surfaces only. */
+    /** 按需展开并缓存的最小布局，仅供预览等需要 Cell 对象的调用者使用。 */
     private volatile @Nullable List<Cell> minCells;
 
     private Blueprint(
@@ -119,14 +74,11 @@ public final class Blueprint {
                       Orientation frame,
                       boolean frameStable,
                       int maxCellCount,
-                      Map<PartRole, CountRequirement> countRequirements,
-                      boolean allowMirror) {
-        this.cells = List.copyOf(cells);
+                      Map<PartRole, CountRequirement> countRequirements) {
         this.bricks = List.copyOf(bricks);
         this.sections = List.copyOf(sections);
         this.definitions = Collections.unmodifiableMap(new LinkedHashMap<>(definitions));
         this.symbolOrder = List.copyOf(symbolOrder);
-        this.controllerCell = controllerCell;
         this.controllerBrick = controllerBrick;
         DeclaredCell controller = cells.get(controllerCell);
         this.controllerDecl = new int[] { controller.x(), controller.y(), controller.z() };
@@ -134,11 +86,15 @@ public final class Blueprint {
         this.frameStable = frameStable;
         this.maxCellCount = maxCellCount;
         this.countRequirements = Map.copyOf(countRequirements);
-        this.allowMirror = allowMirror;
         this.declaredRefs = buildDeclaredRefs(this.bricks);
         this.orientationSensitiveRules = collectOrientationSensitiveRules(this.definitions);
         validateCountRequirements();
         validateRuntimeStateProperties(this.definitions);
+    }
+
+    /** 所有 Cell 能力预声明的元数据字段；字段值不属于蓝图。 */
+    public List<DataKey<?>> metadataKeys() {
+        return definitions.values().stream().flatMap(definition -> definition.binding().metadataKeys().stream()).distinct().toList();
     }
 
     public static Builder of() {
@@ -149,79 +105,58 @@ public final class Blueprint {
     // Public surface — declaration data and layout.
     // ------------------------------------------------------------------------------------------
 
-    /** Number of repeat sections; {@link RepeatResolution}s are indexed by this order. */
+    /** 重复段数量；RepeatResolution 使用相同的声明顺序索引。 */
     public int sectionCount() {
         return sections.size();
     }
 
-    /** One repeat section, in declaration order. */
+    /** 按声明顺序取得一个重复段。 */
     public RepeatSection section(int index) {
         return sections.get(index);
     }
 
-    /** All repeat sections, in declaration order. */
+    /** 按声明顺序返回所有重复段。 */
     public List<RepeatSection> sections() {
         return sections;
     }
 
-    /**
-     * The cells at the minimum count of every section. Materializes one object per cell —
-     * preview/UI/module surfaces only; recognition walks {@link CompiledBlueprint} instead.
-     */
+    /** 各段取最小副本数时的规范单元格。会逐格分配对象；检测热路径使用 BlueprintLayout。 */
     public List<Cell> cells() {
         List<Cell> cached = minCells;
         if (cached == null) {
-            cached = List.copyOf(cells(minRepeats()));
+            cached = cells(minRepeats());
             minCells = cached;
         }
         return cached;
     }
 
-    /**
-     * Expands the blueprint into canonical cells for the given per-section counts. Positions are
-     * computed from the layer grid plus the section shifts — nothing is stored flat, so the same
-     * blueprint can be laid out at any resolution.
-     */
+    /** 按具体副本数展开规范单元格。坐标相对控制器，尚未应用 frame 或控制器朝向。 */
     public List<Cell> cells(RepeatResolution resolution) {
-        Objects.requireNonNull(resolution, "repeat resolution");
-        requireResolutionSize(resolution);
-        List<Cell> out = new ArrayList<>(cellCount(resolution));
-        int[] counts = resolution.countsCopy();
-        int[] controllerShift = shiftOf(bricks.get(controllerBrick), counts);
-        for (Brick brick : bricks) {
-            int[] shift = shiftOf(brick, counts);
-            int copies = brick.section() < 0 ? 1 : counts[brick.section()];
-            int stride = brick.section() < 0 ? 0 : sections.get(brick.section()).stride();
-            for (int copy = 0; copy < copies; copy++) {
-                int layerOffset = copy * stride;
-                for (int k = 0; k < brick.cellCount(); k++) {
-                    int lx = brick.xs()[k] + shift[0] - controllerDecl[0] - controllerShift[0];
-                    int ly = brick.ys()[k] + shift[1] - controllerDecl[1] - controllerShift[1] + layerOffset;
-                    int lz = brick.zs()[k] + shift[2] - controllerDecl[2] - controllerShift[2];
-                    out.add(cellOf(brick.definitions()[k], new BlockPos(lx, ly, lz)));
-                }
-            }
-        }
+        BlueprintLayout layout = layout(resolution);
+        List<Cell> out = new ArrayList<>(layout.cellCount());
+        layout.forEachCell((index, definition, x, y, z) -> {
+            out.add(cellOf(definition, new BlockPos(x, y, z)));
+            return true;
+        });
         return List.copyOf(out);
     }
 
-    /** Number of cells under {@code resolution} — arithmetic only, no materialization. */
-    public int cellCount(RepeatResolution resolution) {
-        Objects.requireNonNull(resolution, "repeat resolution");
-        requireResolutionSize(resolution);
-        int total = 0;
-        for (Brick brick : bricks) {
-            total += brick.cellCount() * (brick.section() < 0 ? 1 : resolution.count(brick.section()));
-        }
-        return total;
+    /** 为具体重复次数建立局部布局；计数必须位于每段声明的范围内。 */
+    public BlueprintLayout layout(RepeatResolution resolution) {
+        return new BlueprintLayout(this, resolution);
     }
 
-    /** The maximal footprint size — the snapshot/threshold sizing figure. */
+    /** 返回具体布局的单元格数量，不展开副本。 */
+    public int cellCount(RepeatResolution resolution) {
+        return layout(resolution).cellCount();
+    }
+
+    /** 最大副本数下的检测位置数，供快照容量和异步阈值使用。 */
     public int maxCellCount() {
         return maxCellCount;
     }
 
-    /** Every section at its minimum count. */
+    /** 每个重复段均取最小副本数。 */
     public RepeatResolution minRepeats() {
         int[] counts = new int[sections.size()];
         for (int i = 0; i < sections.size(); i++) {
@@ -230,7 +165,7 @@ public final class Blueprint {
         return new RepeatResolution(counts);
     }
 
-    /** Every section at its maximum count. */
+    /** 每个重复段均取最大副本数。 */
     public RepeatResolution maxRepeats() {
         int[] counts = new int[sections.size()];
         for (int i = 0; i < sections.size(); i++) {
@@ -239,11 +174,7 @@ public final class Blueprint {
         return new RepeatResolution(counts);
     }
 
-    /**
-     * Whether every cell's controller-relative position is independent of the resolved section
-     * counts. Only frame-stable blueprints can be recognized through a dense max-footprint snapshot;
-     * unstable layouts shift cells when a count changes and must be read from a live view.
-     */
+    /** 所有单元格的控制器相对位置是否独立于重复计数。仅稳定布局可使用最大占地快照；移动布局须读取实时视图。 */
     public boolean supportsSnapshot() {
         return frameStable;
     }
@@ -252,35 +183,23 @@ public final class Blueprint {
         return countRequirements;
     }
 
-    public boolean allowMirror() {
-        return allowMirror;
-    }
-
-    /** The blueprint's local frame: canonical axes mapped onto the blueprint's {@code @}-relative axes. */
+    /** 声明坐标到控制器局部坐标的旋转 frame。 */
     public Orientation frame() {
         return frame;
     }
 
-    /** The orientation a recognition pass actually uses: {@code machineOrientation ∘ frame}. */
+    /** 实际用于检测的旋转：先应用 frame，再应用控制器朝向。 */
     public Orientation effectiveOrientation(Orientation machineOrientation) {
         return Objects.requireNonNull(machineOrientation, "orientation").compose(frame);
     }
 
-    /**
-     * Whether every {@link PropertyRule} attached to a state-pinning cell can represent the
-     * effective orientation ({@code machineOrientation ∘ frame}). Computed once per blueprint ×
-     * machine orientation and cached.
-     */
+    /** 状态规则能否表达该有效旋转。按蓝图和朝向缓存；受限的水平方向属性可能拒绝侧倾旋转。 */
     public boolean supports(Orientation machineOrientation) {
         Objects.requireNonNull(machineOrientation, "orientation");
         return orientationSupport.computeIfAbsent(machineOrientation, this::computeSupports);
     }
 
-    /**
-     * The blueprint compiled for {@code machineOrientation}, with the blueprint frame folded into
-     * the effective orientation. Per-symbol acceptable-state sets, primitive cell grids, arithmetic
-     * world→cell addressing and chunk-sorted capture order are computed once per orientation.
-     */
+    /** 按控制器朝向缓存编译结果。编译符号状态规则并复合 frame，快照采集数组在需要时才生成。 */
     public CompiledBlueprint compiled(Orientation machineOrientation) {
         Objects.requireNonNull(machineOrientation, "orientation");
         return compiled.computeIfAbsent(machineOrientation, orientation -> CompiledBlueprint.compile(this, orientation, orientation.compose(frame)));
@@ -310,13 +229,14 @@ public final class Blueprint {
         return controllerDecl.clone();
     }
 
-    /** Shift contributed by earlier sections to {@code brick} under {@code counts}. */
+    /** 前置重复段在给定计数下对本块产生的声明坐标推移。 */
     int[] shiftOf(Brick brick, int[] counts) {
         int[] shift = new int[3];
         for (int dep : brick.dependencies()) {
             RepeatSection section = sections.get(dep);
-            int delta = (counts[dep] - 1) * section.stride();
-            shift[section.axis().ordinal()] += delta;
+            int delta = Math.multiplyExact(counts[dep] - 1, section.stride());
+            int axis = section.axis().ordinal();
+            shift[axis] = Math.addExact(shift[axis], delta);
         }
         return shift;
     }
@@ -339,7 +259,7 @@ public final class Blueprint {
         return shift;
     }
 
-    /** Declared cell reference packed as {@code (brick << 32) | memberOrdinal}, or -1. */
+    /** 声明位置对应的压缩引用：高 32 位为块编号，低 32 位为组内编号；不存在时为 -1。 */
     long declaredRefAt(long position) {
         return declaredRefs.get(position);
     }
@@ -356,32 +276,27 @@ public final class Blueprint {
         return (int) ref;
     }
 
-    int declaredCellCount() {
-        return cells.size();
-    }
-
-    DeclaredCell declaredCell(int index) {
-        return cells.get(index);
-    }
-
     Cell cellOf(int symbolOrdinal, BlockPos localPos) {
         CellDefinition definition = definitions.get(symbolOrder.get(symbolOrdinal));
         return new Cell(
                 localPos,
                 definition.expectedState(),
                 definition.rules(),
-                definition.predicate(),
+                definition.binding(),
                 definition.maskedProperties());
     }
 
-    CellDefinition definitionOf(char symbol) {
-        return definitions.get(symbol);
-    }
-
-    private void requireResolutionSize(RepeatResolution resolution) {
+    void validateResolution(RepeatResolution resolution) {
+        Objects.requireNonNull(resolution, "repeat resolution");
         if (resolution.size() != sections.size()) {
-            throw new IllegalArgumentException(
-                    "Repeat resolution has " + resolution.size() + " counts but the blueprint declares " + sections.size() + " repeat section(s)");
+            throw new IllegalArgumentException("Repeat resolution does not match the blueprint's sections");
+        }
+        for (int i = 0; i < sections.size(); i++) {
+            RepeatSection section = sections.get(i);
+            int count = resolution.count(i);
+            if (count < section.minCount() || count > section.maxCount()) {
+                throw new IllegalArgumentException("Repeat count outside declared range for section " + i + ": " + count);
+            }
         }
     }
 
@@ -395,7 +310,7 @@ public final class Blueprint {
         return true;
     }
 
-    /** The distinct rules of every definition that pins an expected state (the only rules that fold). */
+    /** 固定了规范状态的定义所使用的去重规则集合。 */
     private static Set<PropertyRule> collectOrientationSensitiveRules(Map<Character, CellDefinition> definitions) {
         Set<PropertyRule> sensitive = new LinkedHashSet<>();
         for (CellDefinition definition : definitions.values()) {
@@ -434,7 +349,7 @@ public final class Blueprint {
         }
     }
 
-    /** Grid-walk validation (per definition × multiplicity), so it never materializes cells. */
+    /** 按定义与副本数校验数量约束，不展开单元格对象。 */
     private void validateCountRequirements() {
         for (CountRequirement requirement : countRequirements.values()) {
             PartRole capability = requirement.role();
@@ -442,7 +357,7 @@ public final class Blueprint {
             for (Brick brick : bricks) {
                 int multiplicity = brick.section() < 0 ? 1 : sections.get(brick.section()).maxCount();
                 for (int k = 0; k < brick.cellCount(); k++) {
-                    if (definitions.get(symbolOrder.get(brick.definitions()[k])).predicate().partRoles().contains(capability)) {
+                    if (definitions.get(symbolOrder.get(brick.definitions()[k])).binding().partRoles().contains(capability)) {
                         maxAchievable += multiplicity;
                     }
                 }
@@ -462,7 +377,7 @@ public final class Blueprint {
     // Value types.
     // ------------------------------------------------------------------------------------------
 
-    /** Inclusive copy-count span of a repeat section; {@code min == max} is fixed. */
+    /** 重复段的闭区间副本数范围；min 等于 max 表示固定次数。 */
     public record RepeatRange(int min, int max) {
 
         public RepeatRange {
@@ -479,11 +394,7 @@ public final class Blueprint {
         }
     }
 
-    /**
-     * One repeat section in layout terms. {@code bandStart} is the minimum normalized layer index of
-     * its layers, {@code bandEnd} the maximum plus one, and {@code stride} the layer count — copies
-     * advance by one stride per count.
-     */
+    /** 一个连续重复组。bandStart/bandEnd 是控制器归一化后的声明层区间（左闭右开），stride 是每份副本的层数。 */
     public record RepeatSection(
                                 Direction.Axis axis,
                                 RepeatRange repeat,
@@ -542,11 +453,7 @@ public final class Blueprint {
 
     record DeclaredCell(int x, int y, int z, char symbol, int section) {}
 
-    /**
-     * One walk unit: either a single fixed cell ({@code section < 0}, one entry) or a repeat
-     * section's members. {@code definitions}, {@code xs/ys/zs} are parallel arrays; {@code
-     * dependencies} lists the earlier sections whose growth shifts this brick.
-     */
+    /** 紧凑遍历块：一段连续固定单元格或一个重复组。平行数组保存符号定义与规范坐标，dependencies 记录会推移本块的前置重复段。 */
     record Brick(
                  int section,
                  int indexBase,
@@ -563,23 +470,23 @@ public final class Blueprint {
 
     record CellDefinition(
                           char symbol,
-                          CellPredicate predicate,
+                          CellBinding binding,
                           @Nullable BlockState expectedState,
                           Set<PropertyRule> rules,
                           Set<Property<?>> maskedProperties) {
 
         CellDefinition {
-            predicate = Objects.requireNonNull(predicate, "cell predicate");
+            binding = Objects.requireNonNull(binding, "cell binding");
             rules = Set.copyOf(Objects.requireNonNull(rules, "property rules"));
             maskedProperties = Set.copyOf(Objects.requireNonNull(maskedProperties, "masked properties"));
         }
 
         CellDefinition(
                        char symbol,
-                       CellPredicate predicate,
+                       CellBinding binding,
                        @Nullable BlockState expectedState,
                        Set<PropertyRule> rules) {
-            this(symbol, predicate, expectedState, rules, Cell.maskedPropertiesOf(rules, expectedState));
+            this(symbol, binding, expectedState, rules, Cell.maskedPropertiesOf(rules, expectedState));
         }
     }
 
@@ -594,7 +501,6 @@ public final class Blueprint {
         private final List<DeclaredCell> cells = new ArrayList<>();
         private final Map<Character, CellDefinition> definitions = new LinkedHashMap<>();
         private final Map<PartRole, CountRequirement> countRequirements = new LinkedHashMap<>();
-        private boolean allowMirror;
         private Orientation frame = Orientation.IDENTITY;
         private boolean frameSet;
         private boolean inSection;
@@ -606,12 +512,7 @@ public final class Blueprint {
 
         // ---- frame ----------------------------------------------------------------------------
 
-        /**
-         * Rotates the whole blueprint relative to {@code '@'}. {@code up} becomes the layer-stacking
-         * direction, {@code front} the row direction and {@code up × front} the character direction.
-         * The two directions must be perpendicular (different axes); the default is
-         * {@code up = UP, front = SOUTH} (canonical layout, no rotation).
-         */
+        /** 设置整个声明相对控制器的旋转：+Y 映射到 up，+Z 映射到 front，+X 映射到 up × front。两方向必须垂直，默认 UP/SOUTH；仅允许声明一次。 */
         public Builder frame(Direction up, Direction front) {
             ensureNotInSection("set the frame");
             Objects.requireNonNull(up, "frame up");
@@ -633,10 +534,7 @@ public final class Blueprint {
 
         // ---- layers ---------------------------------------------------------------------------
 
-        /**
-         * Declares one layer: characters run along the frame's character direction, rows along its
-         * front direction, and the layer stacks along its up direction.
-         */
+        /** 声明一个矩形 XZ 层：字符沿 +X、行沿 +Z、层沿 +Y。所有层尺寸必须相同，构建器保存行数组的副本。 */
         public Builder aisle(String... rows) {
             ensureNotInSection("declare a layer");
             addLayer(rows, null);
@@ -645,10 +543,7 @@ public final class Blueprint {
 
         // ---- repeat sections ------------------------------------------------------------------
 
-        /**
-         * Starts a repeat section and enters the section domain: {@link SectionBuilder} can only
-         * declare layers, and {@link SectionBuilder#endRepeatable()} returns to this builder.
-         */
+        /** 开始一个连续多层重复组。组内只允许声明层，endRepeatable 返回主构建器；不能嵌套或包含控制器。 */
         public SectionBuilder beginRepeatable(int min, int max) {
             ensureNotInSection("begin a repeat section");
             RepeatRange range = new RepeatRange(min, max);
@@ -662,11 +557,7 @@ public final class Blueprint {
             return new SectionBuilder(this, draft);
         }
 
-        /**
-         * Scoped repeat section: {@code body} declares exactly the layers of the section, and the
-         * section is closed when the lambda returns. Equivalent to
-         * {@code beginRepeatable(min, max) ... endRepeatable()}.
-         */
+        /** 在回调中声明重复组，回调返回后自动闭合；等价于 beginRepeatable/endRepeatable。 */
         public Builder repeat(int min, int max, Consumer<SectionBuilder> body) {
             Objects.requireNonNull(body, "repeat section body");
             SectionBuilder section = beginRepeatable(min, max);
@@ -676,64 +567,49 @@ public final class Blueprint {
 
         // ---- definitions ----------------------------------------------------------------------
 
-        public Builder where(char symbol, CellPredicate predicate) {
-            return where(symbol, predicate, null, NO_RULES);
+        public Builder where(char symbol, CellBinding binding) {
+            return where(symbol, binding, null, NO_RULES);
         }
 
-        public Builder where(char symbol, CellPredicate predicate, @Nullable BlockState expectedState) {
-            return where(symbol, predicate, expectedState, NO_RULES);
+        public Builder where(char symbol, CellBinding binding, @Nullable BlockState expectedState) {
+            return where(symbol, binding, expectedState, NO_RULES);
         }
 
-        /**
-         * Defines a symbol's predicate, its canonical (pre-orientation) expected state, and the
-         * {@link PropertyRule}s that govern how that state co-varies with the effective orientation
-         * during recognition.
-         */
+        /** 定义普通字符的谓词、旋转前的规范状态及属性规则。@ 与 # 自动定义，禁止重绑定；同一属性不能被多个协变规则重复变换。 */
         public Builder where(
                              char symbol,
-                             CellPredicate predicate,
+                             CellBinding binding,
                              @Nullable BlockState expectedState,
                              PropertyRule... rules) {
-            Objects.requireNonNull(predicate, "cell predicate");
+            Objects.requireNonNull(binding, "cell binding");
             Objects.requireNonNull(rules, "property rules");
-            if (symbol == CONTROLLER_SYMBOL) {
-                if (predicate != CellPredicates.controller()) {
-                    throw new IllegalArgumentException(
-                            "The controller symbol '@' is defined automatically as the controller cell; a where('@', ...) definition may only repeat CellPredicates.controller()");
-                }
-                return this;
-            }
             ensureNotInSection("define a symbol");
             validateSymbol(symbol);
             validateRules(symbol, rules);
             CellDefinition definition = new CellDefinition(
                     symbol,
-                    predicate,
+                    binding,
                     expectedState,
                     new LinkedHashSet<>(Arrays.asList(rules)));
-            CellDefinition previous = definitions.put(symbol, definition);
+            CellDefinition previous = definitions.putIfAbsent(symbol, definition);
             if (previous != null) {
                 throw new IllegalArgumentException("Duplicate blueprint symbol definition: '" + symbol + "'");
             }
             return this;
         }
 
-        /** Matches a block by identity, without pinning any state. */
+        /** 按方块类型匹配，不固定状态属性。 */
         public Builder where(char symbol, Block block) {
             return where(symbol, CellPredicates.block(Objects.requireNonNull(block, "block")));
         }
 
-        /**
-         * Matches a block by identity and pins its default state as the canonical expected state,
-         * folding the given rules through the effective orientation. The common directional form:
-         * {@code where('C', casing, PropertyRules.direction(FACING))}.
-         */
+        /** 按方块类型匹配，并将默认状态固定为规范状态；所给规则随有效旋转处理该状态。 */
         public Builder where(char symbol, Block block, PropertyRule... rules) {
             Objects.requireNonNull(block, "block");
             return where(symbol, CellPredicates.block(block), block.defaultBlockState(), rules);
         }
 
-        /** Matches a block by identity and pins an explicit canonical expected state. */
+        /** 按方块类型匹配，并固定显式给定的规范状态。 */
         public Builder where(char symbol, Block block, BlockState expectedState, PropertyRule... rules) {
             Objects.requireNonNull(block, "block");
             return where(symbol, CellPredicates.block(block), expectedState, rules);
@@ -742,16 +618,10 @@ public final class Blueprint {
         public Builder count(PartRole capability, int min, int max) {
             ensureNotInSection("declare a count requirement");
             CountRequirement requirement = new CountRequirement(capability, min, max);
-            CountRequirement previous = countRequirements.put(capability, requirement);
+            CountRequirement previous = countRequirements.putIfAbsent(capability, requirement);
             if (previous != null) {
                 throw new IllegalArgumentException("Duplicate count requirement for " + capability.id());
             }
-            return this;
-        }
-
-        public Builder allowMirror(boolean allowMirror) {
-            ensureNotInSection("set allowMirror");
-            this.allowMirror = allowMirror;
             return this;
         }
 
@@ -845,6 +715,7 @@ public final class Blueprint {
 
             List<Character> symbolOrder = validateDefinitions();
             symbolOrder.add(CONTROLLER_SYMBOL);
+            symbolOrder.add(AIR_SYMBOL);
 
             List<RepeatSection> sectionInfo = buildSectionInfo(controllerLayer);
             validateSectionLayout(sectionInfo);
@@ -855,14 +726,15 @@ public final class Blueprint {
             int maxCellCount = 0;
             for (Brick brick : bricks) {
                 int multiplicity = brick.section() < 0 ? 1 : sectionInfo.get(brick.section()).maxCount();
-                maxCellCount += brick.cellCount() * multiplicity;
+                maxCellCount = Math.addExact(maxCellCount, Math.multiplyExact(brick.cellCount(), multiplicity));
             }
 
-            // '@' is structural: its definition is always the controller predicate.
+            // '@' is structural: its definition is always the controller binding.
             CellDefinition controllerDefinition = new CellDefinition(
                     CONTROLLER_SYMBOL, CellPredicates.controller(), null, Set.of());
             Map<Character, CellDefinition> finalDefinitions = new LinkedHashMap<>(definitions);
             finalDefinitions.put(CONTROLLER_SYMBOL, controllerDefinition);
+            finalDefinitions.put(AIR_SYMBOL, new CellDefinition(AIR_SYMBOL, CellPredicates.air(), null, Set.of()));
 
             return new Blueprint(
                     cells,
@@ -875,8 +747,7 @@ public final class Blueprint {
                     frame,
                     frameStable,
                     maxCellCount,
-                    countRequirements,
-                    allowMirror);
+                    countRequirements);
         }
 
         private void addLayer(String[] rows, @Nullable SectionDraft draft) {
@@ -897,7 +768,7 @@ public final class Blueprint {
             } else if (inSection) {
                 throw new IllegalStateException("Cannot declare a blueprint layer inside an open repeat section; use the section builder");
             }
-            layers.add(new Layer(rows, draft == null ? -1 : draft.ordinal));
+            layers.add(new Layer(rows.clone(), draft == null ? -1 : draft.ordinal));
             if (draft != null) {
                 draft.layerCount++;
             }
@@ -934,7 +805,7 @@ public final class Blueprint {
         private List<Character> validateDefinitions() {
             Set<Character> used = new LinkedHashSet<>();
             for (DeclaredCell cell : cells) {
-                if (cell.symbol() != CONTROLLER_SYMBOL) {
+                if (cell.symbol() != CONTROLLER_SYMBOL && cell.symbol() != AIR_SYMBOL) {
                     used.add(cell.symbol());
                 }
             }
@@ -1026,8 +897,12 @@ public final class Blueprint {
             while (cellIndex < cells.size()) {
                 int section = cells.get(cellIndex).section();
                 if (section < 0) {
-                    bricks.add(buildBrick(-1, cellIndex, List.of(cellIndex), info, symbolOrder, indexBase));
-                    cellIndex++;
+                    int end = cellIndex + 1;
+                    while (end < cells.size() && cells.get(end).section() < 0) {
+                        end++;
+                    }
+                    bricks.add(buildBrick(-1, cellIndex, end, info, symbolOrder, indexBase));
+                    cellIndex = end;
                     continue;
                 }
                 if (section != sectionOrdinal) {
@@ -1037,11 +912,7 @@ public final class Blueprint {
                 while (end < cells.size() && cells.get(end).section() == section) {
                     end++;
                 }
-                List<Integer> members = new ArrayList<>(end - cellIndex);
-                for (int i = cellIndex; i < end; i++) {
-                    members.add(i);
-                }
-                bricks.add(buildBrick(section, cellIndex, members, info, symbolOrder, indexBase));
+                bricks.add(buildBrick(section, cellIndex, end, info, symbolOrder, indexBase));
                 cellIndex = end;
                 sectionOrdinal++;
             }
@@ -1054,11 +925,11 @@ public final class Blueprint {
         private Brick buildBrick(
                                  int section,
                                  int firstCell,
-                                 List<Integer> members,
+                                 int endCell,
                                  List<RepeatSection> info,
                                  List<Character> symbolOrder,
                                  int[] indexBase) {
-            int size = members.size();
+            int size = endCell - firstCell;
             int[] defs = new int[size];
             int[] xs = new int[size];
             int[] ys = new int[size];
@@ -1070,7 +941,7 @@ public final class Blueprint {
             int maxY = Integer.MIN_VALUE;
             int maxZ = Integer.MIN_VALUE;
             for (int k = 0; k < size; k++) {
-                DeclaredCell cell = cells.get(members.get(k));
+                DeclaredCell cell = cells.get(firstCell + k);
                 defs[k] = symbolOrder.indexOf(cell.symbol());
                 xs[k] = cell.x();
                 ys[k] = cell.y();
@@ -1105,7 +976,7 @@ public final class Blueprint {
             }
             int base = indexBase[0];
             int multiplicity = section < 0 ? 1 : info.get(section).maxCount();
-            indexBase[0] = base + size * multiplicity;
+            indexBase[0] = Math.addExact(base, Math.multiplyExact(size, multiplicity));
             return new Brick(section, base, deps, defs, xs, ys, zs);
         }
 
@@ -1124,6 +995,8 @@ public final class Blueprint {
         private boolean computeFrameStable(List<RepeatSection> info) {
             for (int s = 0; s < info.size(); s++) {
                 RepeatSection section = info.get(s);
+                // 固定次数只产生常量位移，不会让后续单元格或控制器锚点随解析结果移动。
+                if (!section.repeatable()) continue;
                 SectionDraft draft = sections.get(s);
                 int last = draft.firstCell + draft.cellCount - 1;
                 for (int i = last + 1; i < cells.size(); i++) {
@@ -1161,9 +1034,9 @@ public final class Blueprint {
             if (symbol == ' ') {
                 throw new IllegalArgumentException("Space is reserved for empty blueprint cells");
             }
-            if (symbol == CONTROLLER_SYMBOL) {
+            if (symbol == CONTROLLER_SYMBOL || symbol == AIR_SYMBOL) {
                 throw new IllegalArgumentException(
-                        "The controller symbol '@' is reserved and defined automatically; remove its where(...) definition");
+                        "Blueprint symbols '@' and '#' are reserved and defined automatically");
             }
         }
 
@@ -1210,7 +1083,7 @@ public final class Blueprint {
         }
     }
 
-    /** Scoped builder handed to {@link Builder#beginRepeatable} and {@link Builder#repeat}. */
+    /** 重复组的受限构建入口，只声明组内的连续层。 */
     public static final class SectionBuilder {
 
         private final Builder builder;
@@ -1221,13 +1094,13 @@ public final class Blueprint {
             this.draft = draft;
         }
 
-        /** Declares one layer of this section. */
+        /** 在当前重复组中声明一层。 */
         public SectionBuilder aisle(String... rows) {
             builder.addLayer(rows, draft);
             return this;
         }
 
-        /** Closes the section and returns to the blueprint domain. */
+        /** 闭合当前重复组并返回蓝图构建器。 */
         public Builder endRepeatable() {
             builder.endSection(draft);
             return builder;

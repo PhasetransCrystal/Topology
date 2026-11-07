@@ -6,7 +6,6 @@ import net.ptcrys.topo.api.machine.MachineBlockEntity
 import net.ptcrys.topo.api.machine.multiblock.MultiblockClientDiagnosis
 import net.ptcrys.topo.api.machine.multiblock.MultiblockController
 import net.ptcrys.topo.api.machine.multiblock.pattern.Blueprint
-import net.ptcrys.topo.api.machine.multiblock.pattern.RepeatResolution
 import net.ptcrys.topo.api.machine.ui.LcdData
 import net.ptcrys.topo.api.machine.ui.MachineUiComponentStyle
 import net.ptcrys.topo.api.machine.ui.MachineUiComponentTemplate
@@ -33,25 +32,32 @@ import com.lowdragmc.lowdraglib2.gui.ui.elements.ScrollerView
 import com.lowdragmc.lowdraglib2.gui.ui.event.UIEvents
 import dev.vfyjxf.taffy.style.AlignItems
 
-/**
- * The controller GUI's structure surfaces, ported from the old GTOdyssey controller pages:
- *
- * - [page]: the interactive 3D structure scene with the full toolbar, an eye toggle flipping
- *   between the required example and the live as-built view (auto-refreshing), and cell selection.
- * - [diagnosticsPanel]: formation state plus a live diagnosis list — every reason the structure is
- *   not formed (wrong/missing/misoriented blocks with icons and local coordinates, count
- *   shortfalls), each cell-level row clickable to highlight that cell in the scene, followed by the
- *   selected cell's requirement details.
- */
+/** 控制器的结构场景与诊断面板。场景、问题行和位置详情通过 Selection 联动；诊断每次刷新共用一份朝向与读取上下文。 */
 object MultiblockStructurePage {
     private const val REFRESH_INTERVAL_TICKS = 10
     private const val REASON_DISPLAY_MAX = 10
     private const val ICON_CYCLE_TICKS = 20
 
-    /** Shared selection channel: scene clicks, reason rows, and the detail dock stay in sync. */
+    /** 场景、问题行与详情共用的位置选择和诊断缓存；同一刷新周期只采集、识别一次。 */
     class Selection {
         private var current: BlockPos? = null
         private val listeners = ArrayList<(BlockPos?) -> Unit>()
+        private var frame: MultiblockClientDiagnosis.Frame? = null
+        private var frameMachine: MachineBlockEntity? = null
+        private var frameBlueprint: Blueprint? = null
+        private var frameTick = Long.MIN_VALUE
+
+        fun diagnosis(machine: MachineBlockEntity, blueprint: Blueprint): MultiblockClientDiagnosis.Frame {
+            val tick = requireNotNull(machine.level).gameTime
+            val cached = frame
+            if (cached != null && machine === frameMachine && blueprint === frameBlueprint && tick >= frameTick && tick - frameTick < REFRESH_INTERVAL_TICKS) return cached
+            return MultiblockClientDiagnosis.capture(machine, blueprint).also {
+                frame = it
+                frameMachine = machine
+                frameBlueprint = blueprint
+                frameTick = tick
+            }
+        }
 
         fun addListener(listener: (BlockPos?) -> Unit) {
             listeners.add(listener)
@@ -67,22 +73,19 @@ object MultiblockStructurePage {
 
     @JvmStatic
     fun page(machine: MachineBlockEntity, controller: MultiblockController, blueprint: Blueprint, selection: Selection): UIElement {
-        val resolution = controller.repeatResolution() ?: BlueprintPreview.previewRepeats(blueprint)
-        val preview = BlueprintPreview.of(blueprint, machine.definition(), resolution)
-        val requiredBlocks = preview.blocks()
-        val builtBlocks = MultiblockClientDiagnosis.detectedBlocks(machine, blueprint, resolution)
+        val frame = selection.diagnosis(machine, blueprint)
+        val requiredBlocks = frame.requiredPreview(machine.definition()).blocks()
+        val builtBlocks = frame.detectedBlocks()
         val startWithBuilt = builtBlocks.isNotEmpty()
         val sceneBlocks = if (startWithBuilt) builtBlocks else requiredBlocks
-        // The rendered core is always the FULL blueprint footprint: the as-built view of a partial
-        // structure leaves its empty cells as air, and the required/as-built toggle can then light
-        // any cell up — a core limited to the initial block set would pin every later swap to it.
-        val scene = MultiblockScenePreview.scene(sceneBlocks, requiredBlocks.keys)
+        val renderedPositions = frame.positions()
+        val scene = MultiblockScenePreview.scene(sceneBlocks, renderedPositions)
 
         val panelRef = arrayOfNulls<MultiblockScenePanel.Panel>(1)
-        val modeToggle = sceneModeToggle(machine, blueprint, resolution, requiredBlocks, startWithBuilt, builtBlocks, panelRef) {
+        val modeToggle = sceneModeToggle(machine, blueprint, selection, startWithBuilt, panelRef) {
             if (selection.current() != null) selection.select(null)
         }
-        val panel = MultiblockScenePanel.of(scene, requiredBlocks.keys)
+        val panel = MultiblockScenePanel.of(scene, renderedPositions)
             .leadingControl(modeToggle)
             .onSelect { offset ->
                 if (offset == selection.current()) selection.select(null) else selection.select(offset)
@@ -105,16 +108,9 @@ object MultiblockStructurePage {
         }
     }
 
-    /**
-     * Formation state + live diagnosis list + selected-cell expected/current comparison — the
-     * right-column component, per the v5 spec
-     * ({@code /specs/2026-06-10-structure-panel-redesign-design.md}).
-     */
+    /** 成型状态、定期刷新的诊断列表与选中位置的预期／实际状态对照。 */
     @JvmStatic
     fun diagnosticsPanel(machine: MachineBlockEntity, controller: MultiblockController, blueprint: Blueprint, selection: Selection): UIElement {
-        val resolution = controller.repeatResolution() ?: BlueprintPreview.previewRepeats(blueprint)
-        val preview = BlueprintPreview.of(blueprint, machine.definition(), resolution)
-
         // ① Formed LCD strip: "Formed Yes/No" left, "matched/total" flush right. The yes/no flag is
         // server-truth (S2C bound); the match counter is client-side diagnosis, refreshed below.
         val matchCounter = lcdLabel(MachineUiComponentStyle.textMuted, Horizontal.RIGHT).apply {
@@ -195,9 +191,16 @@ object MultiblockStructurePage {
             root.setDisplay(false)
         }
 
+        var diagnosisFrame = selection.diagnosis(machine, blueprint)
+        var previewBlocks = diagnosisFrame.requiredPreview(machine.definition()).blocks()
         val lastSignature = arrayOfNulls<String>(1)
         fun refresh() {
-            val report = MultiblockClientDiagnosis.report(machine, blueprint, REASON_DISPLAY_MAX)
+            val nextFrame = selection.diagnosis(machine, blueprint)
+            if (nextFrame !== diagnosisFrame) {
+                diagnosisFrame = nextFrame
+                previewBlocks = diagnosisFrame.requiredPreview(machine.definition()).blocks()
+            }
+            val report = diagnosisFrame.report(REASON_DISPLAY_MAX)
             matchCounter.setText(Component.literal("${report.matchedCells()}/${report.totalCells()}"))
             val signature = signature(report)
             if (signature == lastSignature[0]) return
@@ -244,17 +247,17 @@ object MultiblockStructurePage {
 
         fun refreshDetail(offset: BlockPos?) {
             detailBody.clearAllChildren()
-            val previewState = offset?.let { preview.blocks()[it] }
-            if (offset == null || previewState == null) {
+            val previewState = offset?.let { previewBlocks[it] }
+            if (offset == null || previewState == null || !diagnosisFrame.containsCell(offset)) {
                 detail.setDisplay(false)
                 return
             }
-            val diagnosis = MultiblockClientDiagnosis.diagnoseCell(machine, blueprint, offset)
+            val diagnosis = diagnosisFrame.diagnoseCell(offset)
             detailBody.addChild(detailHeaderRow(previewState, diagnosis))
             // Expected vs current, folded to the controller's actual orientation — the facing the
             // table shows is the one to place. Green = goal/met, amber = the value to fix.
-            MultiblockClientDiagnosis.expectedStateAt(machine, blueprint, resolution, offset)?.let { expected ->
-                val actual = MultiblockClientDiagnosis.foundBlockAt(machine, blueprint, offset)
+            diagnosisFrame.expectedStateAt(offset)?.let { expected ->
+                val actual = diagnosisFrame.foundBlockAt(offset)
                 val comparisons = PropertyDisplays.compare(expected, actual)
                 if (comparisons.isNotEmpty()) {
                     detailBody.addChild(comparisonTable(comparisons))
@@ -279,6 +282,7 @@ object MultiblockStructurePage {
                 // a refresh of a 100k-cell structure is not free even captured + compiled.
                 if (ticks[0]++ % REFRESH_INTERVAL_TICKS == 0 && root.isDisplayed) {
                     refresh()
+                    refreshDetail(selection.current())
                 }
             }
             add(formationState)
@@ -363,7 +367,7 @@ object MultiblockStructurePage {
             add(
                 UIElement().apply {
                     setId("topo_multiblock_reason_icon")
-                    val icons = reason.icons().filter { !it.isEmpty }
+                    val icons = reason.iconBlocks().map { ItemStack(it) }.filter { !it.isEmpty }
                     if (icons.isNotEmpty()) {
                         style { it.backgroundTexture(ItemStackTexture(icons[0])) }
                     }
@@ -492,7 +496,7 @@ object MultiblockStructurePage {
         )
     }
 
-    private fun kindColor(kind: MultiblockClientDiagnosis.Kind): Int = if (kind.propertyLevel()) MachineUiComponentStyle.ledWaiting else MachineUiComponentStyle.ledError
+    private fun kindColor(kind: MultiblockClientDiagnosis.Kind): Int = if (kind.warning()) MachineUiComponentStyle.ledWaiting else MachineUiComponentStyle.ledError
 
     /**
      * Selected-cell header: {@code [expected-block icon] name …… verdict tag}. The tag is the
@@ -509,7 +513,7 @@ object MultiblockStructurePage {
             it.paddingHorizontal(3f)
             it.paddingVertical(2f)
         }
-        val icon = diagnosis?.icons()?.firstOrNull() ?: ItemStack(previewState.block)
+        val icon = ItemStack(diagnosis?.iconBlocks()?.firstOrNull() ?: previewState.block)
         if (!icon.isEmpty) {
             add(
                 UIElement().apply {
@@ -595,45 +599,36 @@ object MultiblockStructurePage {
 
     private fun tinted(text: Component, color: Int): MutableComponent = text.copy().withStyle { it.withColor(TextColor.fromRgb(color and 0xFFFFFF)) }
 
-    private fun sceneModeToggle(machine: MachineBlockEntity, blueprint: Blueprint, resolution: RepeatResolution, requiredBlocks: Map<BlockPos, BlockState>, startWithBuilt: Boolean, initialBuiltBlocks: Map<BlockPos, BlockState>, panelRef: Array<MultiblockScenePanel.Panel?>, beforeModeChange: () -> Unit): UIElement {
-        val showingBuilt = booleanArrayOf(startWithBuilt)
-        val lastBuilt = arrayOfNulls<Map<BlockPos, BlockState>>(1)
-        if (startWithBuilt) lastBuilt[0] = initialBuiltBlocks
-
-        // Closure trick: the click action needs the button itself to refresh its tooltip, but the
-        // factory takes the action at construction — populate the back-reference right after.
+    private fun sceneModeToggle(machine: MachineBlockEntity, blueprint: Blueprint, selection: Selection, startWithBuilt: Boolean, panelRef: Array<MultiblockScenePanel.Panel?>, beforeModeChange: () -> Unit): UIElement {
+        var showingBuilt = startWithBuilt
+        var previousFrame = selection.diagnosis(machine, blueprint)
+        var lastBlocks = if (showingBuilt) previousFrame.detectedBlocks() else previousFrame.requiredPreview(machine.definition()).blocks()
+        var lastPositions = previousFrame.positions()
+        fun refreshScene(force: Boolean) {
+            val frame = selection.diagnosis(machine, blueprint)
+            if (!force && frame === previousFrame) return
+            previousFrame = frame
+            val blocks = if (showingBuilt) frame.detectedBlocks() else frame.requiredPreview(machine.definition()).blocks()
+            val positions = frame.positions()
+            if (force || blocks != lastBlocks || positions != lastPositions) {
+                panelRef[0]?.swapBlocks(blocks, positions, !showingBuilt)
+                if (selection.current()?.let { it !in positions } == true) selection.select(null)
+                lastBlocks = blocks
+                lastPositions = positions
+            }
+        }
         val buttonRef = arrayOfNulls<MachineUiComponentTemplate.SelectableButton>(1)
-        val button = MachineUiComponentTemplate.createIconButton(
-            Icons.EYE,
-            modeTooltipKey(showingBuilt[0]),
-        ) {
+        val button = MachineUiComponentTemplate.createIconButton(Icons.EYE, modeTooltipKey(showingBuilt)) {
             beforeModeChange()
-            showingBuilt[0] = !showingBuilt[0]
-            if (showingBuilt[0]) {
-                val built = MultiblockClientDiagnosis.detectedBlocks(machine, blueprint, resolution)
-                lastBuilt[0] = built
-                panelRef[0]?.swapBlocks(built, requiredBlocks.keys, false)
-            } else {
-                lastBuilt[0] = null
-                panelRef[0]?.swapBlocks(requiredBlocks, requiredBlocks.keys, true)
-            }
-            buttonRef[0]?.style {
-                it.tooltips(modeTooltipKey(showingBuilt[0]).getComponent())
-            }
+            showingBuilt = !showingBuilt
+            refreshScene(true)
+            buttonRef[0]?.style { it.tooltips(modeTooltipKey(showingBuilt).getComponent()) }
         }
         buttonRef[0] = button
         button.setId("topo_multiblock_scene_mode_button")
-        // Live as-built refresh: while showing the built structure, re-read it on a short interval
-        // and swap only when it actually changed.
         val ticks = intArrayOf(0)
         button.addEventListener(UIEvents.TICK) {
-            if (!showingBuilt[0]) return@addEventListener
-            if (ticks[0]++ % REFRESH_INTERVAL_TICKS != 0) return@addEventListener
-            val built = MultiblockClientDiagnosis.detectedBlocks(machine, blueprint, resolution)
-            if (built != lastBuilt[0]) {
-                lastBuilt[0] = built
-                panelRef[0]?.swapBlocks(built, requiredBlocks.keys, false)
-            }
+            if (ticks[0]++ % REFRESH_INTERVAL_TICKS == 0 && button.isDisplayed) refreshScene(false)
         }
         return button
     }
@@ -646,7 +641,8 @@ object MultiblockStructurePage {
 
     private fun signature(report: MultiblockClientDiagnosis.Report): String {
         val sb = StringBuilder()
-        sb.append(report.totalProblems()).append('|').append(report.matchedCells()).append('\n')
+        sb.append(report.totalProblems()).append('|').append(report.matchedCells()).append('|')
+            .append(report.totalCells()).append('|').append(report.partCount()).append('|').append(report.allMet()).append('\n')
         for (reason in report.shown()) {
             sb.append(reason.localPos()?.asLong() ?: -1L).append(':')
                 .append(reason.kind().ordinal).append(':')

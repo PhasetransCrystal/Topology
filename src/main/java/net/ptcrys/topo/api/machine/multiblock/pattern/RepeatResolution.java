@@ -3,13 +3,8 @@ package net.ptcrys.topo.api.machine.multiblock.pattern;
 import java.util.Arrays;
 
 /**
- * The concrete copy count chosen for every {@link Blueprint.RepeatSection} during one recognition
- * pass.
- *
- * <p>
- * Counts are indexed by section declaration order ({@link Blueprint#section(int)}). The engine
- * resolves sections greedily in declaration order and records the chosen counts so the formed
- * footprint, targeted invalidation, claims and export all agree on exactly the same layout.
+ * 一次布局解析选定的各重复段副本数，按段的声明顺序索引。
+ * 内部数组防御性复制；成型占地、定点失效、预留和预览使用同一计数。
  */
 public final class RepeatResolution {
 
@@ -19,7 +14,7 @@ public final class RepeatResolution {
         this.counts = counts.clone();
     }
 
-    /** The chosen copy count of section {@code sectionIndex}. */
+    /** 指定重复段的副本数，不是展开层数。 */
     public int count(int sectionIndex) {
         return counts[sectionIndex];
     }
@@ -28,8 +23,8 @@ public final class RepeatResolution {
         return counts.length;
     }
 
-    /** A defensive copy of the raw counts, for the layout engine's hot paths. */
-    int[] countsCopy() {
+    /** 返回内部计数的防御性副本。 */
+    public int[] countsCopy() {
         return counts.clone();
     }
 

@@ -24,23 +24,14 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * Chunk-locality snapshot capture into the {@link CompiledSnapshot dense} form, shared by the
- * server recheck path and the client diagnosis.
- *
- * <p>
- * Walks the compiled blueprint's {@link CompiledBlueprint#captureOffsets() chunk-sorted capture
- * order} writing each state straight into its canonical cell slot, and pins one
- * {@link ChunkAccess} per chunk run — a footprint spanning hundreds of chunks costs one chunk-map
- * lookup per <em>chunk</em> instead of one per <em>cell</em>. Block entities are consulted only for
- * states that declare one ({@link BlockState#hasBlockEntity()}) — plain casing cells never pay a
- * block-entity lookup. Unloaded chunks record {@code null} states (recognition treats them as not
- * formed); chunks are never force-loaded.
+ * 由世界线程按区块局部性顺序采集最大稳定占地，共用于服务端重检和客户端诊断。
+ * 状态写入 CompiledSnapshot 的稳定编号，角色和成员采用稀疏表；未加载区块只记录未知，不强制加载。
  */
 public final class StructureCaptures {
 
     private StructureCaptures() {}
 
-    /** Captures the maximal footprint of {@code blueprint} under {@code orientation}. */
+    /** 采集蓝图在指定控制器朝向下的最大稳定占地。 */
     public static CompiledSnapshot capture(
                                            Level level, BlockPos controllerPos, Blueprint blueprint, Orientation orientation) {
         Objects.requireNonNull(level, "level");
@@ -49,15 +40,14 @@ public final class StructureCaptures {
         Objects.requireNonNull(orientation, "orientation");
         CompiledBlueprint compiled = blueprint.compiled(orientation);
         CompiledSnapshot.Builder builder = CompiledSnapshot.builder(compiled, controllerPos);
-        long[] offsets = compiled.captureOffsets();
-        int[] cellIndex = compiled.captureCellIndex();
+        int captureSize = compiled.captureSize();
         BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
         ChunkAccess chunk = null;
         int chunkX = Integer.MIN_VALUE;
         int chunkZ = Integer.MIN_VALUE;
         boolean chunkResolved = false;
-        for (int i = 0; i < offsets.length; i++) {
-            long packed = offsets[i];
+        for (int i = 0; i < captureSize; i++) {
+            long packed = compiled.captureOffsetAt(i);
             cursor.set(
                     controllerPos.getX() + BlockPos.getX(packed),
                     controllerPos.getY() + BlockPos.getY(packed),
@@ -71,22 +61,22 @@ public final class StructureCaptures {
                 chunkResolved = true;
             }
             if (chunk == null || level.isOutsideBuildHeight(cursor)) {
-                builder.put(cellIndex[i], cursor.asLong(), null, null);
+                builder.put(compiled.captureCellIndexAt(i), cursor.asLong(), null, null);
                 continue;
             }
             BlockState state = chunk.getBlockState(cursor);
             if (state.hasBlockEntity() && chunk.getBlockEntity(cursor) instanceof MachineBlockEntity machine) {
                 long packedWorld = cursor.asLong();
-                builder.put(cellIndex[i], packedWorld, state, new StructureView.Member(cursor, exclusive(machine)));
+                builder.put(compiled.captureCellIndexAt(i), packedWorld, state, new StructureView.Member(cursor, exclusive(machine)));
                 builder.roles(packedWorld, partRoles(machine));
             } else {
-                builder.put(cellIndex[i], cursor.asLong(), state, null);
+                builder.put(compiled.captureCellIndexAt(i), cursor.asLong(), state, null);
             }
         }
         return builder.build();
     }
 
-    /** Structural capabilities a member exposes, derived from its declared part-capability metadata. */
+    /** 从成员的角色附件中提取结构角色。 */
     static Set<PartRole> partRoles(MachineBlockEntity machine) {
         Set<PartRole> capabilities = new LinkedHashSet<>();
         for (PartRoleAttachment metadata : machine.definition().metadata(PartRoleAttachment.TYPE)) {
@@ -95,12 +85,12 @@ public final class StructureCaptures {
         return capabilities;
     }
 
-    /** Whether a member is registered as an exclusive part. */
+    /** 成员是否声明独占部件。 */
     static boolean exclusive(MachineBlockEntity machine) {
         return !machine.definition().metadata(ExclusivePartAttachment.TYPE).isEmpty();
     }
 
-    /** Single-cell live read with the same member/capability semantics as a full capture. */
+    /** 按完整采集相同的角色和成员语义读取一个位置。 */
     static CellState captureCell(Level level, BlockPos worldPos) {
         if (!level.hasChunkAt(worldPos)) {
             return new CellState(null, Set.of(), null);
@@ -113,7 +103,7 @@ public final class StructureCaptures {
         return new CellState(state, Set.of(), null);
     }
 
-    /** One captured cell: its state ({@code null} = unloaded), part capabilities, and member comment. */
+    /** 一个采集位置：状态为 null 表示未加载，同时携带角色和成员声明。 */
     record CellState(
                      @Nullable BlockState state,
                      Set<PartRole> roles,

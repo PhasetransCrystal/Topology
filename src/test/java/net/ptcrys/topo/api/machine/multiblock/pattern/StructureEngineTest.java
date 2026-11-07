@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -27,7 +28,6 @@ class StructureEngineTest {
         assertThrows(IllegalArgumentException.class, () -> Blueprint.of()
                 .aisle("@")
                 .aisle("AB")
-                .where('@', CellPredicates.controller())
                 .where('A', CellPredicates.block(Blocks.STONE))
                 .where('B', CellPredicates.block(Blocks.DIRT))
                 .build());
@@ -41,7 +41,6 @@ class StructureEngineTest {
                 .aisle("R")
                 .endRepeatable()
                 .aisle("C")
-                .where('@', CellPredicates.controller())
                 .where('R', CellPredicates.block(Blocks.STONE))
                 .where('C', CellPredicates.block(Blocks.DIRT))
                 .build();
@@ -65,7 +64,6 @@ class StructureEngineTest {
                 .aisle("CCC")
                 .endRepeatable()
                 .aisle("CCC")
-                .where('@', CellPredicates.controller())
                 .where('C', CellPredicates.block(Blocks.COPPER_BLOCK))
                 .build();
         TestView view = new TestView();
@@ -90,7 +88,6 @@ class StructureEngineTest {
                 .aisle("C")
                 .endRepeatable()
                 .aisle("@")
-                .where('@', CellPredicates.controller())
                 .where('C', CellPredicates.block(Blocks.STONE))
                 .build();
         TestView view = new TestView();
@@ -110,7 +107,6 @@ class StructureEngineTest {
                 .aisle("C")
                 .endRepeatable()
                 .aisle("@")
-                .where('@', CellPredicates.controller())
                 .where('C', CellPredicates.block(Blocks.STONE))
                 .build();
         TestView view = new TestView();
@@ -131,7 +127,6 @@ class StructureEngineTest {
                 .beginRepeatable(1, 4)
                 .aisle("I")
                 .endRepeatable()
-                .where('@', CellPredicates.controller())
                 .where('I', CellPredicates.block(Blocks.IRON_BLOCK))
                 .build();
         CompiledBlueprint compiled = blueprint.compiled(Orientations.IDENTITY);
@@ -164,8 +159,6 @@ class StructureEngineTest {
                 .aisle("OOO", "O#O", "OOO")
                 .endRepeatable()
                 .aisle("OOO", "OTO", "OOO")
-                .where('@', CellPredicates.controller())
-                .where('#', CellPredicates.air())
                 .where('O', CellPredicates.block(Blocks.IRON_BLOCK))
                 .where('F', CellPredicates.block(Blocks.IRON_BLOCK))
                 .where('T', CellPredicates.block(Blocks.IRON_BLOCK))
@@ -207,7 +200,6 @@ class StructureEngineTest {
                 .beginRepeatable(1, 3)
                 .aisle("A")
                 .endRepeatable()
-                .where('@', CellPredicates.controller())
                 .where('A', CellPredicates.block(Blocks.STONE))
                 .build();
         TestView view = new TestView();
@@ -228,7 +220,6 @@ class StructureEngineTest {
                 .beginRepeatable(1, 3)
                 .aisle("A")
                 .endRepeatable()
-                .where('@', CellPredicates.controller())
                 .where('A', CellPredicates.block(Blocks.STONE))
                 .build();
         TestView view = new TestView();
@@ -250,7 +241,6 @@ class StructureEngineTest {
                 .aisle("B")
                 .endRepeatable()
                 .aisle("C")
-                .where('@', CellPredicates.controller())
                 .where('A', CellPredicates.block(Blocks.STONE))
                 .where('B', CellPredicates.block(Blocks.DIRT))
                 .where('C', CellPredicates.block(Blocks.GOLD_BLOCK))
@@ -285,7 +275,6 @@ class StructureEngineTest {
                 .aisle("S")
                 .endRepeatable()
                 .aisle("C")
-                .where('@', CellPredicates.controller())
                 .where('R', CellPredicates.block(Blocks.STONE))
                 .where('S', CellPredicates.block(Blocks.DIRT))
                 .where('C', CellPredicates.block(Blocks.GOLD_BLOCK))
@@ -308,7 +297,6 @@ class StructureEngineTest {
         Blueprint blueprint = Blueprint.of()
                 .aisle("@")
                 .aisle("C")
-                .where('@', CellPredicates.controller())
                 .where('C', CellPredicates.block(Blocks.STONE))
                 .build();
         TestView view = new TestView();
@@ -327,12 +315,16 @@ class StructureEngineTest {
 
     @Test
     void predicateCombinatorsMatchExpectedStates() {
-        assertTrue(CellPredicates.air().test(Blocks.AIR.defaultBlockState(), null));
-        assertFalse(CellPredicates.air().test(Blocks.STONE.defaultBlockState(), null));
-        assertTrue(CellPredicates.not(CellPredicates.air()).test(Blocks.STONE.defaultBlockState(), null));
-        assertTrue(CellPredicates.allOf(
+        assertTrue(testBinding(CellPredicates.air(), Blocks.AIR.defaultBlockState()));
+        assertFalse(testBinding(CellPredicates.air(), Blocks.STONE.defaultBlockState()));
+        assertTrue(testBinding(CellPredicates.not(CellPredicates.air()), Blocks.STONE.defaultBlockState()));
+        assertTrue(testBinding(CellPredicates.allOf(
                 CellPredicates.block(Blocks.STONE),
-                CellPredicates.not(CellPredicates.air())).test(Blocks.STONE.defaultBlockState(), null));
+                CellPredicates.not(CellPredicates.air())), Blocks.STONE.defaultBlockState()));
+    }
+
+    private static boolean testBinding(CellBinding binding, BlockState actual) {
+        return binding.evaluate(new CellContext(BlockPos.ZERO, new StructureView.CellInfo(actual, Set.of(), null), false, null), StructureMetadata.defaults(List.of()).edit()).passed();
     }
 
     private static final class TestView implements StructureView {
@@ -361,7 +353,8 @@ class StructureEngineTest {
 
         @Override
         public @Nullable BlockState blockState(BlockPos worldPos) {
-            return states.get(worldPos);
+            // 此测试世界的未存储位置是已加载空气；null 专门表示未提供状态事实。
+            return states.getOrDefault(worldPos, Blocks.AIR.defaultBlockState());
         }
 
         @Override

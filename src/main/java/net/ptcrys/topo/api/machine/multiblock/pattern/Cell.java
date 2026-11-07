@@ -12,47 +12,27 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * One normalized blueprint cell, with local position relative to the controller origin.
- *
- * <p>
- * {@code expectedState} is the cell's pinned block state in the <b>canonical (pre-orientation)
- * frame</b>: recognition pushes it forward through {@code rules} for the actual orientation before
- * comparing it to the world (see {@link StructureEngine}). {@code rules} is the cell's
- * {@link PropertyRule} set — covariant rules co-rotate their property with the orientation, and any
- * rule may mask properties out of the comparison. {@code maskedProperties} is the precomputed union
- * of every rule's masked properties, carried on the cell so the per-cell state compare never
- * re-derives (or allocates) it. A cell with no {@code expectedState} matches purely on its
- * {@link CellPredicate} (block identity / capability / controller), independent of orientation.
+ * 控制器归一化后的规范单元格，坐标尚未应用 frame 和控制器朝向。
+ * expectedState 为旋转前的固定状态，rules 描述变换，maskedProperties 预先合并所有比较屏蔽项。
  */
 public record Cell(
                    BlockPos localPos,
                    @Nullable BlockState expectedState,
                    Set<PropertyRule> rules,
-                   CellPredicate predicate,
+                   CellBinding binding,
                    Set<Property<?>> maskedProperties) {
 
-    /**
-     * Properties the WORLD mutates in place without breaking or replacing the block (water flowing
-     * into a waterloggable member, sponges drying it). Pinning them would unform structures as the
-     * environment shifts — an underwater build would flicker with every water update — so any
-     * state-pinning cell masks them automatically. A blueprint can still demand a specific value by
-     * matching through a custom predicate.
-     */
+    /** 世界可原地改变而不替换方块的属性。规范状态自动屏蔽 WATERLOGGED；如需限制该值，应使用谓词。 */
     public static final Set<Property<?>> ENVIRONMENT_MUTABLE_PROPERTIES = Set.of(BlockStateProperties.WATERLOGGED);
 
     public Cell {
         localPos = Objects.requireNonNull(localPos, "local position").immutable();
         rules = Set.copyOf(Objects.requireNonNull(rules, "property rules"));
-        predicate = Objects.requireNonNull(predicate, "cell predicate");
+        binding = Objects.requireNonNull(binding, "cell binding");
         maskedProperties = Set.copyOf(Objects.requireNonNull(maskedProperties, "masked properties"));
     }
 
-    /**
-     * The union of every rule's masked properties — masking is a rule capability orthogonal to
-     * {@link PropertyRule.Classification}, so the union is classification-blind — plus the automatic
-     * {@link #ENVIRONMENT_MUTABLE_PROPERTIES} carried by the pinned state: a state-pinning cell
-     * never compares world-mutated properties.
-     */
+    /** 合并全部规则的屏蔽属性，并加入状态自带的运行环境屏蔽项。 */
     public static Set<Property<?>> maskedPropertiesOf(Set<PropertyRule> rules, @Nullable BlockState expectedState) {
         Objects.requireNonNull(rules, "property rules");
         Set<Property<?>> masked = new HashSet<>();
