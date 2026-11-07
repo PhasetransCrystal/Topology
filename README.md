@@ -1,6 +1,6 @@
 # Topology
 
-面向 [NeoForge](https://neoforged.net/) 的 **Minecraft 基础库 Mod**。为下游模组提供机器、材料、管道、配方、矿石生成等基础设施，**自身不添加任何玩法内容**——你声明"做什么"，框架负责"怎么做"。
+面向 [NeoForge](https://neoforged.net/) 的 **Minecraft 基础库 Mod**。为下游模组提供机器、材料、管道、配方、矿石生成等基础设施，**自身不添加任何玩法内容**——你声明“做什么”，框架负责“怎么做”。
 
 ## 协议与来源
 
@@ -48,8 +48,12 @@ Topology 由 **PhasetransCrystal** 基于 Odyssey Industrial 重构为纯 API �
 `runClient` 和 `runServer` 额外加载本地开发 Mod **TopoDemo**（ID：`topodemo`）。
 其 Java / Kotlin 代码放在 `src/demo/java/` / `src/demo/kotlin/`，资源放在 `src/demo/resources/`。
 该源码集可访问 Topo API；后续内容插件在 TopoDemo 构造期通过 `TopoPlugins.register` 登记。
-Topo 的数据生成和单元测试不加载它，发布的 jar、sources jar 和 Maven 产物也不包含它。
+`runClientData` 同时加载 Topo 与 TopoDemo，生成资源按模组命名空间分别打包。
+单元测试不加载 TopoDemo，发布的 jar、sources jar 和 Maven 产物也不包含它。
 可用 `./gradlew demoClasses` 单独检查开发 Mod 的编译与资源处理。
+
+发布 CI 在构建前执行客户端数据生成；代码 PR/push 由 Validate 工作流检查，文档 PR 由 Deploy Docs 构建。
+本地首次构建或修改内容声明后，请先手动运行 `./gradlew runClientData`，再执行构建。
 
 ### 测试
 
@@ -82,6 +86,8 @@ TopoPlugins.register(new MyModPlugin()); // 继承 TopoPlugin，覆写所需的�
 ## 文档
 
 完整文档（中文）见 [`docs-content/`](docs-content/)，在线文档见 [Topology Wiki](https://topology.ptcrys.net)。
+
+项目知识、检查、优化优先级和后续功能计划见 [`PROJECT_ROADMAP.md`](PROJECT_ROADMAP.md)。
 
 | 目标 | 使用指南 |
 |---|---|

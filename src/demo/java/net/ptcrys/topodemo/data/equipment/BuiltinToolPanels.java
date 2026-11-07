@@ -12,6 +12,7 @@ public final class BuiltinToolPanels {
         for (var record : EquipmentRegistry.itemRecords()) {
             if (record.equipment() == BuiltinEquipment.REGULATOR) runtime.tooltip(record.entry().get(), panel);
         }
+        runtime.tooltip(BuiltinTools.STRUCTURE_TOOL.get(), new ToolHintPanel(ContentLang.STRUCTURE_TOOL_HINT));
         runtime.tooltip(BuiltinTools.PIPE_SURVEYOR.get(), new ToolHintPanel(ContentLang.SURVEYOR_HINT));
     }
 

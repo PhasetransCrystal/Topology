@@ -5,6 +5,7 @@ import net.ptcrys.topo.Topology;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
@@ -20,6 +21,7 @@ public final class PipeSurveyNetworking {
                 PipeSurveyManager.onLoggedOut(player);
             }
         });
+        NeoForge.EVENT_BUS.addListener((ServerStoppedEvent event) -> PipeSurveyManager.clearAll());
     }
 
     private static void registerPayloads(RegisterPayloadHandlersEvent event) {

@@ -28,15 +28,8 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 /**
- * Controller-owned formed member runtime and dynamic resource aggregation surface.
- *
- * <p>
- * Steady-state contract: the member set carries an epoch counter, bumped whenever the member list
- * changes ({@link #updateMembers}/{@link #clearMembers}) or {@link #pollMemberResourceVersions}
- * detects a member chunk load/unload flip. Each {@link DynamicResourceHandler} memoizes its resolved
- * delegate against that epoch, so an unchanged epoch costs zero re-resolution. The per-tick version
- * poll itself compares {@code long[]}/{@code boolean[]} parallel arrays in place and allocates
- * nothing.
+ * 控制器拥有的成型成员与资源聚合运行时。完整识别刷新成员或成员加载状态变化时递增 epoch，成员缓存按 epoch 失效；配方路由变化单独使路由缓存失效，避免原位替换后继续使用旧部件处理器。逐 tick
+ * 使用平行数组比较版本，不创建逐成员临时集合。
  */
 final class FormedRuntime {
 
@@ -45,18 +38,18 @@ final class FormedRuntime {
 
     private final MachineBlockEntity controller;
     private final Map<MachineResourceType<?>, CapabilityHandlerCache> capabilityHandlers = new IdentityHashMap<>();
-    /** Per-capability memoized role matches; entries self-invalidate via the member epoch. */
+    /** 按 epoch 缓存成员服务匹配。 */
     private final Map<ServiceKey<?, ?>, ServiceCache> serviceCache = new IdentityHashMap<>();
     // Recognition is block-entity-free: it hands us member world positions, not live block entities.
     // Live MachineBlockEntity instances are re-resolved by position on the server thread, on demand.
     private List<BlockPos> memberPositions = List.of();
-    /** Parallel to {@link #memberPositions}: last polled resource content version (valid while loaded). */
+    /** 成员最近的资源内容版本，仅在已加载时有效。 */
     private long[] memberResourceVersions = EMPTY_VERSIONS;
-    /** Parallel to {@link #memberPositions}: last polled recipe-pool routing revision. */
+    /** 成员最近的配方池路由版本。 */
     private long[] memberRecipeRoutingRevisions = EMPTY_VERSIONS;
-    /** Parallel to {@link #memberPositions}: whether the member resolved to a live machine last poll. */
+    /** 上次轮询是否能解析为已加载机器。 */
     private boolean[] memberLoaded = EMPTY_LOADED;
-    /** Bumped on member-set changes and member load/unload flips; delegate memoization keys on it. */
+    /** 缓存失效版本；成员刷新或加载状态变化时递增。 */
     private long memberEpoch;
 
     FormedRuntime(MachineBlockEntity controller) {
@@ -94,6 +87,11 @@ final class FormedRuntime {
         }
         List<BlockPos> updatedPositions = List.copyOf(updated);
         if (memberPositions.equals(updatedPositions)) {
+            // 完整识别可能来自原位部件替换。位置与版本号相同，也不能继续持有旧实体的服务和处理器。
+            if (!memberPositions.isEmpty()) {
+                memberEpoch++;
+                controller.machineComponents().invalidateRecipeHandlers();
+            }
             pollMemberResourceVersions();
             return;
         }
@@ -116,11 +114,7 @@ final class FormedRuntime {
         controller.machineComponents().invalidateRecipeHandlers();
     }
 
-    /**
-     * Zero-allocation per-tick poll: compares each loaded member's resource content and recipe
-     * routing revisions in place and detects member load/unload flips. Load flips rebuild the
-     * controller's pool router and bump the member epoch; content-only changes merely wake searches.
-     */
+    /** 无临时集合的成员轮询，检测内容版本、路由版本及加载状态变化。加载变化使成员缓存失效，加载或路由变化使配方路由缓存失效，只有内容变化时唤醒配方搜索。 */
     void pollMemberResourceVersions() {
         int count = memberPositions.size();
         if (count == 0) {
@@ -161,12 +155,7 @@ final class FormedRuntime {
         }
     }
 
-    /**
-     * Capability matches mounted on the currently loaded members, in deterministic member order (the
-     * recognized member order, controller excluded). Memoized against the member epoch per
-     * (capability, context) pair — a 1-tick recipe machine queries this on every start, so an
-     * unchanged member set must not re-resolve members or re-collect matches each time.
-     */
+    /** 按识别成员的确定顺序收集指定服务，跳过未加载成员，并按 epoch 缓存结果。 */
     @SuppressWarnings("unchecked")
     <A, C> List<ServiceMatch<A>> services(ServiceKey<A, C> service, @Nullable C context) {
         Objects.requireNonNull(service, "component service");
@@ -183,13 +172,10 @@ final class FormedRuntime {
         return result;
     }
 
-    /** One memoized {@link #services} result; invalidated by epoch mismatch, never cleared explicitly. */
+    /** 一组服务匹配及其缓存版本。 */
     private record ServiceCache(long epoch, @Nullable Object context, List<?> matches) {}
 
-    /**
-     * Forwards each loaded member's recipe contributions into the controller's pool router builder.
-     * Pool merging happens only at router build time — handlers stay pool-unaware.
-     */
+    /** 将每个已加载成员的原始配方资源贡献给控制器池路由器；同池合并由路由器完成。 */
     <R extends Resource> void collectRecipeResourceHandlers(
                                                             MachineResourceType<R> resourceType,
                                                             RecipeRole recipeIo,
@@ -241,11 +227,7 @@ final class FormedRuntime {
         }
     }
 
-    /**
-     * Re-resolves the live member block entity at {@code pos} on the calling (server) thread, or
-     * {@code null} if its chunk is not loaded or it is no longer a live machine. Recognition never
-     * holds a block entity, so this is where positions become live members again.
-     */
+    /** 在调用方的世界线程按位置重新解析机器；区块未加载或不是机器时返回 null。 */
     private @Nullable MachineBlockEntity resolveMember(Level level, BlockPos pos) {
         if (!level.hasChunkAt(pos)) {
             return null;
@@ -263,16 +245,12 @@ final class FormedRuntime {
         ResourceHandler<R> handler(MachineBlockEntity member);
     }
 
-    /**
-     * Aggregating capability handler for one (resource type, side). The combined member delegate is
-     * memoized against {@link #memberEpoch}: while the member set and member load states are
-     * unchanged, repeated queries reuse the resolved delegate without touching the world.
-     */
+    /** 按资源类型及访问面聚合成员处理器，委托按成员 epoch 缓存。 */
     private final class DynamicResourceHandler<R extends Resource> implements ResourceHandler<R> {
 
         private final MachineResourceType<R> resourceType;
         private final MemberHandlerFactory<R> factory;
-        /** Epoch the memoized delegate was resolved against; {@code -1} means never resolved. */
+        /** 当前委托的缓存版本；-1 表示尚未解析。 */
         private long resolvedEpoch = -1;
         private @Nullable ResourceHandler<R> resolvedDelegate;
 

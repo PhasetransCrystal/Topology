@@ -9,15 +9,24 @@ import net.ptcrys.topo.api.api.visual.CtmClientInit;
 import net.ptcrys.topo.api.machine.data.MachineDataSyncBatcher;
 import net.ptcrys.topo.api.machine.data.network.MachineDataNetworking;
 import net.ptcrys.topo.api.machine.multiblock.MultiblockChangeWatcher;
+import net.ptcrys.topo.api.machine.multiblock.tool.StructureToolConfigPage;
+import net.ptcrys.topo.api.machine.multiblock.tool.StructureToolNetworking;
+import net.ptcrys.topo.api.machine.multiblock.tool.StructureToolOptions;
 import net.ptcrys.topo.api.pipe.network.PipeNetworkEngine;
+import net.ptcrys.topo.api.pipe.survey.PipeSurveyNetworking;
 import net.ptcrys.topo.api.recipe.search.TopoRecipeSearchEvents;
 import net.ptcrys.topo.client.debug.JeiLookupProbe;
 import net.ptcrys.topo.client.debug.TooltipProbe;
+import net.ptcrys.topo.client.structure.StructureToolClient;
+import net.ptcrys.topo.client.survey.PipeSurveyClientRenderer;
+import net.ptcrys.topo.config.TopoConfiguration;
 
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.registries.RegisterEvent;
+
+import dev.toma.configuration.Configuration;
 
 /**
  * Host mod entry. Plugins are registered explicitly ({@link TopoPlugins#register}); content bootstrap
@@ -30,6 +39,7 @@ public class Topology {
 
     public static final String MODID = "topo";
     public static final RegistryCore REGISTRY = RegistryCore.create(MODID);
+    public static final TopoConfiguration config = Configuration.registerSimpleYmlConfig(TopoConfiguration.class);
 
     public Topology(IEventBus modEventBus) {
         // Same path as third-party: explicit register in @Mod constructor.
@@ -40,13 +50,17 @@ public class Topology {
 
         CtmClientInit.register(modEventBus);
         MachineDataNetworking.register(modEventBus);
-        MachineDataSyncBatcher.register(modEventBus);
+        MachineDataSyncBatcher.register();
         TopoAsyncExecutors.register();
         TopoRecipeSearchEvents.register(modEventBus);
         MultiblockChangeWatcher.register();
+        StructureToolOptions.register(modEventBus);
+        StructureToolConfigPage.register();
+        StructureToolNetworking.register(modEventBus);
+        StructureToolClient.register();
         PipeNetworkEngine.register();
-        net.ptcrys.topo.api.pipe.survey.PipeSurveyNetworking.register(modEventBus);
-        net.ptcrys.topo.client.survey.PipeSurveyClientRenderer.register();
+        PipeSurveyNetworking.register(modEventBus);
+        PipeSurveyClientRenderer.register();
         TickHeartbeat.register(modEventBus);
         TooltipProbe.register();
         JeiLookupProbe.register();

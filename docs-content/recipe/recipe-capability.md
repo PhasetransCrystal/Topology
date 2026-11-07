@@ -40,7 +40,8 @@ public abstract class RecipeCapability<I, O> {
     protected final RecipeOutputUse<O> outputUse(O content);
 
     // 可选覆盖：maxParallelByInputs / matchOutputAfterInputs / supportsDirectTickIo /
-    // bindDirectTickIo / indexKeys / inputAmount / extractMachineKeys / contributesIndexKeys ...
+    // bindDirectTickIo / indexKeys / inputAmount / extractMachineKeys / contributesIndexKeys /
+    // importConflictKeys / inputIdentity / outputIdentity ...
 }
 ```
 
@@ -53,10 +54,12 @@ public abstract class RecipeCapability<I, O> {
 public abstract int countPreviewSlots(ResourcePortMetadata port);       // 端口折成几个预览槽
 public abstract UIElement createPreviewInputSlotWidget(@Nullable I content);
 public abstract UIElement createPreviewOutputSlotWidget(@Nullable O content);
+public abstract @NonNull UIElement createLiveSlotWidget(ResourcePort<?, R> storage, int slot);
 ```
 
 :::caution
-capability id 与资源类型 id **1:1**——`RecipeCapabilities.freeze()` 校验槽位型能力不得与另一能力共享资源类型。
+槽位型 capability 与资源类型 **1:1**——`RecipeCapabilities.freeze()` 校验槽位型能力不得与另一能力共享资源类型；
+capability id 是独立的配方 I/O 标识，不要求等于资源类型 id。
 :::
 
 ## 生产级结构：资源集成（类型 + 能力 + 名称 + 图标同点声明）
@@ -92,16 +95,20 @@ public final class ManaRecipeCapability extends RecipeCapability<Long, Long> {
 ```
 
 ```java
+/** 页面示例用的集成记录；实际项目可替换为自己的类型。 */
+private record ManaIntegration(MachineResourceType<ManaResource> resourceType,
+        ManaRecipeCapability recipeCapability) {}
+
 /** 资源集成：registerRecipeFoundation 里一次调用完成四件事。 */
-private static BuiltinResourceIntegration<ManaResource, ManaRecipeCapability> mana() {
+private static ManaIntegration mana() {
     MachineResourceType<ManaResource> resourceType = MACHINE.resourceTypeWithDataField(
             "mana", ManaResource.class, /* capability */ null, /* dataFieldFactory */);
     ManaRecipeCapability recipeCapability = RECIPE.capability(
             new ManaRecipeCapability(RECIPE.id("mana"), resourceType));
     // 名称与图标同点绑定——不留到后续阶段：
     MACHINE.bindResourceName(resourceType, "Mana", "魔力");
-    MachineUiIcons.register(resourceType, /* icon */);
-    return new BuiltinResourceIntegration<>(resourceType, recipeCapability);
+    MachineUiIcons.register(resourceType, () -> icon);
+    return new ManaIntegration(resourceType, recipeCapability);
 }
 ```
 
@@ -137,6 +144,7 @@ type.recipe("spell")
 | `handleInputChecked` / `handleOutputChecked`                                    | 事务性执行          |
 | `scaleInput` / `scaleOutput`（+ ForParallel）                                   | 配方缩放            |
 | `hasAnyContent(machine)`                                                        | 存量查询            |
+| `importConflictKeys(content)` / `inputIdentity` / `outputIdentity`             | 导入冲突与配方去重  |
 | `inputUse(content)` / `outputUse(content)`                                      | 铸造权（protected） |
 | `recipe.capability(cap)`                                                        | 领域注册（钩子 1）  |
 | `SlottedRecipeCapability.countPreviewSlots(port)`                               | 槽位预览            |

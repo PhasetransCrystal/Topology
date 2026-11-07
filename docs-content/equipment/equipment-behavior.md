@@ -59,8 +59,8 @@ public final class RegulatorBehavior implements MachineItemBehavior {
 ## 注册
 
 装备策略的 `machineBehavior()` 返回非空行为时，引擎会在 common setup 自动为
-`EquipmentRegistry.recordItem` 登记的生成物品绑定行为，早于插件的 `registerRuntime`。
-自定义装备策略生成物品后也应记录归属，才能参与此流程。
+`EquipmentStrategy.register` 返回的生成物品绑定行为，早于插件的 `registerRuntime`。
+框架统一记录物品归属；策略不需要（也不能）手工写入装备注册表。
 
 额外物品在插件运行时钩子中绑定：
 

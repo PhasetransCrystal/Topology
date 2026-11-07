@@ -3,6 +3,8 @@ package net.ptcrys.topo.api.pipe;
 import net.ptcrys.registrylib.RegistryCore;
 import net.ptcrys.topo.api.api.infrastructure.FreezableStrategyRegistry;
 import net.ptcrys.topo.api.lang.DisplayNames;
+import net.ptcrys.topo.api.machine.resource.MachineResourceType;
+import net.ptcrys.topo.api.machine.resource.MachineResourceTypes;
 import net.ptcrys.topo.helper.IdHelper;
 
 import net.minecraft.resources.Identifier;
@@ -36,7 +38,7 @@ public final class Pipes {
 
     /** Begin declaring a pipe. The path is the identity definition point in the Topo namespace. */
     public static Builder register(String path) {
-        return new Builder(IdHelper.id(Objects.requireNonNull(path, "pipe path")), null);
+        return new Builder(IdHelper.topo(Objects.requireNonNull(path, "pipe path")), null);
     }
 
     /** Plugin-owned declaration entry; legacy register(String) retains the Topo namespace. */
@@ -65,7 +67,48 @@ public final class Pipes {
 
     @ApiStatus.Internal
     public static void freeze() {
+        validateDefinitions();
         REGISTRY.freeze();
+    }
+
+    private static void validateDefinitions() {
+        for (PipeDefinition definition : registered()) {
+            validateResourceType(definition);
+            for (PipeStrategyOffer offer : definition.strategies()) {
+                validateStrategy(definition, offer.strategy());
+            }
+        }
+    }
+
+    private static void validateResourceType(PipeDefinition definition) {
+        MachineResourceType<?> resourceType = definition.resourceType();
+        MachineResourceType<?> registered;
+        try {
+            registered = MachineResourceTypes.require(resourceType.id());
+        } catch (RuntimeException error) {
+            throw new IllegalStateException(
+                    "pipe " + definition.id() + " uses unregistered resource type " + resourceType.id(),
+                    error);
+        }
+        if (registered != resourceType) {
+            throw new IllegalStateException(
+                    "pipe " + definition.id() + " uses a foreign resource type handle " + resourceType.id());
+        }
+    }
+
+    private static void validateStrategy(PipeDefinition definition, PipeDistributionStrategy strategy) {
+        PipeDistributionStrategy registered;
+        try {
+            registered = PipeDistributionStrategies.require(strategy.id());
+        } catch (RuntimeException error) {
+            throw new IllegalStateException(
+                    "pipe " + definition.id() + " offers unregistered strategy " + strategy.id(),
+                    error);
+        }
+        if (registered != strategy) {
+            throw new IllegalStateException(
+                    "pipe " + definition.id() + " offers a foreign strategy handle " + strategy.id());
+        }
     }
 
     /**

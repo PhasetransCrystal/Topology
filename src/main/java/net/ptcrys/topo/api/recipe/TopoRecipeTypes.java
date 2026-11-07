@@ -61,6 +61,12 @@ public final class TopoRecipeTypes {
 
     @ApiStatus.Internal
     public static void freeze() {
+        if (REGISTRY.isFrozen()) {
+            return;
+        }
+        for (TopoRecipeType<?> recipeType : REGISTRY.handlesView()) {
+            recipeType.freezeConfiguration();
+        }
         REGISTRY.freeze();
     }
 

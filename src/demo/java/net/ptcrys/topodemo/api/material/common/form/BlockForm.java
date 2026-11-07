@@ -2,7 +2,7 @@ package net.ptcrys.topodemo.api.material.common.form;
 
 import net.ptcrys.registrylib.RegistryCore;
 import net.ptcrys.registrylib.builders.BlockBuilder;
-import net.ptcrys.registrylib.util.entry.BlockEntry;
+import net.ptcrys.registrylib.datagen.loot.RegistryLibBlockLootTables;
 import net.ptcrys.topo.api.api.registration.ExternalBlockTarget;
 import net.ptcrys.topo.api.lang.DisplayNames;
 import net.ptcrys.topo.api.lang.RegistryDisplayLang;
@@ -10,8 +10,12 @@ import net.ptcrys.topo.api.lang.TemplateDisplayName;
 import net.ptcrys.topo.api.material.Material;
 import net.ptcrys.topo.api.material.MaterialContentContext;
 import net.ptcrys.topo.api.material.MaterialFormOptions;
+import net.ptcrys.topo.api.material.MaterialFormTargets;
 import net.ptcrys.topo.api.material.form.FormDataUse;
+import net.ptcrys.topo.api.material.form.MaterialContentKey;
+import net.ptcrys.topo.api.material.form.MaterialContentTypes;
 import net.ptcrys.topo.api.material.form.MaterialForm;
+import net.ptcrys.topo.api.material.form.MaterialFormPlan;
 import net.ptcrys.topo.api.material.form.MaterialFormStrategy;
 import net.ptcrys.topo.api.material.render.MaterialBlockRender;
 import net.ptcrys.topo.helper.TagHelper;
@@ -23,6 +27,9 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.storage.loot.LootTable;
+
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,6 +53,7 @@ public final class BlockForm extends MaterialFormStrategy {
     private final BiFunction<Block, Item.Properties, ? extends BlockItem> blockItemFactory;
     private final Block initialProperties;
     private final UnaryOperator<BlockBehaviour.Properties> properties;
+    private final @Nullable LootFactory lootFactory;
 
     private BlockForm(Builder builder) {
         super(builder.data);
@@ -58,6 +66,7 @@ public final class BlockForm extends MaterialFormStrategy {
         this.blockItemFactory = builder.blockItemFactory;
         this.initialProperties = builder.initialProperties;
         this.properties = builder.properties;
+        this.lootFactory = builder.lootFactory;
     }
 
     public static Builder builder() {
@@ -70,20 +79,54 @@ public final class BlockForm extends MaterialFormStrategy {
     }
 
     @Override
-    public void validateMaterial(Material material, MaterialForm form) {
-        material.strategy().optionsFor(form)
-                .flatMap(MaterialFormOptions::itemOverride)
-                .ifPresent(target -> {
-                    throw new IllegalStateException(
-                            "material " + material.id() + " declares an item override for block form " + form.id() + "; block forms only accept overrideBlock" + " (the block's item is derived from it)");
-                });
+    public MaterialFormPlan plan(Material material, MaterialForm form) {
+        MaterialFormTargets targets = material.optionsFor(form)
+                .map(MaterialFormOptions::targets)
+                .orElseGet(MaterialFormTargets::empty);
+        ExternalBlockTarget override = targets.block().orElse(null);
+        List<MaterialContentKey> outputs = outputKeys(material, form, override);
+        return MaterialFormPlan.of(
+                outputs,
+                targets,
+                () -> validateForm(material, form, targets),
+                context -> registerForm(context, form, override));
+    }
+
+    private List<MaterialContentKey> outputKeys(Material material, MaterialForm form, @Nullable ExternalBlockTarget override) {
+        if (override == null) {
+            return List.of(
+                    nativeContentKey(material, MaterialContentTypes.BLOCK),
+                    nativeContentKey(material, MaterialContentTypes.ITEM));
+        }
+        var keys = new ArrayList<MaterialContentKey>(2);
+        try {
+            keys.add(new MaterialContentKey(MaterialContentTypes.BLOCK, override.id()));
+        } catch (RuntimeException unavailable) {
+            // An unresolved supplier target is checked again once it can be resolved.
+        }
+        try {
+            keys.add(new MaterialContentKey(MaterialContentTypes.ITEM, override.itemId()));
+        } catch (RuntimeException unavailable) {
+            // A block without a registered item has no item output key yet.
+        }
+        return List.copyOf(keys);
+    }
+
+    private void validateForm(Material material, MaterialForm form, MaterialFormTargets targets) {
+        targets.item().ifPresent(target -> {
+            throw new IllegalStateException(
+                    "material " + material.id() + " declares an item override for block form " + form.id() + "; block forms only accept overrideBlock" + " (the block's item is derived from it)");
+        });
+        targets.fluid().ifPresent(target -> {
+            throw new IllegalStateException(
+                    "material " + material.id() + " declares a fluid override for block form " + form.id() + "; block forms only accept overrideBlock");
+        });
         if (render != null) {
             requireMaterialData(material, form, render.requiredMaterialData());
         }
     }
 
-    @Override
-    public void register(MaterialContentContext context, MaterialForm form) {
+    private void registerForm(MaterialContentContext context, MaterialForm form, @Nullable ExternalBlockTarget override) {
         String materialPath = context.material().id().getPath();
         RegistryCore core = context.core();
         // The conventional tags are the same for both paths; only how they are attached differs.
@@ -92,16 +135,22 @@ public final class BlockForm extends MaterialFormStrategy {
         var itemGroupTag = TagHelper.item(commonTag);
         var itemMaterialTag = TagHelper.itemMaterial(commonTag, materialPath);
 
-        ExternalBlockTarget override = context.material().strategy().optionsFor(form)
-                .flatMap(MaterialFormOptions::blockOverride)
-                .orElse(null);
         if (override != null) {
-            // A vanilla block stands in for an overridden form. It is already bound, so attach tags
-            // and the creative tab through the existing-entry APIs.
-            BlockEntry<Block> block = core.existingBlock(override.id());
-            core.blockTags().addSuppliers(blockGroupTag, block).addSuppliers(blockMaterialTag, block);
-            core.itemTags().addSuppliers(itemGroupTag, block).addSuppliers(itemMaterialTag, block);
-            core.addExistingSupplierToTab(creativeTab, block);
+            // External blocks may not be bound yet. Keep block/item ids separate and defer the
+            // item resolution used by the creative tab.
+            if (override.explicitId().isPresent()) {
+                core.blockTags().addIds(blockGroupTag, override.id()).addIds(blockMaterialTag, override.id());
+            } else {
+                TagHelper.addBlockTag(core, blockGroupTag, override::id);
+                TagHelper.addBlockTag(core, blockMaterialTag, override::id);
+            }
+            if (override.explicitItemId().isPresent()) {
+                core.itemTags().addIds(itemGroupTag, override.itemId()).addIds(itemMaterialTag, override.itemId());
+            } else {
+                TagHelper.addItemTag(core, itemGroupTag, override::itemId);
+                TagHelper.addItemTag(core, itemMaterialTag, override::itemId);
+            }
+            core.addExistingSupplierToTab(creativeTab, override.itemSupplier());
             return;
         }
 
@@ -115,11 +164,16 @@ public final class BlockForm extends MaterialFormStrategy {
         }
         RegistryDisplayLang.applyBlock(builder, core, entryPath, displayName.resolve(context.material()));
         if (render != null) {
-            render.apply(builder, context.material());
+            render.apply(builder, context.material(), form);
         }
         builder.addTag(blockGroupTag, blockMaterialTag);
         builder.addItemTag(itemGroupTag, itemMaterialTag);
-        builder.defaultLoot();
+        if (lootFactory == null) {
+            builder.defaultLoot();
+        } else {
+            builder.loot((tables, block) -> tables.add(
+                    block, lootFactory.create(tables, block, context.material())));
+        }
         if (blockItemFactory == null) {
             builder.item(item -> item.addTab(creativeTab));
         } else {
@@ -139,6 +193,7 @@ public final class BlockForm extends MaterialFormStrategy {
         private BiFunction<Block, Item.Properties, ? extends BlockItem> blockItemFactory;
         private Block initialProperties = Blocks.STONE;
         private UnaryOperator<BlockBehaviour.Properties> properties;
+        private @Nullable LootFactory lootFactory;
         private final List<FormDataUse<?>> data = new ArrayList<>();
 
         private Builder() {}
@@ -203,6 +258,12 @@ public final class BlockForm extends MaterialFormStrategy {
             return this;
         }
 
+        /** Replaces the default drop-self loot table for this form. */
+        public Builder loot(LootFactory lootFactory) {
+            this.lootFactory = Objects.requireNonNull(lootFactory, "lootFactory");
+            return this;
+        }
+
         public BlockForm build() {
             requirePattern(registryPath, "registryPath");
             Objects.requireNonNull(displayName, "block form requires displayName(en, cn)");
@@ -210,5 +271,11 @@ public final class BlockForm extends MaterialFormStrategy {
             Objects.requireNonNull(creativeTab, "block form requires creativeTab");
             return new BlockForm(this);
         }
+    }
+
+    @FunctionalInterface
+    public interface LootFactory {
+
+        LootTable.Builder create(RegistryLibBlockLootTables tables, Block block, Material material);
     }
 }

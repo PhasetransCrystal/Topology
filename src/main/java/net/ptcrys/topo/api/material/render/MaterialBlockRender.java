@@ -4,6 +4,7 @@ import net.ptcrys.registrylib.RegistryCore;
 import net.ptcrys.registrylib.builders.BlockBuilder;
 import net.ptcrys.topo.api.material.Material;
 import net.ptcrys.topo.api.material.data.MaterialDataType;
+import net.ptcrys.topo.api.material.form.MaterialForm;
 
 import net.minecraft.world.level.block.Block;
 
@@ -19,6 +20,9 @@ public interface MaterialBlockRender {
     /** Material data types every material declaring the owning form must provide. */
     List<MaterialDataType<?>> requiredMaterialData();
 
-    /** Applies model and tint generation for {@code material}'s block to {@code builder}. */
-    void apply(BlockBuilder<Block, RegistryCore> builder, Material material);
+    /**
+     * Applies model and tint generation for {@code material}'s block to {@code builder}. The form is
+     * provided so form-scoped data can override material-level values for this form only.
+     */
+    void apply(BlockBuilder<Block, RegistryCore> builder, Material material, MaterialForm form);
 }

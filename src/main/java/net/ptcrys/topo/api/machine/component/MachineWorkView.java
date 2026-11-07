@@ -8,7 +8,7 @@ import org.jspecify.annotations.Nullable;
 /** Semantic runtime view for traits that can make a machine visually work. */
 public interface MachineWorkView {
 
-    ServiceKey<MachineWorkView, Void> KEY = ServiceKey.oi("machine_work", MachineWorkView.class, Void.class);
+    ServiceKey<MachineWorkView, Void> KEY = ServiceKey.topo("machine_work", MachineWorkView.class, Void.class);
 
     boolean isRunning();
 

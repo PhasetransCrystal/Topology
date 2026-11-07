@@ -4,7 +4,7 @@ sidebar_position: 3
 
 # MaterialDataType
 
-材质数据 = 附加在 `Material` 上的类型化属性（颜色、质量、工具/护甲属性……）。装备策略与表单校验依据
+材质数据 = 附加在 `Material` 上的类型化属性（颜色、质量、工具/护甲属性……）。装备策略与形态校验依据
 材质数据决定行为。
 
 本页是 [Material](../material.md) 模块的子页——概念与页面导航见 [Material](../material.md)。
@@ -61,51 +61,69 @@ ToolStatsDataType toolStats = material.dataType("tool_stats", new ToolStatsDataT
 ## 消费
 
 ```java
-// 策略/表单侧（如 EquipmentStrategy.appliesTo 或 MaterialFormStrategy.validateMaterial）：
-Optional<ToolStatsData> stats = material.strategy().data(toolStats);   // MaterialStrategy.data(type)
+// 策略/形态侧（如 EquipmentStrategy.appliesTo 或 MaterialFormPlan.validate）：
+Optional<ToolStatsData> stats = material.data(toolStats);   // Material.data(type)
+
+// 能力谓词可直接用于形态匹配：
+material.form("tool").appliesTo(toolStats.present());
+material.form("ingot").appliesTo(ingotData.present());
 
 // 材料声明侧附加数据（registerMaterials）：
 m.material("copper").data(toolStats.stats(200, 4.5f, 1.5f, 14, ItemTags.INCORRECT_FOR_IRON_TOOL)).build();
 ```
 
-## build 后跨插件注入
+## 跨插件注入能力数据
 
-`build()` 发布材料句柄，不会立刻冻结材料数据。所有插件共享 `registerMaterials` 的注册窗口，
-在该窗口内可直接给其他插件已构建的材料补充已注册的数据：
+推荐在 `registerMaterialContributions` 中注入。该阶段在所有插件的 `registerMaterials` 之后、
+形态匹配与冻结之前运行，因此目标材料一定已经构建，且注入数据会参与 `appliesTo`、校验和后处理：
 
 ```java
 @Override
-public void registerMaterials(MaterialDomainRegistration material) {
-    OtherMaterials.COPPER.data(
-            toolStats.stats(200, 4.5f, 1.5f, 14, ItemTags.INCORRECT_FOR_IRON_TOOL));
+public void registerMaterialContributions(MaterialContributionRegistration contributions) {
+    Material copper = contributions.require(Identifier.fromNamespaceAndPath("base", "copper"));
+    contributions.data(copper, CORROSION.rating(3));
+    contributions.form(copper, INGOT, options -> options.overrideItem(ExternalTargets.mcItem("copper_ingot")));
 }
 ```
 
-上例假设目标已经完成 `build()`。模组依赖隐式确认跨插件依赖关系，但不能保证对方同一钩子内的内容已经初始化；
-应按提供方的初始化或回调约定取得就绪句柄，不能靠插件登记顺序。完整边界见
-[跨插件补数据](../compatibility/topo-plugins.md#5-给已经构建的材料补数据)。
-
-直接操作目标插件公开的真实 `Material` 对象，无需通过当前插件的领域入口转交。
-`Material.data(use)` 返回材料自身，可连续补充不同类型的数据。
-Builder 从创建起便持有该策略；构建前后使用同一份数据存储与重复校验，不在 `build()` 时复制出第二份。
-`Material.data(use)` 直接写入内部策略，不经过注册表转发；策略的写方法不对开发者开放。
-数据类型仍须在 `registerMaterialFoundation` 注册；注入只补充数据值，不改变目标材料归属。
-
-- 所有插件完成 `registerMaterials` 后才执行 `appliesTo`，注入数据也参与形态匹配、策略校验、装备与后处理。
-- 对同一材料重复写入同一数据类型会报错，包括覆盖其构建时声明的数据；不采用后写覆盖。
-- 不同数据类型可以分别由多个插件补充，材料句柄及命名空间保持不变。
+- 不依赖插件登记顺序；可遍历 `contributions.materials()` 给全量材料注入。
+- 已知目标已构建时，也可在 `registerMaterials` 窗口内直接 `target.data(use)`。
+- `Material.data(use)` 返回材料自身，可连续补充不同类型的数据；内部策略的写方法不对开发者开放。
+- 数据类型仍须在 `registerMaterialFoundation` 注册；注入只补充数据值，不改变目标材料归属。
+- 对同一材料重复写入同一数据类型会报错，包括覆盖其构建时声明的数据；不同数据类型可由多个插件分别补充。
 - 形态匹配开始前关闭写入；匹配 Lambda、校验、内容生成及运行时均不能注入。
-- 注入目标必须已经 `build()`，通过目标插件公开的材料句柄访问；此接口不会提前构建或创建材料。
+- 形态局部数据依赖按「材料级数据 + 同一形态的局部数据」在注入时检查；互斥在同一作用域冻结时检查。
+
+## 依赖与互斥
+
+属性之间可以声明关系：
+
+```java
+// 依赖：注入 TOOL 时必须已经声明 INGOT；顺序由注入方保证。
+TOOL.requires(INGOT);
+
+// 互斥：冻结时检查，不能同时声明 GEM 与 INGOT。
+GEM.excludes(INGOT);
+```
+
+- `requires(...)` 在每次 `data(use)` / Builder `.data(use)` 注入时检查；缺少依赖立即失败。
+- `excludes(...)` 在材料冻结时逐条检查（`checkExclusions` 先于 `validate`）；同时声明会终止启动。
+- 冻结校验会再次检查依赖，覆盖 form-scoped data 和基础阶段之后才补上的关系。
+- 关系本身只允许在基础阶段修改；数据类型表冻结后调用 `requires(...)` / `excludes(...)` 会失败。
+- 两者都按 DataType 身份判断，不依赖值相等；新增属性只需声明关系，不改材料核心。
+- `present()` 只判断类型是否存在；`is(value)` / `matches(predicate)` 依赖 payload 的值相等或谓词。payload 推荐使用 record 或实现 `equals/hashCode`。
+- `.form(form, options -> options.data(use))` 声明的值只对那个形态生效；用 `material.data(type, form)` 读取。
+  `hasData(type)` / `dataUses()` 仍只表示材料级能力，渲染接口也会收到 form，因此可以使用形态局部数据。
 
 ## 校验
 
-领域入口 `material.dataType(path, handle)` 使用默认无校验策略。产品的数据值约束应放在 payload record 的构造器或
-类型公开的工厂方法中；与某个形态有关的数据依赖在 `MaterialFormStrategy.validateMaterial` 中检查。
-底层 `MaterialDataRegistry.begin` 支持框架内部校验器，但不是产品接入入口。
-材料冻结时仍会统一执行已安装的校验策略，包含补充的数据。
+数据类型可覆写 `validate(Material, D)`；材料冻结时统一执行已安装的校验，包含补充的数据。
+产品的数据值约束也可放在 payload record 的构造器或类型公开的工厂方法中；
+与某个形态有关的数据依赖在 `MaterialFormPlan.validate` 中检查。
 
 :::info
-数据类型与表单一样有冻结点：在 `registerMaterialFoundation` 注册，`registerMaterials` 只能引用。
+数据类型与形态一样有冻结点：在 `registerMaterialFoundation` 注册，`registerMaterials` 只能引用。
+所有插件的 `registerMaterials` 完成后，材料创建入口关闭；`registerMaterialContributions` 只能补数据和配置形态选项，不能创建新材料。
 :::
 
 ## API 速查
@@ -114,7 +132,11 @@ Builder 从创建起便持有该策略；构建前后使用同一份数据存储
 |----------------------------------------|---------------------------------|
 | `MaterialDataType(Identifier)`         | 数据类型基类构造                |
 | `MaterialDataType.use(data)`           | 铸造权（protected，子类公开包装）|
+| `MaterialDataType.validate(material, data)` | 可覆写的材料级校验        |
+| `MaterialDataType.requires(...)` / `.excludes(...)` | 注入依赖 / 冻结互斥 |
+| `MaterialDataType.present()` / `.is(value)` / `.matches(predicate)` | 形态匹配谓词 |
 | `material.dataType(path, handle)`      | 领域注册入口（钩子 3）          |
-| `MaterialStrategy.data(type)`          | 消费侧读取 → `Optional<D>`      |
+| `Material.data(type)`                  | 消费侧读取 → `Optional<D>`      |
 | `m.material(...).data(use)`            | 材料声明侧附加                  |
 | `targetMaterial.data(use)`            | 直接向已构建材料补充数据        |
+| `contributions.data(material, use)`   | 贡献阶段向任意已构建材料注入    |

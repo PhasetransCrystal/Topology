@@ -2,7 +2,6 @@ package net.ptcrys.topo.api.machine.data;
 
 import net.ptcrys.topo.api.machine.MachineBlockEntity;
 import net.ptcrys.topo.api.machine.component.ComponentKey;
-import net.ptcrys.topo.api.machine.data.network.MachineDataC2SPayload;
 
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.server.level.ServerLevel;
@@ -14,6 +13,8 @@ import net.neoforged.neoforge.network.connection.ConnectionType;
 
 import com.mojang.serialization.Codec;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -50,6 +51,8 @@ import java.util.Objects;
  */
 public final class MachineDataScope {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(MachineDataScope.class);
+
     public static final String SAVE_KEY = "machine_data";
     public static final String UPDATE_TAG_SYNC_KEY = "machine_data_sync";
     static final int FORMAT_VERSION = 2;
@@ -59,7 +62,6 @@ public final class MachineDataScope {
     private final MachineBlockEntity machine;
     private final Map<String, DataScope> scopes = new LinkedHashMap<>();
     private final List<DataField> syncToClientFields = new ArrayList<>();
-    private final List<DataField> syncToServerFields = new ArrayList<>();
 
     private DataField[] computedFieldsCache = NO_FIELDS;
     private long lastRecomputeGameTime = Long.MIN_VALUE;
@@ -77,7 +79,6 @@ public final class MachineDataScope {
     private Phase phase = Phase.BOOTSTRAP;
     private boolean clientBaselineReceived;
     private boolean schemaSealed;
-    private boolean endOfTickSyncRequested;
     /** Depth: while &gt; 0, handler mutations must not raise business dirty / recipe invalidation. */
     private int suppressMutationSideEffectsDepth;
 
@@ -179,18 +180,6 @@ public final class MachineDataScope {
     }
 
     /**
-     * @deprecated Persistence and S2C queues now publish independently at mutation time. This
-     *             compatibility hook only reasserts any outstanding requests.
-     */
-    @Deprecated(forRemoval = false)
-    public void lifecycleFlushEndOfTick() {
-        MachineDataPersistCoordinator.flushDomainNow(this);
-        if (endOfTickSyncRequested) {
-            MachineDataSyncBatcher.markClientDirty(this);
-        }
-    }
-
-    /**
      * Refresh computed fields. Server-live only; no-op otherwise. {@code Long.MIN_VALUE} bypasses
      * per-tick dedupe (used after enter-world).
      */
@@ -212,7 +201,7 @@ public final class MachineDataScope {
                                                byte[] data, RegistryAccess registryAccess, ConnectionType connectionType) {
         Objects.requireNonNull(data, "data");
         runWithSuppressedMutationSideEffects(
-                () -> applySync(DataSyncDirection.TO_CLIENT, data, registryAccess, connectionType));
+                () -> applySync(data, registryAccess, connectionType));
         clientBaselineReceived = true;
         phase = Phase.CLIENT_LIVE;
         clearRuntimeDirty();
@@ -225,14 +214,7 @@ public final class MachineDataScope {
             throw new IllegalStateException("Cannot apply machine data delta before initial client baseline for " + machine.definition().id() + " at " + machine.getBlockPos() + "; deltas are incremental and require a full update-tag snapshot first");
         }
         runWithSuppressedMutationSideEffects(
-                () -> applySync(DataSyncDirection.TO_CLIENT, data, registryAccess, connectionType));
-    }
-
-    /** C2S upload apply (when enabled). */
-    public void lifecycleReceiveClientUpload(
-                                             byte[] data, RegistryAccess registryAccess, ConnectionType connectionType) {
-        requireBusinessReady("apply client machine data upload");
-        applySync(DataSyncDirection.TO_SERVER, data, registryAccess, connectionType);
+                () -> applySync(data, registryAccess, connectionType));
     }
 
     /** Coordinator-only: enter the current persist epoch; the coordinator marks the chunk once. */
@@ -269,61 +251,25 @@ public final class MachineDataScope {
         MachineDataPersistCoordinator.detach(this);
     }
 
-    /**
-     * @deprecated Use the automatic persist coordinator. Retained for integrations that invoke the
-     *             previous save backstop explicitly.
-     */
-    @Deprecated(forRemoval = false)
-    public void lifecyclePersistResidualForSave() {
-        Level level = machine.getLevel();
-        if (level != null) {
-            MachineDataPersistCoordinator.flushResidualPersistForSave(level);
-        }
-    }
-
     /** Full S2C snapshot bytes for update-tag / first track. Does not clear delta dirty bits. */
     public byte[] lifecycleWriteUpdateTag(RegistryAccess registryAccess) {
         return encodeSync(
-                DataSyncDirection.TO_CLIENT,
                 registryAccess,
                 ConnectionType.OTHER,
                 MachineDataSyncCodec.WriteMode.FULL_SNAPSHOT);
     }
 
     public byte[] lifecycleDrainClientDelta(RegistryAccess registryAccess, ConnectionType connectionType) {
-        try {
-            return encodeSync(
-                    DataSyncDirection.TO_CLIENT,
-                    registryAccess,
-                    connectionType,
-                    MachineDataSyncCodec.WriteMode.DRAIN_DIRTY_DELTA);
-        } finally {
-            endOfTickSyncRequested = false;
-        }
+        return encodeSync(
+                registryAccess,
+                connectionType,
+                MachineDataSyncCodec.WriteMode.DRAIN_DIRTY_DELTA);
     }
 
     public void lifecycleDropClientDelta() {
         for (DataField field : syncToClientFields) {
-            field.clearSyncDirty(DataSyncDirection.TO_CLIENT);
+            field.clearSyncDirty();
         }
-        endOfTickSyncRequested = false;
-    }
-
-    public void lifecycleSendToServer(boolean force) {
-        Level level = machine.getLevel();
-        if (level == null || !level.isClientSide()) {
-            return;
-        }
-        requireBusinessReady("send machine data to server");
-        byte[] payload = encodeSync(
-                DataSyncDirection.TO_SERVER,
-                level.registryAccess(),
-                ConnectionType.NEOFORGE,
-                force ? MachineDataSyncCodec.WriteMode.FULL_SNAPSHOT : MachineDataSyncCodec.WriteMode.DRAIN_DIRTY_DELTA);
-        if (payload.length == 0) {
-            return;
-        }
-        MachineDataC2SPayload.sendToServer(machine.getBlockPos().asLong(), payload);
     }
 
     // =============================================================================================
@@ -376,10 +322,6 @@ public final class MachineDataScope {
         }
     }
 
-    public boolean hasClientToServerFields() {
-        return !syncToServerFields.isEmpty();
-    }
-
     // =============================================================================================
     // Schema + dirty bookkeeping
     // =============================================================================================
@@ -401,11 +343,11 @@ public final class MachineDataScope {
     }
 
     public void enableClientSync(DataField field) {
-        enableSyncField(field, DataSyncDirection.TO_CLIENT, syncToClientFields);
-    }
-
-    public void enableServerSync(DataField field) {
-        throw new UnsupportedOperationException("TO_SERVER machine data sync is disabled until " + "menu/session authorization and field validators are implemented for " + field.path());
+        requireSchemaOpen("enable client sync for data field '" + field.path() + "'");
+        if (syncToClientFields.contains(field)) {
+            return;
+        }
+        syncToClientFields.add(field);
     }
 
     void recordManualPersistMutation() {
@@ -413,7 +355,6 @@ public final class MachineDataScope {
     }
 
     public void requestEndOfTickSync() {
-        endOfTickSyncRequested = true;
         MachineDataSyncBatcher.markClientDirty(this);
     }
 
@@ -425,7 +366,7 @@ public final class MachineDataScope {
         if (field.persistEnabled()) {
             recordPersistMutation();
         }
-        if (field.isSyncDirty(DataSyncDirection.TO_CLIENT)) {
+        if (field.isSyncDirty()) {
             requestEndOfTickSync();
         }
     }
@@ -446,7 +387,8 @@ public final class MachineDataScope {
 
     private void promoteToWorldSide(Level level) {
         if (level.isClientSide()) {
-            phase = clientBaselineReceived ? Phase.CLIENT_LIVE : Phase.CLIENT_WAITING;
+            // Nothing to receive means the declared defaults are the complete client mirror.
+            phase = clientBaselineReceived || syncToClientFields.isEmpty() ? Phase.CLIENT_LIVE : Phase.CLIENT_WAITING;
         } else {
             phase = Phase.SERVER_LIVE;
         }
@@ -456,7 +398,10 @@ public final class MachineDataScope {
         input.child(SAVE_KEY).ifPresent(root -> {
             int version = root.getIntOr("version", -1);
             if (version != FORMAT_VERSION) {
-                throw new IllegalStateException("Unsupported machine_data persist version " + version + " for " + machine.definition().id() + " at " + machine.getBlockPos());
+                LOGGER.error(
+                        "Ignoring unsupported machine_data persist version {} for {} at {} (expected {}); fields keep defaults",
+                        version, machine.definition().id(), machine.getBlockPos(), FORMAT_VERSION);
+                return;
             }
             root.child("scopes").ifPresent(scopesIn -> {
                 for (DataScope scope : scopes.values()) {
@@ -484,28 +429,24 @@ public final class MachineDataScope {
     }
 
     private byte[] encodeSync(
-                              DataSyncDirection direction,
                               RegistryAccess registryAccess,
                               ConnectionType connectionType,
                               MachineDataSyncCodec.WriteMode writeMode) {
         return MachineDataSyncCodec.write(
                 machine,
-                direction,
-                syncFields(direction),
+                syncToClientFields,
                 registryAccess,
                 connectionType,
                 writeMode);
     }
 
     private void applySync(
-                           DataSyncDirection direction,
                            byte[] data,
                            RegistryAccess registryAccess,
                            ConnectionType connectionType) {
         MachineDataSyncCodec.read(
                 machine,
-                direction,
-                syncFields(direction),
+                syncToClientFields,
                 data,
                 registryAccess,
                 connectionType);
@@ -539,7 +480,6 @@ public final class MachineDataScope {
         acknowledgedPersistGeneration = 0L;
         markedPersistGeneration = 0L;
         persistAwaitingSnapshot = false;
-        endOfTickSyncRequested = false;
     }
 
     private void recordPersistMutation() {
@@ -569,23 +509,6 @@ public final class MachineDataScope {
 
     private static long maxGeneration(long first, long second) {
         return Math.max(first, second);
-    }
-
-    private void enableSyncField(
-                                 DataField field,
-                                 DataSyncDirection direction,
-                                 List<DataField> fields) {
-        requireSchemaOpen("enable " + direction + " sync for data field '" + field.path() + "'");
-        if (field.syncSlot(direction) >= 0) {
-            return;
-        }
-        int slot = fields.size();
-        field.assignSyncSlot(direction, slot);
-        fields.add(field);
-    }
-
-    private List<DataField> syncFields(DataSyncDirection direction) {
-        return direction == DataSyncDirection.TO_CLIENT ? syncToClientFields : syncToServerFields;
     }
 
     private IllegalStateException accessException(String operation, @Nullable DataField field) {

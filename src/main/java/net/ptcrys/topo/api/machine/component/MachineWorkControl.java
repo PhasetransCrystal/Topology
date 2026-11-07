@@ -7,7 +7,7 @@ package net.ptcrys.topo.api.machine.component;
  */
 public interface MachineWorkControl {
 
-    ServiceKey<MachineWorkControl, Void> KEY = ServiceKey.oi("machine_work_control", MachineWorkControl.class, Void.class);
+    ServiceKey<MachineWorkControl, Void> KEY = ServiceKey.topo("machine_work_control", MachineWorkControl.class, Void.class);
 
     WorkMode workMode();
 

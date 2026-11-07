@@ -1,11 +1,17 @@
 package net.ptcrys.topo.helper;
 
+import net.ptcrys.registrylib.RegistryCore;
+import net.ptcrys.registrylib.datagen.ProviderType;
+
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
+import net.minecraft.tags.TagEntry;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.material.Fluid;
+
+import java.util.function.Supplier;
 
 /**
  * Builds conventional ({@code c:}) item and block {@link TagKey}s from an explicit group name.
@@ -43,6 +49,39 @@ public final class TagHelper {
     /** {@code c:<group>/<material>} per-material block tag, e.g. {@code c:ores/iron}. */
     public static TagKey<Block> blockMaterial(String group, String material) {
         return TagKey.create(Registries.BLOCK, conventional(group + "/" + material));
+    }
+
+    /**
+     * Adds an item tag entry whose id is resolved only when the tag provider runs. This is the
+     * safe path for external targets whose item is not bound when the form content is declared.
+     */
+    public static void addItemTag(RegistryCore core, TagKey<Item> tag, Supplier<Identifier> id) {
+        if (!core.doDatagen()) {
+            return;
+        }
+        core.addDataGenerator(
+                ProviderType.ITEM_TAGS,
+                provider -> provider.rawBuilder(tag).add(TagEntry.element(id.get())));
+    }
+
+    /** Block counterpart of {@link #addItemTag}. */
+    public static void addBlockTag(RegistryCore core, TagKey<Block> tag, Supplier<Identifier> id) {
+        if (!core.doDatagen()) {
+            return;
+        }
+        core.addDataGenerator(
+                ProviderType.BLOCK_TAGS,
+                provider -> provider.rawBuilder(tag).add(TagEntry.element(id.get())));
+    }
+
+    /** Fluid counterpart of {@link #addItemTag}. */
+    public static void addFluidTag(RegistryCore core, TagKey<Fluid> tag, Supplier<Identifier> id) {
+        if (!core.doDatagen()) {
+            return;
+        }
+        core.addDataGenerator(
+                ProviderType.FLUID_TAGS,
+                provider -> provider.rawBuilder(tag).add(TagEntry.element(id.get())));
     }
 
     /** {@code c:<group>} fluid group tag, e.g. {@code c:solutions}. */

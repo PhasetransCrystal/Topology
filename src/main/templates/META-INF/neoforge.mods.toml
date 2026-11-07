@@ -111,11 +111,12 @@ side="BOTH"
 [[dependencies.${mod_id}]]
 modId="registrylib"
 type="required"
-versionRange="[${registry_lib_version},)"
+versionRange="[26.1.2-${registry_lib_version},)"
 ordering="AFTER"
 side="BOTH"
 
-# Applied Energistics 2: required for the ME hatch machines (integration.ae2).
+# Applied Energistics 2: retained as required groundwork for planned integration.
+# The integration itself is not implemented in this repository yet.
 [[dependencies.${mod_id}]]
 modId="ae2"
 type="required"

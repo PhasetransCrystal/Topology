@@ -4,8 +4,9 @@ sidebar_position: 3
 
 # TopoRecipeType
 
-配方类型大多不需要子类——`recipe.recipeType(path)` 用默认工厂即可。只有需要**特殊配方载体**（额外状态、
-专用序列化）时才继承。
+配方类型大多不需要子类——`recipe.recipeType(path)` 用默认工厂即可。只有需要特殊配方载体时才继承；
+`RecipeFactory` 负责从公共四通道重建实例，缩放/并行会再次经过该工厂，因此自定义子类不会退化成基类。
+默认 codec 只覆盖公共字段，额外字段的 JSON/网络序列化需要后续 codec 扩展点。
 
 本页是 [Recipe](../recipe.md) 模块的子页——概念与页面导航见 [Recipe](../recipe.md)。
 
@@ -56,8 +57,14 @@ recipe.recipeType("spell_crafting", new SpellRecipeType(plugin.recipe().id("spel
         .progressBar(/* texture */);
 ```
 
+`TopoRecipeTypes.freeze()` 会关闭类型上的 `displayName`、`progressBar`、`vanillaFacing`、`importRecipesFrom`、
+`exportRecipesTo` 配置；之后仍可在 `registerRecipes` 中通过 `recipe(...)` / `addRecipe(...)` 声明具体配方。
+
 框架自动完成 RegistryLib 配方类型注册、序列化器与流编解码绑定。只有导入/导出外部配方表
 （原版、其他 Mod）时才需要 `ImportedRecipeAdapter` / `ExportedRecipeAdapter`。
+
+内部实现按职责拆分：`RecipeCatalog` 管理本地声明/去重/替换，`RecipeImports` 管理外部导入导出投影，
+`RecipeSearchState` 管理运行时搜索索引；`TopoRecipeType` 只保留公共句柄与配置入口。
 
 ## TopoRecipe.Builder — 完整链
 

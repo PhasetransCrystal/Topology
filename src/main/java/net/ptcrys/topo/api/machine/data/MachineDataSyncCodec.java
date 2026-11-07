@@ -18,7 +18,6 @@ final class MachineDataSyncCodec {
 
     static byte[] write(
                         MachineBlockEntity machine,
-                        DataSyncDirection direction,
                         List<DataField> fields,
                         RegistryAccess registryAccess,
                         ConnectionType connectionType,
@@ -26,16 +25,20 @@ final class MachineDataSyncCodec {
         if (fields.isEmpty()) {
             return new byte[0];
         }
-        long[] dirtyWords = dirtyWords(direction, fields, writeMode.force);
+        long[] dirtyWords = dirtyWords(fields, writeMode.force);
         if (!hasAnyBit(dirtyWords)) {
             return new byte[0];
         }
         var byteBuf = Unpooled.buffer();
         var buffer = new RegistryFriendlyByteBuf(byteBuf, registryAccess, connectionType);
         try {
-            writeHeader(buffer, machine, direction, fields, dirtyWords);
-            writeDirtyFieldValues(buffer, direction, fields, dirtyWords, writeMode.clearDirty);
-            return copyReadableBytes(byteBuf);
+            writeHeader(buffer, machine, fields, dirtyWords);
+            writeDirtyFieldValues(buffer, fields, dirtyWords);
+            byte[] data = copyReadableBytes(byteBuf);
+            if (writeMode.clearDirty) {
+                clearDirtyFields(fields, dirtyWords);
+            }
+            return data;
         } finally {
             byteBuf.release();
         }
@@ -43,7 +46,6 @@ final class MachineDataSyncCodec {
 
     static void read(
                      MachineBlockEntity machine,
-                     DataSyncDirection direction,
                      List<DataField> fields,
                      byte[] data,
                      RegistryAccess registryAccess,
@@ -54,7 +56,7 @@ final class MachineDataSyncCodec {
         var byteBuf = Unpooled.wrappedBuffer(data);
         var buffer = new RegistryFriendlyByteBuf(byteBuf, registryAccess, connectionType);
         try {
-            validateHeader(buffer, machine, direction, fields);
+            validateHeader(buffer, machine, fields);
             long[] dirtyWords = readDirtyWords(buffer, fields.size());
             List<DecodedSyncValue> decodedValues = decodeDirtyValues(buffer, fields, dirtyWords);
             rejectTrailingBytes(byteBuf.readableBytes(), machine);
@@ -67,11 +69,10 @@ final class MachineDataSyncCodec {
     private static void writeHeader(
                                     RegistryFriendlyByteBuf buffer,
                                     MachineBlockEntity machine,
-                                    DataSyncDirection direction,
                                     List<DataField> fields,
                                     long[] dirtyWords) {
         buffer.writeVarInt(MachineDataScope.FORMAT_VERSION);
-        buffer.writeLong(schemaHash(machine, direction, fields));
+        buffer.writeLong(schemaHash(machine, fields));
         buffer.writeVarInt(fields.size());
         buffer.writeVarInt(dirtyWords.length);
         for (long word : dirtyWords) {
@@ -81,17 +82,20 @@ final class MachineDataSyncCodec {
 
     private static void writeDirtyFieldValues(
                                               RegistryFriendlyByteBuf buffer,
-                                              DataSyncDirection direction,
                                               List<DataField> fields,
-                                              long[] dirtyWords,
-                                              boolean clearDirty) {
+                                              long[] dirtyWords) {
         for (int i = 0; i < fields.size(); i++) {
             if (bit(dirtyWords, i)) {
-                DataField field = fields.get(i);
-                field.writeSync(buffer);
-                if (clearDirty) {
-                    field.clearSyncDirty(direction);
-                }
+                fields.get(i).writeSync(buffer);
+            }
+        }
+    }
+
+    /** Dirty bits are cleared only after the complete frame has been encoded successfully. */
+    private static void clearDirtyFields(List<DataField> fields, long[] dirtyWords) {
+        for (int i = 0; i < fields.size(); i++) {
+            if (bit(dirtyWords, i)) {
+                fields.get(i).clearSyncDirty();
             }
         }
     }
@@ -106,14 +110,13 @@ final class MachineDataSyncCodec {
     private static void validateHeader(
                                        RegistryFriendlyByteBuf buffer,
                                        MachineBlockEntity machine,
-                                       DataSyncDirection direction,
                                        List<DataField> fields) {
         int version = buffer.readVarInt();
         if (version != MachineDataScope.FORMAT_VERSION) {
             throw new IllegalStateException("Unsupported machine data sync version " + version);
         }
         long remoteSchemaHash = buffer.readLong();
-        long localSchemaHash = schemaHash(machine, direction, fields);
+        long localSchemaHash = schemaHash(machine, fields);
         if (remoteSchemaHash != localSchemaHash) {
             throw new IllegalStateException("Machine data sync schema mismatch for " + machine.definition().id() + " at " + machine.getBlockPos() + ", local=" + Long.toUnsignedString(localSchemaHash, 16) + ", remote=" + Long.toUnsignedString(remoteSchemaHash, 16));
         }
@@ -163,10 +166,10 @@ final class MachineDataSyncCodec {
         }
     }
 
-    private static long[] dirtyWords(DataSyncDirection direction, List<DataField> fields, boolean force) {
+    private static long[] dirtyWords(List<DataField> fields, boolean force) {
         long[] words = new long[wordCount(fields.size())];
         for (int i = 0; i < fields.size(); i++) {
-            if (force || fields.get(i).isSyncDirty(direction)) {
+            if (force || fields.get(i).isSyncDirty()) {
                 words[i / Long.SIZE] |= 1L << (i % Long.SIZE);
             }
         }
@@ -192,12 +195,13 @@ final class MachineDataSyncCodec {
         }
     }
 
-    private static long schemaHash(MachineBlockEntity machine, DataSyncDirection direction, List<DataField> fields) {
+    private static long schemaHash(MachineBlockEntity machine, List<DataField> fields) {
         // Safety contract: positional bitsets stay compact, but every frame carries a stable schema
         // fingerprint so equal field counts cannot hide key/type/order mismatches.
         long hash = 0xcbf29ce484222325L;
         hash = hashString(hash, machine.definition().id().toString());
-        hash = hashString(hash, direction.name());
+        // Preserve the existing S2C schema fingerprint after removing the C2S direction.
+        hash = hashString(hash, "TO_CLIENT");
         for (int i = 0; i < fields.size(); i++) {
             DataField field = fields.get(i);
             hash = hashLong(hash, i);

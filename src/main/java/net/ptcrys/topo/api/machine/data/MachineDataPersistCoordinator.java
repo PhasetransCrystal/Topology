@@ -1,8 +1,9 @@
 package net.ptcrys.topo.api.machine.data;
 
+import net.ptcrys.topo.Topology;
+
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
-import net.minecraft.world.level.Level;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.level.ChunkDataEvent;
@@ -27,7 +28,6 @@ import java.util.Map;
  */
 final class MachineDataPersistCoordinator {
 
-    private static final long FAILED_SNAPSHOT_RECOVERY_INTERVAL_TICKS = 200L;
     private static final Map<ServerLevel, LevelState> LEVEL_STATES = new IdentityHashMap<>();
 
     private MachineDataPersistCoordinator() {}
@@ -71,12 +71,6 @@ final class MachineDataPersistCoordinator {
         }
     }
 
-    static void flushResidualPersistForSave(Level level) {
-        if (level instanceof ServerLevel serverLevel) {
-            recoverDroppedChunkMarks(serverLevel, LEVEL_STATES.get(serverLevel));
-        }
-    }
-
     @SubscribeEvent
     public static void onServerTickPost(ServerTickEvent.Post event) {
         for (Map.Entry<ServerLevel, LevelState> entry : LEVEL_STATES.entrySet()) {
@@ -84,7 +78,7 @@ final class MachineDataPersistCoordinator {
             LevelState state = entry.getValue();
             long gameTime = level.getGameTime();
             if (gameTime >= state.nextRecoveryGameTime) {
-                state.nextRecoveryGameTime = gameTime + FAILED_SNAPSHOT_RECOVERY_INTERVAL_TICKS;
+                state.nextRecoveryGameTime = gameTime + Math.max(20, Topology.config.MACHINES.persistRecoveryIntervalTicks);
                 recoverDroppedChunkMarks(level, state);
             }
         }

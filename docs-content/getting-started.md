@@ -86,7 +86,7 @@ public final class MyContentPlugin extends TopoPlugin {
         metal = material.dataType("metal", new MetalDataType(material.id("metal")));
         material.form("dust")
                 .lang("Dust", "粉")
-                .appliesTo(value -> value.strategy().data(metal).orElse(false))
+                .appliesTo(value -> value.data(metal).orElse(false))
                 .strategy(new DustForm())
                 .build();
     }
@@ -120,19 +120,22 @@ public final class MyContentPlugin extends TopoPlugin {
         }
 
         @Override
-        public void validateMaterial(Material material, MaterialForm form) {
-            // 此形态没有额外的数据依赖。
-        }
-
-        @Override
-        public void register(MaterialContentContext context, MaterialForm form) {
-            Material material = context.material();
+        public MaterialFormPlan plan(Material material, MaterialForm form) {
             String path = registryPath().formatted(material.id().getPath());
-            var builder = context.core().item(path);
-            RegistryDisplayLang.applyItem(builder, context.core(), path,
-                    DisplayNames.fixed(material.displayNameEn() + " Dust",
-                            material.displayNameCn() + "粉"));
-            builder.register();
+            MaterialContentKey output = new MaterialContentKey(
+                    MaterialContentTypes.ITEM, material.id().withPath(path));
+            return MaterialFormPlan.of(
+                    List.of(output),
+                    () -> {
+                        // 此形态没有额外的数据依赖。
+                    },
+                    context -> {
+                        var builder = context.core().item(path);
+                        RegistryDisplayLang.applyItem(builder, context.core(), path,
+                                DisplayNames.fixed(material.displayNameEn() + " Dust",
+                                        material.displayNameCn() + "粉"));
+                        builder.register();
+                    });
         }
     }
 }

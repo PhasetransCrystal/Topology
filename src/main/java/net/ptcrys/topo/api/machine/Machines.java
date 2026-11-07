@@ -74,6 +74,10 @@ public final class Machines {
 
     @ApiStatus.Internal
     public static void freeze() {
+        if (REGISTRY.isFrozen()) {
+            return;
+        }
+        MachineValidator.validate(REGISTRY.handlesView());
         REGISTRY.freeze();
     }
 

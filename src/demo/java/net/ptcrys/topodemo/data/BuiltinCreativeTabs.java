@@ -35,7 +35,7 @@ public final class BuiltinCreativeTabs {
     public static final RegistryEntry<CreativeModeTab, CreativeModeTab> EQUIPMENT = creativeTab("equipment",
             "Equipment & Tools",
             "装备与工具",
-            builder -> builder.icon(() -> BuiltinTools.PIPE_SURVEYOR.asStack()));
+            builder -> builder.icon(BuiltinTools.PIPE_SURVEYOR::asStack));
 
     private BuiltinCreativeTabs() {}
 

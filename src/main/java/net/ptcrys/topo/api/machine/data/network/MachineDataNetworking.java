@@ -20,6 +20,5 @@ public final class MachineDataNetworking {
                 MachineDataBatchS2CPayload.TYPE,
                 MachineDataBatchS2CPayload.CODEC,
                 MachineDataBatchS2CPayload::execute);
-        registrar.playToServer(MachineDataC2SPayload.TYPE, MachineDataC2SPayload.CODEC, MachineDataC2SPayload::execute);
     }
 }

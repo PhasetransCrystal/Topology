@@ -8,23 +8,11 @@ sidebar_position: 3
 
 本页是 [Equipment](../equipment.md) 模块的子页——概念与页面导航见 [Equipment](../equipment.md)。
 
-## 功能说明行 — tooltipLine
+## 功能说明行 — 在面板中构建
 
-策略 Builder 的 `tooltipLine(langKey, nameEn, nameCn, descEn, descCn)` 声明一条「功能名 | 说明」行。
-语言键在注册点铸造（`tooltip.<modid>.<langKey>.name` / `.desc`），调用方绝不拼字符串：
-
-```java
-equipment.kind("wrench",
-        ToolEquipment.builder()
-                .registryPath("%s_wrench")
-                .displayName("%s Wrench", "%s扳手")
-                .tooltipLine("equipment.wrench.machines", "Dismantle", "拆卸", "Fast & safe", "快速且安全")
-                .tooltipLine("equipment.wrench.ports", "Ports", "端口", "Right-click to configure", "右键点击以配置")
-                .build());
-```
-
-每条说明行是 `EquipmentTooltipLine(nameLang, descriptionLang)` 记录——名称与描述键在注册时一次铸造，
-面板渲染只读句柄。
+装备工具提示没有独立的 `tooltipLine(...)` 声明 API。功能说明行由你在
+`registerRuntime` 注册的 `TopoTooltipUiProvider` 面板中构建，文本用 `LangKey` 铸造；
+可参考 Demo 的 `ToolHintPanel` 与 `BuiltinToolPanels`。
 
 ## 面板构建 — ItemTooltipUis 注册
 
@@ -37,7 +25,7 @@ for (EquipmentRegistry.EquipmentItemRecord record : EquipmentRegistry.itemRecord
     runtime.tooltip(record.entry().get(), new TopoTooltipUiProvider() {
         @Override
         public UIElement build(ItemStack stack) {
-            // 耐久行（可损耗才有）+ 每个 tooltipLine 一条缩进子项
+            // 耐久行（可损耗才有）+ 每条功能说明一条缩进子项
             return createPanel(stack, /* 你的策略 */);
         }
 
@@ -70,7 +58,6 @@ TOOLTIP_EQUIPMENT_RANGE_BLOCKS = lang.key("tooltip", "equipment.range_blocks", "
 
 | 类/方法                                            | 用途                       |
 |----------------------------------------------------|----------------------------|
-| `Builder.tooltipLine(key, en, cn, descEn, descCn)` | 声明功能说明行             |
 | `ItemTooltipUis.register(item, provider)`          | 按物品注册面板             |
 | `TopoTooltipUiProvider.build(stack)`               | 构建面板元素树             |
 | `TopoTooltipUiProvider.cacheKey(stack)`            | 缓存键（耐久变化用损伤值） |

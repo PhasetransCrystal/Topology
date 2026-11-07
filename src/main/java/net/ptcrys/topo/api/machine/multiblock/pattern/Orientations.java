@@ -9,86 +9,44 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Value holder for {@link Orientation} (no registry — an intentional exception to the
- * {@code Xxxs} accessor convention, since the octahedral group is a fixed, fully precomputed set).
- *
- * <p>
- * Exposes the interned group: {@link #all()} (48), {@link #rotations()} (24 proper rotations),
- * {@link #IDENTITY}, the canonical {@link #forFacing(Direction)} mapping and the {@link #mirrorOf}
- * helper.
- *
- * <h2>Roll convention of {@link #forFacing(Direction)}</h2>
- *
- * <p>
- * The canonical controller front is {@code SOUTH} ({@code +Z}). {@code forFacing(f)} returns the
- * unique proper rotation that maps {@code SOUTH} onto {@code f} with this roll:
- *
- * <ul>
- * <li><b>Horizontal facings</b> ({@code NORTH/EAST/SOUTH/WEST}): a pure yaw rotation about the up
- * ({@code +Y}) axis ({@code UP} stays {@code UP}). It is built directly from the vanilla
- * {@link Rotation} that maps {@code SOUTH} onto the facing, so for any direction
- * {@code forFacing(f).apply(d)} equals {@code rotation.rotate(d)} — it agrees with vanilla
- * {@link Rotation} about {@code Y}. ({@code SOUTH->NONE}, {@code WEST->CLOCKWISE_90},
- * {@code NORTH->CLOCKWISE_180}, {@code EAST->COUNTERCLOCKWISE_90}.)</li>
- * <li><b>Vertical facings</b> ({@code UP/DOWN}): a pitch rotation about the east-west ({@code +X})
- * axis, holding {@code EAST} fixed. For {@code UP} the original top {@code +Y} rotates to
- * {@code NORTH}; for {@code DOWN} it rotates to {@code SOUTH}.</li>
- * </ul>
- *
- * @see Orientation
+ * 固定的立方体朝向集合，不使用注册表。rotations 返回 24 个正旋转，all 返回含镜像的 48 个变换。
+ * forFacing 将规范前向 SOUTH 映射到给定方向：水平面只绕 Y 轴旋转、UP 保持不变；竖直前向绕 X 轴转动、EAST 保持不变，UP 前向时原 UP 变为 NORTH，DOWN 前向时原 UP 变为 SOUTH。
  */
 public final class Orientations {
 
     private Orientations() {}
 
-    /** The identity orientation. */
+    /** 恒等旋转。 */
     public static final Orientation IDENTITY = Orientation.IDENTITY;
 
-    /** Canonical orientation per facing, indexed by {@link Direction#ordinal()}. */
+    /** 按 Direction 序号索引的预设控制器旋转。 */
     private static final Orientation[] FOR_FACING = buildForFacing();
 
-    /**
-     * The proper rotation mapping the canonical front {@code SOUTH} onto {@code facing} with the roll
-     * documented on this class.
-     */
+    /** 将规范前向 SOUTH 映射到 facing 的预设正旋转，滚转约定见类注释。 */
     public static Orientation forFacing(Direction facing) {
         Objects.requireNonNull(facing, "facing");
         return FOR_FACING[facing.ordinal()];
     }
 
-    /** The 24 proper rotations ({@code det == +1}); immutable. */
+    /** 不可变的 24 种正旋转。 */
     public static List<Orientation> rotations() {
         return Orientation.ROTATIONS;
     }
 
-    /** All 48 members of the octahedral group {@code O_h}, rotations and mirrors; immutable. */
+    /** 不可变的 48 种正交变换，含镜像。 */
     public static List<Orientation> all() {
         return Orientation.ALL;
     }
 
-    /** The mirrored variant of {@code orientation} (see {@link Orientation#mirrored()}). */
+    /** 取得当前变换的局部 X 镜像版本。 */
     public static Orientation mirrorOf(Orientation orientation) {
         Objects.requireNonNull(orientation, "orientation");
         return orientation.mirrored();
     }
 
     /**
-     * Rigid-body rotation of a block state: every property whose value space is a set of
-     * {@link Direction}s or {@link Direction.Axis} axes is sent through
-     * {@link Orientation#apply(Direction)}, the rest of the state is untouched. Generic by value
-     * type — no property constant is named, so any vanilla or modded spatial property co-rotates.
-     *
-     * <p>
-     * Partial like the covariant {@code PropertyRules}: a property whose value space does not
-     * contain the image (a horizontal-only facing under a pitch orientation) keeps its original
-     * value. Properties encoding geometry without a direction/axis value type (stair shape, half,
-     * connection booleans) are not transformed; under pure yaw orientations they are
-     * frame-invariant, which covers every orientation a horizontal controller front can produce.
-     *
-     * <p>
-     * This is a display/projection helper (e.g. folding an as-built structure back into the
-     * blueprint's canonical frame with {@link Orientation#inverse()}); recognition compares
-     * through {@link PropertyRule}s instead.
+     * 用于显示和投影的通用状态旋转：变换 Direction 和 Axis 类型属性，其他属性保持原值。
+     * 属性值域无法表达结果时保留原值；本方法不处理半格、形状或连接等非方向编码。检测使用显式 PropertyRule，不使用此显示辅助方法。
      */
     @SuppressWarnings("unchecked")
     public static BlockState rotated(Orientation orientation, BlockState state) {
@@ -130,7 +88,7 @@ public final class Orientations {
         return forFacing;
     }
 
-    /** The orientation whose linear action equals the vanilla yaw {@link Rotation} (about {@code Y}). */
+    /** 与原版 Y 轴 Rotation 等效的正交旋转。 */
     private static Orientation fromYaw(Rotation rotation) {
         return Orientation.fromColumns(
                 rotation.rotate(Direction.EAST),

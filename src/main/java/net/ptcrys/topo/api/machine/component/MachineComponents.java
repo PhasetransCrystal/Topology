@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -43,8 +42,8 @@ public final class MachineComponents {
     private final List<MachineTicker> tickers;
     private final Map<Identifier, MachineComponent> byIdMap;
     private final Map<ServiceKey<?, ?>, List<MountedService<?, ?, ?>>> byServiceMap;
-    /** Memo for {@link #servicesCached}; benign-race lazy fill, entries are immutable lists. */
-    private final Map<ServiceKey<?, Void>, List<?>> contextFreeServiceCache = new ConcurrentHashMap<>();
+    /** Context-free service matches, frozen with the trait set at mount. */
+    private final Map<ServiceKey<?, ?>, List<ServiceMatch<?>>> contextFreeServices;
     private final Map<MachineResourceType<?>, ResourceHandlerCache> resourceHandlerCache = new IdentityHashMap<>();
     private final Map<MachineResourceType<?>, RecipeDirectAccessCache> recipeDirectAccessCache = new IdentityHashMap<>();
     private final MachineResourceViews resourceViews = new MachineResourceViews(this);
@@ -85,6 +84,7 @@ public final class MachineComponents {
         this.tickers = tickers;
         this.byIdMap = byIdMap;
         this.byServiceMap = byServiceMap;
+        this.contextFreeServices = indexContextFreeServices();
     }
 
     /**
@@ -181,12 +181,19 @@ public final class MachineComponents {
      */
     @SuppressWarnings("unchecked")
     public <A> List<ServiceMatch<A>> servicesCached(ServiceKey<A, Void> capability) {
-        List<?> cached = contextFreeServiceCache.get(Objects.requireNonNull(capability, "trait capability"));
-        if (cached == null) {
-            cached = services(capability, null);
-            contextFreeServiceCache.put(capability, cached);
+        List<ServiceMatch<?>> cached = contextFreeServices.get(Objects.requireNonNull(capability, "trait capability"));
+        return cached == null ? List.of() : (List<ServiceMatch<A>>) (List<?>) cached;
+    }
+
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    private Map<ServiceKey<?, ?>, List<ServiceMatch<?>>> indexContextFreeServices() {
+        Map<ServiceKey<?, ?>, List<ServiceMatch<?>>> indexed = new LinkedHashMap<>();
+        for (ServiceKey<?, ?> key : byServiceMap.keySet()) {
+            if (key.contextType() == Void.class) {
+                indexed.put(key, (List) services((ServiceKey) key, null));
+            }
         }
-        return (List<ServiceMatch<A>>) cached;
+        return Collections.unmodifiableMap(indexed);
     }
 
     /**

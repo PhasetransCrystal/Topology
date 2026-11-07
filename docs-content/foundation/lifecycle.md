@@ -54,25 +54,25 @@ gantt
     TopoRecipeTypes 冻结                 :milestone, crit, typesFrozen, after recipeTypes, 0s
 
     section 材料基础表
-    data／form／post-processor 未冻结    :foundationWindow, 1000, 3s
+    data／form-data／form／post-processor 未冻结    :foundationWindow, 1000, 3s
     registerMaterialFoundation          :active, foundation, 3000, 1s
     材料基础四表冻结                    :milestone, crit, foundationFrozen, after foundation, 0s
 
     section 材料构建与数据注入
     材料声明与数据写入开放              :materialWindow, 1000, 7s
     registerMaterials（全部插件）       :active, materials, 4000, 4s
+    registerMaterialContributions       :active, contributions, after materials, 2s
     目标材料 build 完成（示意）         :milestone, built, 5000, 0s
     向该已构建材料注入 data             :injection, after built, 3s
-    关闭材料声明及数据写入              :milestone, crit, dataClosed, after materials, 0s
+    关闭材料声明及数据写入              :milestone, crit, dataClosed, after contributions, 0s
     MaterialForm.appliesTo → Predicate.test :done, selection, after dataClosed, 1s
-    MaterialDataStrategy.validate        :done, dataValidation, 9000, 1s
-    MaterialPostProcessor.validate（激活数据） :done, activationValidation, 9000, 1s
-    MaterialFormStrategy.validateMaterial :done, validation, 9000, 1s
+    MaterialDataType.validate           :done, dataValidation, 9000, 1s
+    MaterialFormPlan.validate      :done, validation, 9000, 1s
+    MaterialPostProcessor.validate :done, activationValidation, 9000, 1s
     MaterialRegistry 冻结               :milestone, crit, materialFrozen, after validation, 0s
     registerMaterialCreativeTabs        :active, tabs, after materialFrozen, 1s
-    MaterialFormStrategy.register        :done, formContent, 11000, 11400
-    MaterialPostProcessor.validate（激活组合） :done, processorValidation, 11400, 11700
-    MaterialPostProcessor.process        :done, content, 11700, 12000
+    MaterialFormPlan.register            :done, formContent, 11000, 11400
+    MaterialPostProcessor.process        :done, content, 11400, 12000
     registerMaterialFollowUps           :active, followups, after content, 1s
 
     section 装备
@@ -162,9 +162,9 @@ gantt
 
 | 区间 | 回调与实际顺序 |
 |------|----------------|
-| 材料匹配 8–9 | 对全部材料／形态组合调用 `MaterialForm.appliesTo`，转到声明的 `Predicate.test`；只有返回 true 的形态入选，配置覆盖不会跳过规则。全部结果计算完成后统一发布，求值期间形态集合均为空。 |
-| 材料校验 9–10 | **逐材料**先校验全局 data，再逐个匹配形态校验其作用域 data（`MaterialDataStrategy.validate`）并调用 `MaterialFormStrategy.validateMaterial`。激活后处理器的 data 校验器还会调用一次 `MaterialPostProcessor.validate`。 |
-| 材料生成 11–12 | 先为全部材料／形态调用 `MaterialFormStrategy.register`；随后只对缓存的已激活材料／后处理器组合调用 `validate`，全部通过后再调用 `process`。这次后处理校验独立于冻结前的激活数据校验；未激活组合不收到调用。 |
+| 材料匹配 8–9 | 形态有 `appliesToData` 提示时，先用材料级 data 的 BitSet 索引过滤候选，再调用 `MaterialForm.appliesTo`；无提示形态回退到全部材料。只有返回 true 的形态入选，配置覆盖不会跳过规则。全部结果计算完成后统一发布，求值期间形态集合均为空；发布完成后才统一构建 `MaterialFormPlan`，plan 构造期可读取完整形态表。 |
+| 材料校验 9–10 | **逐材料**先校验全局 data，再逐个匹配形态校验其作用域 data（`MaterialDataType.validate`）并调用 `MaterialFormPlan.validate`；激活的后处理器在同一冻结阶段调用一次 `MaterialPostProcessor.validate`。 |
+| 材料生成 11–12 | 先为全部材料／形态调用 `MaterialFormPlan.register`；随后只对已激活材料／后处理器组合调用一次 `MaterialPostProcessor.process`，不再重复 validate。 |
 | 装备生成 13.5–14 | **逐材料／装备种类组合**调用 `EquipmentStrategy.appliesTo`，仅当其返回 true 时立即调用该组合的 `register`。装备表此时已冻结。 |
 | 机器生成 15.3–15.7 | 对有渲染声明的每台机器，依次调用 `MachineBlockRenderStrategy.validate`、`applyBlockModel` 配置 Builder；随后排队方块及共享 BE 类型。策略内提交的模型 datagen lambda 仍在 datagen 时执行。 |
 | 配方预览计划 15.7–16 | 对每个配方类型调用安装器的 planner（当前为 `RecipePreviewPlans.canonical`）；计算槽位布局时调用 `SlottedRecipeCapability.countPreviewSlots`。此时配方类型、机器表已冻结，具体配方尚未注册。 |
@@ -185,7 +185,7 @@ gantt
 | 管道 | `PipeDistributionStrategy.initialPortConfig`、`budget`、`distribute`、`contributeConfigUi`、`configCodec` | 分别在端口初始化／切换／恢复、传输预算计算、批次分配、配置界面构建、配置编解码时使用。分配策略表冻结只关闭声明。 |
 | 矿脉 | `OreVeinMode.Strategy.collectGrid`、`OreVeinShape.Strategy.contains`、`OreAirExposurePolicy.Strategy.discardExposed`、`OreConflictPolicy.Strategy.canReplace` | 世界矿脉规划与放置时。 |
 | 矿脉展示 | `OreVeinDisplay.Strategy.buildPreview`、`OreAirExposurePolicy.Strategy.describe` | 客户端矿脉预览／说明构建时。 |
-| 矿脉 feature 桥 | `OreVeinMode.Strategy.collectFeature` | 内容插件的 `VanillaOreFeatureBridge.featureVeins` 在 configured feature、placed feature、biome modifier 的 datagen bootstrap 内调用。`registerOreDatagen` 仅安装这些 bootstrap 回调。 |
+| 矿脉 feature 桥 | `OreVeinMode.Strategy.collectFeature` | 框架 `VanillaOreFeatureBridge.featureVeins` 在 configured feature、placed feature、biome modifier 的 datagen bootstrap 内调用；`ore.featureDatagen()` 仅安装这些 bootstrap 回调。 |
 | 配方 UI | `SlottedRecipeCapability.createPreviewInputSlotWidget`、`createPreviewOutputSlotWidget`、`createLiveSlotWidget`、`previewInputSlotAssignment` | 构建预览／实况 UI 及分配预览内容时；与启动时的 `countPreviewSlots` 区分。 |
 | 配方执行 | `RecipeCapability` 的匹配、传输及 `DirectTickIoBinding` 回调 | 配方搜索、开始执行和工作 tick 时；注册能力本身不执行配方。 |
 | 资源生成 | 向 RegistryLib 提交的模型、标签、配方等 provider 回调 | datagen 对应 provider 运行时；声明 provider 的 hook 可以已经结束。 |
@@ -196,11 +196,12 @@ gantt
 |----|------------------------------------------|------------------------------------------------------------------------------------------|----------------------------------------------------------------|
 | 1  | `registerRecipeFoundation(recipe)`       | `RecipeCapabilities`                                                                     | 机器资源类型、配方能力                                         |
 | 2  | `registerRecipeTypes(recipe)`            | `TopoRecipeTypes`                                                                        | 已冻结的配方能力                                               |
-| 3  | `registerMaterialFoundation(material)`   | 材质四表（data/form/post-processor）                                                     | 尚未有材质实例                                                 |
-| 4  | `registerMaterials(material)`            | `MaterialRegistry`                                                                       | 已冻结的表单、数据类型、后处理器                               |
+| 3  | `registerMaterialFoundation(material)`   | 材质四表（data / form-data / form / post-processor）                                      | 尚未有材质实例                                                 |
+| 4  | `registerMaterials(material)`            | `MaterialRegistry`                                                                       | 已冻结的形态、数据类型、后处理器                               |
+| 4b | `registerMaterialContributions(contributions)` | `MaterialRegistry` 在全部插件完成后冻结                                            | 全部已构建材料；可补能力 data 与形态局部选项                    |
 | 5  | `registerMaterialCreativeTabs(material)` | —                                                                                        | 已冻结的材质                                                   |
-| 6  | （引擎内部）                             | —                                                                                        | 为每个材质铸造表单物品；先跑全部 `validate` 再跑全部 `process` |
-| 7  | `registerMaterialFollowUps(material)`    | —                                                                                        | 全部表单物品已排队；可用稳定 ID，不能读取游戏实例                 |
+| 6  | （引擎内部）                             | —                                                                                        | 为每个材质铸造形态物品；先跑全部 `validate` 再跑全部 `process` |
+| 7  | `registerMaterialFollowUps(material)`    | —                                                                                        | 全部形态物品已排队；可用稳定 ID，不能读取游戏实例                 |
 | 8  | `registerEquipmentKinds(equipment)`      | `EquipmentRegistry`                                                                      | 全部材质（含数据）；之后引擎按 (材料 × 种类) 铸造物品          |
 | 9  | `registerMachineFoundation(machine)`     | 机器六表（resource type / UI icon / render / part role / property display / attachment） | 尚未有机器定义                                                 |
 | 10 | `registerMachines(machine)`              | `Machines`                                                                               | 已冻结的机器基础表；之后引擎铸造方块/BE 并安装预览计划         |
@@ -208,7 +209,7 @@ gantt
 | 12 | `registerOreFoundation(ore)`             | 矿石四表（shape / mode / air exposure / conflict）                                       | 尚未有矿脉                                                     |
 | 13 | `registerOreDisplays(ore)`               | `OreVeinDisplays`                                                                        | 已冻结的模式表；每种模式必须有对应显示                         |
 | 14 | `registerOreVeins(ore)`                  | `OreVeins`                                                                               | 已冻结的矿石基础表                                             |
-| 15 | `registerOreDatagen(ore)`                | —                                                                                        | 全部矿脉                                                       |
+| 15 | `registerOreDatagen(ore)`                | —                                                                                        | 全部矿脉；通常调用 `ore.featureDatagen()` 安装通用 feature 桥 |
 | 16 | `registerRecipes(recipe)`                | `ProductionLines`                                                                        | 全部领域定义及已排队的 RegistryLib Entry；游戏对象仍未绑定      |
 | 17 | `registerLang(lang)`                     | `LangRegistry`                                                                           | 全部                                                           |
 | 18 | `registerRuntime(runtime)`               | 此时不冻结；load complete 才冻结共享运行时表                                               | 已绑定的游戏对象；common setup deferred work                  |
@@ -238,7 +239,7 @@ NeoForge 的 `RegisterEvent` 按优先级跨 Mod 派发，因此 `HIGHEST` 的�
 RegistryLib 的 `LOW`。common setup 属于并行生命周期事件，不能靠另一个 Mod 的监听器
 优先级保证其 deferred work 先执行；共享运行时表必须在后续生命周期事件中冻结。
 
-上表的能力注册事件位置按项目当前 NeoForge 26.1.2.107 的 `CommonModLoader.load` /
+上表的能力注册事件位置按项目当前 NeoForge 26.1.2.125 的 `CommonModLoader.load` /
 `RegistrationEvents.init` 实现核对：发生在 common / sided setup 之后、IMC 和 load complete 之前。
 
 每个钩子先遍历**全部插件**，再冻结对应表，随后进入下一个钩子。

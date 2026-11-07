@@ -9,48 +9,30 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.WeakHashMap;
 
-/**
- * Pure per-level holder of the multiblock runtime services. Holds no event subscriptions — world
- * events are observed by {@link MultiblockChangeWatcher}, which also calls {@link #forget} on level
- * unload.
- *
- * <p>
- * Threading contract: the returned {@link Services} (and the {@link MultiblockClaimIndex} /
- * {@link MultiblockRecheckDirtySet} inside) are server-thread-only and not thread-safe. All binder methods
- * share one lock so the weak map itself stays internally consistent regardless of which path
- * (controller tick, event ingress, unload) touches it.
- */
+/** 按世界持有纯占地索引与脏标记集合，服务值不反向持有弱键世界。事件订阅由 MultiblockChangeWatcher 负责，并在世界卸载时清理绑定。所有绑定方法共用锁；返回的服务仅限世界线程使用。 */
 public final class MultiblockLevelBinder {
 
     private static final Map<Level, Services> SERVICES = new WeakHashMap<>();
 
     private MultiblockLevelBinder() {}
 
-    /** Returns the services for {@code level}, creating them on first access. */
+    /** 取得世界服务，首次访问时创建。 */
     public static synchronized Services services(ServerLevel level) {
         Objects.requireNonNull(level, "level");
-        return SERVICES.computeIfAbsent(level, ignored -> new Services(level));
+        return SERVICES.computeIfAbsent(level, ignored -> new Services(new MultiblockClaimIndex(), new MultiblockRecheckDirtySet()));
     }
 
-    /**
-     * Returns the services for {@code level} only if they already exist, never creating them.
-     * Event-path ingress must use this so levels without multiblock activity pay no allocation.
-     */
+    /** 只查询已有服务，不创建；事件入口据此跳过没有多方块活动的世界。 */
     public static synchronized @Nullable Services servicesIfPresent(ServerLevel level) {
         Objects.requireNonNull(level, "level");
         return SERVICES.get(level);
     }
 
-    /** Drops the services held for {@code level}; the next {@link #services} call recreates them. */
+    /** 丢弃世界服务；后续访问会重新建立。 */
     public static synchronized void forget(Level level) {
         SERVICES.remove(Objects.requireNonNull(level, "level"));
     }
 
-    /** Bundle of the per-level multiblock services. */
-    public record Services(MultiblockClaimIndex claims, MultiblockRecheckDirtySet rechecks) {
-
-        Services(ServerLevel level) {
-            this(new MultiblockClaimIndex(level), new MultiblockRecheckDirtySet());
-        }
-    }
+    /** 同一世界的占地与脏标记服务。 */
+    public record Services(MultiblockClaimIndex claims, MultiblockRecheckDirtySet rechecks) {}
 }

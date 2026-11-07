@@ -97,8 +97,11 @@ public abstract class MachineTicker extends MachineComponent implements TickHook
             return;
         }
         handle = null;
-        onDetaching(h);
-        h.unsubscribe();
+        try {
+            onDetaching(h);
+        } finally {
+            h.unsubscribe();
+        }
     }
 
     protected void onAttached(TickHandle handle) {}

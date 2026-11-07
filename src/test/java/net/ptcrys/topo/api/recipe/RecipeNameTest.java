@@ -56,9 +56,18 @@ class RecipeNameTest {
 
     @Test
     void defaultProgressTextureBelongsToTheFramework() {
-        assertEquals(IdHelper.id("textures/gui/progress_bar/arrow.png"), type.progressBarTexture());
+        assertEquals(IdHelper.topo("textures/gui/progress_bar/arrow.png"), type.progressBarTexture());
         assertEquals(20, type.progressBarTextureWidth());
         assertEquals(20, type.progressBarTextureFrameHeight());
+    }
+
+    @Test
+    void configurationFreezesBeforeRecipeDeclarations() {
+        type.freezeConfiguration();
+        assertThrows(IllegalStateException.class, () -> type.displayName("Frozen", "已冻结"));
+        assertThrows(IllegalStateException.class, () -> type.progressBar(IdHelper.topo("textures/gui/progress_bar/other.png")));
+        assertThrows(IllegalStateException.class, () -> type.vanillaFacing());
+        assertNotNull(type.recipe("still_declarable"));
     }
 
     private static ResourceKey<net.minecraft.world.item.crafting.Recipe<?>> source(String id) {

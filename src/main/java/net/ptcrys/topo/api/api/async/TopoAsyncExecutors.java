@@ -1,11 +1,15 @@
 package net.ptcrys.topo.api.api.async;
 
+import net.ptcrys.topo.Topology;
+
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
@@ -15,9 +19,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 public final class TopoAsyncExecutors {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TopoAsyncExecutors.class);
-    private static final int MAX_TICK_SCHEDULER_THREADS = 2;
 
     private static volatile ScheduledExecutorService tickScheduler;
+    private static volatile ExecutorService structureExecutor;
     private static boolean registered;
 
     private TopoAsyncExecutors() {}
@@ -51,16 +55,36 @@ public final class TopoAsyncExecutors {
 
     static int tickSchedulerThreadCount(int availableProcessors) {
         int cpus = Math.max(1, availableProcessors);
-        return cpus <= 3 ? 1 : MAX_TICK_SCHEDULER_THREADS;
+        int configured = Math.max(1, Topology.config.ASYNC.tickSchedulerMaxThreads);
+        return cpus <= 3 ? 1 : Math.min(cpus, configured);
     }
 
     public static synchronized void shutdownServerExecutors() {
         shutdownTickScheduler();
+        shutdownStructureExecutor();
     }
 
     public static synchronized void shutdownTickScheduler() {
         ScheduledExecutorService current = tickScheduler;
         tickScheduler = null;
+        if (current != null) {
+            current.shutdownNow();
+        }
+    }
+
+    /** Background pool for multiblock recognition; restarted lazily after a server stop. */
+    public static synchronized ExecutorService structureExecutor() {
+        if (structureExecutor == null || structureExecutor.isShutdown() || structureExecutor.isTerminated()) {
+            structureExecutor = Executors.newFixedThreadPool(
+                    Math.max(1, Topology.config.MULTIBLOCK.structureExecutorThreads),
+                    new NamedThreadFactory("topo-structure-", Thread.NORM_PRIORITY));
+        }
+        return structureExecutor;
+    }
+
+    public static synchronized void shutdownStructureExecutor() {
+        ExecutorService current = structureExecutor;
+        structureExecutor = null;
         if (current != null) {
             current.shutdownNow();
         }

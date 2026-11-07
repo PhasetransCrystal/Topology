@@ -7,11 +7,16 @@ import net.ptcrys.topo.api.api.registration.ExternalTargets;
 import net.ptcrys.topo.api.equipment.EquipmentRegistry;
 import net.ptcrys.topo.api.machine.MachineItemBehaviors;
 import net.ptcrys.topo.api.machine.ui.tooltip.ItemTooltipUis;
+import net.ptcrys.topo.api.material.MaterialLookup;
 import net.ptcrys.topo.api.material.MaterialRegistry;
+import net.ptcrys.topo.api.material.form.MaterialContentTypes;
 import net.ptcrys.topo.api.material.form.MaterialFormRegistry;
 import net.ptcrys.topo.api.recipe.productionline.ProductionLines;
 
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.material.Fluids;
 
 import org.junit.jupiter.api.Test;
 
@@ -44,19 +49,102 @@ class TopoPluginEngineIntegrationTest {
     }
 
     @Test
+    void contributionPhaseInjectsCapabilitiesIntoOtherPluginsMaterials() {
+        assertTrue(contributionSawAllMaterials);
+        assertTrue(contributionDataVisible);
+        var material = MaterialRegistry.require(a.material().id("lifecycle_material"));
+        assertTrue(material.data(contributionMarker).orElse(false));
+    }
+
+    @Test
+    void materialLookupIndexesFrozenPlanOutputs() {
+        var material = MaterialRegistry.require(a.material().id("lifecycle_material"));
+        var id = material.id().withPath(material.id().getPath() + "_" + baseForm.id().getPath());
+        var binding = MaterialLookup.current().byContent(MaterialContentTypes.ITEM, id).orElseThrow();
+        assertSame(material, binding.material());
+        assertSame(baseForm, binding.form());
+
+        var compatibleItem = MaterialLookup.current()
+                .byItem(Identifier.withDefaultNamespace("stick"))
+                .orElseThrow();
+        assertSame(material, compatibleItem.material());
+        assertSame(baseForm, compatibleItem.form());
+
+        var customId = material.id().withPath(
+                material.id().getPath() + "_" + baseForm.id().getPath() + "_custom");
+        var customBinding = MaterialLookup.current()
+                .byContent(customContentType, customId)
+                .orElseThrow();
+        assertSame(material, customBinding.material());
+        assertSame(baseForm, customBinding.form());
+        assertEquals(id, net.ptcrys.topo.helper.MaterialHelper.itemId(material, baseForm));
+    }
+
+    @Test
+    void formPlansAreBuiltValidatedAndRegisteredOnce() {
+        int generated = generatedForms.values().stream().mapToInt(List::size).sum();
+        assertTrue(generated > 0);
+        assertEquals(generated, planCreations);
+        assertEquals(generated, planOutputBuilds);
+        assertEquals(generated, planValidations);
+        assertEquals(generated, planRegistrations);
+        assertTrue(plansSawCompleteFormTable);
+        assertTrue(baseForm.requiredData().contains(materialMarker));
+    }
+
+    @Test
+    void externalTargetsCanUseRegisteredObjectsAndStableIds() {
+        var item = ExternalTargets.item(Items.STICK);
+        assertTrue(item.explicitId().isEmpty());
+        assertEquals(Identifier.withDefaultNamespace("stick"), item.id());
+        assertSame(Items.STICK, item.itemSupplier().get());
+
+        var block = ExternalTargets.block(Blocks.STONE);
+        assertEquals(Identifier.withDefaultNamespace("stone"), block.id());
+        assertEquals(Identifier.withDefaultNamespace("stone"), block.itemId());
+        assertSame(Blocks.STONE, block.blockSupplier().orElseThrow().get());
+
+        var fluid = ExternalTargets.fluid(Fluids.WATER);
+        assertEquals(Identifier.withDefaultNamespace("water"), fluid.id());
+        assertSame(Fluids.WATER, fluid.fluidSupplier().get());
+    }
+
+    @Test
+    void materialCreationClosesAfterTheMaterialsPhaseAndDataRelationsFreezeAtFoundation() {
+        assertNotNull(contributionCreationFailure);
+        assertTrue(contributionCreationFailure.getMessage().contains("material creation is closed"));
+        assertNotNull(relationMutationFailure);
+        assertTrue(relationMutationFailure.getMessage().contains("relations are frozen"));
+    }
+
+    @Test
+    void requiredPropertiesAreCheckedWhenDataIsInjected() {
+        assertNotNull(missingDependencyFailure);
+        assertTrue(missingDependencyFailure.getMessage().contains("dependent_probe"));
+        assertTrue(missingDependencyFailure.getMessage().contains("form_probe"));
+        assertTrue(dependencySatisfied);
+        assertNotNull(scopedMissingDependencyFailure);
+        assertTrue(scopedMissingDependencyFailure.getMessage().contains("scoped_dependent_probe"));
+        assertTrue(scopedMissingDependencyFailure.getMessage().contains("contribution_probe"));
+        assertTrue(scopedDependencySatisfied);
+        var material = MaterialRegistry.require(a.material().id("dependency_material"));
+        assertTrue(material.data(dependentMarker).orElse(false));
+    }
+
+    @Test
     void formRulesApplyInBothDirectionsAcrossPluginsBeforeValidationAndContent() {
         var base = MaterialRegistry.require(a.material().id("lifecycle_material"));
         var extension = MaterialRegistry.require(b.material().id("extension_material"));
         for (var material : List.of(base, extension)) {
-            assertEquals(List.of(baseForm, extensionForm), material.strategy().forms());
-            assertEquals(material.strategy().forms(), generatedForms.get(material));
+            assertEquals(List.of(baseForm, extensionForm), material.forms());
+            assertEquals(material.forms(), generatedForms.get(material));
         }
         assertTrue(formValidationSawResolvedForms);
         assertSame(coreA, generatedFormOwners.get(base));
         assertSame(coreB, generatedFormOwners.get(extension));
-        var before = base.strategy().forms();
+        var before = base.forms();
         MaterialRegistry.freeze();
-        assertSame(before, base.strategy().forms());
+        assertSame(before, base.forms());
         assertEquals(2, generatedForms.get(base).size());
         assertTrue(MaterialFormRegistry.isFrozen());
     }
@@ -64,44 +152,43 @@ class TopoPluginEngineIntegrationTest {
     @Test
     void externalItemOptionsCannotSelectANonMatchingForm() {
         var material = MaterialRegistry.require(a.material().id("lifecycle_material"));
-        assertTrue(material.strategy().optionsFor(nonMatchingForm).orElseThrow().itemOverride().isPresent());
+        assertTrue(material.optionsFor(nonMatchingForm).orElseThrow().targets().item().isPresent());
         assertFalse(nonMatchingForm.appliesTo(material));
-        assertFalse(material.strategy().forms().contains(nonMatchingForm));
+        assertFalse(material.forms().contains(nonMatchingForm));
         assertFalse(generatedForms.get(material).contains(nonMatchingForm));
         assertEquals(1, scopedValidations);
-        assertTrue(material.strategy().data(scopedMarker).isEmpty());
-        assertTrue(material.strategy().data(scopedMarker, baseForm).orElseThrow());
+        assertTrue(material.data(scopedMarker).isEmpty());
+        assertTrue(material.data(scopedMarker, baseForm).orElseThrow());
     }
 
     @Test
     void materialSnapshotsAndRetainedBuildersRespectTheFreezeFence() {
         assertTrue(rulesSawEmptyForms);
         assertTrue(rulesReusedMaterialSnapshot);
-        assertEquals(2, ruleCalls);
+        assertEquals(3, ruleCalls);
         assertNotNull(foreignFormFailure);
         assertNotNull(duplicateBuildFailure);
         var material = MaterialRegistry.require(a.material().id("lifecycle_material"));
-        assertTrue(material.strategy().hasForm(baseForm));
-        assertFalse(material.strategy().hasForm(nonMatchingForm));
-        assertThrows(UnsupportedOperationException.class, () -> material.strategy().forms().clear());
+        assertTrue(material.hasForm(baseForm));
+        assertFalse(material.hasForm(nonMatchingForm));
+        assertThrows(UnsupportedOperationException.class, () -> material.forms().clear());
         assertThrows(IllegalStateException.class, () -> retainedFormOptions.overrideItem(ExternalTargets.mcItem("diamond")));
         assertThrows(IllegalStateException.class, () -> retainedFormOptions.overrideBlock(ExternalTargets.mcBlock("stone")));
         assertThrows(IllegalStateException.class, () -> retainedFormOptions.data(materialMarker.enabled()));
         assertThrows(IllegalStateException.class, () -> builtMaterialBuilder.lang("Changed", "修改"));
         MaterialRegistry.freeze();
-        assertEquals(2, ruleCalls);
+        assertEquals(3, ruleCalls);
     }
 
     @Test
     void processorsOnlyVisitActivatedMaterialsAndValidateBeforeProcessing() {
         var material = MaterialRegistry.require(a.material().id("lifecycle_material"));
         var extension = MaterialRegistry.require(b.material().id("extension_material"));
-        assertEquals(List.of(alphaProcessor, zetaProcessor), material.strategy().postProcessors());
-        assertTrue(extension.strategy().postProcessors().isEmpty());
-        assertThrows(UnsupportedOperationException.class, () -> material.strategy().postProcessors().clear());
-        // Activation data is validated before content, followed by the post-content validation pass.
-        assertEquals(List.of("validate:zeta", "validate:alpha", "validate:alpha", "validate:zeta",
-                "process:alpha", "process:zeta"), processorEvents);
+        assertEquals(List.of(alphaProcessor, zetaProcessor), material.postProcessors());
+        assertTrue(extension.postProcessors().isEmpty());
+        assertThrows(UnsupportedOperationException.class, () -> material.postProcessors().clear());
+        // Post-processors validate once at freeze and process once after all material content.
+        assertEquals(List.of("validate:alpha", "validate:zeta", "process:alpha", "process:zeta"), processorEvents);
     }
 
     @Test
@@ -130,20 +217,42 @@ class TopoPluginEngineIntegrationTest {
         assertSame(ProductionLines.require(b.recipe().id("machine_line")), recipeLine);
         assertTrue(recipesSawFrozenContent);
         assertTrue(ProductionLines.isFrozen());
-        assertNotNull(ProductionLines.require(a.recipe().id("final_line")));
+        var finalLine = ProductionLines.require(a.recipe().id("final_line"));
+        var finalView = ProductionLines.view(finalLine.id());
+        assertSame(finalView, ProductionLines.view(finalLine.id()));
+        assertTrue(finalView.recipes().isEmpty());
         TopoPluginEngine.host().bootstrapContent();
         assertEquals(1, recipeCalls);
+    }
+
+    @Test
+    void equipmentItemsArePublishedOnceAndIndexedByMaterialAndKind() {
+        var material = MaterialRegistry.require(a.material().id("lifecycle_material"));
+        var equipment = EquipmentRegistry.require(a.equipment().id("lifecycle_tool"));
+        var byMaterial = EquipmentRegistry.itemsFor(material);
+        var byEquipment = EquipmentRegistry.itemsFor(equipment);
+        assertEquals(1, byMaterial.size());
+        assertEquals(1, byEquipment.size());
+        var record = byMaterial.getFirst();
+        assertSame(record, byEquipment.getFirst());
+        assertSame(equipment, record.equipment());
+        assertSame(material, record.material());
+        assertSame(generatedEquipment, record.entry());
+        assertSame(record, EquipmentRegistry.itemFor(generatedEquipment.identifier()).orElseThrow());
+        assertTrue(EquipmentRegistry.isItemsPublished());
+        assertThrows(UnsupportedOperationException.class, () -> EquipmentRegistry.itemRecords().clear());
+        assertThrows(IllegalStateException.class, () -> EquipmentRegistry.publishItems(List.of()));
     }
 
     @Test
     void hostRunsAllPluginsAndLegacyCommonSetupBeforeFreezingSharedRegistries() {
         TopoPluginEngine.host().bootstrapContent();
         assertTrue(TopoPlugins.view().contains(OfficialTopoAPIPlugin.INSTANCE));
-        assertEquals(4, a.lang().registeredKeys().size());
+        assertEquals(5, a.lang().registeredKeys().size());
         assertEquals(4, b.lang().registeredKeys().size());
         assertTrue(a.lang().registeredKeys().getFirst().key().contains("topo_test_a"));
         assertTrue(b.lang().registeredKeys().stream().allMatch(key -> key.key().contains("topo_test_b")));
-        assertEquals(Set.of("ui.topo_test_a.owned_a", "material.topo_test_a.lifecycle_material", "form.topo_test_a.base_form", "form.topo_test_a.non_matching_form"), coreA.languages.keySet());
+        assertEquals(Set.of("ui.topo_test_a.owned_a", "material.topo_test_a.lifecycle_material", "material.topo_test_a.dependency_material", "form.topo_test_a.base_form", "form.topo_test_a.non_matching_form"), coreA.languages.keySet());
         assertEquals(Set.of("pipe.strategy.topo_test_b.owned_b", "jade.config.topo_test_b.owned", "form.topo_test_b.extension_form", "material.topo_test_b.extension_material"), coreB.languages.keySet());
         assertEquals("A", coreA.languages.get("ui.topo_test_a.owned_a").get("en_us"));
         assertEquals("甲", coreA.languages.get("ui.topo_test_a.owned_a").get("zh_cn"));

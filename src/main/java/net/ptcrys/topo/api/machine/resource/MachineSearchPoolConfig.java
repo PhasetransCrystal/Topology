@@ -1,5 +1,6 @@
 package net.ptcrys.topo.api.machine.resource;
 
+import net.ptcrys.topo.api.api.lang.TopoApiLang;
 import net.ptcrys.topo.api.machine.component.ComponentContext;
 import net.ptcrys.topo.api.machine.component.ComponentKey;
 import net.ptcrys.topo.api.machine.component.ComponentMount;
@@ -8,8 +9,6 @@ import net.ptcrys.topo.api.machine.data.DataString;
 import net.ptcrys.topo.api.machine.multiblock.ability.PartRoleAttachment;
 import net.ptcrys.topo.api.machine.ui.MachineUiComponentTemplate;
 import net.ptcrys.topo.api.machine.ui.MachineUiContribution;
-
-import net.minecraft.network.chat.Component;
 
 import java.util.Locale;
 import java.util.Objects;
@@ -148,7 +147,7 @@ public final class MachineSearchPoolConfig extends MachineComponent implements R
         }
         contribution.rightPanel(
                 "topo_search_pool",
-                Component.translatable("ui.topo.search_pool.panel"),
+                TopoApiLang.UI_SEARCH_POOL_PANEL.getComponent(),
                 null,
                 null,
                 MachineUiComponentTemplate.INSTANCE.createSearchPoolConfigPanel(

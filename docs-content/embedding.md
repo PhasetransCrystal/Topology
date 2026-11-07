@@ -27,6 +27,8 @@ sidebar_position: 3
 | `PipeSurveyNetworking.register(modEventBus)`           | 管道勘测网络通道                            |
 | `PipeSurveyClientRenderer.register()`                  | 勘测客户端渲染                              |
 | `TickHeartbeat.register(modEventBus)`                  | tick 心跳                                   |
+| `TooltipProbe.register()`                              | 可选开发者 tooltip 探针（仅客户端）          |
+| `JeiLookupProbe.register()`                            | 可选开发者 JEI 探针（仅客户端）              |
 
 ## 启动管线
 

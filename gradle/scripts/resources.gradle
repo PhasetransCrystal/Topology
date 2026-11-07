@@ -28,14 +28,12 @@ sourceSets.main.resources.srcDir generateModMetadata
 // Multi-mod datagen creates one resource root per mod id.
 sourceSets.main.resources {
     srcDir("src/generated/resources/${mod_id}")
-    srcDir("src/generated/serverResources/${mod_id}")
     exclude('**/*.bbmodel')
     exclude('**/.cache/**')
 }
 
 sourceSets.demo.resources {
     srcDir('src/generated/resources/topodemo')
-    srcDir('src/generated/serverResources/topodemo')
     exclude('**/*.bbmodel')
     exclude('**/.cache/**')
 }

@@ -1,0 +1,260 @@
+package net.ptcrys.topo.api.machine.multiblock.ui
+
+import net.ptcrys.topo.api.api.lang.LangKey
+import net.ptcrys.topo.api.api.lang.TopoApiLang
+import net.ptcrys.topo.api.machine.ui.MachineUiComponentStyle
+import net.ptcrys.topo.api.machine.ui.MachineUiComponentTemplate
+import net.ptcrys.topo.api.machine.ui.MachineUiLayout
+
+import net.minecraft.core.BlockPos
+import net.minecraft.network.chat.Component
+import net.minecraft.world.level.block.state.BlockState
+
+import com.lowdragmc.lowdraglib2.gui.texture.IGuiTexture
+import com.lowdragmc.lowdraglib2.gui.texture.Icons
+import com.lowdragmc.lowdraglib2.gui.ui.UIElement
+import com.lowdragmc.lowdraglib2.gui.ui.elements.Button
+import com.lowdragmc.lowdraglib2.gui.ui.elements.Scene
+import dev.vfyjxf.taffy.style.AlignItems
+import dev.vfyjxf.taffy.style.TaffyPosition
+import org.joml.Vector3f
+
+import java.util.ArrayList
+import java.util.function.Consumer
+
+/**
+ * Shared interactive scene panel for the JEI multiblock preview and the controller structure page,
+ * ported from the old GTOdyssey panel: an [InspectorScene] with a floating toolbar — layer slicer
+ * (ALL &rarr; L1 &rarr; &hellip; &rarr; LN), zoom in/out, auto-rotation toggle, reset view, plus
+ * caller-supplied extra controls — and an optional header info element pinned to the top-left.
+ */
+object MultiblockScenePanel {
+    private const val ROTATE_SPEED = 0.5f
+    private const val ZOOM_MIN = 2.0f
+    private const val ZOOM_MAX = 40.0f
+    private const val ZOOM_STEP = 1.5f
+    private const val LAYER_ALL = Int.MIN_VALUE
+    private const val DEFAULT_YAW = 35f
+    private const val DEFAULT_PITCH = 28f
+
+    @JvmStatic
+    fun of(scene: Scene, positions: Collection<BlockPos>): Builder = Builder(scene, positions)
+
+    class Builder internal constructor(internal val scene: Scene, positions: Collection<BlockPos>) {
+        internal val positions = ArrayList(positions)
+        internal var homeYaw = DEFAULT_YAW
+        internal var homePitch = DEFAULT_PITCH
+        internal var homeZoom: Float? = null
+        internal var zoomControls = true
+        internal var resetControl = true
+        internal val leadingControls = ArrayList<UIElement>()
+        internal val extraControls = ArrayList<Control>()
+        internal var headerInfo: UIElement? = null
+        internal var onSelect: Consumer<BlockPos>? = null
+
+        fun homeView(yaw: Float, pitch: Float): Builder = apply {
+            homeYaw = yaw
+            homePitch = pitch
+        }
+
+        fun homeView(yaw: Float, pitch: Float, zoom: Float): Builder = apply {
+            homeView(yaw, pitch)
+            homeZoom = zoom
+        }
+
+        fun zoomControls(show: Boolean): Builder = apply { zoomControls = show }
+
+        fun resetControl(show: Boolean): Builder = apply { resetControl = show }
+
+        /** Control pinned before the layer slicer (e.g. the required/as-built mode toggle). */
+        fun leadingControl(control: UIElement): Builder = apply { leadingControls.add(control) }
+
+        /** Label / element pinned to the toolbar's left side (dimensions + rotation info). */
+        fun headerInfo(header: UIElement): Builder = apply { headerInfo = header }
+
+        fun control(icon: IGuiTexture, tooltipKey: LangKey, action: Runnable): Builder = apply {
+            extraControls.add(Control(icon, tooltipKey, action))
+        }
+
+        fun onSelect(onSelect: Consumer<BlockPos>): Builder = apply { this.onSelect = onSelect }
+
+        fun build(): Panel = assemble(this)
+    }
+
+    internal data class Control(val icon: IGuiTexture, val tooltipKey: LangKey, val action: Runnable)
+
+    internal class Footprint(positions: Collection<BlockPos>, scene: Scene, zoom: Float) {
+        var positions = positions.toSet()
+        val center = Vector3f(scene.center)
+        var zoom = zoom
+        var layer = LAYER_ALL
+        var layerButton: Button? = null
+    }
+
+    class Panel internal constructor(private val sceneArea: UIElement, private val scene: Scene, private val resetView: Runnable, private val footprint: Footprint) {
+        fun sceneArea(): UIElement = sceneArea
+
+        fun scene(): Scene = scene
+
+        fun highlight(pos: BlockPos?): Panel = apply {
+            (scene as? InspectorScene)?.selectBlock(pos)
+        }
+
+        /** 替换场景并更新占地；增长、收缩、模块及镜像变化同时更新镜头和切层范围。 */
+        fun swapBlocks(blocks: Map<BlockPos, BlockState>, positions: Collection<BlockPos>, reshape: Boolean): Panel = apply {
+            (scene as? InspectorScene)?.setBlocks(blocks, footprint.positions, reshape)
+            val next = positions.toSet()
+            if (next != footprint.positions) {
+                val yaw = scene.rotationYaw
+                val pitch = scene.rotationPitch
+                footprint.positions = next
+                footprint.layer = LAYER_ALL
+                footprint.layerButton?.setText(Component.literal("ALL"))
+                scene.setRenderedCore(ArrayList(next))
+                footprint.center.set(scene.center)
+                footprint.zoom = scene.zoom
+                scene.setCameraYawAndPitch(yaw, pitch)
+                val selected = (scene as? InspectorScene)?.selectedBlock()
+                if (selected != null && selected !in next) highlight(null)
+            }
+        }
+
+        fun resetView() {
+            resetView.run()
+        }
+    }
+
+    private fun assemble(builder: Builder): Panel {
+        val scene = builder.scene.apply {
+            setId("topo_multiblock_scene_view")
+            layout {
+                it.widthPercent(100f)
+                it.heightPercent(100f)
+            }
+        }
+        val footprint = Footprint(builder.positions, scene, builder.homeZoom ?: scene.zoom)
+        applyView(scene, footprint.center, builder.homeYaw, builder.homePitch, footprint.zoom)
+
+        val spinning = booleanArrayOf(false)
+        scene.setBeforeWorldRender {
+            if (spinning[0] && !it.isDragging) {
+                it.setCameraYawAndPitch((it.rotationYaw + ROTATE_SPEED) % 360f, it.rotationPitch)
+            }
+        }
+
+        val resetView = Runnable {
+            spinning[0] = false
+            applyView(scene, footprint.center, builder.homeYaw, builder.homePitch, footprint.zoom)
+        }
+
+        builder.onSelect?.let { onSelect ->
+            scene.setOnSelected { pos, _ -> onSelect.accept(pos) }
+        }
+
+        val sceneArea = UIElement().apply {
+            setId("topo_multiblock_scene_area")
+            layout {
+                it.positionType(TaffyPosition.RELATIVE)
+                it.widthPercent(100f)
+            }
+            addChild(scene)
+            toolbarOverlays(scene, spinning, resetView, builder, footprint).forEach(::addChild)
+        }
+        return Panel(sceneArea, scene, resetView, footprint)
+    }
+
+    private fun toolbarOverlays(scene: Scene, spinning: BooleanArray, resetView: Runnable, builder: Builder, footprint: Footprint): List<UIElement> {
+        val overlays = ArrayList<UIElement>(2)
+        builder.headerInfo?.let { header ->
+            overlays.add(
+                MachineUiLayout.row(
+                    gap = 2f,
+                    alignItems = AlignItems.CENTER,
+                    id = "topo_multiblock_scene_toolbar_leading",
+                ) {
+                    root.layout {
+                        it.positionType(TaffyPosition.ABSOLUTE)
+                        it.top(2f)
+                        it.left(2f)
+                    }
+                    add(header)
+                },
+            )
+        }
+        overlays.add(
+            MachineUiLayout.row(
+                gap = 2f,
+                alignItems = AlignItems.CENTER,
+                id = "topo_multiblock_scene_toolbar",
+            ) {
+                root.layout {
+                    it.positionType(TaffyPosition.ABSOLUTE)
+                    it.top(2f)
+                    it.right(2f)
+                }
+                builder.leadingControls.forEach { add(it) }
+                add(layerSlicer(scene, footprint))
+                if (builder.zoomControls) {
+                    add(
+                        MachineUiComponentTemplate.createIconButton(Icons.ADD, TopoApiLang.UI_MULTIBLOCK_PREVIEW_ZOOM_IN) {
+                            scene.setZoom(maxOf(ZOOM_MIN, scene.zoom - ZOOM_STEP))
+                        },
+                    )
+                    add(
+                        MachineUiComponentTemplate.createIconButton(Icons.REMOVE, TopoApiLang.UI_MULTIBLOCK_PREVIEW_ZOOM_OUT) {
+                            scene.setZoom(minOf(ZOOM_MAX, scene.zoom + ZOOM_STEP))
+                        },
+                    )
+                }
+                add(
+                    MachineUiComponentTemplate.createIconButton(Icons.ROTATION, TopoApiLang.UI_MULTIBLOCK_PREVIEW_ROTATE) {
+                        spinning[0] = !spinning[0]
+                    },
+                )
+                if (builder.resetControl) {
+                    add(MachineUiComponentTemplate.createIconButton(Icons.REPLAY, TopoApiLang.UI_MULTIBLOCK_PREVIEW_RESET) { resetView.run() })
+                }
+                builder.extraControls.forEach { control ->
+                    add(
+                        MachineUiComponentTemplate.createIconButton(control.icon, control.tooltipKey) {
+                            control.action.run()
+                        },
+                    )
+                }
+            },
+        )
+        return overlays
+    }
+
+    private fun layerSlicer(scene: Scene, footprint: Footprint): UIElement = MachineUiComponentTemplate.createButton(Component.literal("ALL")).apply {
+        footprint.layerButton = this
+        setId("topo_multiblock_scene_layer_button")
+        style { it.tooltips(TopoApiLang.UI_MULTIBLOCK_PREVIEW_LAYER.getComponent()) }
+        setOnClick {
+            val minY = footprint.positions.minOfOrNull { it.y } ?: return@setOnClick
+            val maxY = footprint.positions.maxOfOrNull { it.y } ?: return@setOnClick
+            footprint.layer = when {
+                footprint.layer == LAYER_ALL -> minY
+                footprint.layer >= maxY -> LAYER_ALL
+                else -> footprint.layer + 1
+            }
+            val visibleCells = footprint.positions.filter { footprint.layer == LAYER_ALL || it.y == footprint.layer }
+            scene.setRenderedCore(visibleCells, null, false)
+            scene.setCenter(Vector3f(footprint.center))
+            scene.setZoom(footprint.zoom)
+            setText(Component.literal(layerLabel(footprint.layer, minY)))
+        }
+        layout {
+            it.height(MachineUiComponentStyle.sceneToolbarButtonSize)
+            it.flexShrink(0f)
+        }
+    }
+
+    private fun layerLabel(layerY: Int, minY: Int): String = if (layerY == LAYER_ALL) "ALL" else "L${layerY - minY + 1}"
+
+    private fun applyView(scene: Scene, center: Vector3f, yaw: Float, pitch: Float, zoom: Float) {
+        scene.setCenter(Vector3f(center))
+        scene.setCameraYawAndPitch(yaw, pitch)
+        scene.setZoom(zoom)
+    }
+}

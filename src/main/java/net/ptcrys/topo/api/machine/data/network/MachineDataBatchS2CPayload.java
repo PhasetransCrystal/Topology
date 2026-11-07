@@ -13,15 +13,20 @@ import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.network.connection.ConnectionType;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
+import io.netty.handler.codec.DecoderException;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public record MachineDataBatchS2CPayload(List<Entry> entries) implements CustomPacketPayload {
 
-    public static final Identifier ID = IdHelper.id("machine_data_batch_s2c");
+    private static final Logger LOGGER = LoggerFactory.getLogger(MachineDataBatchS2CPayload.class);
+
+    public static final Identifier ID = IdHelper.topo("machine_data_batch_s2c");
     public static final Type<MachineDataBatchS2CPayload> TYPE = new Type<>(ID);
     public static final StreamCodec<RegistryFriendlyByteBuf, MachineDataBatchS2CPayload> CODEC = StreamCodec.ofMember(MachineDataBatchS2CPayload::write, MachineDataBatchS2CPayload::decode);
 
@@ -44,6 +49,10 @@ public record MachineDataBatchS2CPayload(List<Entry> entries) implements CustomP
 
     private static MachineDataBatchS2CPayload decode(RegistryFriendlyByteBuf buffer) {
         int count = buffer.readVarInt();
+        // Each entry needs at least 8 bytes of position plus a 1-byte empty payload length.
+        if (count < 0 || count > buffer.readableBytes() / 9) {
+            throw new DecoderException("Invalid machine data batch entry count: " + count);
+        }
         List<Entry> entries = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
             entries.add(new Entry(buffer.readLong(), buffer.readByteArray()));
@@ -66,11 +75,16 @@ public record MachineDataBatchS2CPayload(List<Entry> entries) implements CustomP
             return;
         }
         for (Entry entry : entries) {
-            if (level.getBlockEntity(BlockPos.of(entry.pos())) instanceof MachineBlockEntity machine) {
-                machine.data().lifecycleReceiveClientDelta(
-                        entry.data(),
-                        level.registryAccess(),
-                        connectionType);
+            BlockPos pos = BlockPos.of(entry.pos());
+            try {
+                if (level.getBlockEntity(pos) instanceof MachineBlockEntity machine) {
+                    machine.data().lifecycleReceiveClientDelta(
+                            entry.data(),
+                            level.registryAccess(),
+                            connectionType);
+                }
+            } catch (RuntimeException error) {
+                LOGGER.error("Failed to apply machine data sync at {}; dropping this entry", pos, error);
             }
         }
     }

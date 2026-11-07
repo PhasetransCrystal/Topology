@@ -38,7 +38,7 @@ public final class OreProcessingChain extends MaterialPostProcessor {
     @Override
     public void process(Material material) {
         if (notDeclaredOn(material)) return;
-        // 为该材质发射配方。此刻表单物品已铸造，
+        // 为该材质发射配方。此刻形态物品已铸造，
         // 可用 MaterialHelper 等延迟获取（datagen 时才解析为具体物品）
     }
 }
@@ -62,7 +62,7 @@ m.material("copper").data(processor.activation()).build();
 全部形态内容生成后，引擎先对**所有已激活的材料／处理器组合**跑完 `validate`，
 再对这些组合跑 `process`。因此校验器必须无副作用且允许重复执行；
 不能要求冻结阶段已有生成物品，也不能在 `validate` 内生成配方。
-`process` 里可以安全引用其他材质的表单物品（跨材质配方链可行）。
+`process` 里可以安全引用其他材质的形态物品（跨材质配方链可行）。
 
 未激活的处理器不会收到框架的 `validate` 或 `process` 调用，产品无需自行过滤未激活材质。
 引擎复用冻结时构建的激活列表，单个材料的处理器按完整 ID 排序，
@@ -77,5 +77,5 @@ m.material("copper").data(processor.activation()).build();
 | `processor.validate(material)`                | 结构校验（先于全部 process）     |
 | `processor.process(material)`                 | 每材质发射配方链                 |
 | `processor.notDeclaredOn(material)`           | 未激活判定（process 首行 guard） |
-| `processor.require(material, form)`           | 表单存在断言                     |
+| `processor.require(material, form)`           | 形态存在断言                     |
 | `material.postProcessor(path, processor)`     | 领域注册（钩子 3，id 须匹配）    |

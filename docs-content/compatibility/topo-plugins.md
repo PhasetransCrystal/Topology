@@ -99,7 +99,7 @@ public void registerMaterials(MaterialDomainRegistration material) {
 public void registerMaterialFoundation(MaterialDomainRegistration material) {
     material.form("plate")
             .lang("Plate", "板")
-            .appliesTo(value -> value.strategy().data(BaseMaterialTypes.METAL).orElse(false))
+            .appliesTo(value -> value.data(BaseMaterialTypes.METAL).orElse(false))
             .strategy(new PlateForm())
             .build();
 }
@@ -120,29 +120,34 @@ Lambda 在全部材料声明结束后求值，因此可以把 `BaseMaterialTypes
 
 ## 5. 给已经构建的材料补数据
 
-材料在 `build()` 后、全部插件完成 `registerMaterials` 之前，允许通过 `Material.data(use)` 补数据：
+在 `registerMaterialContributions` 中注入。它在所有插件的 `registerMaterials` 之后、形态匹配与冻结之前运行，
+目标材料一定已构建，且注入数据参与 `appliesTo`、校验和后处理：
 
 ```java
-// builtTarget 是合作方在本次材料声明窗口中已经 build() 的真实句柄。
 // CORROSION 是 myaddon 在材料基础阶段注册的数据类型。
-public void contributeCorrosion(Material builtTarget) {
-    builtTarget.data(CORROSION.rating(3));
+@Override
+public void registerMaterialContributions(MaterialContributionRegistration contributions) {
+    for (Material target : contributions.materials()) {
+        if (target.hasData(INGOT)) {
+            contributions.data(target, CORROSION.rating(3));
+        }
+    }
 }
 ```
 
-这里的关键前提是**调用时目标已经构建**。模组依赖不能证明 `BaseMaterials.COPPER` 已经赋值，
-也不能保证自己的 `registerMaterials` 晚于对方。
-直接读取对方静态字段可能得到 null，也可能意外触发整组注册；
-把读取包进 Supplier，若仍在同一窗口过早调用，也没有解决问题。
+也可以精确指定合作方已公开的材料：
 
-需要此类兼容时，按合作方明确提供的初始化／回调约定取得已构建目标，再在窗口内调用。
-当前框架没有“全部材料声明后、关闭写入前”的单独插件注入钩子；
-不能先等到 `registerMaterialFollowUps` 再补数据，那时已经关闭写入。
-若双方没有保证目标就绪的协作入口，优先让新形态读取对方已有数据，
-或由材料提供方在构建材料时消费扩展数据类型。
+```java
+Material target = contributions.require(
+        Identifier.fromNamespaceAndPath("basemod", "copper"));
+contributions.data(target, CORROSION.rating(3));
+```
 
-补数据不改变材料归属，同一数据类型重复写入会报错，不提供后写覆盖。
-形态匹配、校验和运行时均不能继续修改；也不能通过改写对方策略或重新注册材料绕过冻结。
+- 该阶段不依赖插件登记顺序，适合全量材料注入或跨插件补数据。
+- 已知目标已构建时，也可在 `registerMaterials` 窗口内直接 `target.data(use)`。
+- 补数据不改变材料归属，同一数据类型重复写入会报错，不提供后写覆盖。
+- 不同数据类型可由多个插件分别补充；能力之间保持正交。
+- 形态匹配、校验和运行时均不能继续修改；也不能通过改写对方策略或重新注册材料绕过冻结。
 
 ## 6. 为共享内容添加配方
 
@@ -169,7 +174,7 @@ public void registerRecipes(RecipeDomainRegistration recipe) {
 
 ```java
 for (Material target : MaterialRegistry.registered()) {
-    if (!target.strategy().hasForm(ingot) || !target.strategy().hasForm(dust)) continue;
+    if (!target.hasForm(ingot) || !target.hasForm(dust)) continue;
     String path = "compat/myaddon/" + target.id().getNamespace() + "/" + target.id().getPath();
     // 在目标配方类型下使用该局部路径并保存配方。
 }
@@ -182,7 +187,7 @@ for (Material target : MaterialRegistry.registered()) {
 
 | 要扩展什么 | 做法 | 边界 |
 |---|---|---|
-| 为其他材料增加装备 | 在 `registerEquipmentKinds` 声明按共享数据匹配的策略 | 生成时使用材料的 `context.core()`，通过 `EquipmentRegistry.recordItem` 记录装备以接入自动行为 |
+| 为其他材料增加装备 | 在 `registerEquipmentKinds` 声明按共享数据匹配的策略 | 生成时使用材料的 `context.core()` 并返回 `ItemEntry`；框架统一记录装备以接入自动行为 |
 | 用对方组件搭自己的机器 | 在 `registerMachines` 引用已公开的组件工厂、资源类型与配方类型 | 组件 key、依赖结构和数据字段应遵守对方契约 |
 | 让管道与对方资源体系兼容 | 复用公开的 `MachineResourceType` 与匹配 capability | 不要重新注册同名资源类型；实际传输还取决于 handler 兼容性 |
 | 为对方物品添加工具交互／面板 | `registerRuntime` 中对已绑定物品登记 | 一个物品一个对应贡献，重复登记不会自动合并 |

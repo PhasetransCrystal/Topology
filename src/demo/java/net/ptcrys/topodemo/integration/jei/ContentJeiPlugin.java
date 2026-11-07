@@ -78,7 +78,8 @@ public final class ContentJeiPlugin implements IModPlugin {
 
     @Override
     public void registerRecipeCatalysts(IRecipeCatalystRegistration registration) {
-        for (var category : recipes) registration.addCraftingStation(category.jei(), category.station().registeredBlock().get());
+        for (var category : recipes)
+            registration.addCraftingStation(category.jei(), category.station().registeredBlock().get());
     }
 
     @Override

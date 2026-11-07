@@ -1,11 +1,15 @@
-# graphigy
+# graphify
 
-本项目不适用于Graphify
+本项目不适用于 Graphify
 
-# PROJECT_KNOWLEDGE.md
+# PROJECT_ROADMAP.md
 
-PROJECT_KNOWLEDGE.md应保持简介,不要写入详细的或只使用一次的信息
+PROJECT_ROADMAP.md 的“项目知识”部分应保持简洁，不要写入详细的或只使用一次的信息
 
 # 测试与沙箱
 
-存在需要进行运行测试的场景,应通知用户手动操作,这样可以获得更完整的测试数据
+存在需要进行运行测试的场景，应通知用户手动操作，这样可以获得更完整的测试数据
+
+# 项目知识
+
+多方块模块的已核实事实与用户约定见 [PROJECT_KNOWLEDGE.md](PROJECT_KNOWLEDGE.md)；涉及该模块时先读取。

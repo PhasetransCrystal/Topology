@@ -199,6 +199,16 @@ public abstract class RecipeCapability<I, O> {
 
     public void validateOutput(O content) {}
 
+    /** Identity used when comparing two declared input contents for duplicate detection. */
+    public Object inputIdentity(I content) {
+        return content;
+    }
+
+    /** Identity used when comparing two declared output contents for duplicate detection. */
+    public Object outputIdentity(O content) {
+        return content;
+    }
+
     /**
      * Pure scale of one input content for parallel / batch / performance modifiers. Duration is not
      * involved. Must cover every content shape this capability admits; {@code factor == 1} is identity.
@@ -264,6 +274,14 @@ public abstract class RecipeCapability<I, O> {
                                                           List<I> inputs,
                                                           List<O> outputs) {
         return null;
+    }
+
+    /**
+     * Keys that identify one input content for import/replacement conflict detection. Returning an
+     * empty set means this content does not participate in hand-written/imported recipe deduplication.
+     */
+    public Set<?> importConflictKeys(I content) {
+        return Set.of();
     }
 
     /**

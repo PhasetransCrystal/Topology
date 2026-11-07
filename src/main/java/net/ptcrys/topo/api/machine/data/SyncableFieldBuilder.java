@@ -94,14 +94,6 @@ public final class SyncableFieldBuilder<F extends DataField, V> extends DataFiel
         return this;
     }
 
-    /**
-     * Reserved client-to-server write axis. Disabled until per-field authorization and validators
-     * exist; declaring it fails loudly, mirroring the domain contract.
-     */
-    public SyncableFieldBuilder<F, V> syncToServer() {
-        throw new UnsupportedOperationException("TO_SERVER machine data sync is disabled until " + "menu/session authorization and field validators are implemented for " + path());
-    }
-
     @Override
     void validateDeclaration() {
         super.validateDeclaration();
@@ -115,8 +107,7 @@ public final class SyncableFieldBuilder<F extends DataField, V> extends DataFiel
         FieldPolicy base = super.resolvePolicy();
         return new FieldPolicy(
                 base.persistEnabled(),
-                Boolean.TRUE.equals(syncToClient),
-                false);
+                Boolean.TRUE.equals(syncToClient));
     }
 
     @Override

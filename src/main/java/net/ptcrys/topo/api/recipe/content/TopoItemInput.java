@@ -17,6 +17,7 @@ import net.neoforged.neoforge.transfer.item.ItemResource;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.netty.handler.codec.DecoderException;
 import org.jspecify.annotations.Nullable;
 
 import java.math.BigDecimal;
@@ -25,6 +26,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Supplier;
 
 /**
@@ -39,6 +41,8 @@ public sealed interface TopoItemInput
                                       permits TopoItemInput.Resource, TopoItemInput.Tag, TopoItemInput.AnyOf, TopoItemInput.Unconsumed {
 
     Codec<TopoItemInput> CODEC = Codec.STRING.dispatch("type", TopoItemInput::type, TopoItemInput::codecFor);
+
+    int MAX_TEMPLATES = 256;
 
     StreamCodec<RegistryFriendlyByteBuf, TopoItemInput> STREAM_CODEC = new StreamCodec<>() {
 
@@ -122,6 +126,23 @@ public sealed interface TopoItemInput
     static TopoItemInput of(ItemLike item, long count) {
         validateCount(count, "TopoItemInput.Resource");
         return new Resource(new ItemStackTemplate(Objects.requireNonNull(item, "item").asItem(), 1), count);
+    }
+
+    /** Capability-neutral item identities for recipe import/replacement conflict detection. */
+    static Set<Object> importConflictKeys(TopoItemInput input) {
+        Objects.requireNonNull(input, "recipe item input");
+        return switch (input) {
+            case Resource resource -> Set.of(resource.template().item().value());
+            case Unconsumed unconsumed -> Set.of(unconsumed.template().item().value());
+            case Tag tag -> Set.of(tag.tag());
+            case AnyOf anyOf -> {
+                Set<Object> keys = new LinkedHashSet<>();
+                for (ItemStackTemplate template : anyOf.templates()) {
+                    keys.add(template.item().value());
+                }
+                yield Set.copyOf(keys);
+            }
+        };
     }
 
     static TopoItemInput of(Supplier<? extends ItemLike> item, long count) {
@@ -211,8 +232,8 @@ public sealed interface TopoItemInput
 
     private static List<ItemStackTemplate> readTemplates(RegistryFriendlyByteBuf buf) {
         int size = buf.readVarInt();
-        if (size < 1) {
-            throw new IllegalArgumentException("Item input alternative count must be positive: " + size);
+        if (size < 1 || size > MAX_TEMPLATES) {
+            throw new DecoderException("Invalid item input alternative count: " + size + " (expected 1.." + MAX_TEMPLATES + ")");
         }
         List<ItemStackTemplate> templates = new ArrayList<>(size);
         for (int index = 0; index < size; index++) {

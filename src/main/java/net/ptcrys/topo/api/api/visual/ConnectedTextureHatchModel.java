@@ -40,7 +40,7 @@ public record ConnectedTextureHatchModel(
                                          Identifier family)
         implements CustomUnbakedBlockStateModel {
 
-    public static final Identifier LOADER = IdHelper.id("ctm_hatch");
+    public static final Identifier LOADER = IdHelper.topo("ctm_hatch");
     private static final ModelDebugName DEBUG_NAME = () -> "ConnectedTextureHatchModel";
 
     public static final MapCodec<ConnectedTextureHatchModel> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(

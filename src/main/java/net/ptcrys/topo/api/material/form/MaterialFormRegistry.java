@@ -6,13 +6,16 @@ import net.ptcrys.topo.api.api.builtin.MaterialDomainRegistration;
 import net.ptcrys.topo.api.api.infrastructure.FreezableStrategyRegistry;
 import net.ptcrys.topo.api.api.lang.LangKey;
 import net.ptcrys.topo.api.material.Material;
+import net.ptcrys.topo.api.material.data.MaterialDataType;
 
 import net.minecraft.resources.Identifier;
 
 import org.jetbrains.annotations.ApiStatus;
 
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Predicate;
 
 /**
@@ -56,6 +59,7 @@ public final class MaterialFormRegistry {
         private String langEn;
         private String langCn;
         private Predicate<Material> applicability = material -> false;
+        private final Set<MaterialDataType<?>> requiredData = new LinkedHashSet<>();
 
         private Builder(Identifier id, LangDomainRegistration langApi) {
             this.id = id;
@@ -87,6 +91,17 @@ public final class MaterialFormRegistry {
             return appliesTo(material -> true);
         }
 
+        /**
+         * Optional matching index hint: only evaluate {@link #appliesTo} on materials that declare
+         * all listed material-level data types. The predicate remains authoritative.
+         */
+        public Builder appliesToData(MaterialDataType<?>... types) {
+            for (MaterialDataType<?> type : types) {
+                this.requiredData.add(Objects.requireNonNull(type, "required data type"));
+            }
+            return this;
+        }
+
         public MaterialForm build() {
             MaterialFormStrategy registeredStrategy = Objects.requireNonNull(strategy, "material form requires strategy");
             if (langEn == null || langCn == null) {
@@ -94,7 +109,7 @@ public final class MaterialFormRegistry {
                         "material form " + id + " requires lang(en, cn); both languages are mandatory");
             }
             LangKey nameLang = langApi.resource(id, "form", langEn, langCn);
-            MaterialForm form = new MaterialForm(id, registeredStrategy, nameLang, applicability);
+            MaterialForm form = new MaterialForm(id, registeredStrategy, nameLang, applicability, requiredData);
             return REGISTRY.register(id, form, registeredStrategy);
         }
     }

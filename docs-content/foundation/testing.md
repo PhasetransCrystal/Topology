@@ -51,5 +51,39 @@ ID 与资源引用的回归由 `OreFeatureKeysTest`、`RecipeNameTest`、`Recipe
 
 `LifecycleTestEntrypoint` 只位于测试源码集，提供测试插件及捕获 datagen 输出的 RegistryCore。
 它与生产宿主一起走 NeoForge 生命周期；测试不靠手动调用引擎来代替首次加载。
-实际客户端/服务端验证还应检查 TopoDemo 的材质形态、装备及加载日志；数据生成验证检查输出归属，
-Topo 自身 datagen 不应夹带 TopoDemo 内容。不能用编译通过推断这些运行结果。
+实际客户端/服务端验证还应检查 TopoDemo 的材质形态、装备及加载日志。
+`runClientData` 同时加载 Topo 与 TopoDemo；验证时应检查生成目录和打包归属，
+Topo 发布包不应夹带 TopoDemo 内容。不能用编译通过推断这些运行结果。
+
+## 勘测快照边界回归
+
+由开发者手动运行协议用例：
+
+```bash
+./gradlew test --tests 'net.ptcrys.topo.api.pipe.survey.PipeSurveySnapshotTest' --rerun
+```
+
+`overlongLaneDoesNotShiftFollowingLaneOrCapacity` 构造一条 2049 节点路径和紧随其后的正常路径，
+检查后续路径、容量及报文消费位置；旧实现会将第 2049 个坐标当成后续字段。
+其余用例覆盖空帧、0/2048 节点路径、2048 节点表、全部路径超限、车道数边界、
+负数/超限长度、数据不足及合法帧编码兼容。仅编译测试源码不代表这些断言已运行。
+
+运行世界验收前先执行 `./gradlew runClientData`，为“不完整”提示和容量标签生成语言资源。
+在测试世界比较普通网络与超过 2048 节点的 A/B 路径，确认超长路径省略、其他路径仍显示，
+锚点上方出现“不完整”提示，B 端分别显示分析容量和已显示路径数。
+全部路径被省略时也应显示容量；缩短路径后提示应随新快照消失。保留客户端与专服日志。
+
+## 生成资源与发布包
+
+发布 CI 在构建前运行客户端数据生成；代码 PR/push 由 Validate 工作流检查，文档 PR 由 Deploy Docs 构建。发布包内容（署名、语言资源、TopoDemo 隔离）仍需在本地检查。
+本地首次构建或修改内容声明后，由开发者手动执行：
+
+```bash
+./gradlew runClientData
+./gradlew build demoClasses
+```
+
+数据生成会写入 `src/generated/resources/<modid>/`；TopoDemo 的原版矿石替换还会写入
+`src/generated/resources/topodemo/data/minecraft/worldgen/configured_feature/`，用于把原版矿石 target 指向 Topo 方块。
+普通本地 `build` 不自动运行数据生成；
+验证干净检出的发布流程时应使用独立目录，避免依赖已有生成文件。

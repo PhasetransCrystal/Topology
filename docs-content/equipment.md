@@ -34,10 +34,10 @@ public interface EquipmentStrategy {
 
     boolean appliesTo(Material material);
     // 依据材质数据判断，例如：
-    // material.strategy().data(MyDataTypes.TOOL_STATS).isPresent()
+    // material.data(MyDataTypes.TOOL_STATS).isPresent()
 
-    void register(MaterialContentContext context, Equipment self);
-    // 为 (材料, 本种类) 铸造物品：context.core().item(...)
+    ItemEntry<Item> register(MaterialContentContext context, Equipment self);
+    // 为 (材料, 本种类) 铸造并返回唯一物品：context.core().item(...).register()
 
     default @Nullable MachineItemBehavior machineBehavior() { return null; }
     // 可选：右键机器时的行为（注册细节见 Equipment Behavior 页）
@@ -56,12 +56,13 @@ public final class ToolEquipment implements EquipmentStrategy {
 
     @Override
     public boolean appliesTo(Material material) {
-        return material.strategy().data(MyDataTypes.TOOL_STATS).isPresent();
+        return material.data(MyDataTypes.TOOL_STATS).isPresent();
     }
 
     @Override
-    public void register(MaterialContentContext context, Equipment self) {
-        // 按 registryPath 模板（%s = 材质名）为每个 (材料, 种类) 铸造物品
+    public ItemEntry<Item> register(MaterialContentContext context, Equipment self) {
+        // 按 registryPath 模板（%s = 材质名）为每个 (材料, 种类) 铸造物品并返回 entry
+        return context.core().item(registryPath.formatted(context.material().id().getPath())).register();
     }
 
     @Override
@@ -115,7 +116,8 @@ equipment.kind("axe",
                 .build());
 ```
 
-引擎随后冻结种类表，并对每个 (材料 × 种类) 调用 `appliesTo` → `register`。
+引擎随后冻结种类表，并对每个 (材料 × 种类) 调用 `appliesTo` → `register`。策略只返回 item entry；
+框架统一发布不可变记录，因此不会出现漏登记或重复登记。
 
 生成策略应使用材料的 `context.core()`，这样扩展其他插件材料时保留其归属。跨插件用法见
 [兼容其他 TopoPlugin](compatibility/topo-plugins.md)。
@@ -126,6 +128,10 @@ equipment.kind("axe",
 
 ```java
 Equipment pickaxe = EquipmentRegistry.require(Identifier.fromNamespaceAndPath("mymod", "pickaxe"));
+Material copper = MaterialRegistry.require(Identifier.fromNamespaceAndPath("mymod", "copper"));
+
+List<EquipmentRegistry.EquipmentItemRecord> byKind = EquipmentRegistry.itemsFor(pickaxe);
+List<EquipmentRegistry.EquipmentItemRecord> byMaterial = EquipmentRegistry.itemsFor(copper);
 
 for (EquipmentRegistry.EquipmentItemRecord record : EquipmentRegistry.itemRecords()) {
     Equipment kind = record.equipment();
@@ -134,13 +140,17 @@ for (EquipmentRegistry.EquipmentItemRecord record : EquipmentRegistry.itemRecord
 }
 ```
 
+`itemRecords()`、`itemsFor(...)` 都是发布后的不可变视图；物品尚未绑定时继续使用 `record.entry()`。
+
 ## API 速查
 
 | 类/方法                                            | 用途                 |
 |----------------------------------------------------|----------------------|
 | `EquipmentDomainRegistration.kind(path, strategy)` | 注册设备种类         |
 | `EquipmentRegistry.require(id)`                    | 按 ID 查找设备种类   |
-| `EquipmentRegistry.itemRecords()`                  | 所有已生成设备物品   |
-| `EquipmentStrategy.appliesTo(material)`            | 判断该材料是否适用   |
-| `EquipmentStrategy.register(context, self)`        | 为指定材料生成物品   |
+| `EquipmentRegistry.itemRecords()`                  | 所有已生成设备物品（不可变） |
+| `EquipmentRegistry.itemFor(itemId)`                | 按物品 ID 查询生成记录       |
+| `EquipmentRegistry.itemsFor(material/equipment)`   | 按材料或种类查询物品记录     |
+| `EquipmentStrategy.appliesTo(material)`            | 判断该材料是否适用           |
+| `EquipmentStrategy.register(context, self)`        | 为指定材料生成唯一物品并返回 entry |
 | `EquipmentStrategy.machineBehavior()`              | 右键机器行为（可选） |

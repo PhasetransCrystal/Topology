@@ -37,7 +37,7 @@ Identifier id = IdHelper.id("by_distance");
 
 ## MaterialHelper
 
-材质表单 → 物品解析（含覆盖目标）：
+材质形态 → 物品解析（含覆盖目标）：
 
 ```java
 Optional<Item> item = MaterialHelper.item(material, form);   // 立即解析；含 itemOverride 覆盖
@@ -89,7 +89,7 @@ String mb = TopoCompactNumber.formatCompactBuckets(amountMb);     // 流体桶�
 | 类/方法                                                     | 用途                           |
 |-------------------------------------------------------------|--------------------------------|
 | `IdHelper.id(path)`                                         | topo 命名空间 id 铸造          |
-| `MaterialHelper.item(material, form)`                       | 表单物品解析（含覆盖目标）     |
+| `MaterialHelper.item(material, form)`                       | 形态物品解析（含覆盖目标）     |
 | `MaterialHelper.itemId(material, form)`                     | 物品注册 id（含覆盖分支）      |
 | `MaterialHelper.itemPath(material, form)`                   | 注册路径                       |
 | `MaterialHelper.requireItem(material, form)`                | 必须存在的物品                 |
