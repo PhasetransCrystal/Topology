@@ -1,43 +1,21 @@
-# 项目知识
+# 项目知识索引
 
-## 多方块蓝图
+面向框架开发者；按主题查阅内部设计与实现依据。公开使用契约见 [docs-content](docs-content/)。
 
-- 用户确认现有蓝图功能基本成立，仅有少量问题。审查和重构以现有功能为基础，重点优化实现；具体取舍在对应方案中说明，不在通用文档或记忆中预设替代模型。
-- 蓝图使用控制器相对局部坐标。现有 `aisle` 沿声明坐标 +Y 堆叠 XZ 字符层；`frame(up, front)` 提供 24 种声明旋转，有效旋转为控制器朝向与 frame 的组合。
-- 镜像是结构检测流程的一部分，不是蓝图许可开关；它作用于整个多方块结构，本体与全部模块共享同一个镜像变换，不能分别镜像。运行时、客户端诊断与工具实际成型检测的朝向选择须遵守这一整体约束。
-- 当前声明支持多层整体重复、可选段、后续内容随重复次数推移，以及带依赖关系的可选叠加模块。
-- `@`、`#` 自动定义为控制器、空气，不允许 `where` 重定义；空格忽略位置。
-- 组合回归与 Demo 蓝图最小尺寸至少为 4×4×6；主集成场景为 5×5×6，覆盖 24 向、重复组、空气内腔、方向状态及部件计数。小型单元用例用于边界定位。
-- 占地索引不读取或持有世界；只对独占部件建立位置到所有者的稀疏索引，提交时校验全部冲突并整体替换预留。
-- CellBinding 的候选和诊断图标仅保存方块声明，`ItemStack` 由展示层创建；NeoForge 单元测试完成注册并不代表物品组件已经绑定。检测器不再提供候选或角色内容，接口用法见多方块文档。
-- 局部布局统一由 `BlueprintLayout` 处理；移动布局使用实时视图，稳定布局可采集不可变快照。固定次数重复段只产生常量位移，不会因后接内容或控制器而变成移动布局；可变次数段仍须检查后续位置及锚点。快照构建器发布后失效。
+- [框架设计原则](docs/foundation/framework-principles.md)：全框架接口与能力组合的约束。
+- [多方块蓝图知识](docs/machine/multiblock-blueprint-knowledge.md)：布局、变换、索引与已确认边界。
+- [多方块检测实现](docs/machine/multiblock-detection-implementation.md)：当前检测、元数据、预览和 JEI 集成。
+- [结构工具约定](docs/machine/multiblock-tool-agreements.md)：已确认需求及尚未实现的范围。
+- [多方块检测与结构工具设计目录](docs/machine/design-index.md)：检测、元数据、施工、当前差距与验收。
+- [通用仓储边界](docs/foundation/storage-boundaries.md)：仓储访问的已确认边界与状态。
+- [仓储访问设计目录](docs/foundation/design-index.md)：资源、批量操作、适配、组合与验收。
 
-来源：用户于 2026-11-06 至 2026-11-07 的直接说明；现有 [Blueprint](src/main/java/net/ptcrys/topo/api/machine/multiblock/pattern/Blueprint.java)、[MultiblockModule](src/main/java/net/ptcrys/topo/api/machine/multiblock/MultiblockModule.java) 和 [MultiblockRecheck](src/main/java/net/ptcrys/topo/api/machine/multiblock/MultiblockRecheck.java)。适用于多方块模块维护；使用方式见 [多方块蓝图](docs-content/machine/multiblock.md)。
-
-## 检测重构的当前实现
-
-- `CellPredicate<I>.evaluate(input, context, metadata)` 是无内容绑定的检测算法；`CellBinding` 绑定输入、候选、角色和字段声明，`Cell.binding()` 返回内容声明。
-- 统一结果为 `CellResult` 三态、命名空间错误码、期望／实际数据及子错误；`RecognitionResult.CellIssue` 补充位置，失败与未知样本分别有界保存。诊断及工具不重新猜测失败原因。`StructureView` 中已加载空气应返回空气状态，`null` 表示状态事实缺失，不等同于空气。
-- 控制器在已有组件数据域的 `structure_metadata` 分组声明通用 `DataValue<T>`。`DataKey<T>` 提供 Codec 与复制函数；工作数据使用 `DataTransaction`，发布使用 `DataSnapshot`，正式值仍由 `MachineDataScope` 保存。
-- 已探测事实与声明默认值分开记录；失败 Cell、组合分支、增长试探及可选模块写入回滚。成型周期验证保留基线；显式新探测使用 `requestProbe()`，未知期间保留旧正式数据。
-- `StructureDetection` 比较本体与全部模块的整体变换；主体对称时结合模块数量选择方向，不允许模块各自镜像。
-- 机器预览以控制器本体正向为坐标基准，先应用声明 frame 并保留整体镜像，去除世界旋转；控制器本体固定朝 SOUTH。选中、问题定位和实建图沿同一坐标转换。
-- 客户端预览不能依赖服务端专属的 `controller.repeatResolution()` 或打开界面时的最小布局。`MultiblockClientDiagnosis.Frame` 保留本次整体检测的本体及模块结果，各自的布局、视图与 frame 用于实建、所需图及点选；布局变化同步更新场景范围、镜头和切层。报告成型统计仍针对本体，可选模块缺失不使本体失败。
-- 通用结构示例由 `MultiblockPreviewPage` 提供，JEI 只承载界面；示例模块／重复数选择与实际检测配置独立。材料表按候选、角色及其数量限制分组，共享位置只计一次。
-- 多方块 JEI 接入属于 Topo：`TopoMultiblockJeiPlugin` 收集所有已注册且声明控制器元数据的机器，内容模组不重复注册结构展示。全部结构共用 `topo:multiblock` 分类，控制器按条目注册 OUTPUT／CRAFTING_STATION 查询索引，不能按机器拆分类或注册分类级控制器。Topo 的客户端 Mixin 仅对结构分类按当前可见预览生成原生工作方块栏，翻页、返回或改变查询时沿 JEI 布局刷新；多条可见预览时显示其去重控制器。分类、语言键和注入配置随框架发布，Demo 只维护自身生产配方及矿脉 JEI 接入。
-
-来源：本次检测重构的源码及 [多方块蓝图](docs-content/machine/multiblock.md)。事实适用于当前实现，运行结果仍以手动测试为准。
-
-## 检测与结构工具的已确认约定
-
-- 沿用 `CellPredicate` 作为统一、可复用的检测器，具体检测内容通过输入提供，不在检测器中绑定方块、角色、Cell、材料或展示内容。Cell 定义绑定内容，引擎处理朝向、镜像、重复段及定位；检测返回统一状态和结构化错误，展示层不另行猜测失败原因。
-- 核心模型是“多方块结构 = 蓝图 + 元数据”。元数据可由框架自身或其他 mod 注入的检测能力提供，组内数据贯穿整个结构检测周期，本体、模块、各 Cell 与能力共享。检测探测并累积数据，后续读取校验，构建据此反推；成型后可保留供周期检测复用。具体生命周期与失效见方案，同型信息只是外部能力的示例。
-- 元数据的正式承载复用控制器所属机器现有的 `MachineDataScope`，在控制器组件的数据域中声明专用 `DataScope` 分组。机器提供通用数据设施，组件和外部能力声明字段；注入接口只接收结构元数据的访问视图。沿用持久化与同步机制，按需补齐试探暂存／提交、异步快照和自定义值类型扩展，不另建正式存储体系，也不在通用数据系统中写入多方块业务规则。
-- 检测与放置分别定义契约：检测判断已有事实，放置选择具体目标并执行施工，不能将二者强制合并成同一流程。框架提供可注册、可注入的放置判断与选择接口；同型、等级只是外部需求示例，其实现、数据含义和跨批次约束由接入方提供，不是框架内置功能。具体契约见方案。
-- 结构工具物品只做交互调用；配置保存到玩家数据并由不同等级或物品的工具共享，物品栈不保存配置，配置页由框架的玩家菜单承担。
-- 配置值在检测前作为要求写入结构元数据，与探测事实分开；外部 mod 通过 `Option.require(...)` 提供检测输入，键须由蓝图声明。
-- 序号 0 表示本体，1 起按模块声明顺序递增。本体与模块锚定控制器；施工目标采用配置的整体镜像与重复次数，实际成型检测自动判断，不能改写施工目标或单独翻转模块。
-- 物品提供器按顺序接收整批剩余需求 Map，返回实际取出 Map，扣减后再交给下一个；同时提供批量接收返还接口，依次处理后仍有剩余则生成掉落物。保留物品组件，不要求返回原提供器，不以逐物品查询代替批量协议。背包只是一个实现，AE 等具体适配暂不处理。
-- 支持有多少材料就用多少的分批补建，已有非空气方块不能覆盖，创造模式免材料。支持一键拆除，按实际拆除所得物品走同一返还链；拆除边界与交互细节仍需在具体方案中确定。
-
-来源：用户于 2026-11-06 至 2026-11-07 的直接要求。适用于本次重设计，不代表原型已实现；详细职责、待定接口、范围与验收见唯一方案入口 [多方块检测与结构工具设计](docs-content/machine/multiblock-design.md)。现有原型见 [结构工具](docs-content/machine/multiblock-tool.md)，仍需迁移与手动运行验收。
+- [宿主接线](docs/foundation/host-wiring.md)：框架宿主职责及无宿主内嵌限制。
+- [NeoForge 测试启动](docs/foundation/neo-forge-tests.md)：仓库测试运行环境与报告位置。
+- [插件回归](docs/foundation/plugin-regression.md)、[管道勘测回归](docs/foundation/pipe-survey-regression.md)、[发布验证](docs/foundation/release-verification.md)：对应模块的维护验证。
+- [Tick 分桶](docs/foundation/tick-buckets.md)、[材料注册性能](docs/foundation/material-registration-performance.md)：调度与注册实现依据。
+- [多方块 Demo 验证](docs/machine/multiblock-demo-verification.md)、[结构工具验证](docs/machine/structure-tool-verification.md)：测试样本及手动验收。
+- [配方类型内部职责](docs/foundation/recipe-type-internals.md)、[悬浮面板缓存](docs/foundation/tooltip-cache.md)：内部实现边界。
+- [Demo 原版矿石替换](docs/foundation/demo-vanilla-ore-replacement.md)：Demo 数据生成及掉落策略。
+- [注册管线时序](docs/foundation/registration-timeline.md)、[新增注册领域](docs/foundation/registration-domain-extension.md)：宿主调度与领域扩展依据。
+- [多方块周期重检](docs/machine/multiblock-recheck.md)、[占地与独占索引](docs/machine/multiblock-claim-index.md)、[JEI 工作方块栏](docs/machine/multiblock-jei-integration.md)：各自的框架实现。

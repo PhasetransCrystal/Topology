@@ -4,7 +4,7 @@ sidebar_position: 3
 
 # Pipe Surveyor
 
-管道网络勘测器——玩家手持勘测物品右键管道，锚定网络并测量吞吐。
+面向需要提供管道网络勘测物品的模组开发者。本页说明标记接口、交互调用和显示范围。
 
 本页是 [Pipe](../pipe.md) 模块的子页——概念与页面导航见 [Pipe](../pipe.md)。
 
@@ -14,8 +14,8 @@ sidebar_position: 3
 public interface PipeSurveyTool {}
 ```
 
-你的物品实现该接口即成为勘测器。客户端渲染器自动识别主/副手持有的勘测物品并绘制网络覆盖层
-（`PipeSurveyClientRenderer`，默认宿主已注册）。
+物品实现该接口后，客户端渲染器会识别主手或副手持有的物品并绘制已有勘测数据。
+标记接口本身不处理右键；物品还须在服务端交互中调用下方的管理器方法。
 
 ## PipeSurveyManager — 行为驱动
 
@@ -23,6 +23,8 @@ public interface PipeSurveyTool {}
 PipeSurveyManager.activate(player, pos, range);   // 锚定勘测（pos = 管道节点，range 格范围）
 PipeSurveyManager.selectPoint(player, pos);       // 设置端点 A（首次）/ B（第二次）
 ```
+
+例如，物品可在服务端普通右键时调用 `activate`，在潜行右键时调用 `selectPoint`；具体手势由物品实现决定。
 
 调查数据（`PipeSurveySnapshot`：锚点、双端点、快照协议最多 16 条车道；服务端分析上限
 `PipeSurveyManager.MAX_LANES` = 6）经
@@ -38,9 +40,7 @@ PipeSurveyManager.selectPoint(player, pos);       // 设置端点 A（首次）/
 
 ## 接线
 
-默认 `@Mod("topo")` 宿主已注册网络通道（`PipeSurveyNetworking.register`）与客户端渲染器
-（`PipeSurveyClientRenderer.register`）。纯库嵌入需自行复制这两项——清单见
-[Embedding](../embedding.md)。
+默认 `@Mod("topo")` 宿主已注册网络通道与客户端渲染器，内容模组无需重复接线。无宿主内嵌的支持范围见[集成宿主](../embedding.md)。
 
 管道注册与交互见 [Pipe](../pipe.md)。
 

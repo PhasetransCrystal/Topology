@@ -9,9 +9,11 @@ sidebar_position: 6
 
 本页是 [Machine](../machine.md) 的子页。部件角色与状态显示的注册见 [多方块能力](multiblock-ability.md)。
 游戏内检测、世界虚影和按配置补建见 [多方块结构工具](multiblock-tool.md)。
-检测契约已迁移为 `CellPredicate<I>`、`CellBinding` 与结构元数据；放置扩展、工具解耦和提供器链仍在后续范围，见 [设计与实施范围](multiblock-design.md)。
+检测接口包括 `CellPredicate<I>`、`CellBinding` 与结构元数据。
 
 ## 局部坐标与朝向
+
+{/* 图片预留：控制器、蓝图局部坐标轴与朝向变换示意图。 */}
 
 蓝图在局部坐标系中定义，以控制器 `@` 为原点。`aisle(rows...)` 声明一个 XZ 字符层：
 字符沿声明坐标的 `+X` 排列，行沿 `+Z` 排列，连续的 `aisle` 沿 `+Y` 堆叠。
@@ -230,8 +232,7 @@ Cell、组合分支、重复段试探和失败可选模块均不把失败写入�
 `MultiblockPreviewPage.build(definition)` 提供不依赖 JEI 的结构示例界面，由 Topo 自带的 `TopoMultiblockJeiPlugin` 承载。
 框架统一收集已注册且带有 `MultiblockControllerMetadata` 的机器，内容模组无需重复注册结构展示；分类 ID 为 `topo:multiblock`。
 全部机器共用一个 JEI 结构分类；每条预览按自己的控制器建立配方／用途查询索引，查询某台机器时只匹配对应结构。
-Topo 的客户端 Mixin 让原生工作方块栏跟随当前可见预览，翻页或返回后同步刷新；同屏有多个结构时显示这些结构的去重控制器。
-不把控制器注册成整个结构分类的通用工作方块，也不按机器增加分类页签。其他配方分类使用 JEI 原有逻辑；结构分类、语言键与 `topo.mixins.json` 中的客户端注入均随框架发布。
+JEI 工作方块栏随当前可见结构预览更新，多条预览的控制器会去重显示。
 界面包括结构尺寸、拖动旋转、切层、重置、独立放大窗口，以及按候选和角色数量限制分组的材料清单；点击场景方块会高亮对应材料行。
 可切换本体、指定模块（连同其依赖）或全部模块，并调整所显示蓝图的各重复段次数，场景、尺寸和材料数量一起重建。
 这些选择只影响示例，不修改世界、机器配置或成型检测。紧凑与放大窗口各自保存展示选项。
@@ -326,71 +327,12 @@ MultiblockController.mount(core,
 固定次数重复段（`min == max`）只产生常量位移，后接顶层或控制器不会因此使布局失去快照资格；可变次数段仍需检查后续位置和锚点是否移动。
 `verify.firstMismatchPos()` 在没有方块不匹配时为 `null`；世界原点也是有效的失败位置。
 
-运行时由 `MultiblockController` 与 `MultiblockRecheck` 协作：
-
-1. 监听占地变更，标记控制器待检；已成型结构也按配置周期进行兜底检查。
-2. 优先定点重测变更单元格；涉及重复增长、角色计数、成员替换或模块可能占地时执行完整检测。无模块的已成型结构可使用 `verify` 维护。
-3. `supportsSnapshot()` 为真时采集最大占地快照；达到 `MULTIBLOCK.asyncCellThreshold` 后可异步识别。其他布局使用实时视图同步检测。
-4. 异步结果回到服务端线程后检查任务、朝向及脏标记，再处理独占部件预留、成员接入和成型外观。
-5. 遇到 `CHUNK_UNLOADED` 保留当前成型状态，按 `MULTIBLOCK.unloadedRetryIntervalTicks` 延迟重试。
+控制器根据世界变化和周期检查维护结构状态。区块暂不可读取时，保留当前成型状态并延后重试。
 
 普通结构方块和共享部件不会被独占。带 `ExclusivePartMount` 标记的成员由成型控制器预留；
 主蓝图独占冲突阻止成型，模块独占冲突使对应模块及依赖它的模块失效。
-`MultiblockClaimIndex` 只管理占地、监听和独占预留，不持有世界或生产快照；世界采集由 `StructureCaptures` 负责。
-`tryClaim(...)` 返回 `ClaimUpdate`：`accepted=false` 时旧预留完全保留；成功替换且 `released` 非空时，控制器唤醒相交监听者。
-释放范围包含主占地之外的模块独占部件，模块退出而主体仍成型时也会释放并唤醒竞争者。
-
 客户端诊断由 `MultiblockClientDiagnosis` 展示，结构预览使用 `BlueprintPreview`。
 诊断总数取解析布局，匹配数取 `RecognitionResult.matchedCount()`，不会把未加载位置算作已匹配或把额外增长探测计入总数。
 未知区块与不支持的朝向各有单独提示；“全部匹配”以引擎的 `formed()` 为准。
 `RecognitionResult.partCount()` 按携带角色的位置计数，同一位置有多个角色也只计一次。
 客户端通过 `MultiblockClientDiagnosis.capture(controller, blueprint)` 创建一次刷新的 `Frame`。报告 `frame.report(max)`、单格详情 `frame.diagnoseCell(localPos)`、预期／实际状态与 `frame.detectedBlocks()` 共用本次识别的朝向和视图；主朝向及镜像的选择与服务端一致。单格直接检测，不受完整报告 64 条缺失样本的限制。稳定布局持有快照，移动布局持有实时视图，后者须在同一客户端世界线程及时使用。
-
-## Demo 与验证
-
-`src/demo/java/net/ptcrys/topodemo/data/machine/BuiltinMachines.java` 提供以下结构机器。
-尺寸按声明的字符宽 × 行深 × 展开层数记录；`axis_tower` 的 frame 将层数映射到控制器局部 X。
-空气计入检测位置，空格不计入。以下均为真实最小布局尺寸，不按最大重复数凑尺寸。
-
-| 机器 ID | 最小尺寸 | 最小检测位置 | 验收内容 |
-|---|---|---|---|
-| `alloyer` | 4×4×6 | 96 | 输入输出总线各一个，配方资源接入 |
-| `repeatable_tower` | 5×5×6 | 150 | 106 个实体方块；控制器下方 1～2 层、上方 1～3 份双层重复组、移动金顶、可选原木横梁 |
-| `variable_tower` | 4×4×6 | 96 | 3～7 层铜壳中段及移动金顶 |
-| `layered_tower` | 4×4×6 | 96 | 四层实心底座、2～4 层铁壳及可选金壳 |
-| `grouped_tower` | 4×4×7 | 112 | 铁壳加铜壳为一组，重复 2～4 份，后接实心金顶 |
-| `axis_tower` | 4×4×6 | 96 | frame 旋转后的局部 X 向扩展，4～8 层铁壳 |
-| `optional_module_machine` | 主体 4×4×6 | 主体 96 | 左右各一座 4×4×6 可选舱，共用控制器锚点 |
-| `dependent_module_machine` | 主体 4×4×6 | 主体 96 | 左钻石舱依赖右金舱；舱体各 96 个位置，模块报告排除共用的 `@` |
-| `predicate_machine` | 4×4×6 | 96 | 内腔空气、石头精确状态、未点燃熔炉、主世界基岩石标签及安山岩组合谓词 |
-
-除 `alloyer` 外，这些结构机器挂载控制器和结构 UI，不包含配方逻辑。
-`repeatable_tower` 使用铜壳、石砖底座、玻璃组层、金壳顶盖；控制器所在层指定一个输入总线和一个输出总线。
-每个处理组的中心放置朝声明 `EAST` 的发射器；可选原木横梁的轴为声明 `X`，两者都随有效旋转改变。
-`#` 位置须清空；可选横梁声明中的空格不要求清空。左右模块通过空格跳过主体，舱体位于主体两侧，和主体保留间隔。
-
-组合回归源码包括：
-
-- `ComplexBlueprintTest`：最小 5×5×6、最大 5×5×12；独立施工样本覆盖 24 向、两种 frame、12 种重复计数组合、空气损坏、方向错误、跨区块未知、成员及角色上下限。另有最大 500 格稳定快照与实时视图的结果对照、采集编号双射及 75 格损坏的诊断上限。
-- `MultiblockModuleEvaluationTest`：两座最小 5×5×6 的可变长舱体，覆盖 24 向、逆序声明依赖、局部损坏、依赖失效，以及增长探测未知时的总数。
-- `AsyncStructureServiceTest`：4×4×6 非对称实心结构，对照实时视图与快照的主／镜像选择和未知结果传播。
-- `MultiblockClaimIndexTest`：4×4×6 主舱及远端模块，覆盖原子冲突拒绝、预留替换、释放唤醒、共享占地、24 向监听与具体布局反查、可变坐标隔离。
-- `MultiblockClientDiagnosisTest`：4×4×6 诊断，覆盖未知及不支持状态、增长探测总数、同位置多角色部件计数，超过 64 条样本后的单格查询，24 向镜像结构的报告、详情和预览一致性，以及未绑定物品组件时的候选元数据与缺失报告。
-- `StructureEngineTest`：保留小型边界用例，定位尺寸校验、单段增长、同材质顶盖等问题。
-- `StructureDetectionTest`：4×4×6 外部能力示例，覆盖 48 个整体变换、跨模块事实共享、周期基线、失败模块和增长回滚、未知及组合错误。
-- `DataTransactionTest`：可变值隔离、显式提交、默认值也可作为已探测事实、有限字段刷新与声明冲突。
-- `BlueprintPreviewCoordinatesTest` 与诊断扩展用例：非默认 frame 下的控制器正向坐标、镜像属性与 24 向点击定位。
-- `MultiblockCompositePreviewTest`：304 格展开本体与侧舱、24 向及整体镜像、模块独立 frame 的状态与点击定位、增长后收缩、模块独立快照读取，以及固定／可变重复次数下顶层和控制器锚点的快照资格对照。
-
-按项目约定，由开发者手动运行 NeoForge 测试和游戏验收：
-
-```bash
-./gradlew test --tests 'net.ptcrys.topo.api.machine.multiblock.*' --tests 'net.ptcrys.topo.api.machine.data.*' --rerun
-./gradlew runClientData
-./gradlew runClient
-```
-
-新增诊断语言键须先通过 `runClientData` 生成语言资源。游戏内使用结构页预览搭建，分别检查最小和最大重复数、可选段移除及恢复、非对称结构转向、内腔填入方块、发射器朝向错误、总线拆换、模块最后一块补齐、依赖舱拆除，以及跨区块卸载／重载。
-预览验收还应保持机器界面打开，增减重复段、补建或移除模块，切换所需／实建图并检查切层和模块详情；在 JEI 中调整模块、重复数、材料行高亮，打开大图后关闭返回原界面。
-运行编译或格式检查不代表这些运行场景已通过；以手动执行的测试报告和游戏日志为准。
-构建环境、完整测试命令和日志位置见 [测试与验证](../foundation/testing.md)。

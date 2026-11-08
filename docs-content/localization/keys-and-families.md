@@ -4,7 +4,7 @@ sidebar_position: 2
 
 # Keys & Families
 
-自定义 UI 文本的注册——`LangDomainRegistration` 的三种铸造形态与 `LangKeyFamily` 分组。
+面向需要注册自定义界面文本或一组相关翻译键的模组开发者。本页说明 `LangDomainRegistration` 的三种键形态与 `LangKeyFamily` 分组。
 
 本页是 [Localization](../localization.md) 模块的子页——概念与页面导航见 [Localization](../localization.md)。
 

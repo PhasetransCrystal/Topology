@@ -38,8 +38,8 @@ public void registerRuntime(RuntimeDomainRegistration runtime) {
 
 ## 缓存语义
 
-- 键 = `provider.cacheKey(stack)`；同键复用已构建的 `TooltipComponent`
-- 缓存是 LRU（容量 4）；逐出时框架调用 `MachineUiTooltipTemplate.dispose` 释放元素树
+- 键由物品和 `provider.cacheKey(stack)` 共同组成；同一物品、同一键复用已构建的 `TooltipComponent`
+- 缓存可被逐出；不要依赖缓存组件永久存在
 - 构建失败按物品去重记日志并抑制该面板，不打断游戏
 - 渲染线程专用（`componentFor` 仅限客户端渲染线程）
 

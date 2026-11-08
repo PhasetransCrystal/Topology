@@ -4,7 +4,7 @@ sidebar_position: 2
 
 # MaterialForm
 
-形态 = 一个 `MaterialFormStrategy` 实例 + 注册时的双语文案，可通过 `appliesTo(Predicate<Material>)` 自动选择材料。
+面向需要定义材料形态及其生成内容的模组开发者。形态由 `MaterialFormStrategy` 实例和注册时的双语文案组成，可通过 `appliesTo(Predicate<Material>)` 自动选择材料。
 每个匹配的材料只执行一次该形态策略；`appliesTo` 是选择形态的唯一来源。
 
 本页是 [Material](../material.md) 模块的子页——概念与页面导航见 [Material](../material.md)。
@@ -35,10 +35,10 @@ public abstract class MaterialFormStrategy {
 流体形式同样由策略在这里调用 `context.core().fluid(...)`，再按需要配置方块和桶；
 框架不把流体形式自动转成物品形式，查询源流体使用 `MaterialHelper.fluid`／`requireFluid`。
 
-## 生产级结构：Builder 模式
+## 示例：Builder 模式
 
-形态通常是**参数化模板**（锭/粉/宝石只是文案与标签不同）——用静态 `builder()` 组织，
-build() 里做必填校验，与生产级物品形态实现同构：
+形态可以作为参数化模板，用静态 `builder()` 组织并在 `build()` 中校验必填项。
+以下示例省略模型、标签、创造栏和外部覆盖处理；`MyDataTypes.MAGIC` 与后文的 `magicDataType` 指同一个已注册数据类型：
 
 ```java
 public final class OrbForm extends MaterialFormStrategy {
@@ -65,9 +65,12 @@ public final class OrbForm extends MaterialFormStrategy {
         return MaterialFormPlan.of(
                 List.of(output),
                 () -> requireMaterialData(material, form, List.of(MyDataTypes.MAGIC)),
-                context -> context.core().item(path)
-                        /* builder 链（渲染/标签/创造栏） */
-                        .register());
+                context -> {
+                    var builder = context.core().item(path);
+                    RegistryDisplayLang.applyItem(builder, context.core(), path,
+                            displayName.resolve(context.material()));
+                    builder.register();
+                });
     }
 
     public static final class Builder {
@@ -115,7 +118,7 @@ m.material("moonstone").lang("Moonstone", "月长石")
 `appliesTo` 接受任意 Lambda，不限定属性类型、材料命名空间或材料名单。扩展插件可用共享的
 数据类型声明新材料，也可新增带规则的形态，已有材料无需修改声明。
 
-所有插件完成 `registerMaterials` 后，框架关闭数据写入，
+所有插件完成 `registerMaterialContributions` 后，框架关闭数据写入，
 先计算所有材料的最终形态，再统一校验，随后才生成内容。其他插件注入的数据同样参与规则判断。
 规则必须无副作用，并基于材料的声明数据判断，不应读取其他规则推导的形态或尚未生成的注册项。
 匹配期间全部材料的 `forms()` 均为空；全部规则求值完成后统一发布最终集合。
@@ -141,9 +144,8 @@ m.material("moonstone").lang("Moonstone", "月长石")
 覆盖选项由具体策略读取并执行；仅在材料上声明选项不会自动跳过该策略的注册逻辑。
 配置覆盖也不能绕过 `appliesTo`；先匹配成功，再由策略复用外部条目。
 每个形态的外部 item/block/fluid override 只能声明一次，重复写入会失败。
-材料冻结时会检查已匹配形态的 **输出 key**：内置 item/block/fluid 形态会报告自己的注册 ID，
-同一 `MaterialContentType + ID` 被两个形态/材料声明会失败。内置形态通过 `MaterialFormPlan.outputs()`
-声明输出；自定义形态实现 `plan(...)` 并返回完整输出列表后，也会参与冻结检查。
+材料冻结时会检查已匹配形态声明的**输出 key**；同一 `MaterialContentType + ID` 被两个形态或材料声明会失败。
+形态策略通过 `MaterialFormPlan.outputs()` 声明输出，只有返回的输出才参与检查。Demo 的物品、方块和流体形态提供了相应示例。
 未解析的 supplier target 以及形态未声明的额外输出不在检查范围内。
 流体形态使用 `options.overrideFluid(target)`；可同时提供外部桶物品的 supplier，
 未提供时创造栏仍由对方拥有。覆盖分支复用既有条目，不应重复注册或改写外部条目的名称。参见

@@ -4,8 +4,8 @@ sidebar_position: 2
 
 # PipeDistributionStrategy
 
-策略决定一个抽取端口**这一 tick 往哪些目标送多少**。纯函数式：入参上下文（定义、配置、预算、目标列表），
-出参是转移调用。
+面向需要为管道定义分发策略的模组开发者。策略决定一个抽取端口的当前批次向哪些目标转移多少资源；
+它通过上下文发起实际转移，并可维护本会话内的轮询游标。
 
 本页是 [Pipe](../pipe.md) 模块的子页——概念与页面导航见 [Pipe](../pipe.md)。
 
@@ -38,8 +38,8 @@ public interface PipeDistributionStrategy {
 // 目标已按最近优先排序：
 PipeDefinition definition();
 PipePortStrategyConfig config();
-int budgetRemaining();                  // 本 tick 剩余预算
-long sourceAvailable();                 // 源可用量
+int budgetRemaining();                  // 本批剩余预算
+int sourceAvailable();                  // 本批源可用量
 int destinationCount();
 int destinationAcceptance(int index);   // 第 index 个目标还能收多少
 int transfer(int index, int maxAmount); // 向目标实际转移
@@ -47,8 +47,12 @@ int cursor(); void setCursor(int index);// 跨 tick 轮询游标
 ```
 
 ```java
-public final class GreedyStrategy implements PipeDistributionStrategy {
-    // id/nameLang/descriptionLang/shortNameLang/configCodec/initialPortConfig ...
+public final class GreedyStrategy extends LangBoundStrategy {
+    private final Identifier id;
+
+    public GreedyStrategy(Identifier id) { this.id = id; }
+    @Override public Identifier id() { return id; }
+    // 还需实现 configCodec 和 initialPortConfig；语言键由下方基类提供。
 
     @Override
     public void distribute(PipeDistributionContext context) {
@@ -59,6 +63,9 @@ public final class GreedyStrategy implements PipeDistributionStrategy {
     }
 }
 ```
+
+`transfer` 返回实际转移量，可能小于请求量；它会扣减本批剩余预算。
+按比例分配时，先用 `min(budgetRemaining(), sourceAvailable())` 确定可分配总量，避免源资源不足时首个目标占用全部资源。
 
 ## 生产级结构：注册时绑定语言键
 
@@ -107,10 +114,8 @@ private abstract static class LangBoundStrategy implements PipeDistributionStrat
 
 ## 注册
 
-```java
-// registerMachineFollowUps（PipeDistributionStrategies.freeze() 之前）：
-PipeDistributionStrategies.register(new GreedyStrategy());
-```
+在 `registerMachineFollowUps` 中调用上面的 `register(...)`，并保存返回的 `GREEDY` 句柄。
+该辅助方法已经调用 `PipeDistributionStrategies.register(strategy)`，不要再次注册相同策略。
 
 :::caution
 策略在 `registerMachineFollowUps` 注册——引擎先冻结策略表，再执行 `Pipes.freeze()`。`id()` 持久化，

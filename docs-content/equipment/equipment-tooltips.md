@@ -4,7 +4,7 @@ sidebar_position: 3
 
 # Equipment Tooltips
 
-装备物品的悬浮面板——耐久、功能说明行与勘测范围。本页覆盖面板构建与注册。
+面向需要为装备物品提供悬浮面板的模组开发者。本页说明如何构建、注册和缓存面板。
 
 本页是 [Equipment](../equipment.md) 模块的子页——概念与页面导航见 [Equipment](../equipment.md)。
 
@@ -16,7 +16,7 @@ sidebar_position: 3
 
 ## 面板构建 — ItemTooltipUis 注册
 
-面板是 LCD 结构：耐久行（可损耗才有）+ 功能区（父行 `Function | 行数` + 每条说明一行缩进子项）。
+例如，面板可以包含耐久行和功能说明行；具体布局由面板提供器决定。
 在插件的 `registerRuntime(RuntimeDomainRegistration runtime)` 中为本插件生成的装备物品注册（此时物品已经绑定）：
 
 ```java
@@ -31,15 +31,18 @@ for (EquipmentRegistry.EquipmentItemRecord record : EquipmentRegistry.itemRecord
 
         @Override
         public Object cacheKey(ItemStack stack) {
-            return stack.getDamageValue();   // 耐久变化自动重建面板
+            return stack.getDamageValue();   // 此示例假设面板内容只随损伤值变化
         }
     });
 }
 ```
 
+缓存同时区分物品和提供器返回的键。若面板还依赖物品组件或其他会变化的数据，
+`cacheKey` 必须包含这些数据；否则相同键会复用旧面板。
+
 ## 固定标签键
 
-面板骨架的固定标签（耐久/功能/范围）在装备域语言表里集中声明：
+可以在自己的语言表中集中声明面板标签，例如：
 
 ```java
 TOOLTIP_EQUIPMENT_DURABILITY = lang.key("tooltip", "equipment.durability", "Durability", "耐久");

@@ -4,9 +4,11 @@ sidebar_position: 4
 
 # Machine Resource Ports
 
+面向需要为机器提供自定义资源存储和访问端口的模组开发者。
+
 :::caution
-库**不内置任何现成的物品/流体/能量端口**——端口是内容级组件。本页示例按生产级实现的结构组织：
-元数据 record + 预置 key + 静态 mount 工厂 + 语义工厂门面。
+库不提供现成的物品、流体或能量端口组件。下方示例展示元数据、组件键和挂载工厂的组织方式；
+存储 handler、资源类型、图标及具体用途需要由模组提供。
 :::
 
 本页是 [Machine](../machine.md) 模块的子页——概念与页面导航见 [Machine](../machine.md)。
@@ -143,7 +145,7 @@ machine.machine("my_machine")
 ```java
 PortAccess.input()                    // INPUT 配方角色 + INSERT 自动化 + 玩家自由
 PortAccess.input(Direction first, Direction... more)   // 限定可传输面
-PortAccess.output()                   // OUTPUT 配方角色 + EXTRACT
+PortAccess.output()                   // OUTPUT 配方角色 + EXTRACT 自动化 + 玩家仅取出
 PortAccess.output(Direction first, Direction... more)
 PortAccess.storage()                  // 双向存储（配方 I/O 均可）
 // 链式：.withRecipeIo(...) / .withAutomationIo(...) / .withPlayerSlotAccess(...) / .withPlayerConfigurableSides()
@@ -155,6 +157,7 @@ boolean playerConfigurableSides();    // true = 玩家可逐面配置（Resource
 
 玩家可配置端口的逐面模式用 `ResourcePort.setSideIo(localSide, mode)` / `cycleSideIo(localSide)` /
 `resetSideIo()` 操作（局部面，框架按方块 FACING 折叠成世界面）。运行期玩家配置存进 packed side-io 字段。
+未指定传输面时，无侧向的能力查询也被允许；`onAllSides()` 显式选择六个面，不包含无侧向查询。
 
 ## RecipeSearchPoolId — 配方搜索池
 

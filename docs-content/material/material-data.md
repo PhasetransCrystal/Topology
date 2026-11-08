@@ -4,7 +4,7 @@ sidebar_position: 3
 
 # MaterialDataType
 
-材质数据 = 附加在 `Material` 上的类型化属性（颜色、质量、工具/护甲属性……）。装备策略与形态校验依据
+面向需要声明或扩展材料属性的模组开发者。材质数据是附加在 `Material` 上的类型化属性（颜色、质量、工具/护甲属性等）。装备策略与形态校验依据
 材质数据决定行为。
 
 本页是 [Material](../material.md) 模块的子页——概念与页面导航见 [Material](../material.md)。
@@ -69,7 +69,7 @@ material.form("tool").appliesTo(toolStats.present());
 material.form("ingot").appliesTo(ingotData.present());
 
 // 材料声明侧附加数据（registerMaterials）：
-m.material("copper").data(toolStats.stats(200, 4.5f, 1.5f, 14, ItemTags.INCORRECT_FOR_IRON_TOOL)).build();
+m.material("copper").data(toolStats.stats(200, 4.5f, 1.5f, 14, BlockTags.INCORRECT_FOR_IRON_TOOL)).build();
 ```
 
 ## 跨插件注入能力数据

@@ -4,7 +4,7 @@ sidebar_position: 6
 
 # Helpers
 
-库附带的消费者工具类——各策略实现里的常用杂务。
+面向编写 Topology 内容和策略的模组开发者。本页索引常用标识、材料、过滤器、标签和数字格式化工具。
 
 ## 路径、资源标识与注册表键
 
@@ -26,14 +26,14 @@ sidebar_position: 6
 
 ```java
 // 库命名空间（topo）下的 id 铸造。你的内容 id 用自己插件的 machine().id(path)：
-Identifier id = IdHelper.id("by_distance");
+Identifier id = IdHelper.topo("by_distance");
 ```
 
 插件所属 ID 使用领域入口的 `id(path)`，或 `PluginIds.id(plugin, path)`；原版资源使用
 `Identifier.withDefaultNamespace(path)`。派生已有 ID 时用 `withPath`、`withPrefix`、`withSuffix`
 保留所属命名空间。已有 RegistryLib Entry 时直接取 `identifier()`（资源标识）或 `getKey()`
-（带注册表类型的键），无需重建身份。`IdHelper.id` 固定使用 `topo`，不能用于其他插件内容。
-只有解析外部完整 ID 时使用 `parse`／`tryParse`；翻译键、管线步骤 ID 和随机盐值仍保留 `String`。
+（带注册表类型的键），无需重建身份。`IdHelper.topo` 固定使用 `topo`，不能用于其他插件内容。
+外部完整 ID 可通过 `Identifier` 的解析方法处理；翻译键、管线步骤 ID 和随机盐值仍保留 `String`。
 
 ## MaterialHelper
 
@@ -42,7 +42,7 @@ Identifier id = IdHelper.id("by_distance");
 ```java
 Optional<Item> item = MaterialHelper.item(material, form);   // 立即解析；含 itemOverride 覆盖
 Identifier itemId = MaterialHelper.itemId(material, form);  // 物品注册 id（含覆盖分支）
-String itemPath = MaterialHelper.itemPath(material, form);  // 注册路径（"%s_ingot" 代入后）
+String itemPath = MaterialHelper.itemPath(material, form);  // 主物品 ID 的路径部分，可能来自覆盖目标
 Item required = MaterialHelper.requireItem(material, form); // 找不到就抛异常
 ```
 
@@ -57,9 +57,9 @@ Item required = MaterialHelper.requireItem(material, form); // 找不到就抛�
 端口内容过滤谓词（`ResourcePortMetadata.resourceFilter` 用）：
 
 ```java
-Predicate<Resource> tag = ResourceFilterHelper.itemTag(TagKey<Item>);     // 物品标签
-Predicate<Resource> exact = ResourceFilterHelper.itemExact(ItemResource); // 精确物品
-Predicate<Resource> fluid = ResourceFilterHelper.fluidTag(TagKey<Fluid>); // 流体标签
+Predicate<Resource> tag = ResourceFilterHelper.itemTag(itemTag);       // itemTag 是 TagKey<Item>
+Predicate<Resource> exact = ResourceFilterHelper.itemExact(item);       // item 是 ItemResource
+Predicate<Resource> fluid = ResourceFilterHelper.fluidTag(fluidTag);    // fluidTag 是 TagKey<Fluid>
 Predicate<Resource> any = ResourceFilterHelper.any();                     // 放行一切
 ```
 
@@ -79,8 +79,8 @@ TagKey<Fluid> acids = TagHelper.fluid("acids");                     // c:acids
 槽位角标格式化（大数字缩写）：
 
 ```java
-String text = TopoCompactNumber.formatCompact(12500);            // 12.5k 级缩写
-String wide = TopoCompactNumber.formatCompact(12500, /* maxLen */);   // 带长度上限
+String text = TopoCompactNumber.formatCompact(12500);            // 使用默认长度格式化
+String wide = TopoCompactNumber.formatCompact(12500, 5);         // 指定长度
 String mb = TopoCompactNumber.formatCompactBuckets(amountMb);     // 流体桶（mB）格式化
 ```
 
@@ -88,7 +88,7 @@ String mb = TopoCompactNumber.formatCompactBuckets(amountMb);     // 流体桶�
 
 | 类/方法                                                     | 用途                           |
 |-------------------------------------------------------------|--------------------------------|
-| `IdHelper.id(path)`                                         | topo 命名空间 id 铸造          |
+| `IdHelper.topo(path)`                                       | topo 命名空间 id 铸造          |
 | `MaterialHelper.item(material, form)`                       | 形态物品解析（含覆盖目标）     |
 | `MaterialHelper.itemId(material, form)`                     | 物品注册 id（含覆盖分支）      |
 | `MaterialHelper.itemPath(material, form)`                   | 注册路径                       |

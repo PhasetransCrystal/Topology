@@ -4,8 +4,7 @@ sidebar_position: 1
 
 # Equipment
 
-设备系统基于 Material 上声明的 **MaterialData** 自动生成工具、武器、护甲等物品。
-一种设备种类 × 一种材料 = 一个物品，全自动。
+面向需要为材料生成装备物品的模组开发者。装备策略依据 `Material` 上的数据选择适用材料，并为每个匹配的“装备种类 × 材料”组合注册一个物品。工具、武器或护甲的具体行为由策略实现。
 
 ## 工作原理
 
@@ -23,7 +22,7 @@ Equipment "helmet"   +  Material "copper"  →  铜头盔物品
 |-------------------------------------------------------|----------------------------------------------------|-------------------|
 | **Equipment（本页）**                                 | `EquipmentStrategy` 接口、builder 式种类注册、查询 | 添加工具/护甲种类 |
 | [Equipment Behavior](equipment/equipment-behavior.md) | `MachineItemBehavior` 右键机器行为（扳手/调节器）  | 装备需要机器交互  |
-| [Equipment Tooltips](equipment/equipment-tooltips.md) | `tooltipLine` 功能说明行、悬浮面板注册、固定标签键 | 装备需要悬浮信息  |
+| [Equipment Tooltips](equipment/equipment-tooltips.md) | 面板提供器与功能说明行 | 装备需要悬浮信息  |
 
 ## 接口
 
@@ -44,13 +43,19 @@ public interface EquipmentStrategy {
 }
 ```
 
-## 生产级结构：Builder 模式
+## 示例：Builder 模式
 
-装备种类通常是**可复用族**（镐/斧/锄只有参数不同）——用静态 `builder()` + 参数化 Builder 组织，
-与生产级工具族实现同构：
+装备种类可以使用静态 `builder()` 和参数化 Builder 组织。下例只展示装备策略的组织方式：
+物品属性、名称、模型、工具行为和配方仍需由模组补充，示例中的倍率字段也不会自动生效。
 
 ```java
 public final class ToolEquipment implements EquipmentStrategy {
+
+    private final String registryPath;
+
+    private ToolEquipment(Builder builder) {
+        this.registryPath = builder.registryPath;
+    }
 
     public static Builder builder() { return new Builder(); }
 
@@ -89,6 +94,7 @@ public final class ToolEquipment implements EquipmentStrategy {
             // build() 里做必填校验（registryPath / displayName），缺一抛异常
             Objects.requireNonNull(registryPath, "registryPath required");
             Objects.requireNonNull(displayNameEn, "displayName(en, cn) required");
+            Objects.requireNonNull(displayNameCn, "displayName(en, cn) required");
             return new ToolEquipment(this);
         }
     }
@@ -116,7 +122,7 @@ equipment.kind("axe",
                 .build());
 ```
 
-引擎随后冻结种类表，并对每个 (材料 × 种类) 调用 `appliesTo` → `register`。策略只返回 item entry；
+引擎随后冻结种类表，对每个 (材料 × 种类) 调用 `appliesTo`，仅在匹配时调用 `register`。策略只返回 item entry；
 框架统一发布不可变记录，因此不会出现漏登记或重复登记。
 
 生成策略应使用材料的 `context.core()`，这样扩展其他插件材料时保留其归属。跨插件用法见

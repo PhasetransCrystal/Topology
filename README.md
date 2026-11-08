@@ -87,7 +87,7 @@ TopoPlugins.register(new MyModPlugin()); // 继承 TopoPlugin，覆写所需的�
 
 完整文档（中文）见 [`docs-content/`](docs-content/)，在线文档见 [Topology Wiki](https://topology.ptcrys.net)。
 
-项目知识、检查、优化优先级和后续功能计划见 [`PROJECT_ROADMAP.md`](PROJECT_ROADMAP.md)。
+框架开发者的内部知识入口见 [项目知识索引](PROJECT_KNOWLEDGE.md)；内部设计文档位于 [`docs/`](docs/)。
 
 | 目标 | 使用指南 |
 |---|---|
@@ -102,3 +102,4 @@ TopoPlugins.register(new MyModPlugin()); // 继承 TopoPlugin，覆写所需的�
 - [Ptcrys](https://ptcrys.net)
 - [Maven](https://maven.ptcrys.net)
 - [PhasetransCrystal](https://github.com/PhasetransCrystal)
+- [Wiki](https://topology.ptcrys.net)

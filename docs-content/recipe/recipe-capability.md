@@ -4,7 +4,7 @@ sidebar_position: 2
 
 # RecipeCapability
 
-配方系统把「机器资源类型」与「配方 I/O 能力」配对。添加一种新资源（物品、流体、能量、魔力……）=
+面向需要接入自定义配方资源的模组开发者。配方系统把「机器资源类型」与「配方 I/O 能力」配对。添加一种新资源（物品、流体、能量、魔力……）=
 继承 `RecipeCapability` + 注册资源类型。库不内置任何资源集成。
 
 本页是 [Recipe](../recipe.md) 模块的子页——概念与页面导航见 [Recipe](../recipe.md)。
@@ -58,14 +58,14 @@ public abstract @NonNull UIElement createLiveSlotWidget(ResourcePort<?, R> stora
 ```
 
 :::caution
-槽位型 capability 与资源类型 **1:1**——`RecipeCapabilities.freeze()` 校验槽位型能力不得与另一能力共享资源类型；
+同一资源类型最多对应一个槽位型 capability——`RecipeCapabilities.freeze()` 会拒绝多个槽位型能力共享资源类型；
 capability id 是独立的配方 I/O 标识，不要求等于资源类型 id。
 :::
 
-## 生产级结构：资源集成（类型 + 能力 + 名称 + 图标同点声明）
+## 示例：组合资源类型与配方能力
 
-生产级实现把「资源类型 + 能力 + 显示名 + 图标」打包成一个**资源集成**在同一个声明点完成——
-它们同生共死，拆开注册会留下半成品状态：
+下面的示例将资源类型、能力、显示名和图标放在一个初始化方法中。具体组织方式由模组决定；
+机器端口和配方能力必须引用同一个资源类型。示例省略了能力方法和存储工厂的实现：
 
 ```java
 /** 标量型能力：I = O = Long。 */
@@ -99,7 +99,7 @@ public final class ManaRecipeCapability extends RecipeCapability<Long, Long> {
 private record ManaIntegration(MachineResourceType<ManaResource> resourceType,
         ManaRecipeCapability recipeCapability) {}
 
-/** 资源集成：registerRecipeFoundation 里一次调用完成四件事。 */
+/** 示例：在 registerRecipeFoundation 期间调用。 */
 private static ManaIntegration mana() {
     MachineResourceType<ManaResource> resourceType = MACHINE.resourceTypeWithDataField(
             "mana", ManaResource.class, /* capability */ null, /* dataFieldFactory */);
@@ -114,11 +114,8 @@ private static ManaIntegration mana() {
 
 ## 注册
 
-```java
-// registerRecipeFoundation：
-ManaRecipeCapability capability = recipe.capability(new ManaRecipeCapability(
-        plugin.recipe().id("mana"), manaResourceType));
-```
+在 `registerRecipeFoundation` 中调用上述 `mana()`，并保存返回的资源类型和能力句柄。
+方法内部已调用 `recipe.capability(...)`；不要再注册同一能力。
 
 ## 配方里使用
 
@@ -140,7 +137,7 @@ type.recipe("spell")
 |---------------------------------------------------------------------------------|---------------------|
 | `RecipeCapability(id, inType, outType, inCodec, outCodec, inStream, outStream)` | 基类构造            |
 | `resourceType()`                                                                | 配对资源类型        |
-| `matchInput` / `matchOutput`                                                    | 启动 I/O 匹配       |
+| `matchInput` / `matchOutput`                                                    | 输入匹配 / 输出空间检查 |
 | `handleInputChecked` / `handleOutputChecked`                                    | 事务性执行          |
 | `scaleInput` / `scaleOutput`（+ ForParallel）                                   | 配方缩放            |
 | `hasAnyContent(machine)`                                                        | 存量查询            |

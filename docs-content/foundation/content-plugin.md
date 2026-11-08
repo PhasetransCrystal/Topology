@@ -118,18 +118,7 @@ TopoDemo 的 `ItemRecipeCapability` 只支持精确物品输入；通用标签�
 真实物品面板和交互在 `registerRuntime` 绑定。将 `.get()` 放到真正允许读取对象的回调内，
 并确认传入 Supplier 的 API 确实延迟调用它。
 
-仓库的手动验证顺序是：
-
-```bash
-./gradlew demoClasses compileTestJava spotlessCheck
-./gradlew runClientData
-./gradlew runClient
-```
-
-`runClientData` 选择 `topo` 和 `topodemo` 两个 modid，
-输出位于 `src/generated/resources/<modid>`。
-RegistryLib 当前使用客户端 GatherData 入口，模型、语言、标签及其配方生成需要 `runClientData`。
-自己的项目应配置自己的 modid 和资源输出目录。
+在自己的 datagen 配置中选择模组 ID，并将输出目录加入资源源码集。模型、语言、标签和配方应在相应 provider 中生成。
 
 检查注册表里是否出现预期 ID、复用条目是否重复生成、名称与模型是否完整、配方输入输出是否正确。
 兼容验证还要覆盖依赖模组存在／缺席以及专用服务端；详见[测试与验证](testing.md)。

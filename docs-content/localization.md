@@ -4,8 +4,8 @@ sidebar_position: 1
 
 # Localization
 
-Topology 为所有用户可见文本提供**强类型双语翻译键**。注册项自带 `en` + `cn` 文本，框架自动收集、
-冻结、桥接到数据生成管线（`zh_tw` 从 `zh_cn` 自动派生）。
+面向需要为模组内容和界面提供本地化文本的开发者。Topology 提供双语显示名与强类型翻译键，
+并将声明的文本接入数据生成（`zh_tw` 从 `zh_cn` 自动派生）。
 
 ## 关键概念
 
@@ -17,7 +17,7 @@ LangKey           ← 一个翻译键句柄（key + en + cn），注册后不可
   └── RegistryDisplayLang    ← 显示名 → RegistryLib 物品/方块 lang 的桥
 ```
 
-- **全键格式**：`category.modId.path`——调用方绝不把 modId 嵌进 path
+- **普通键格式**：`lang.key` 生成 `category.modId.path`，调用方不把 modId 重复放进 path；`resource` 和 `absolute` 的规则见[键与键族](localization/keys-and-families.md)
 - **冻结点**：`registerLang`（钩子 17）后 `LangRegistry.freeze()`，不可再注册
 - **隐式 vs 显式**：大多数键由注册调用隐式创建（`.lang(...)` / `.displayName(...)`），只有自定义 UI 文本需要显式注册
 
@@ -59,7 +59,7 @@ MutableComponent msg = key.getComponent();     // Component.translatable(key)
 
 ## 生命周期
 
-所有 `LangKey` 在 `registerLang` 阶段统一收集 → 冻结 → 桥接到 RegistryLib 数据生成。冻结后不可注册新键。
+内容声明阶段和 `registerLang` 中都可以声明 `LangKey`；`registerLang` 完成后语言表冻结并导出到数据生成，冻结后不能再注册新键。物品、方块的注册表显示名由其 Builder 接入资源生成，见[显示名](localization/display-names.md)。
 
 ## API 速查
 

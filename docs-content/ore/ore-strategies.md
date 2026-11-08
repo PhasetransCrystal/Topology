@@ -4,71 +4,26 @@ sidebar_position: 2
 
 # Ore Strategies
 
-矿脉系统有四个可继承的策略接口：**形状**（几何）、**模式**（生成通道）、**空气暴露**、**冲突**。
+面向需要扩展矿脉生成行为的模组开发者。矿脉系统提供四类策略：**形状**（几何）、**模式**（生成通道）、**空气暴露**、**冲突**。
 全部在 `registerOreFoundation` 注册。
 
 本页是 [Ore](../ore.md) 模块的子页——概念与页面导航见 [Ore](../ore.md)。
 
 ## OreVeinShape — 几何包含测试
 
-```java
-@FunctionalInterface
-public interface Strategy { boolean contains(int dx, int dy, int dz, int radius); }
-// 以矿脉中心为原点；radius 由矿脉声明提供
-
-ore.shape("oval", (dx, dy, dz, radius) ->
-        dx * dx + dy * dy + dz * dz <= radius * radius);
-```
+判断矿脉局部坐标是否位于网格矿体内；使用方法见[矿脉形状](shape.md)。
 
 ## OreVeinMode — 生成通道
 
-```java
-public interface Strategy {
-    void validate(OrePlacement placement);      // 拒绝不属于本通道的放置配置
-    default void collectGrid(OreVein vein, OreVeinCollector collector) {}     // 网格通道：写入每 chunk 确定性放置计划
-    default void collectFeature(OreVein vein, OreVeinCollector collector) {}  // feature 通道：交给原版 feature 数据生成桥
-}
-```
-
-`OrePlacement` 是 sealed 接口（`Feature` / `Grid` 两种）——validate 用 `instanceof` 区分。
-模式必须与显示成对：`registerOreDisplays` 里 `ore.display(modeId, strategy)`。引擎双向校验：
-每个模式必须有显示，每个显示也必须指向已注册模式。
-
-```java
-ore.mode("stone_replace", new OreVeinMode.Strategy() {
-    @Override public void validate(OrePlacement placement) {
-        if (!(placement instanceof OrePlacement.Feature)) throw new IllegalArgumentException(...);
-    }
-    // 只实现本通道需要的方法；另一个通道使用默认 no-op。
-    @Override public void collectFeature(OreVein vein, OreVeinCollector collector) { collector.add(vein); }
-});
-```
+校验放置配置并将矿脉交给网格或 feature 通道；使用方法见[矿脉生成模式](mode.md)。
 
 ## OreAirExposurePolicy — 空气暴露
 
-```java
-public interface Strategy {
-    boolean discardExposed(double discardChance, double randomSample);
-    Component describe(double discardChance);   // JEI / 信息卡标签
-}
-
-ore.airExposure("probabilistic", new OreAirExposurePolicy.Strategy() {
-    @Override public boolean discardExposed(double discardChance, double randomSample) {
-        return randomSample < discardChance;
-    }
-    @Override public Component describe(double discardChance) { return Component.literal("Probabilistic"); }
-});
-```
+决定暴露位置是否丢弃，并提供显示文本；使用方法见[空气暴露策略](air-exposure.md)。
 
 ## OreConflictPolicy — 矿脉冲突
 
-```java
-public interface Strategy {
-    boolean canReplace(int candidatePriority, int existingPriority);
-}
-
-ore.conflict("replace_lower", (candidate, existing) -> candidate >= existing);
-```
+决定网格矿脉重叠时能否替换已有规划；使用方法见[矿脉冲突策略](conflict.md)。
 
 ## OreVeinDisplay — 矿脉显示（JEI 预览）
 

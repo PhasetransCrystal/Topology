@@ -4,7 +4,7 @@ sidebar_position: 1
 
 # Material
 
-材料系统是 Topology 最基础的部分。声明一个材料，框架自动生成对应形态（锭、粉、板、流体）的物品和方块。
+面向需要声明材料或复用材料形态的模组开发者。材料声明完成后，框架按已注册形态的规则匹配材料，并调用匹配形态的策略生成内容。
 
 ## 关键概念
 
@@ -55,7 +55,7 @@ public void registerMaterials(MaterialDomainRegistration m) {
             // MaterialDataUse 通过 DataType 的公开工厂方法获得，不能直接 new：
             .data(rgbColorDataType.rgb(0xFFB873))
             .data(massDataType.mass(8))
-            .data(toolStatsDataType.stats(/* durability */ 200, /* speed */ 4.5f, /* attack */ 1.5f))
+            .data(toolStatsDataType.stats(200, 4.5f, 1.5f, 14, BlockTags.INCORRECT_FOR_IRON_TOOL))
             .build();
 }
 ```
@@ -80,22 +80,13 @@ public void registerMaterials(MaterialDomainRegistration m) {
 
 ```java
 m.material("copper").lang("Copper", "铜")
-        .data(toolStatsDataType.stats(200, 4.5f, 1.5f))
+        .data(toolStatsDataType.stats(200, 4.5f, 1.5f, 14, BlockTags.INCORRECT_FOR_IRON_TOOL))
         .form(ingotForm, options -> options.overrideItem(ExternalTargets.item(Items.COPPER_INGOT)))
         .build();
 ```
 
 跨模组的现有条目复用见[兼容其他模组](compatibility/other-mods.md)，
 共享类型、新形态与已构建材料的数据补充见[兼容其他 TopoPlugin](compatibility/topo-plugins.md)。
-
-## 原版矿石替换
-
-TopoDemo 的数据生成会把原版主世界矿石 configured feature 的 target 替换为 Topo 原生矿石方块；
-原版 placed feature 与生物群系分布保持不变，因此不需要重建矿脉分布。铜是例外：原版铜
-placed feature 被移除，继续由 Demo 的自定义铜矿脉生成，避免重复生成。
-
-原生矿石的掉落由 `ORE_DROP` 数据声明：粗金属掉 1–4 个粗矿，煤/宝石/红石等掉对应形态，
-没有 `ORE_DROP` 的矿石退回掉落自身。下界石英、下界金矿和远古残骸的 configured feature 也走同一替换流程。
 
 ## 按兼容物品获取材料
 
@@ -159,25 +150,7 @@ public void registerMaterialFoundation(MaterialDomainRegistration m) {
 - 所有插件完成注入后关闭写入，再统一匹配形态并校验；此后 `forms()` 才是完整且不可变的集合
 - `MaterialPostProcessor` 在形态物品铸造后运行（先全部 validate，再全部 process）
 
-## 注册流程与性能边界
-
-| 阶段 | 输入与输出 | 扩展约束 |
-|------|------------|----------|
-| 基础声明 | 注册数据类型、形态规则和后处理器，然后冻结这些注册表 | 扩展插件在 `registerMaterialFoundation` 提供新类型与策略 |
-| 材料声明 | Builder 与材料共享同一个策略，按数据类型存储属性 | `registerMaterials` 内允许补充不同类型，重复类型拒绝覆盖 |
-| 关闭写入与匹配 | 固定材料快照，形态按完整 ID 排序，每个材料／形态组合求值一次，再统一构建执行计划 | 所有规则求值完毕后统一发布形态并构建 plan；保留的 Builder 和 options 引用也无法继续写入 |
-| 校验与冻结 | 校验材料数据、匹配形态的局部数据及形态策略 | 未匹配形态的选项不参与校验；失败终止启动，不能继续修改后重试冻结 |
-| 生成与后处理 | 使用材料所属插件的 RegistryCore 生成内容，再处理实际激活的处理器 | 全部材料内容生成后才运行后处理；先完成所有校验再执行处理 |
-
-设材料数为 M、形态数为 F、激活的材料／处理器组合总数为 A。任意 Lambda 无法预先建立属性索引，
-形态选择保持 M×F 次调用；框架只排序候选形态一次，规则不应在内部重复扫描全表。
-匹配、校验期间复用材料快照，冻结后查询不重复复制材料列表。
-后处理的两轮分派各遍历 A 个实际激活组合，不遍历 M×处理器总数。
-每个材料的处理器列表在冻结阶段按完整 ID 排序并缓存。
-
-`forms()` 提供有序不可变列表；只判断是否存在形态时使用 `hasForm(form)`，
-以哈希集合查询替代线性扫描。数据声明不在 `build()` 时复制，内部写入口在统一冻结边界关闭。
-注册仍是单线程启动过程，数据 payload 应使用不可变值（如 record）；框架不会深拷贝插件自定义对象。
+`forms()` 返回有序不可变列表；只判断是否存在某种形态时可使用 `hasForm(form)`。插件自定义数据应使用不可变值，框架不会深拷贝数据对象。
 
 ## API 速查
 
