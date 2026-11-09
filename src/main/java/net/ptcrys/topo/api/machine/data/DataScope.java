@@ -10,10 +10,12 @@ import net.neoforged.neoforge.transfer.item.ItemResource;
 
 import org.jspecify.annotations.Nullable;
 
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * A named container of machine data fields, owned by a {@link MachineDataScope}. Each trait gets one
@@ -58,6 +60,40 @@ public final class DataScope {
         return domain;
     }
 
+    /** 在当前分组声明自定义值字段，策略仍由现有字段构建器确定。 */
+    public <T> SyncableFieldBuilder<DataValue<T>, T> valueField(DataKey<T> key) {
+        return new SyncableFieldBuilder<>(this, key.id().toString(), policy -> new DataValue<>(this, key, policy));
+    }
+
+    /** 仅捕获当前分组中声明的通用值字段，不暴露机器的其他数据域。 */
+    public DataSnapshot snapshotValues() {
+        Map<DataKey<?>, Object> values = new LinkedHashMap<>();
+        Set<DataKey<?>> assigned = new HashSet<>();
+        for (DataField field : fieldsByKey.values()) {
+            if (field instanceof DataValue<?> value) {
+                values.put(value.definition(), value.value());
+                if (value.assigned()) assigned.add(value.definition());
+            }
+        }
+        return new DataSnapshot(values, assigned);
+    }
+
+    /** 整体校验声明后提交工作结果；只允许相同分组的完整快照。须在机器所属线程调用。 */
+    public void commitValues(DataSnapshot snapshot) {
+        Set<DataKey<?>> keys = new HashSet<>();
+        for (DataField field : fieldsByKey.values()) if (field instanceof DataValue<?> value) {
+            if (value.isComputed()) throw new IllegalStateException("Cannot commit computed field");
+            domain.requireFieldWrite(value);
+            keys.add(value.definition());
+        }
+        if (!keys.equals(snapshot.keys())) throw new IllegalArgumentException("Snapshot schema differs from data scope");
+        for (DataField field : fieldsByKey.values()) if (field instanceof DataValue<?> value) commitValue(value, snapshot);
+    }
+
+    private static <T> void commitValue(DataValue<T> value, DataSnapshot snapshot) {
+        value.restore(snapshot.get(value.definition()), snapshot.assignedKeys().contains(value.definition()));
+    }
+
     public String key() {
         return key;
     }
@@ -67,6 +103,9 @@ public final class DataScope {
         DataScope existing = groups.get(key);
         if (existing != null) {
             return existing;
+        }
+        if (fieldsByKey.containsKey(key)) {
+            throw new IllegalStateException("Data group '" + fullPath(key) + "' conflicts with a field key");
         }
         domain.requireSchemaOpen("create data group '" + fullPath(key) + "'");
         DataScope created = new DataScope(domain, this, key);
@@ -210,6 +249,9 @@ public final class DataScope {
 
     void register(DataField field) {
         domain.requireSchemaOpen("register data field '" + fullPath(field.key()) + "'");
+        if (groups.containsKey(field.key())) {
+            throw new IllegalStateException("Data field '" + fullPath(field.key()) + "' conflicts with a group key");
+        }
         DataField previous = fieldsByKey.putIfAbsent(field.key(), field);
         if (previous != null) {
             throw new IllegalStateException("Duplicate data field '" + fullPath(field.key()) + "'");

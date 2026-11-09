@@ -9,6 +9,7 @@ import net.ptcrys.registrylib.util.color.RgbColor;
 import net.ptcrys.registrylib.util.visual.BlockModelLayer;
 import net.ptcrys.topo.api.material.Material;
 import net.ptcrys.topo.api.material.data.MaterialDataType;
+import net.ptcrys.topo.api.material.form.MaterialForm;
 import net.ptcrys.topo.api.material.render.MaterialBlockRender;
 import net.ptcrys.topo.api.material.render.MaterialItemRender;
 import net.ptcrys.topodemo.api.TopoDemoApiPlugin;
@@ -17,8 +18,10 @@ import net.ptcrys.topodemo.api.material.common.RgbColorData;
 import net.minecraft.client.color.block.BlockTintSource;
 import net.minecraft.client.color.item.ItemTintSource;
 import net.minecraft.client.data.models.model.ItemModelUtils;
+import net.minecraft.client.data.models.model.ModelTemplate;
 import net.minecraft.client.data.models.model.ModelTemplates;
 import net.minecraft.client.data.models.model.TextureMapping;
+import net.minecraft.client.data.models.model.TextureSlot;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
@@ -26,6 +29,9 @@ import net.minecraft.world.level.block.Block;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+
+import static net.ptcrys.topodemo.api.material.common.render.TemplateMaterials.templateMaterial;
 
 /**
  * 极简染色渲染:灰阶模板纹理 + 材料颜色。骨架版本只支持单层;
@@ -106,17 +112,17 @@ public final class TintedTemplate {
     private static final class ItemRender implements MaterialItemRender {
 
         /** Vanilla only ships layered templates for the generated parent; handheld needs its own. */
-        private static final net.minecraft.client.data.models.model.ModelTemplate TWO_LAYERED_HANDHELD = new net.minecraft.client.data.models.model.ModelTemplate(
-                java.util.Optional.of(Identifier.withDefaultNamespace("item/handheld")),
-                java.util.Optional.empty(),
-                net.minecraft.client.data.models.model.TextureSlot.LAYER0,
-                net.minecraft.client.data.models.model.TextureSlot.LAYER1);
-        private static final net.minecraft.client.data.models.model.ModelTemplate THREE_LAYERED_HANDHELD = new net.minecraft.client.data.models.model.ModelTemplate(
-                java.util.Optional.of(Identifier.withDefaultNamespace("item/handheld")),
-                java.util.Optional.empty(),
-                net.minecraft.client.data.models.model.TextureSlot.LAYER0,
-                net.minecraft.client.data.models.model.TextureSlot.LAYER1,
-                net.minecraft.client.data.models.model.TextureSlot.LAYER2);
+        private static final ModelTemplate TWO_LAYERED_HANDHELD = new ModelTemplate(
+                Optional.of(Identifier.withDefaultNamespace("item/handheld")),
+                Optional.empty(),
+                TextureSlot.LAYER0,
+                TextureSlot.LAYER1);
+        private static final ModelTemplate THREE_LAYERED_HANDHELD = new ModelTemplate(
+                Optional.of(Identifier.withDefaultNamespace("item/handheld")),
+                Optional.empty(),
+                TextureSlot.LAYER0,
+                TextureSlot.LAYER1,
+                TextureSlot.LAYER2);
 
         private final List<Layer> layers;
         private final boolean handheld;
@@ -138,26 +144,26 @@ public final class TintedTemplate {
         }
 
         @Override
-        public void apply(ItemBuilder<Item, RegistryCore> builder, Material material) {
-            ItemTintSource[] tints = itemTintSources(layers, material);
+        public void apply(ItemBuilder<Item, RegistryCore> builder, Material material, MaterialForm form) {
+            ItemTintSource[] tints = itemTintSources(layers, material, form);
             builder.model(() -> (item, generator) -> {
                 Identifier model = switch (layers.size()) {
                     case 1 -> (handheld ? ModelTemplates.FLAT_HANDHELD_ITEM : ModelTemplates.FLAT_ITEM).create(
                             item,
-                            TextureMapping.layer0(templateMaterial(layers.get(0))),
+                            TextureMapping.layer0(templateMaterial(layers.get(0).texturePath)),
                             generator.modelOutput);
                     case 2 -> (handheld ? TWO_LAYERED_HANDHELD : ModelTemplates.TWO_LAYERED_ITEM).create(
                             item,
                             TextureMapping.layered(
-                                    templateMaterial(layers.get(0)),
-                                    templateMaterial(layers.get(1))),
+                                    templateMaterial(layers.get(0).texturePath),
+                                    templateMaterial(layers.get(1).texturePath)),
                             generator.modelOutput);
                     case 3 -> (handheld ? THREE_LAYERED_HANDHELD : ModelTemplates.THREE_LAYERED_ITEM).create(
                             item,
                             TextureMapping.layered(
-                                    templateMaterial(layers.get(0)),
-                                    templateMaterial(layers.get(1)),
-                                    templateMaterial(layers.get(2))),
+                                    templateMaterial(layers.get(0).texturePath),
+                                    templateMaterial(layers.get(1).texturePath),
+                                    templateMaterial(layers.get(2).texturePath)),
                             generator.modelOutput);
                     default -> throw new IllegalStateException(
                             "Unsupported tinted template item layer count: " + layers.size());
@@ -187,33 +193,28 @@ public final class TintedTemplate {
         }
 
         @Override
-        public void apply(BlockBuilder<Block, RegistryCore> builder, Material material) {
+        public void apply(BlockBuilder<Block, RegistryCore> builder, Material material, MaterialForm form) {
             TextureRef particle = templateTextureRef(layers.get(0).layer);
             builder.layeredCube(particle, blockModelLayers(layers))
-                    .blockTintSource(() -> () -> blockTintSources(layers, material))
-                    .tintSource(blockItemTintSources(layers, material));
+                    .blockTintSource(() -> () -> blockTintSources(layers, material, form))
+                    .tintSource(blockItemTintSources(layers, material, form));
         }
     }
 
-    private static net.minecraft.client.resources.model.sprite.Material templateMaterial(Layer layer) {
-        return new net.minecraft.client.resources.model.sprite.Material(
-                TopoDemoApiPlugin.INSTANCE.material().id(layer.texturePath));
-    }
-
-    private static ItemTintSource[] itemTintSources(List<Layer> layers, Material material) {
+    private static ItemTintSource[] itemTintSources(List<Layer> layers, Material material, MaterialForm form) {
         ItemTintSource[] tints = new ItemTintSource[layers.size()];
         for (int index = 0; index < layers.size(); index++) {
-            tints[index] = RegistryLibTintSources.itemConstant(RgbColor.of(layerColor(layers.get(index), material)));
+            tints[index] = RegistryLibTintSources.itemConstant(
+                    RgbColor.of(layerColor(layers.get(index), material, form)));
         }
         return tints;
     }
 
-    private static int layerColor(Layer layer, Material material) {
+    private static int layerColor(Layer layer, Material material, MaterialForm form) {
         if (layer.requiredData == null) {
             return 0xFFFFFF;
         }
-        return material.strategy()
-                .data(layer.requiredData)
+        return material.data(layer.requiredData, form)
                 .map(RgbColorData::rgb)
                 .orElse(0xFFFFFF);
     }
@@ -237,20 +238,20 @@ public final class TintedTemplate {
         return result;
     }
 
-    private static BlockTintSource[] blockTintSources(List<BlockLayer> layers, Material material) {
+    private static BlockTintSource[] blockTintSources(List<BlockLayer> layers, Material material, MaterialForm form) {
         BlockTintSource[] tints = new BlockTintSource[layers.size()];
         for (int index = 0; index < layers.size(); index++) {
             tints[index] = RegistryLibTintSources.blockConstant(
-                    RgbColor.of(layerColor(layers.get(index).layer, material)));
+                    RgbColor.of(layerColor(layers.get(index).layer, material, form)));
         }
         return tints;
     }
 
-    private static ItemTintSource[] blockItemTintSources(List<BlockLayer> layers, Material material) {
+    private static ItemTintSource[] blockItemTintSources(List<BlockLayer> layers, Material material, MaterialForm form) {
         ItemTintSource[] tints = new ItemTintSource[layers.size()];
         for (int index = 0; index < layers.size(); index++) {
             tints[index] = RegistryLibTintSources.itemConstant(
-                    RgbColor.of(layerColor(layers.get(index).layer, material)));
+                    RgbColor.of(layerColor(layers.get(index).layer, material, form)));
         }
         return tints;
     }

@@ -19,6 +19,9 @@ title: 内容注册实作
 | 具体内容 | 材料参数、机器组合、管道、矿脉和具体配方 | `src/demo/java/net/ptcrys/topodemo/data/` |
 | 外部适配 | 可选模组接入、JEI 展示、其他插件的内容桥接 | `src/demo/java/net/ptcrys/topodemo/integration/` |
 
+多方块结构的 JEI 展示由 Topo 统一提供：框架收集所有已注册的多方块控制器，内容模组无需再次注册结构分类。
+Demo 的 JEI 接入只负责自身生产配方和矿脉展示；结构预览的查询与工作方块栏见[多方块蓝图](../machine/multiblock.md#机器结构页与结构示例)。
+
 TopoDemo 在构造期登记 `TopoDemoApiPlugin` 与 `TopoDemoPlugin`，二者共用 `TopoDemo.REGISTRY`。
 拆成两个插件便于组织代码；初始化时机仍由各钩子决定。
 跨插件依赖按所属模组的依赖关系隐式确认，不再添加 Plugin 依赖配置；
@@ -41,7 +44,7 @@ Demo 将声明放在静态字段中，并从所属钩子显式调用对应类的
 | `registerEquipmentKinds` | 声明装备策略，由框架按材料属性生成物品 | `BuiltinEquipment` |
 | `registerMachineFoundation` / `registerMachines` | 先声明机器基础类型，再组合组件、端口、渲染和 UI | `BuiltinMachineTypes`、`BuiltinMachines` |
 | `registerMachineFollowUps` | 声明管道、分发策略及配套工具 | `BuiltinPipes`、`BuiltinTools` |
-| 矿脉相关钩子 | 先声明生成类型与显示，再创建矿脉、安装 datagen 桥 | `BuiltinOreTypes`、`BuiltinVeinDisplays`、`BuiltinVeins`、`VanillaOreFeatureBridge` |
+| 矿脉相关钩子 | 先声明生成类型与显示，再创建矿脉；`registerOreDatagen` 调用 `ore.featureDatagen()` 安装框架 feature 桥 | `BuiltinOreTypes`、`BuiltinVeinDisplays`、`BuiltinVeins` |
 | `registerRecipes` | 使用所有内容领域的句柄组装具体配方 | `BuiltinRecipes` |
 | `registerLang` / `registerRuntime` | 分别声明独立文本、绑定真实物品的面板和交互 | `ContentLang`、`BuiltinToolPanels` |
 
@@ -51,22 +54,24 @@ Demo 将声明放在静态字段中，并从所属钩子显式调用对应类的
 
 ## 3. 声明材料，让规则决定生成内容
 
-产品先定义共享数据，例如 Demo 的 `KIND`、`ORE_HOST`、`ORE_PRODUCT`，再用 `appliesTo` 选择形态。
+产品先定义共享属性，例如 Demo 的 `INGOT`、`GEM`、`ORE_HOST`、`ORE_PRODUCT`，再用 `appliesTo` 选择形态。
+每个属性都是独立的 DataUse；不存在统一的分类枚举。
 材料注册行填写数据和覆盖选项：
 
 ```java
 // registerMaterials 内；这些句柄由自己的 registerMaterialFoundation 初始化。
 Material copper = material.material("copper")
         .lang("Copper", "铜")
-        .data(KIND.kind(METAL))
+        .data(INGOT.enabled())
+        .data(PULVERIZABLE.enabled())
         .data(PRIMARY_COLOR.rgb(0xB87333))
         .data(GRINDING.activation())
-        .form(INGOT, options -> options.overrideItem(ExternalTargets.mcItem("copper_ingot")))
+        .form(INGOT_FORM, options -> options.overrideItem(ExternalTargets.mcItem("copper_ingot")))
         .build();
 ```
 
-`KIND` 等分类属于产品代码，Topo 没有统一的“金属”枚举。形态依据公开数据匹配，
-这样新的材料和新的形态可以分别由不同插件贡献。
+`INGOT`、`GEM` 等属性属于产品代码，Topo 没有统一的“金属/宝石”枚举。
+形态依据属性匹配；新增能力只需注册新的 DataType 并注入，不需要修改其他分类或形态逻辑。
 示例中的 `INGOT` 规则必须匹配该材料；配置覆盖本身不会使形态入选。
 
 形态策略决定具体生成方式：
@@ -113,19 +118,7 @@ TopoDemo 的 `ItemRecipeCapability` 只支持精确物品输入；通用标签�
 真实物品面板和交互在 `registerRuntime` 绑定。将 `.get()` 放到真正允许读取对象的回调内，
 并确认传入 Supplier 的 API 确实延迟调用它。
 
-仓库的手动验证顺序是：
-
-```bash
-./gradlew demoClasses compileTestJava spotlessCheck
-./gradlew runClientData
-./gradlew runServerData
-./gradlew runClient
-```
-
-`runClientData` / `runServerData` 选择 `topo` 和 `topodemo` 两个 modid，
-输出分别位于 `src/generated/resources/<modid>` 和 `src/generated/serverResources/<modid>`。
-RegistryLib 当前使用客户端 GatherData 入口，模型、语言、标签和其配方生成需要 `runClientData`；
-`runServerData` 不能替代这一步。自己的项目应配置自己的 modid 和资源输出目录。
+在自己的 datagen 配置中选择模组 ID，并将输出目录加入资源源码集。模型、语言、标签和配方应在相应 provider 中生成。
 
 检查注册表里是否出现预期 ID、复用条目是否重复生成、名称与模型是否完整、配方输入输出是否正确。
 兼容验证还要覆盖依赖模组存在／缺席以及专用服务端；详见[测试与验证](testing.md)。

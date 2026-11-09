@@ -4,7 +4,7 @@ sidebar_position: 3
 
 # Display Names
 
-双语显示名的铸造与注册表桥——策略层接收产品表的裸 `(en, cn)` 字符串后，用本页的类型完成
+面向需要为生成的物品或方块声明显示名的模组开发者。策略层接收产品表的裸 `(en, cn)` 字符串后，用本页的类型完成
 「显示名 → 物品/方块语言条目」的闭环。
 
 本页是 [Localization](../localization.md) 模块的子页——概念与页面导航见 [Localization](../localization.md)。
@@ -42,12 +42,12 @@ RegistryDisplayLang.applyBlock(blockBuilder, core, entryPath, fixedName);
 
 zh_tw 由框架内部经 `ChineseConvert.s2t` 自动派生——桥使用者不碰转换。
 
-## 完整链路示例
+## 链路示例
 
 ```java
 // ① 产品表：只传裸字符串（MaterialDomainRegistration）
 m.material("copper").lang("Copper", "铜")
-        .data(toolStatsDataType.stats(200, 4.5f, 1.5f)).build();
+        .data(myMaterialData).build();
 // ingotForm 的 appliesTo 根据该数据匹配材料。
 
 // ② 策略内部：形态注册时铸造模板名
@@ -55,8 +55,9 @@ TemplateDisplayName name = DisplayNames.template("%s Ingot", "%s锭");
 
 // ③ 策略内部：为每个材质代入并桥接
 FixedDisplayName resolved = name.resolve(material);
-RegistryDisplayLang.applyItem(
-        core.item("copper_ingot"), core, "copper_ingot", resolved);
+var builder = core.item("copper_ingot");
+RegistryDisplayLang.applyItem(builder, core, "copper_ingot", resolved);
+builder.register();
 ```
 
 ## API 速查

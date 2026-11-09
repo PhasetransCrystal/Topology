@@ -8,28 +8,48 @@ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 /**
  * Stable int id table for one recipe search index.
  *
  * <p>
- * Optimization: recipe keys are converted to dense primitive ids at index-build time.
- * Principle: the search hot path can use int-keyed maps and arrays instead of repeatedly hashing
- * rich objects such as item resources, fluid resources, or tag keys.
+ * Each capability owns a separate primitive key namespace. Machine-fingerprint extraction and
+ * index building therefore avoid allocating a temporary composite key object on the search path.
  */
 public final class RecipeSearchKeyRegistry {
 
-    private final Object2IntOpenHashMap<Object> ids = new Object2IntOpenHashMap<>();
+    private final Object2IntOpenHashMap<Object> unqualifiedIds = new Object2IntOpenHashMap<>();
+    private final Map<Identifier, Object2IntOpenHashMap<Object>> capabilityIds = new HashMap<>();
     private final List<Object> keys = new ArrayList<>();
 
     public RecipeSearchKeyRegistry() {
-        ids.defaultReturnValue(-1);
+        unqualifiedIds.defaultReturnValue(-1);
     }
 
     public int getOrAssign(Object key) {
         Objects.requireNonNull(key, "recipe search key");
+        int existing = unqualifiedIds.getInt(key);
+        if (existing >= 0) {
+            return existing;
+        }
+        int assigned = keys.size();
+        keys.add(key);
+        unqualifiedIds.put(key, assigned);
+        return assigned;
+    }
+
+    public int getOrAssign(RecipeCapability<?, ?> capability, Object key) {
+        Objects.requireNonNull(capability, "recipe search capability");
+        Objects.requireNonNull(key, "recipe search key");
+        Object2IntOpenHashMap<Object> ids = capabilityIds.computeIfAbsent(capability.id(), ignored -> {
+            Object2IntOpenHashMap<Object> created = new Object2IntOpenHashMap<>();
+            created.defaultReturnValue(-1);
+            return created;
+        });
         int existing = ids.getInt(key);
         if (existing >= 0) {
             return existing;
@@ -40,33 +60,20 @@ public final class RecipeSearchKeyRegistry {
         return assigned;
     }
 
-    public int getOrAssign(RecipeCapability<?, ?> capability, Object key) {
-        return getOrAssign(searchKey(capability, key));
-    }
-
     public int idOf(@Nullable Object key) {
-        return key == null ? -1 : ids.getInt(key);
+        return key == null ? -1 : unqualifiedIds.getInt(key);
     }
 
     public int idOf(RecipeCapability<?, ?> capability, @Nullable Object key) {
-        return key == null ? -1 : ids.getInt(searchKey(capability, key));
+        if (key == null) {
+            return -1;
+        }
+        Objects.requireNonNull(capability, "recipe search capability");
+        Object2IntOpenHashMap<Object> ids = capabilityIds.get(capability.id());
+        return ids == null ? -1 : ids.getInt(key);
     }
 
     public int size() {
         return keys.size();
-    }
-
-    private static SearchKey searchKey(RecipeCapability<?, ?> capability, Object key) {
-        Objects.requireNonNull(capability, "recipe search capability");
-        Objects.requireNonNull(key, "recipe search key");
-        return new SearchKey(capability.id(), key);
-    }
-
-    private record SearchKey(Identifier capabilityId, Object value) {
-
-        private SearchKey {
-            Objects.requireNonNull(capabilityId, "recipe search capability id");
-            Objects.requireNonNull(value, "recipe search key value");
-        }
     }
 }

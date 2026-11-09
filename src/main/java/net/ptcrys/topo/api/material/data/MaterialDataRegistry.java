@@ -1,6 +1,5 @@
 package net.ptcrys.topo.api.material.data;
 
-import net.ptcrys.topo.api.api.builtin.MaterialDomainRegistration;
 import net.ptcrys.topo.api.api.infrastructure.FreezableStrategyRegistry;
 import net.ptcrys.topo.api.material.Material;
 
@@ -8,37 +7,28 @@ import net.minecraft.resources.Identifier;
 
 import org.jetbrains.annotations.ApiStatus;
 
+import java.util.List;
+import java.util.Objects;
+import java.util.function.Predicate;
+
 /**
- * Material data-type table (query + freeze). Product writes only via
- * {@link MaterialDomainRegistration#dataType}.
+ * Material capability-type table (query + freeze). Product writes only via the material domain
+ * registration. The registered handle is both the identity and the validation strategy.
  */
 public final class MaterialDataRegistry {
 
-    private static final FreezableStrategyRegistry<Identifier, MaterialDataType<?>, MaterialDataStrategy<?>> REGISTRY = FreezableStrategyRegistry.create("material data types");
-
-    /** No-op validator for data types that only store values. */
-    @SuppressWarnings("unchecked")
-    public static <D> MaterialDataStrategy<D> noValidation() {
-        return (MaterialDataStrategy<D>) NO_VALIDATION;
-    }
-
-    private static final MaterialDataStrategy<Object> NO_VALIDATION = (material, data) -> {};
+    private static final FreezableStrategyRegistry<Identifier, MaterialDataType<?>, MaterialDataType<?>> REGISTRY = FreezableStrategyRegistry.create("material data types");
 
     private MaterialDataRegistry() {}
 
-    /**
-     * Single write entry. Used by {@link MaterialDomainRegistration} and
-     * post-processor pairing. Pass {@link #noValidation()} when no value checks are needed.
-     */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings("unchecked")
     @ApiStatus.Internal
-    public static <D, H extends MaterialDataType<D>> H begin(
-                                                             Identifier id, H handle, MaterialDataStrategy<D> strategy) {
+    public static <D, H extends MaterialDataType<D>> H begin(Identifier id, H handle) {
         if (!id.equals(handle.id())) {
             throw new IllegalArgumentException(
                     "material data type id mismatch: registry key " + id + " != handle id " + handle.id());
         }
-        REGISTRY.register(id, handle, (MaterialDataStrategy) strategy);
+        REGISTRY.register(id, handle, handle);
         return handle;
     }
 
@@ -46,8 +36,8 @@ public final class MaterialDataRegistry {
         return REGISTRY.require(id);
     }
 
-    public static MaterialDataStrategy<?> strategy(Identifier id) {
-        return REGISTRY.strategy(id);
+    public static List<MaterialDataType<?>> registered() {
+        return REGISTRY.handlesView();
     }
 
     public static boolean isFrozen() {
@@ -59,17 +49,22 @@ public final class MaterialDataRegistry {
         REGISTRY.freeze();
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
     public static void validate(Material material, MaterialDataUse<?> use) {
-        MaterialDataStrategy strategy = REGISTRY.strategy(use.type().id());
-        if (strategy == null) {
-            throw new IllegalStateException("no material data strategy for " + use.type().id());
-        }
-        strategy.validate(material, use.data());
+        validate(material, use, material::hasData);
+    }
+
+    /** Validates one use against the supplied visibility scope. */
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    @ApiStatus.Internal
+    public static void validate(Material material, MaterialDataUse<?> use,
+                                Predicate<MaterialDataType<?>> present) {
+        use.type().checkDependencies(material.id(), present);
+        use.type().checkExclusions(material.id(), present);
+        ((MaterialDataType) use.type()).validate(material, use.data());
     }
 
     static <D> MaterialDataUse<D> use(MaterialDataType<D> type, D data) {
         REGISTRY.verifyOwnedHandle(type.id(), type);
-        return new MaterialDataUse<>(type, data);
+        return new MaterialDataUse<>(type, Objects.requireNonNull(data, "material data"));
     }
 }

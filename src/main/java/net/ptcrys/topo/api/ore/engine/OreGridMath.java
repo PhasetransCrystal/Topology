@@ -19,8 +19,10 @@ public final class OreGridMath {
 
     public static long seed(long worldSeed, Identifier dimensionId, Identifier id, int x, int z) {
         long value = worldSeed;
-        value ^= ((long) dimensionId.hashCode()) * 0x9E3779B97F4A7C15L;
-        value ^= ((long) id.hashCode()) * 0xBF58476D1CE4E5B9L;
+        // String hashes preserve the pre-Identifier worldgen seed layout; Identifier.hashCode()
+        // would silently re-seed every existing world.
+        value ^= ((long) dimensionId.toString().hashCode()) * 0x9E3779B97F4A7C15L;
+        value ^= ((long) id.toString().hashCode()) * 0xBF58476D1CE4E5B9L;
         value ^= ((long) x) * 0x94D049BB133111EBL;
         value ^= ((long) z) * 0xD6E8FEB86659FD93L;
         return mix(value);
@@ -34,8 +36,14 @@ public final class OreGridMath {
             return min;
         }
         long range = (long) max - (long) min + 1L;
-        long value = Long.remainderUnsigned(mix(seed + salt * 0x9E3779B97F4A7C15L), range);
-        return (int) (min + value);
+        return (int) (min + randomLong(seed, salt, range));
+    }
+
+    public static long randomLong(long seed, int salt, long bound) {
+        if (bound <= 0L) {
+            throw new IllegalArgumentException("bound must be positive, got " + bound);
+        }
+        return Long.remainderUnsigned(mix(seed + salt * 0x9E3779B97F4A7C15L), bound);
     }
 
     public static long mix(long value) {

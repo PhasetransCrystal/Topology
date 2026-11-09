@@ -4,7 +4,7 @@ sidebar_position: 2
 
 # Equipment Behavior
 
-装备右键机器时的行为——扳手拆机、调节器启停都走这个插座。本页覆盖 `MachineItemBehavior` 的实现与注册。
+面向需要为物品添加机器交互的模组开发者。本页说明 `MachineItemBehavior` 的实现与注册。
 
 本页是 [Equipment](../equipment.md) 模块的子页——概念与页面导航见 [Equipment](../equipment.md)。
 
@@ -26,7 +26,7 @@ public interface MachineItemBehavior {
 - 服务端：执行变更，返回 `CONSUME`
 - 不处理 → 返回 `PASS`，落回机器默认交互（打开 UI）
 
-## 生产级实现：调节器行为
+## 示例：调节器行为
 
 ```java
 public final class RegulatorBehavior implements MachineItemBehavior {
@@ -59,8 +59,8 @@ public final class RegulatorBehavior implements MachineItemBehavior {
 ## 注册
 
 装备策略的 `machineBehavior()` 返回非空行为时，引擎会在 common setup 自动为
-`EquipmentRegistry.recordItem` 登记的生成物品绑定行为，早于插件的 `registerRuntime`。
-自定义装备策略生成物品后也应记录归属，才能参与此流程。
+`EquipmentStrategy.register` 返回的生成物品绑定行为，早于插件的 `registerRuntime`。
+框架统一记录物品归属；策略不需要（也不能）手工写入装备注册表。
 
 额外物品在插件运行时钩子中绑定：
 
@@ -77,7 +77,7 @@ public void registerRuntime(RuntimeDomainRegistration runtime) {
 
 ## 反馈语言键
 
-行为的玩家反馈键走 `equipment` 分类（不是 tooltip 分类）：
+行为的玩家反馈可以声明为独立语言键，例如：
 
 ```java
 // registerLang 或行为声明点：

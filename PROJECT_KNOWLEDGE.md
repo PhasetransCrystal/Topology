@@ -1,8 +1,24 @@
-# 项目知识
+# 项目知识索引
 
-- 材料数据由内部 `MaterialStrategy` 持有，Builder 与构建后共用该实例；共享窗口内直接通过 `material.data(use)` 跨插件补充，重复类型拒绝覆盖。全部 `registerMaterials` 完成后关闭写入，统一匹配 `appliesTo`、校验和生成内容。契约见 [材料数据](docs-content/material/material-data.md) 与 [MaterialForm](docs-content/material/material-form.md)。
-- `appliesTo` 是材料形态选择的唯一来源；材料不维护包含或排除名单，`.form(form, options)` 只配置局部数据和原版条目覆盖。契约见 [MaterialForm](docs-content/material/material-form.md)。
-- 材料冻结统一发布匹配结果；`hasForm` 使用成员索引，后处理仅遍历缓存的激活列表（完整 ID 排序）。任意形态规则仍需 M×F 次求值，注册为单线程启动过程；见 [材料注册流程与性能边界](docs-content/material.md#注册流程与性能边界)。
+面向框架开发者；按主题查阅内部设计与实现依据。公开使用契约见 [docs-content](docs-content/)。
 
-- 插件身份和声明内容相同时，登记顺序不决定执行结果：`PluginCollection` 锁定并复用快照，`RegistrationPlan` 按依赖与阶段调度，每个引擎独立持有启动状态。钩子内部须使用确定输入；生产环境保持单宿主。来源与边界见 [插件生命周期](docs-content/foundation/lifecycle.md)。
-- 跨 TopoPlugin 的依赖按所属模组依赖隐式确认，不单独配置插件依赖；依赖存在不保证句柄、静态内容或运行时已初始化，需按阶段取用。来源与边界见 [跨插件兼容](docs-content/compatibility/topo-plugins.md)。
+- [框架设计原则](docs/foundation/framework-principles.md)：全框架接口与能力组合的约束。
+- [多方块蓝图知识](docs/machine/multiblock-blueprint-knowledge.md)：布局、变换、索引与已确认边界。
+- [多方块检测实现](docs/machine/multiblock-detection-implementation.md)：当前检测、元数据、预览和 JEI 集成。
+- [结构工具约定](docs/machine/multiblock-tool-agreements.md)：已确认需求及尚未实现的范围。
+- [多方块检测与结构工具设计目录](docs/machine/design-index.md)：检测、元数据、施工、当前差距与验收。
+- [通用仓储边界](docs/foundation/storage-boundaries.md)：仓储访问的已确认边界与状态。
+- [仓储访问设计目录](docs/foundation/design-index.md)：资源、批量操作、适配、组合与验收。
+
+- [宿主接线](docs/foundation/host-wiring.md)：框架宿主职责及无宿主内嵌限制。
+- [NeoForge 测试启动](docs/foundation/neo-forge-tests.md)：仓库测试运行环境与报告位置。
+- [插件回归](docs/foundation/plugin-regression.md)、[管道勘测回归](docs/foundation/pipe-survey-regression.md)、[发布验证](docs/foundation/release-verification.md)：对应模块的维护验证。
+- [Tick 分桶](docs/foundation/tick-buckets.md)、[材料注册性能](docs/foundation/material-registration-performance.md)：调度与注册实现依据。
+- [多方块 Demo 验证](docs/machine/multiblock-demo-verification.md)、[结构工具验证](docs/machine/structure-tool-verification.md)：测试样本及手动验收。
+- [配方类型内部职责](docs/foundation/recipe-type-internals.md)、[悬浮面板缓存](docs/foundation/tooltip-cache.md)：内部实现边界。
+- [Demo 原版矿石替换](docs/foundation/demo-vanilla-ore-replacement.md)：Demo 数据生成及掉落策略。
+- [注册管线时序](docs/foundation/registration-timeline.md)、[新增注册领域](docs/foundation/registration-domain-extension.md)：宿主调度与领域扩展依据。
+- [Demo 注册归属](docs/foundation/demo-registration-ownership.md)：两个 Demo 插件的职责、阶段及旧版迁移现状。
+- [Demo 锅炉燃料](docs/machine/demo-boiler-fuel.md)：燃料储备与配方运行视图的组件组合。
+- [AE 样板内容转换](docs/foundation/ae-pattern-conversion.md)：配方能力分组与样板输入、输出槽的对应关系。
+- [多方块周期重检](docs/machine/multiblock-recheck.md)、[占地与独占索引](docs/machine/multiblock-claim-index.md)、[JEI 工作方块栏](docs/machine/multiblock-jei-integration.md)：各自的框架实现。

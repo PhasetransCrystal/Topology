@@ -20,7 +20,7 @@ import java.util.Map;
 /** Owns lang registration steps and their freeze fences. */
 public final class LangRegistrationModule implements RegistrationModule {
 
-    static final RegistrationPoint<LangPlugin, LangDomainRegistration> KEYS = RegistrationPoint.of(IdHelper.id("lang/keys"), LangPlugin.class, LangDomainRegistration.DOMAIN, LangPlugin::registerLang);
+    static final RegistrationPoint<LangPlugin, LangDomainRegistration> KEYS = RegistrationPoint.of(IdHelper.topo("lang/keys"), LangPlugin.class, LangDomainRegistration.DOMAIN, LangPlugin::registerLang);
 
     @Override
     public void define(RegistrationPlan.Builder plan, RegistrationContext context) {

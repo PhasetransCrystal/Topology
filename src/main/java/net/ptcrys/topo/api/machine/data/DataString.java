@@ -4,16 +4,23 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Objects;
 
 /** A non-null {@link String} machine field. */
 public final class DataString extends DataField {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(DataString.class);
+    /** Matches {@link RegistryFriendlyByteBuf#writeUtf(String)}'s default wire limit. */
+    private static final int MAX_LENGTH = 32_767;
+
     private String value;
 
     DataString(DataScope owner, String key, String initialValue, FieldPolicy policy) {
         super(owner, key, policy);
-        this.value = Objects.requireNonNull(initialValue, "initial value");
+        this.value = requireValid(initialValue);
     }
 
     public String value() {
@@ -37,12 +44,12 @@ public final class DataString extends DataField {
     public void set(String value) {
         requireNotComputed();
         requireWriteAccess();
-        applyValue(Objects.requireNonNull(value, "value"));
+        applyValue(requireValid(value));
     }
 
     @Override
     void applyComputed(Object value) {
-        applyValue(Objects.requireNonNull((String) value, "value"));
+        applyValue(requireValid((String) value));
     }
 
     private void applyValue(String value) {
@@ -60,12 +67,19 @@ public final class DataString extends DataField {
 
     @Override
     void readPersist(ValueInput input) {
-        value = input.getStringOr(key(), value);
+        String stored = input.getStringOr(key(), value);
+        if (stored.length() > MAX_LENGTH) {
+            LOGGER.warn(
+                    "Ignoring oversized persisted value for machine data field {} ({} > {} characters); keeping '{}'",
+                    path(), stored.length(), MAX_LENGTH, value);
+            return;
+        }
+        value = stored;
     }
 
     @Override
     void writeSync(RegistryFriendlyByteBuf buffer) {
-        buffer.writeUtf(value);
+        buffer.writeUtf(value, MAX_LENGTH);
     }
 
     @Override
@@ -75,7 +89,16 @@ public final class DataString extends DataField {
 
     @Override
     void applyDecodedSyncValue(Object value) {
-        this.value = Objects.requireNonNull((String) value, "value");
+        this.value = requireValid((String) value);
+    }
+
+    private String requireValid(String value) {
+        Objects.requireNonNull(value, "value");
+        if (value.length() > MAX_LENGTH) {
+            throw new IllegalArgumentException(
+                    "Machine data string field " + path() + " exceeds " + MAX_LENGTH + " characters");
+        }
+        return value;
     }
 
     @Override

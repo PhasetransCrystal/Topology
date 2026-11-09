@@ -54,12 +54,17 @@ Supplier<Item> otherIngot = () -> BuiltInRegistries.ITEM.getOptional(otherIngotI
 |---|---|---|
 | 配方的外部物品／流体 | 完整 ID、Entry 或支持延迟解析的 Supplier | 对应配方／资源 provider 或运行时读取时 |
 | 原版／外部方块作为形态 | `ExternalItemTarget` / `ExternalBlockTarget` | 由形态策略选择安全的解析方式 |
+| 原版／外部流体作为形态 | `ExternalFluidTarget` / `ExternalTargets.fluid(...)` | 可选提供外部桶物品 supplier |
 | 物品面板或机器交互 | ID 或外部模组公开的 Entry | `registerRuntime` 中 |
 | 共享资源传输 | 对方提供的能力与兼容 handler | 游戏中查询能力时 |
 
 Supplier 只延迟调用，不会自动初始化内容或修复错误的阶段。
-例如当前 RegistryLib 的 `existingItem`、`existingBlock` 会立即查询对象，
-`itemTags().addSuppliers` 也会立即调用 Supplier，不能用它们包装尚未绑定的外部条目。
+Topo 的外部形态目标支持三种来源：完整 ID、已经可用的 `ItemLike`/`Block`/`Fluid`、以及 Supplier；
+`ExternalTargets` 会为后两者延迟解析注册 ID。需要稳定 ID 时显式传入，例如
+`ExternalTargets.item(otherIngot.id(), otherIngot)`。
+目标仍表示一个注册项；带 data component、NBT、block state 或多个 tag 变体的条目需要自定义形态策略或额外 target 类型。
+材料冻结时会检查已匹配形态的输出 key；内置形态会报告 item/block/fluid 注册 ID，未绑定 Supplier
+目标以及自定义形态未声明的额外输出会跳过。
 
 ## 3. 将外部物品或方块作为材料形态
 
@@ -67,18 +72,20 @@ Supplier 只延迟调用，不会自动初始化内容或修复错误的阶段�
 
 ```java
 // INGOT、STORAGE_BLOCK 是已声明的形态，数据应满足它们的 appliesTo 规则。
+// otherIngot 是对方公开的 ItemLike/Supplier 句柄，otherIngot.id() 提供稳定注册 ID。
 material.material("copper").lang("Copper", "铜")
         .data(METAL.enabled())
-        .form(INGOT, options -> options.overrideItem(new ExternalItemTarget(
-                Identifier.fromNamespaceAndPath("othermod", "copper_ingot"))))
-        .form(STORAGE_BLOCK, options -> options.overrideBlock(new ExternalBlockTarget(
-                Identifier.fromNamespaceAndPath("othermod", "copper_block"))))
+        .form(INGOT, options -> options.overrideItem(
+                ExternalTargets.item(otherIngot.id(), otherIngot)))
+        .form(STORAGE_BLOCK, options -> options.overrideBlock(
+                ExternalTargets.block(otherBlock.id(), otherBlock::block)))
         .build();
 ```
 
 `ExternalItemTarget`、`ExternalBlockTarget` 和 `ExternalTargets` 位于 `net.ptcrys.topo.api.api.registration`。
-原版目标可简写为 `ExternalTargets.mcItem("copper_ingot")` 或 `mcBlock("copper_block")`。
-这些类型只保存目标 ID；**你的形态策略必须读取并执行覆盖选项**，框架不会自动替策略完成覆盖分支。
+原版目标可简写为 `ExternalTargets.item(Items.COPPER_INGOT)` 或 `block(Blocks.COPPER_BLOCK)`。
+只有在无法取得稳定 ID 时才使用 `itemSupplier(...)` / `blockSupplier(...)`；此时 ID 会在对象绑定后解析。
+**你的形态策略必须读取并执行覆盖选项**，框架不会自动替策略完成覆盖分支。
 
 实现覆盖分支时遵循以下分工：
 
@@ -86,22 +93,40 @@ material.material("copper").lang("Copper", "铜")
 - 自定义形态的普通生成分支仍通过 `context.core()` 创建自己的条目。
 - 后续配方使用 `MaterialHelper.itemId` / `materialItemSupplier`，让查询包含覆盖目标。
 - 方块形态应使用 block target，并明确物品查询是否采用该方块的物品形式。
+- 流体形态使用 `overrideFluid`；外部桶物品只在创造栏需要时提供，不强制生成。
 
-TopoDemo 的 `ItemForm`／`BlockForm` 覆盖分支面向已经绑定的原版条目，不能直接据此推断任意模组目标都能在同一时刻解析。
-对仍未绑定的模组条目，覆盖分支应优先按 ID 提交资源，例如：
+TopoDemo 的 `ItemForm`／`BlockForm` 覆盖分支使用 ID 标签和延迟创造栏解析，因此可直接接受
+尚未绑定的模组目标。自定义形态策略也应优先采用同样的分工：
 
 ```java
-// 位于形态策略 register(context, form) 的覆盖分支中。
-context.core().itemTags()
-        .addIds(TagHelper.item("ingots"), target.id())
-        .addIds(TagHelper.itemMaterial("ingots", context.material().id().getPath()), target.id());
+// 位于 MaterialFormPlan.register(context) 的覆盖分支中。
+if (target.explicitId().isPresent()) {
+    context.core().itemTags().addIds(TagHelper.item("ingots"), target.id());
+} else {
+    TagHelper.addItemTag(context.core(), TagHelper.item("ingots"), target::id);
+}
 ```
 
-这里 `target` 是从 `optionsFor(form)` 取得的 `ExternalItemTarget`，`TagHelper` 位于 `net.ptcrys.topo.helper`。
-`addIds` 只提交标识，不取物品实例；创造栏等需要对象的贡献也应使用真正延迟到绑定之后的回调。
+这里 `target` 是从 `optionsFor(form)` 取得的 `ExternalItemTarget`，`TagHelper` 位于
+`net.ptcrys.topo.helper`。`addItemTag`/`addBlockTag` 会把 ID 解析推迟到标签 provider 运行；
+创造栏等需要对象的贡献使用 `externalTarget.itemSupplier()`，由事件触发时再解析。
 若需要修改对方物品自身的行为或资源，请使用对方公开的扩展点或资源／数据包机制。
 
-## 4. 用公共标签表达可替代输入
+## 4. 按兼容物品获取材料
+
+形态输出和外部 target 会进入 `MaterialLookup` 索引。对方物品注册绑定后，可以按物品/内容 ID 直接定位材料：
+
+```java
+MaterialLookup.current().byItem(otherIngot)
+        .ifPresent(binding -> {
+            Material material = binding.material();
+            MaterialForm form = binding.form();
+        });
+```
+
+`byItem(ItemStack)` 忽略 data component，只按物品 ID 查找；索引在运行时注册表绑定后会重建一次。
+
+## 5. 用公共标签表达可替代输入
 
 希望接受所有模组的铜锭时，应使用共同约定的标签，而不是枚举各模组的物品 ID。
 可以在自己提供的数据包的 `data/c/tags/item/ingots/copper.json` 中添加可选成员：
@@ -123,7 +148,7 @@ Topo 的 `TopoItemInput.tag(tag, amount)` 可以表达标签输入，
 TopoDemo 的精确物品能力只接受 `TopoItemInput.Resource`，加入标签并不会自动让它接受任意铜锭。
 资源共享是否成立，要同时核对标签成员和实际消费该标签的能力实现。
 
-## 5. 兼容配方和容器能力
+## 6. 兼容配方和容器能力
 
 | 目标 | 做法 | 边界 |
 |---|---|---|
@@ -148,7 +173,7 @@ recipe.recipeType("electric_smelting")
 管道兼容同样不靠模组名自动识别容器。`PipeResourceProfile` 引用的资源类型必须提供 block capability；
 外部容器若使用别的接口或资源语义，需要产品实现适配层。普通世界流体方块不等于流体能力容器。
 
-## 6. 在运行时绑定外部物品
+## 7. 在运行时绑定外部物品
 
 ```java
 @Override

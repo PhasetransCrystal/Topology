@@ -4,7 +4,7 @@ sidebar_position: 1
 
 # Recipe
 
-Topology 配方系统基于**能力**（capability）I/O 模型：配方不直接操作机器存储，而是通过 `RecipeCapability`
+面向需要声明机器配方或配方类型的模组开发者。Topology 配方系统基于**能力**（capability）I/O 模型：配方不直接操作机器存储，而是通过 `RecipeCapability`
 声明的 I/O 面与机器资源端口对接。配方支持启动消耗、每 tick I/O、并行执行与配方缩放。
 
 ## 关键概念
@@ -17,7 +17,7 @@ RecipeCapability  ← 资源种类 × 配方 I/O 的桥梁（物品/流体/标�
     └── RecipeLogic       ← 机器组件：搜索、匹配、执行
 ```
 
-- **启动 I/O**：开始时一次性消耗/产出（`input` / `output`）
+- **一次性 I/O**：开始时消耗输入，完成时产出输出（`input` / `output`）
 - **每 tick I/O**：运行期间持续消耗/产出（`tickInput` / `tickOutput`）
 - **配方缩放**：`withParallel(n)` 并行执行、`withScaledDuration(f)` 调整耗时——返回新实例（不可变）
 - **导入/导出**：`importRecipesFrom(...)` 吸收原版/外部配方表，`exportRecipesTo(...)` 反向导出
@@ -36,7 +36,7 @@ RecipeCapability  ← 资源种类 × 配方 I/O 的桥梁（物品/流体/标�
 
 @Override
 public void registerRecipeTypes(RecipeDomainRegistration recipe) {
-    recipe.recipeType("macerating")
+    maceratingType = recipe.recipeType("macerating")
             .displayName("Macerating", "粉碎");
 
     recipe.recipeType("smelting")
@@ -56,7 +56,7 @@ public void registerRecipeTypes(RecipeDomainRegistration recipe) {
 // 公开铸造包装（基类 inputUse/outputUse 是 protected）：
 TopoRecipe recipe = maceratingType.recipe("iron_dust")
                 .input(itemCapability.in(Items.IRON_ORE, 1))      // 启动消耗：1 铁矿石
-                .output(itemCapability.out(IRON_DUST, 2))         // 启动产出：2 铁粉
+                .output(itemCapability.out(IRON_DUST, 2))         // 完成时产出：2 铁粉
                 .tickInput(energyCapability.in(128))              // 每 tick 消耗 128 EU
                 .duration(200)
                 .productionLine(maceratingLine)
@@ -70,32 +70,32 @@ TopoRecipe recipe = maceratingType.recipe("iron_dust")
 ```java
 recipeType.recipe("path")
     .input(capability.in(...))            // 启动消耗
-    .output(capability.out(...))          // 启动产出
+    .output(capability.out(...))          // 完成时产出
     .tickInput(capability.in(...))        // 每 tick 消耗
     .tickOutput(capability.out(...))      // 每 tick 产出
     .duration(200)                        // 配方时间（tick），默认 100
     .productionLine(line)                 // 关联生产线（ProductionLine 句柄）
-    .replacesImported()                   // 手写配方覆盖 datapack/导入配方
+    .replacesImported()                   // 显式替换冲突的导入配方
     .save();
 ```
 
 ## 兼容外部配方与其他插件
 
 原版／模组配方表通过类型的 `importRecipesFrom` 与自定义适配器接入，做法见
-[兼容其他模组](compatibility/other-mods.md#5-兼容配方和容器能力)。
+[兼容其他模组](compatibility/other-mods.md#6-兼容配方和容器能力)。
 为其他 TopoPlugin 的配方类型增加配方时，复用对方公开类型，并注意配方 ID 与资源输出仍归类型拥有者，见
 [跨插件配方贡献](compatibility/topo-plugins.md#6-为共享内容添加配方)。
 
 ## 运行时执行流程
 
-RecipeLogic 在机器中按以下顺序执行配方：
+`RecipeLogic` 搜索匹配的配方后，在开始前检查逐 tick 输入输出及一次性输出空间；检查通过才消耗一次性输入。运行时执行逐 tick 输入输出，进度完成后尝试产出一次性输出；输出受阻时等待空间并重试。
 
 ```
-matchInputs → 检查启动消耗是否满足
+matchInputs → 搜索匹配输入的配方
    ↓
-consumeInputs → 扣除启动消耗
+checkTickIo + canEmitOutputs → 检查开始条件
    ↓
-每 tick: checkTickIo → 检查逐 tick I/O
+consumeInputs → 扣除一次性输入
    ↓
 每 tick: handleTickIo → 执行逐 tick I/O
    ↓
@@ -125,7 +125,7 @@ double itemsPerSec = TopoRecipe.contentPerSecond(baseCount, parallelCount, durat
 | 类/方法                                | 用途              |
 |----------------------------------------|-------------------|
 | `TopoRecipe.Builder(type, id)`         | 配方构建器        |
-| `.input(use)` / `.output(use)`         | 启动 I/O          |
+| `.input(use)` / `.output(use)`         | 一次性输入 / 完成输出 |
 | `.tickInput(use)` / `.tickOutput(use)` | 每 tick I/O       |
 | `.duration(ticks)` / `.save()`         | 时间 + 注册       |
 | `TopoRecipe.matchInputs(machine)`      | 检查消耗          |

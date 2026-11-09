@@ -11,7 +11,5 @@ package net.ptcrys.topo.api.machine.data;
  *                       UI sync; {@code true} is only for special cases such as world rendering
  *                       (and even then prefer a render-side synchronizer). See
  *                       {@link SyncableFieldBuilder#syncToClientAtEndOfDirtyTick()}.
- * @param syncToServer   whether the field accepts client-to-server writes (currently always
- *                       {@code false}; the axis is reserved until authorization exists)
  */
-record FieldPolicy(boolean persistEnabled, boolean syncToClient, boolean syncToServer) {}
+record FieldPolicy(boolean persistEnabled, boolean syncToClient) {}

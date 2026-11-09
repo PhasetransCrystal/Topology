@@ -180,7 +180,7 @@ public record ExportHints(
         }
 
         /** Unlock by item tag (not confused with {@link IngredientSpec.Tag}). */
-        record Tag(TagKey<net.minecraft.world.item.Item> tag) implements Unlock {
+        record Tag(TagKey<Item> tag) implements Unlock {
 
             public Tag {
                 Objects.requireNonNull(tag, "tag");

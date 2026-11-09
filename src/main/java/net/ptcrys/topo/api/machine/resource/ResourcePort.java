@@ -1,5 +1,6 @@
 package net.ptcrys.topo.api.machine.resource;
 
+import net.ptcrys.topo.api.api.lang.TopoApiLang;
 import net.ptcrys.topo.api.machine.component.ComponentContext;
 import net.ptcrys.topo.api.machine.component.MachineComponent;
 import net.ptcrys.topo.api.machine.data.DataInt;
@@ -63,20 +64,6 @@ public abstract class ResourcePort<S, R extends Resource> extends MachineCompone
         // OUTPUT so a recipe that hits pool P also emits into P. Scalars stay global.
         RecipeRole role = policy.recipeIo();
         this.poolScoped = metadata.recipePoolIsolatable() && (role.acceptsInput() || role.acceptsOutput());
-    }
-
-    /**
-     * @deprecated Persistence cadence is no longer a field policy. The parameter is retained for
-     *             source compatibility; persisted mutations enter one coalesced machine snapshot epoch.
-     */
-    @Deprecated(forRemoval = false)
-    protected ResourcePort(
-                           ComponentContext<? extends ResourcePort<S, R>> context,
-                           MachineResourceType<R> resourceType,
-                           StacksResourceHandler<S, R> handler,
-                           ResourcePortMetadata metadata,
-                           int contentsPersistIntervalTicks) {
-        this(context, resourceType, handler, metadata);
     }
 
     @Override
@@ -347,15 +334,7 @@ public abstract class ResourcePort<S, R extends Resource> extends MachineCompone
         return Component.translatableWithFallback(
                 id().toLanguageKey("trait"),
                 "%s",
-                Component.translatable(sideIoTitleKey(metadata.recipeIo())));
-    }
-
-    private static String sideIoTitleKey(RecipeRole role) {
-        return switch (role) {
-            case INPUT -> "ui.topo.side_io.title.insert";
-            case OUTPUT -> "ui.topo.side_io.title.extract";
-            case BOTH, NONE -> "ui.topo.side_io.title.both";
-        };
+                TopoApiLang.sideIoTitle(metadata.recipeIo()).getComponent());
     }
 
     protected void onStorageChanged(int index, @NonNull S previousContents) {

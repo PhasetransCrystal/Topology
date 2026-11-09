@@ -12,63 +12,29 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * A0 transform core (L2 engine layer): a single element of the cube's symmetry group, the full
- * octahedral group {@code O_h}.
- *
- * <p>
- * An orientation is a {@code 3x3} signed-permutation integer matrix — exactly one nonzero entry
- * ({@code +1} or {@code -1}) in every row and every column. There are exactly {@code 3! * 2^3 = 48}
- * such matrices; together they <em>are</em> {@code O_h}. {@code det == +1} marks a proper rotation
- * (24 of them); {@code det == -1} marks a reflected (mirror) orientation (the other 24).
- *
- * <p>
- * The matrix acts on column vectors as {@code out = M * v} (vanilla coordinates: {@code +X} east,
- * {@code +Y} up, {@code +Z} south). Because it is an integer orthonormal matrix the image of any unit
- * axis vector is again a unit axis vector, so {@link #apply(Direction)} is total. Its inverse is its
- * transpose ({@link #inverse()}) and group multiplication is matrix multiplication ({@link #compose}).
- *
- * <p>
- * All 48 instances are precomputed once and interned, so every derived orientation
- * ({@link #compose}, {@link #inverse}, {@link #mirrored}) returns one of those singletons and
- * reference equality coincides with mathematical equality. {@link #apply(Direction)} and the mutable
- * {@link #apply(BlockPos, BlockPos, BlockPos.MutableBlockPos)} variant allocate nothing.
- *
- * <p>
- * This type is vanilla-only and pure (no Minecraft bootstrap required); it never references the
- * {@code net.ptcrys.breakdown.data} package, per the api &perp; content rule.
- *
- * @see Orientations
+ * 立方体正交变换的不可变值：24 个正旋转，加上 24 个镜像变换。
+ * 使用元素为 -1/0/1 的有符号置换矩阵，变换和复合均为精确整数运算；所有合法元素预先驻留并复用。
  */
 public final class Orientation {
 
-    /**
-     * Row-major flattened matrix: {@code m[3 * row + col]}; {@code out[row] = sum_col m[3*row+col] * in[col]}.
-     * Exactly one nonzero (&plusmn;1) per row and per column. Private and never exposed — effectively immutable.
-     */
+    /** 行优先的 3×3 矩阵，每行每列恰有一个非零项，值为 ±1。 */
     private final int[] m;
 
-    /** Determinant: {@code +1} for a proper rotation, {@code -1} for a reflected orientation. */
+    /** 行列式：正旋转为 +1，镜像为 -1。 */
     private final int det;
 
-    /** Packed identity key: each of the 9 entries (in {@code {-1,0,1}}) encoded in 2 bits. */
+    /** 九个矩阵元素各编码为两位的身份键。 */
     private final int key;
 
     private static final Map<Integer, Orientation> BY_KEY = new HashMap<>();
 
-    /** All 48 members of {@code O_h}. */
+    /** 全部 48 个正交变换。 */
     static final List<Orientation> ALL;
 
-    /** The 24 proper rotations ({@code det == +1}). */
+    /** 24 个行列式为 +1 的正旋转。 */
     static final List<Orientation> ROTATIONS;
 
-    /** The identity orientation. */
-    static final Orientation IDENTITY;
-
-    /**
-     * Reflection across the plane spanned by the up ({@code Y}) and front-back ({@code Z}) axes, i.e.
-     * negation of the left-right ({@code X}) axis ({@code diag(-1, +1, +1)}); the building block of
-     * {@link #mirrored()}.
-     */
+    /** 反转局部 X 轴，保持局部 Y/Z 轴。 */
     static final Orientation REFLECT_X;
 
     static {
@@ -99,7 +65,6 @@ public final class Orientation {
         }
         ROTATIONS = Collections.unmodifiableList(rotations);
 
-        IDENTITY = of(new int[] { 1, 0, 0, 0, 1, 0, 0, 0, 1 });
         REFLECT_X = of(new int[] { -1, 0, 0, 0, 1, 0, 0, 0, 1 });
     }
 
@@ -109,7 +74,7 @@ public final class Orientation {
         this.key = keyOf(matrix);
     }
 
-    /** Returns the interned group member equal to {@code matrix}; the array is not retained. */
+    /** 返回与输入矩阵对应的驻留变换，不保留输入数组。 */
     private static Orientation of(int[] matrix) {
         Orientation orientation = BY_KEY.get(keyOf(matrix));
         return Objects.requireNonNull(orientation, "matrix is not a member of the octahedral group");
@@ -123,11 +88,7 @@ public final class Orientation {
         return key;
     }
 
-    /**
-     * Builds the orientation whose matrix has the given direction unit vectors as its columns, i.e. the
-     * linear map sending {@code +X -> columnX}, {@code +Y -> columnY}, {@code +Z -> columnZ}. The three
-     * directions must lie on mutually distinct axes (the result is then a signed-permutation matrix).
-     */
+    /** 以三个方向单位向量为矩阵列，分别指定局部 X/Y/Z 轴的映射；三轴必须正交。 */
     static Orientation fromColumns(Direction columnX, Direction columnY, Direction columnZ) {
         int[] matrix = new int[9];
         setColumn(matrix, 0, columnX);
@@ -142,10 +103,7 @@ public final class Orientation {
         matrix[6 + column] = direction.getStepZ();
     }
 
-    /**
-     * Transforms a facing by applying the matrix to its unit vector. Total and zero-allocation: the image
-     * of a unit axis vector under a signed-permutation matrix is always exactly one of the six facings.
-     */
+    /** 将方向单位向量按矩阵变换，不分配新方向对象。 */
     public Direction apply(Direction direction) {
         int x = direction.getStepX();
         int y = direction.getStepY();
@@ -156,25 +114,22 @@ public final class Orientation {
         return Objects.requireNonNull(Direction.getNearest(nx, ny, nz, null), "non-axis transform result");
     }
 
-    /** The X component of {@code M · (x, y, z)} — allocation-free component transforms. */
+    /** 无分配计算变换后的位置 X 分量。 */
     public int transformX(int x, int y, int z) {
         return m[0] * x + m[1] * y + m[2] * z;
     }
 
-    /** The Y component of {@code M · (x, y, z)}. */
+    /** 无分配计算变换后的位置 Y 分量。 */
     public int transformY(int x, int y, int z) {
         return m[3] * x + m[4] * y + m[5] * z;
     }
 
-    /** The Z component of {@code M · (x, y, z)}. */
+    /** 无分配计算变换后的位置 Z 分量。 */
     public int transformZ(int x, int y, int z) {
         return m[6] * x + m[7] * y + m[8] * z;
     }
 
-    /**
-     * Zero-allocation positional transform: writes {@code origin + M * local} into {@code out}. {@code local}
-     * is a blueprint-local offset, {@code origin} the world anchor (typically the controller position).
-     */
+    /** 将 origin + M×local 写入可复用位置 out；local 为局部偏移，origin 通常是控制器世界位置。 */
     public void apply(BlockPos local, BlockPos origin, BlockPos.MutableBlockPos out) {
         int lx = local.getX();
         int ly = local.getY();
@@ -185,7 +140,7 @@ public final class Orientation {
                 m[6] * lx + m[7] * ly + m[8] * lz + origin.getZ());
     }
 
-    /** Allocating counterpart of {@link #apply(BlockPos, BlockPos, BlockPos.MutableBlockPos)}. */
+    /** 返回 origin + M×local，分配一个不可变位置对象。 */
     public BlockPos apply(BlockPos local, BlockPos origin) {
         int lx = local.getX();
         int ly = local.getY();
@@ -196,12 +151,12 @@ public final class Orientation {
                 m[6] * lx + m[7] * ly + m[8] * lz + origin.getZ());
     }
 
-    /** {@code true} iff this is a reflected (mirror) orientation, i.e. {@code det == -1}. */
+    /** 是否为行列式 -1 的镜像变换。 */
     public boolean mirror() {
         return det < 0;
     }
 
-    /** The inverse orientation. For an orthonormal matrix the inverse is the transpose. */
+    /** 逆变换；正交矩阵的逆等于转置。 */
     public Orientation inverse() {
         int[] transpose = new int[9];
         for (int row = 0; row < 3; row++) {
@@ -212,10 +167,7 @@ public final class Orientation {
         return of(transpose);
     }
 
-    /**
-     * Group multiplication. {@code a.compose(b)} is the orientation that applies {@code b} first and then
-     * {@code a}: {@code a.compose(b).apply(v) == a.apply(b.apply(v))} (matrix product {@code M_a * M_b}).
-     */
+    /** 复合顺序：a.compose(b) 先应用 b，再应用 a。 */
     public Orientation compose(Orientation other) {
         int[] product = new int[9];
         for (int row = 0; row < 3; row++) {
@@ -230,10 +182,7 @@ public final class Orientation {
         return of(product);
     }
 
-    /**
-     * This orientation composed with {@link #REFLECT_X} (negation of the left-right {@code X} axis): the
-     * mirrored variant of this orientation. Always flips {@link #mirror()} / the determinant sign.
-     */
+    /** 在当前变换右侧复合局部 X 反射；连续调用两次恢复原变换。 */
     public Orientation mirrored() {
         return compose(REFLECT_X);
     }

@@ -2,23 +2,28 @@ package net.ptcrys.topodemo.api.material;
 
 import net.ptcrys.topo.api.api.builtin.MaterialDomainRegistration;
 import net.ptcrys.topo.api.material.form.MaterialForm;
+import net.ptcrys.topo.helper.MaterialHelper;
+import net.ptcrys.topodemo.api.DemoCreativeTabKeys;
 import net.ptcrys.topodemo.api.TopoDemoApiPlugin;
-import net.ptcrys.topodemo.api.material.common.MaterialKindDataType.Kind;
 import net.ptcrys.topodemo.api.material.common.OreProductDataType.Product;
 import net.ptcrys.topodemo.api.material.common.form.BlockForm;
 import net.ptcrys.topodemo.api.material.common.form.FluidForm;
 import net.ptcrys.topodemo.api.material.common.form.ItemForm;
 import net.ptcrys.topodemo.api.material.common.render.TintedTemplate;
-import net.ptcrys.topodemo.data.BuiltinCreativeTabs;
 
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.storage.loot.providers.number.UniformGenerator;
 
 import static net.ptcrys.topodemo.api.material.BuiltinFormDataTypes.AMOUNT;
-import static net.ptcrys.topodemo.api.material.BuiltinMaterialDataTypes.KIND;
+import static net.ptcrys.topodemo.api.material.BuiltinMaterialDataTypes.BULK;
 import static net.ptcrys.topodemo.api.material.BuiltinMaterialDataTypes.ORE_HOST;
 import static net.ptcrys.topodemo.api.material.BuiltinMaterialDataTypes.ORE_PRODUCT;
 import static net.ptcrys.topodemo.api.material.BuiltinMaterialDataTypes.PRIMARY_COLOR;
-import static net.ptcrys.topodemo.api.material.common.MaterialKindDataType.Kind.METAL;
+import static net.ptcrys.topodemo.api.material.BuiltinMaterialDataTypes.PULVERIZABLE;
+import static net.ptcrys.topodemo.api.material.common.GemDataType.GemQuality.BROKEN;
+import static net.ptcrys.topodemo.api.material.common.GemDataType.GemQuality.FLAWED;
+import static net.ptcrys.topodemo.api.material.common.GemDataType.GemQuality.FLAWLESS;
+import static net.ptcrys.topodemo.api.material.common.OreHostDataType.Host.NETHER;
 import static net.ptcrys.topodemo.api.material.common.OreHostDataType.Host.OVERWORLD;
 import static net.ptcrys.topodemo.api.material.common.render.TintedTemplate.flat;
 import static net.ptcrys.topodemo.api.material.common.render.TintedTemplate.opaque;
@@ -28,98 +33,157 @@ public final class BuiltinMaterialForms {
     private static final MaterialDomainRegistration MATERIAL = TopoDemoApiPlugin.INSTANCE.material();
 
     public static final MaterialForm INGOT = MATERIAL.form("ingot")
-            .appliesTo(KIND.is(METAL))
+            .appliesTo(BuiltinMaterialDataTypes.INGOT.present()).appliesToData(BuiltinMaterialDataTypes.INGOT)
             .lang("Ingot", "锭")
             .strategy(ItemForm.builder().registryPath("%s_ingot").displayName("%s Ingot", "%s锭").commonTag("ingots")
                     .data(AMOUNT.ingots(1))
                     .render(TintedTemplate.item(flat("item/material/ingot")))
-                    .creativeTab(BuiltinCreativeTabs.MATERIALS.getKey()).build())
+                    .creativeTab(DemoCreativeTabKeys.MATERIALS).build())
             .build();
 
     public static final MaterialForm DUST = MATERIAL.form("dust")
-            .appliesTo(material -> material.strategy().data(KIND).isPresent())
+            .appliesTo(PULVERIZABLE.isEnabled()).appliesToData(PULVERIZABLE)
             .lang("Dust", "粉")
             .strategy(ItemForm.builder().registryPath("%s_dust").displayName("%s Dust", "%s粉").commonTag("dusts")
                     .render(TintedTemplate.item(flat("item/material/dust")))
-                    .creativeTab(BuiltinCreativeTabs.MATERIALS.getKey()).build())
+                    .creativeTab(DemoCreativeTabKeys.MATERIALS).build())
             .build();
 
     public static final MaterialForm GEM = MATERIAL.form("gem").lang("Gem", "宝石")
-            .appliesTo(KIND.is(Kind.GEM))
+            .appliesTo(BuiltinMaterialDataTypes.GEM.has(FLAWLESS)).appliesToData(BuiltinMaterialDataTypes.GEM)
             .strategy(ItemForm.builder().registryPath("%s_gem").displayName("%s Gem", "%s宝石").commonTag("gems")
                     .render(TintedTemplate.item(flat("item/material/gem")))
-                    .creativeTab(BuiltinCreativeTabs.MATERIALS.getKey()).build())
+                    .creativeTab(DemoCreativeTabKeys.MATERIALS).build())
+            .build();
+    public static final MaterialForm FLAWED_GEM = MATERIAL.form("flawed_gem").lang("Flawed Gem", "瑕疵宝石")
+            .appliesTo(BuiltinMaterialDataTypes.GEM.has(FLAWED)).appliesToData(BuiltinMaterialDataTypes.GEM)
+            .strategy(ItemForm.builder().registryPath("%s_flawed_gem").displayName("Flawed %s", "瑕疵%s").commonTag("gems")
+                    .render(TintedTemplate.item(flat("item/material/gem")))
+                    .creativeTab(DemoCreativeTabKeys.MATERIALS).build())
+            .build();
+    public static final MaterialForm BROKEN_GEM = MATERIAL.form("broken_gem").lang("Broken Gem", "破碎宝石")
+            .appliesTo(BuiltinMaterialDataTypes.GEM.has(BROKEN)).appliesToData(BuiltinMaterialDataTypes.GEM)
+            .strategy(ItemForm.builder().registryPath("%s_broken_gem").displayName("Broken %s", "破碎%s").commonTag("gems")
+                    .render(TintedTemplate.item(flat("item/material/gem")))
+                    .creativeTab(DemoCreativeTabKeys.MATERIALS).build())
             .build();
     public static final MaterialForm SHARD = MATERIAL.form("shard").lang("Shard", "碎片")
-            .appliesTo(KIND.is(Kind.SHARD))
+            .appliesTo(BuiltinMaterialDataTypes.SHARD.present()).appliesToData(BuiltinMaterialDataTypes.SHARD)
             .strategy(ItemForm.builder().registryPath("%s_shard").displayName("%s Shard", "%s碎片").commonTag("gems")
                     .render(TintedTemplate.item(flat("item/material/shard")))
-                    .creativeTab(BuiltinCreativeTabs.MATERIALS.getKey()).build())
+                    .creativeTab(DemoCreativeTabKeys.MATERIALS).build())
             .build();
     public static final MaterialForm FUEL = MATERIAL.form("fuel").lang("Fuel", "燃料")
-            .appliesTo(KIND.is(Kind.FUEL))
+            .appliesTo(BuiltinMaterialDataTypes.FUEL.present()).appliesToData(BuiltinMaterialDataTypes.FUEL)
             .strategy(ItemForm.builder().registryPath("%s").displayName("%s", "%s").commonTag("fuels")
                     .render(TintedTemplate.item(flat("item/material/fuel")))
-                    .creativeTab(BuiltinCreativeTabs.MATERIALS.getKey()).build())
+                    .creativeTab(DemoCreativeTabKeys.MATERIALS).build())
             .build();
     public static final MaterialForm SCRAP = MATERIAL.form("scrap").lang("Scrap", "碎屑")
-            .appliesTo(ORE_PRODUCT.is(Product.SCRAP))
+            .appliesTo(ORE_PRODUCT.is(Product.SCRAP)).appliesToData(ORE_PRODUCT)
             .strategy(ItemForm.builder().registryPath("%s_scrap").displayName("%s Scrap", "%s碎屑").commonTag("scraps")
                     .render(TintedTemplate.item(flat("item/material/scrap")))
-                    .creativeTab(BuiltinCreativeTabs.MATERIALS.getKey()).build())
+                    .creativeTab(DemoCreativeTabKeys.MATERIALS).build())
             .build();
 
     public static final MaterialForm ORE = MATERIAL.form("ore").lang("Ore", "矿石")
-            .appliesTo(material -> material.strategy().data(ORE_HOST).isPresent())
+            .appliesTo(ORE_HOST.has(OVERWORLD)).appliesToData(ORE_HOST)
             .strategy(BlockForm.builder().registryPath("%s_ore").displayName("%s Ore", "%s矿石").commonTag("ores")
                     .initialProperties(Blocks.COPPER_ORE)
                     .render(TintedTemplate.block(opaque(flat("block/material/ore_host_stone"))))
-                    .creativeTab(BuiltinCreativeTabs.MATERIALS.getKey()).build())
+                    .loot((tables, block, material) -> material.data(BuiltinMaterialDataTypes.ORE_DROP)
+                            .map(drop -> tables.createSingleItemTableWithSilkTouch(block,
+                                    MaterialHelper.requireItem(material, drop.form()),
+                                    UniformGenerator.between(drop.minCount(), drop.maxCount())))
+                            .orElseGet(() -> tables.createSingleItemTableWithSilkTouch(block, block)))
+                    .creativeTab(DemoCreativeTabKeys.MATERIALS).build())
             .build();
 
     public static final MaterialForm DEEPSLATE_ORE = MATERIAL.form("deepslate_ore").lang("Deepslate Ore", "深层矿石")
-            .appliesTo(ORE_HOST.is(OVERWORLD))
+            .appliesTo(ORE_HOST.has(OVERWORLD)).appliesToData(ORE_HOST)
             .strategy(BlockForm.builder().registryPath("deepslate_%s_ore").displayName("Deepslate %s Ore", "深层%s矿石").commonTag("ores")
                     .initialProperties(Blocks.DEEPSLATE_COPPER_ORE)
                     .render(TintedTemplate.block(opaque(flat("block/material/ore_host_deepslate"))))
-                    .creativeTab(BuiltinCreativeTabs.MATERIALS.getKey()).build())
+                    .loot((tables, block, material) -> material.data(BuiltinMaterialDataTypes.ORE_DROP)
+                            .map(drop -> tables.createSingleItemTableWithSilkTouch(block,
+                                    MaterialHelper.requireItem(material, drop.form()),
+                                    UniformGenerator.between(drop.minCount(), drop.maxCount())))
+                            .orElseGet(() -> tables.createSingleItemTableWithSilkTouch(block, block)))
+                    .creativeTab(DemoCreativeTabKeys.MATERIALS).build())
+            .build();
+
+    public static final MaterialForm NETHER_ORE = MATERIAL.form("nether_ore").lang("Nether Ore", "下界矿石")
+            .appliesTo(ORE_HOST.has(NETHER)).appliesToData(ORE_HOST)
+            .strategy(BlockForm.builder().registryPath("%s_nether_ore").displayName("Nether %s Ore", "下界%s矿石").commonTag("ores")
+                    .initialProperties(Blocks.NETHER_QUARTZ_ORE)
+                    .render(TintedTemplate.block(opaque(flat("block/material/ore_host_deepslate"))))
+                    .loot((tables, block, material) -> material.data(BuiltinMaterialDataTypes.ORE_DROP)
+                            .map(drop -> tables.createSingleItemTableWithSilkTouch(block,
+                                    MaterialHelper.requireItem(material, drop.form()),
+                                    UniformGenerator.between(drop.minCount(), drop.maxCount())))
+                            .orElseGet(() -> tables.createSingleItemTableWithSilkTouch(block, block)))
+                    .creativeTab(DemoCreativeTabKeys.MATERIALS).build())
             .build();
 
     public static final MaterialForm NUGGET = MATERIAL.form("nugget").lang("Nugget", "粒")
-            .appliesTo(KIND.is(METAL))
+            .appliesTo(BuiltinMaterialDataTypes.INGOT.present()).appliesToData(BuiltinMaterialDataTypes.INGOT)
             .strategy(ItemForm.builder().registryPath("%s_nugget").displayName("%s Nugget", "%s粒").commonTag("nuggets")
                     .data(AMOUNT.ingotFraction(9))
                     .render(TintedTemplate.item(flat("item/material/nugget")))
-                    .creativeTab(BuiltinCreativeTabs.MATERIALS.getKey()).build())
+                    .creativeTab(DemoCreativeTabKeys.MATERIALS).build())
             .build();
     public static final MaterialForm PLATE = MATERIAL.form("plate").lang("Plate", "板")
-            .appliesTo(KIND.is(METAL))
+            .appliesTo(BuiltinMaterialDataTypes.INGOT.present()).appliesToData(BuiltinMaterialDataTypes.INGOT)
             .strategy(ItemForm.builder().registryPath("%s_plate").displayName("%s Plate", "%s板").commonTag("plates")
                     .render(TintedTemplate.item(flat("item/material/plate")))
-                    .creativeTab(BuiltinCreativeTabs.MATERIALS.getKey()).build())
+                    .creativeTab(DemoCreativeTabKeys.MATERIALS).build())
             .build();
     public static final MaterialForm RAW = MATERIAL.form("raw").lang("Raw Material", "粗矿")
-            .appliesTo(ORE_PRODUCT.is(Product.RAW))
+            .appliesTo(ORE_PRODUCT.is(Product.RAW)).appliesToData(ORE_PRODUCT)
             .strategy(ItemForm.builder().registryPath("raw_%s").displayName("Raw %s", "粗%s").commonTag("raw_materials")
                     .render(TintedTemplate.item(flat("item/material/raw")))
-                    .creativeTab(BuiltinCreativeTabs.MATERIALS.getKey()).build())
+                    .creativeTab(DemoCreativeTabKeys.MATERIALS).build())
             .build();
     public static final MaterialForm STORAGE_BLOCK = MATERIAL.form("storage_block").lang("Storage Block", "储存块")
-            .appliesTo(material -> material.strategy().data(KIND).isPresent())
+            .appliesTo(BULK.isEnabled()).appliesToData(BULK)
             .strategy(BlockForm.builder().registryPath("%s_block").displayName("Block of %s", "%s块").commonTag("storage_blocks")
                     .data(AMOUNT.ingots(9))
                     .initialProperties(Blocks.IRON_BLOCK)
                     .render(TintedTemplate.block(opaque(flat("block/material/block"))))
-                    .creativeTab(BuiltinCreativeTabs.MATERIALS.getKey()).build())
+                    .creativeTab(DemoCreativeTabKeys.MATERIALS).build())
             .build();
     public static final MaterialForm MOLTEN = MATERIAL.form("molten").lang("Molten Material", "熔融态")
-            .appliesTo(KIND.is(METAL))
+            .appliesTo(BuiltinMaterialDataTypes.INGOT.present()).appliesToData(BuiltinMaterialDataTypes.INGOT)
             .strategy(FluidForm.builder().registryPath("molten_%s").displayName("Molten %s", "熔融%s").commonTag("molten_metals")
                     .texture("block/material/fluid")
                     .tint(PRIMARY_COLOR)
                     .properties(properties -> properties.temperature(1900).density(7500).viscosity(6000))
                     .fluidProperties(properties -> properties.tickRate(20).slopeFindDistance(3).levelDecreasePerBlock(1))
-                    .creativeTab(BuiltinCreativeTabs.FLUIDS.getKey()).build())
+                    .creativeTab(DemoCreativeTabKeys.FLUIDS).build())
+            .build();
+
+    public static final MaterialForm GAS = MATERIAL.form("gas").lang("Gas", "气体")
+            .appliesTo(BuiltinMaterialDataTypes.GAS.isEnabled()).appliesToData(BuiltinMaterialDataTypes.GAS)
+            .strategy(FluidForm.builder().registryPath("%s_gas").displayName("%s Gas", "%s气体").commonTag("gases")
+                    .texture("block/material/fluid")
+                    .tint(PRIMARY_COLOR)
+                    .properties(properties -> properties.density(-100).viscosity(100).temperature(295)
+                            .motionScale(0.004D).canPushEntity(false).canSwim(false).canDrown(false)
+                            .fallDistanceModifier(1.0F).pathType(null).adjacentPathType(null))
+                    .fluidProperties(properties -> properties.slopeFindDistance(6).levelDecreasePerBlock(1)
+                            .tickRate(2).explosionResistance(1.0F))
+                    .creativeTab(DemoCreativeTabKeys.FLUIDS).build())
+            .build();
+
+    public static final MaterialForm SOLUTION = MATERIAL.form("solution").lang("Solution", "溶液")
+            .appliesTo(BuiltinMaterialDataTypes.SOLUTION.isEnabled()).appliesToData(BuiltinMaterialDataTypes.SOLUTION)
+            .strategy(FluidForm.builder().registryPath("%s_solution").displayName("%s Solution", "%s溶液").commonTag("solutions")
+                    .texture("block/material/fluid").tint(PRIMARY_COLOR)
+                    .properties(properties -> properties.density(1200).viscosity(1600).temperature(300)
+                            .motionScale(0.010D).canExtinguish(true))
+                    .fluidProperties(properties -> properties.slopeFindDistance(3).levelDecreasePerBlock(2)
+                            .tickRate(8).explosionResistance(100.0F))
+                    .creativeTab(DemoCreativeTabKeys.FLUIDS).build())
             .build();
 
     private BuiltinMaterialForms() {}

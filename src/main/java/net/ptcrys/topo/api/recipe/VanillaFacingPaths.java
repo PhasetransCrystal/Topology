@@ -27,13 +27,13 @@ public final class VanillaFacingPaths {
         Objects.requireNonNull(productPath, "productPath");
         Objects.requireNonNull(kindFolder, "kindFolder");
         String prefix = kindFolder + "/";
-        if (productPath.startsWith(prefix)) {
-            return productPath.substring(prefix.length());
-        }
         // Also accept accidental dual-prefix from old call sites.
         String dual = kindFolder + "/" + kindFolder + "/";
         if (productPath.startsWith(dual)) {
             return productPath.substring(dual.length());
+        }
+        if (productPath.startsWith(prefix)) {
+            return productPath.substring(prefix.length());
         }
         return productPath;
     }

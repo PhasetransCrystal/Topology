@@ -3,7 +3,14 @@ name: Deploy Docs to GitHub Pages
 on:
   push:
     branches:
-      - "master"
+      - master
+    paths:
+      - ".github/workflows/deploy-docs.yml"
+      - "docs-content/**"
+      - "website/**"
+  pull_request:
+    branches:
+      - master
     paths:
       - ".github/workflows/deploy-docs.yml"
       - "docs-content/**"
@@ -12,19 +19,17 @@ on:
 
 permissions:
   actions: read
-  contents: write
+  contents: read
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
-# All branch docs are written into one gh-pages branch, so serialize publishes.
-concurrency:
-  group: docs-pages
-  cancel-in-progress: false
-
 jobs:
   build:
     runs-on: ubuntu-latest
+    concurrency:
+      group: docs-build-${{ github.ref }}
+      cancel-in-progress: true
     defaults:
       run:
         working-directory: website
@@ -58,6 +63,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Typecheck docs
+        run: pnpm run typecheck
+
       - name: Build Docusaurus
         env:
           DOCUSAURUS_BASE_URL: ${{ steps.branch.outputs.base_url }}
@@ -70,9 +78,15 @@ jobs:
           path: website/build
 
   publish:
+    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
     needs: build
+    permissions:
+      actions: read
+      contents: write
+    concurrency:
+      group: docs-pages
+      cancel-in-progress: false
     steps:
       - name: Checkout source
         uses: actions/checkout@v4

@@ -57,6 +57,7 @@ const sidebars: SidebarsConfig = {
         'machine/machine-resource',
         'machine/multiblock-ability',
         'machine/multiblock',
+        'machine/multiblock-tool',
         'machine/machine-ui',
       ],
     },
@@ -76,7 +77,14 @@ const sidebars: SidebarsConfig = {
         type: 'doc',
         id: 'ore',
       },
-      items: ['ore/ore-strategies', 'ore/ore-display'],
+      items: [
+        'ore/ore-strategies',
+        'ore/shape',
+        'ore/mode',
+        'ore/air-exposure',
+        'ore/conflict',
+        'ore/ore-display',
+      ],
     },
     {
       type: 'category',

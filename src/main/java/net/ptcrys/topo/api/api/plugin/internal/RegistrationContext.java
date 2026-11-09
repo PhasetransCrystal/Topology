@@ -7,6 +7,7 @@ import net.ptcrys.topo.api.api.plugin.TopoPlugin;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -23,7 +24,7 @@ public final class RegistrationContext {
 
     /** Reject an uninstalled domain before any content callback can run. */
     void validate(Set<RegistrationPoint<?, ?>> points) {
-        Set<Class<?>> supported = new java.util.HashSet<>();
+        Set<Class<?>> supported = new HashSet<>();
         for (RegistrationPoint<?, ?> point : points) supported.add(point.contributor());
         for (TopoPlugin plugin : plugins.plugins()) validateInterfaces(plugin.getClass(), supported, plugin.identity());
     }

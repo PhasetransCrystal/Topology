@@ -4,11 +4,8 @@ import net.ptcrys.registrylib.RegistryCore;
 import net.ptcrys.registrylib.util.entry.RecipeTypeEntry;
 import net.ptcrys.topo.api.api.builtin.LangDomainRegistration;
 import net.ptcrys.topo.api.api.lang.LangKey;
-import net.ptcrys.topo.api.recipe.content.TopoFluidIngredient;
-import net.ptcrys.topo.api.recipe.content.TopoItemInput;
-import net.ptcrys.topo.api.recipe.content.TopoItemOutput;
+import net.ptcrys.topo.api.machine.MachineBlockEntity;
 import net.ptcrys.topo.api.recipe.productionline.ProductionLine;
-import net.ptcrys.topo.api.recipe.search.TopoRecipeSearchIndex;
 import net.ptcrys.topo.helper.IdHelper;
 
 import net.minecraft.core.HolderLookup;
@@ -17,7 +14,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeBookCategory;
 import net.minecraft.world.item.crafting.RecipeHolder;
@@ -31,17 +27,9 @@ import com.mojang.serialization.JsonOps;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 
 /**
@@ -63,15 +51,10 @@ public class TopoRecipeType<R extends TopoRecipe> {
     private int progressBarTextureHeight = 40;
     private FillDirection fillDirection = FillDirection.LEFT_TO_RIGHT;
     private @Nullable RecipeTypeEntry<R> entry;
-    private volatile @Nullable TopoRecipeSearchIndex<R> searchIndex;
     private volatile @Nullable RecipePreviewPlan previewPlan;
-    private final AtomicLong searchRevision = new AtomicLong();
-    private final Map<ResourceKey<Recipe<?>>, DuplicateAwareRecipeFactory<R>> recipesByKey = new LinkedHashMap<>();
-    /** 导入来源表（GTCEu {@code proxyRecipes}）；按声明序投影。 */
-    private final List<RecipeType<?>> importedRecipeTypes = new ArrayList<>();
-    private @Nullable ImportedRecipeAdapter<R> importedRecipeAdapter;
-    /** 手写配方的完整键 → 声明 replacesImported，索引期剔除冲突的导入项。 */
-    private final Set<ResourceKey<Recipe<?>>> recipesReplacingImported = new LinkedHashSet<>();
+    private final RecipeCatalog<R> catalog = new RecipeCatalog<>(this);
+    private final RecipeImports<R> imports = new RecipeImports<>(this);
+    private final RecipeSearchState<R> searchState = new RecipeSearchState<>(this::collectSearchHolders);
     private @Nullable LangKey displayName;
     /** Owning plugin lang; set by {@link TopoRecipeTypes#begin} before displayName is called. */
     @Nullable
@@ -81,13 +64,12 @@ public class TopoRecipeType<R extends TopoRecipe> {
      * foreign serializers; they must not mount on machines or appear as Topo JEI categories.
      */
     private boolean vanillaFacing;
-    private @Nullable ExportedRecipeAdapter<R> exportedRecipeAdapter;
-    private @Nullable RecipeType<?> exportedForeignType;
+    private boolean configurationFrozen;
 
     protected TopoRecipeType(Identifier id, RecipeFactory<R> recipeFactory) {
         this.id = Objects.requireNonNull(id, "recipe type id");
         this.recipeFactory = Objects.requireNonNull(recipeFactory, "recipe factory");
-        this.progressBarTexture = IdHelper.id("textures/gui/progress_bar/arrow.png");
+        this.progressBarTexture = IdHelper.topo("textures/gui/progress_bar/arrow.png");
     }
 
     /** Package write entry used by {@link TopoRecipeTypes#begin}. */
@@ -96,6 +78,17 @@ public class TopoRecipeType<R extends TopoRecipe> {
         recipeType.bindLang(lang);
         recipeType.bindEntry(core);
         return recipeType;
+    }
+
+    final void freezeConfiguration() {
+        configurationFrozen = true;
+    }
+
+    private void requireConfigurationOpen() {
+        if (configurationFrozen) {
+            throw new IllegalStateException(
+                    "Recipe type " + id + " configuration is frozen; declare display/import/export before the recipe type freeze");
+        }
     }
 
     final void bindLang(@Nullable LangDomainRegistration lang) {
@@ -130,6 +123,7 @@ public class TopoRecipeType<R extends TopoRecipe> {
      * Namespace ownership is the plugin that began this type ({@link LangDomainRegistration}).
      */
     public TopoRecipeType<R> displayName(String en, String cn) {
+        requireConfigurationOpen();
         if (lang == null) {
             throw new IllegalStateException(
                     "recipe type " + id + " has no lang domain — register via plugin.recipe().recipeType(...)");
@@ -183,6 +177,7 @@ public class TopoRecipeType<R extends TopoRecipe> {
                                          FillDirection direction,
                                          int textureWidth,
                                          int textureHeight) {
+        requireConfigurationOpen();
         if (textureWidth <= 0) {
             throw new IllegalArgumentException("Progress bar texture width must be positive");
         }
@@ -210,8 +205,9 @@ public class TopoRecipeType<R extends TopoRecipe> {
      * }</pre>
      */
     public TopoRecipeType<R> importRecipesFrom(
-                                               java.util.function.Function<? super TopoRecipeType<R>, ? extends ImportedRecipeAdapter<R>> adapterFactory,
+                                               Function<? super TopoRecipeType<R>, ? extends ImportedRecipeAdapter<R>> adapterFactory,
                                                RecipeType<?>... types) {
+        requireConfigurationOpen();
         Objects.requireNonNull(adapterFactory, "imported recipe adapter factory");
         return importRecipesFrom(adapterFactory.apply(this), types);
     }
@@ -226,20 +222,8 @@ public class TopoRecipeType<R extends TopoRecipe> {
      * RecipeType[])} 在声明链上配置。
      */
     public TopoRecipeType<R> importRecipesFrom(ImportedRecipeAdapter<R> adapter, RecipeType<?>... types) {
-        Objects.requireNonNull(adapter, "imported recipe adapter");
-        Objects.requireNonNull(types, "imported recipe types");
-        if (types.length == 0) {
-            throw new IllegalArgumentException(
-                    "importRecipesFrom requires at least one foreign RecipeType for " + id);
-        }
-        if (importedRecipeAdapter != null && importedRecipeAdapter != adapter) {
-            throw new IllegalStateException(
-                    "Recipe type " + id + " already imports with a different adapter; one type, one projection");
-        }
-        importedRecipeAdapter = adapter;
-        for (RecipeType<?> type : types) {
-            importedRecipeTypes.add(Objects.requireNonNull(type, "imported recipe type"));
-        }
+        requireConfigurationOpen();
+        imports.importRecipesFrom(adapter, types);
         return this;
     }
 
@@ -248,6 +232,7 @@ public class TopoRecipeType<R extends TopoRecipe> {
      * export, no machine mount, no Topo JEI category.
      */
     public TopoRecipeType<R> vanillaFacing() {
+        requireConfigurationOpen();
         this.vanillaFacing = true;
         return this;
     }
@@ -263,37 +248,25 @@ public class TopoRecipeType<R extends TopoRecipe> {
     public TopoRecipeType<R> exportRecipesTo(
                                              Function<? super TopoRecipeType<R>, ? extends ExportedRecipeAdapter<R>> adapterFactory,
                                              RecipeType<?> foreignType) {
+        requireConfigurationOpen();
         Objects.requireNonNull(adapterFactory, "exported recipe adapter factory");
         Objects.requireNonNull(foreignType, "foreign recipe type");
-        ExportedRecipeAdapter<R> adapter = Objects.requireNonNull(
-                adapterFactory.apply(this), "exported recipe adapter");
-        if (exportedRecipeAdapter != null && exportedRecipeAdapter != adapter) {
-            throw new IllegalStateException(
-                    "Recipe type " + id + " already exports with a different adapter");
-        }
-        this.exportedRecipeAdapter = adapter;
-        this.exportedForeignType = foreignType;
+        imports.exportRecipesTo(Objects.requireNonNull(adapterFactory.apply(this), "exported recipe adapter"), foreignType);
         return this;
     }
 
     public TopoRecipeType<R> exportRecipesTo(ExportedRecipeAdapter<R> adapter, RecipeType<?> foreignType) {
-        Objects.requireNonNull(adapter, "exported recipe adapter");
-        Objects.requireNonNull(foreignType, "foreign recipe type");
-        if (exportedRecipeAdapter != null && exportedRecipeAdapter != adapter) {
-            throw new IllegalStateException(
-                    "Recipe type " + id + " already exports with a different adapter");
-        }
-        this.exportedRecipeAdapter = adapter;
-        this.exportedForeignType = foreignType;
+        requireConfigurationOpen();
+        imports.exportRecipesTo(adapter, foreignType);
         return this;
     }
 
     public @Nullable ExportedRecipeAdapter<R> exportedRecipeAdapter() {
-        return exportedRecipeAdapter;
+        return imports.exportedAdapter();
     }
 
     public @Nullable RecipeType<?> exportedForeignType() {
-        return exportedForeignType;
+        return imports.exportedForeignType();
     }
 
     /**
@@ -309,38 +282,23 @@ public class TopoRecipeType<R extends TopoRecipe> {
      * @param hints      layout / cooking / result side-channel for foreign serializers
      */
     public void exportRecipe(String recipeName, @Nullable R recipe, ExportHints hints) {
-        Objects.requireNonNull(recipeName, "recipeName");
-        Objects.requireNonNull(hints, "hints");
-        ExportedRecipeAdapter<R> adapter = exportedRecipeAdapter;
-        if (adapter == null) {
-            if (vanillaFacing) {
-                throw new IllegalStateException(
-                        "Recipe type " + id + " is vanilla-facing but has no exportRecipesTo adapter");
-            }
-            return;
-        }
-        Identifier foreignId = adapter.scheduleExport(recipeName, recipe, hints);
-        if (foreignId == null) {
-            throw new IllegalStateException(
-                    "Export adapter returned null for " + id + " / " + recipeName + " (foreign path " + hints.foreignPath() + ")");
-        }
-        ExportRegistry.register(foreignId, id);
+        imports.exportRecipe(recipeName, recipe, hints, vanillaFacing);
     }
 
     public List<RecipeType<?>> importedRecipeTypes() {
-        return Collections.unmodifiableList(importedRecipeTypes);
+        return imports.importedTypes();
     }
 
     public @Nullable ImportedRecipeAdapter<R> importedRecipeAdapter() {
-        return importedRecipeAdapter;
+        return imports.importedAdapter();
     }
 
     final void markReplacesImported(String recipeName) {
-        recipesReplacingImported.add(recipeKey(recipeName));
+        catalog.markReplacesImported(recipeName);
     }
 
     final boolean replacesImported(ResourceKey<Recipe<?>> recipeKey) {
-        return recipesReplacingImported.contains(recipeKey);
+        return catalog.replacesImported(recipeKey);
     }
 
     /**
@@ -406,24 +364,17 @@ public class TopoRecipeType<R extends TopoRecipe> {
     }
 
     public TopoRecipeType<R> addRecipe(String recipeName, R recipe) {
-        duplicateAwareRecipe(recipeName).addDirect(recipe);
+        catalog.add(recipeName, recipe);
         return this;
     }
 
     public TopoRecipeType<R> addRecipe(String recipeName, Function<HolderLookup.Provider, R> recipeFactory) {
-        duplicateAwareRecipe(recipeName).add(recipeFactory);
+        catalog.add(recipeName, recipeFactory);
         return this;
     }
 
     public List<R> registeredRecipes() {
-        List<R> recipes = new ArrayList<>(recipesByKey.size());
-        for (DuplicateAwareRecipeFactory<R> factory : recipesByKey.values()) {
-            R recipe = factory.registeredRecipe();
-            if (recipe != null) {
-                recipes.add(recipe);
-            }
-        }
-        return List.copyOf(recipes);
+        return catalog.registered();
     }
 
     public Collection<R> displayRecipes(@Nullable MinecraftServer server, @Nullable Level level) {
@@ -437,25 +388,13 @@ public class TopoRecipeType<R extends TopoRecipe> {
         return List.copyOf(recipes);
     }
 
-    public @Nullable RecipeHolder<R> findRecipe(net.ptcrys.topo.api.machine.MachineBlockEntity machine) {
-        if (vanillaFacing) {
-            // Hard guard: vanilla-facing mirrors are not machine-runnable (unordered bag / no grid).
-            return null;
-        }
-        Level level = machine.getLevel();
-        if (level == null || level.isClientSide() || level.getServer() == null) {
-            return null;
-        }
-        // Optimization: delegate to the per-type capability-aware search index instead of copying
-        // and linearly scanning RecipeManager.byType() on every machine tick. Principle: the index
-        // pays recipe-list traversal once per server recipe-set generation, then searches by live
-        // machine resource keys and runs precise capability matching only on likely candidates.
-        return searchIndex(level.getServer()).findRecipe(machine);
+    public @Nullable RecipeHolder<R> findRecipe(MachineBlockEntity machine) {
+        return vanillaFacing ? null : searchState.findRecipe(machine);
     }
 
     /** Exact recheck for a pool-local historical candidate; callers must validate revision first. */
     public boolean matchesRememberedRecipe(
-                                           net.ptcrys.topo.api.machine.MachineBlockEntity machine,
+                                           MachineBlockEntity machine,
                                            RecipeHolder<? extends TopoRecipe> remembered) {
         Objects.requireNonNull(machine, "machine");
         Objects.requireNonNull(remembered, "remembered recipe");
@@ -463,7 +402,7 @@ public class TopoRecipeType<R extends TopoRecipe> {
     }
 
     public long searchRevision() {
-        return searchRevision.get();
+        return searchState.revision();
     }
 
     @SuppressWarnings("unchecked")
@@ -474,7 +413,6 @@ public class TopoRecipeType<R extends TopoRecipe> {
         if (resolved.isPresent() && resolved.get().value() instanceof TopoRecipe recipe && recipe.recipeType() == this) {
             return (RecipeHolder<R>) resolved.get();
         }
-        // 导入配方使用合成 id，不在 RecipeManager 本类型表内。
         for (RecipeHolder<R> holder : collectSearchHolders(server)) {
             if (holder.id().equals(recipeId)) {
                 return holder;
@@ -483,187 +421,24 @@ public class TopoRecipeType<R extends TopoRecipe> {
         return null;
     }
 
-    public boolean resourceVersionSearchCacheable(net.ptcrys.topo.api.machine.MachineBlockEntity machine) {
-        Level level = machine.getLevel();
-        if (level == null || level.isClientSide() || level.getServer() == null) {
-            return false;
-        }
-        // Optimization safety: RecipeLogic may reuse a failed search only when the index
-        // has proven that every start-input capability in this recipe type is invalidated by the
-        // machine resource-content version.
-        return searchIndex(level.getServer()).resourceVersionSearchCacheable();
+    public boolean resourceVersionSearchCacheable(MachineBlockEntity machine) {
+        return searchState.resourceVersionSearchCacheable(machine);
     }
 
-    public synchronized void rebuildSearchIndex(MinecraftServer server) {
-        Objects.requireNonNull(server, "server");
-        // Optimization: bind the snapshot to the current server identity without retaining a
-        // strong MinecraftServer reference. Principle: lazy rebuilds remain safe across test
-        // servers or integrated-server restarts, and ServerStopped can still release holders.
-        // 本类型 datapack ∪ 导入投影 − replacesImported 剔除（对齐 GTCEu initDB + proxy）。
-        searchIndex = TopoRecipeSearchIndex.build(collectSearchHolders(server), System.identityHashCode(server));
-        // Optimization safety: failed-search caches in machine logic key on this revision.
-        // Principle: recipe reloads or lazy rebuilds must invalidate "no recipe" answers even
-        // when the machine inventory itself did not change.
-        searchRevision.incrementAndGet();
+    public void rebuildSearchIndex(MinecraftServer server) {
+        searchState.rebuild(server);
     }
 
-    /**
-     * 搜索/展示用的完整 holder 列表：本类型 datapack + 适配后的导入配方。
-     */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    private List<RecipeHolder<R>> collectSearchHolders(MinecraftServer server) {
-        List<RecipeHolder<R>> own = new ArrayList<>(server.getRecipeManager().recipeMap().byType(vanillaType()));
-        appendMissingDeclaredGameTestRecipes(own);
-        if (importedRecipeTypes.isEmpty()) {
-            return own;
-        }
-        // importRecipesFrom always sets adapter with at least one type; keep invariant check.
-        if (importedRecipeAdapter == null) {
-            throw new IllegalStateException(
-                    "Recipe type " + id + " has import sources but no adapter (broken importRecipesFrom)");
-        }
-
-        Set<Object> ownKeys = new HashSet<>();
-        Set<Object> replacedImportKeys = new HashSet<>();
-        for (RecipeHolder<R> holder : own) {
-            Set<Object> keys = itemConflictKeys(holder.value());
-            if (replacesImported(holder.id())) {
-                replacedImportKeys.addAll(keys);
-            } else {
-                ownKeys.addAll(keys);
-            }
-        }
-
-        List<RecipeHolder<R>> merged = new ArrayList<>(own);
-        Set<ResourceKey<Recipe<?>>> seenIds = new HashSet<>();
-        for (RecipeHolder<R> holder : own) {
-            seenIds.add(holder.id());
-        }
-
-        for (RecipeType<?> importedType : importedRecipeTypes) {
-            for (RecipeHolder<?> source : holdersOf(server, importedType)) {
-                // R1': skip only foreign ids exported by *this* type (same-type re-entry).
-                // Cross-type exports (e.g. SMELTING → ELECTRIC_FURNACE) must remain importable.
-                if (ExportRegistry.isExportedBy(source.id(), id)) {
-                    continue;
-                }
-                R adapted = importedRecipeAdapter.adapt(source.id().identifier(), source.value());
-                if (adapted == null) {
-                    continue;
-                }
-                Set<Object> keys = itemConflictKeys(adapted);
-                if (!keys.isEmpty() && !Collections.disjoint(keys, replacedImportKeys)) {
-                    // 手写 replacesImported：剔除冲突的导入项。
-                    continue;
-                }
-                if (!keys.isEmpty() && !Collections.disjoint(keys, ownKeys)) {
-                    throw new IllegalStateException(
-                            "Recipe type " + id + ": imported " + source.id().identifier() + " conflicts with a written recipe on item-input keys " + keys + ". Mark the written recipe with replacesImported(), or change inputs.");
-                }
-                ResourceKey<Recipe<?>> importedId = importedHolderId(source.id());
-                if (!seenIds.add(importedId)) {
-                    throw new IllegalStateException("Recipe type " + id + ": imported " + source.id().identifier() + " collides with an existing recipe id " + importedId.identifier());
-                }
-                merged.add(new RecipeHolder<>(importedId, adapted));
-            }
-        }
-        return merged;
+    List<RecipeHolder<R>> collectSearchHolders(MinecraftServer server) {
+        return imports.collectHolders(server, catalog);
     }
 
-    /**
-     * GameTest fixture declarations are intentionally excluded from release jars and may be absent
-     * from a fresh developer checkout before datagen runs. In fixture-enabled processes only,
-     * expose missing declared recipes directly while preserving RecipeManager/datapack entries as
-     * authoritative whenever the same id is present.
-     */
-    private void appendMissingDeclaredGameTestRecipes(List<RecipeHolder<R>> recipes) {
-        if (!Boolean.getBoolean("oi.gametest.fixtures")) {
-            return;
-        }
-        Set<ResourceKey<Recipe<?>>> seenIds = new HashSet<>();
-        for (RecipeHolder<R> holder : recipes) {
-            seenIds.add(holder.id());
-        }
-        for (Map.Entry<ResourceKey<Recipe<?>>, DuplicateAwareRecipeFactory<R>> entry : recipesByKey.entrySet()) {
-            R declared = entry.getValue().registeredRecipe();
-            if (declared == null) {
-                continue;
-            }
-            ResourceKey<Recipe<?>> recipeId = entry.getKey();
-            if (seenIds.add(recipeId)) {
-                recipes.add(new RecipeHolder<>(recipeId, declared));
-            }
-        }
-    }
-
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    private static Collection<RecipeHolder<?>> holdersOf(MinecraftServer server, RecipeType<?> type) {
-        return (Collection) server.getRecipeManager().recipeMap().byType((RecipeType) type);
-    }
-
-    /**
-     * 导入配方合成 id：{@code imports/<类型路径长度>/<类型路径>/<来源 namespace>/<原 path>}。
-     * 类型路径与来源路径均可嵌套；长度字段和独立 namespace 段保留各自边界。
-     */
     ResourceKey<Recipe<?>> importedHolderId(ResourceKey<Recipe<?>> sourceId) {
-        Identifier source = sourceId.identifier();
-        String prefixedPath = "imports/" + id.getPath().length() + "/" + id.getPath() + "/" + source.getNamespace() + "/" + source.getPath();
-        return ResourceKey.create(
-                Registries.RECIPE, id.withPath(prefixedPath));
-    }
-
-    /**
-     * 物品起始输入冲突键：用于导入/手写去重与冲突检测（熔炼类单物品足够）。
-     */
-    private static Set<Object> itemConflictKeys(TopoRecipe recipe) {
-        Set<Object> keys = new HashSet<>();
-        for (TopoRecipe.InputEntry<?> entry : recipe.inputs()) {
-            for (Object content : entry.contents()) {
-                if (content instanceof TopoItemInput itemInput) {
-                    addItemConflictKeys(itemInput, keys);
-                }
-            }
-        }
-        return keys;
-    }
-
-    private static void addItemConflictKeys(TopoItemInput input, Set<Object> keys) {
-        switch (input) {
-            case TopoItemInput.Resource resource -> keys.add(resource.template().item().value());
-            case TopoItemInput.Tag tag -> keys.add(tag.tag());
-            case TopoItemInput.AnyOf anyOf -> {
-                for (ItemStackTemplate template : anyOf.templates()) {
-                    keys.add(template.item().value());
-                }
-            }
-            case TopoItemInput.Unconsumed unconsumed -> keys.add(unconsumed.template().item().value());
-        }
+        return imports.importedHolderId(sourceId);
     }
 
     public void invalidateSearchIndex() {
-        searchIndex = null;
-        // Optimization safety: invalidation is also a semantic recipe-set boundary for machines
-        // that skipped searching after a previous miss.
-        searchRevision.incrementAndGet();
-    }
-
-    private TopoRecipeSearchIndex<R> searchIndex(MinecraftServer server) {
-        int serverToken = System.identityHashCode(server);
-        TopoRecipeSearchIndex<R> index = searchIndex;
-        if (index != null && index.serverToken() == serverToken) {
-            return index;
-        }
-        // Optimization: lazy rebuild is a safety net for tests and unusual server lifecycles.
-        // Principle: normal play builds at server-start/reload boundaries, but correctness should
-        // not depend on event ordering when a test calls findRecipe directly.
-        synchronized (this) {
-            index = searchIndex;
-            if (index == null || index.serverToken() != serverToken) {
-                rebuildSearchIndex(server);
-                index = Objects.requireNonNull(searchIndex, "rebuilt recipe search index");
-            }
-            return index;
-        }
+        searchState.invalidate();
     }
 
     private RecipeTypeEntry<R> requireEntry() {
@@ -674,163 +449,11 @@ public class TopoRecipeType<R extends TopoRecipe> {
         return current;
     }
 
-    private DuplicateAwareRecipeFactory<R> duplicateAwareRecipe(String recipeName) {
-        ResourceKey<Recipe<?>> key = recipeKey(recipeName);
-        DuplicateAwareRecipeFactory<R> duplicateAware = recipesByKey.get(key);
-        if (duplicateAware == null) {
-            duplicateAware = new DuplicateAwareRecipeFactory<>(this, key);
-            recipesByKey.put(key, duplicateAware);
-            entry().addRecipe(recipeName, duplicateAware::createAndValidate);
-        }
-        return duplicateAware;
-    }
-
-    private JsonElement recipeJson(R recipe) {
+    JsonElement recipeJson(R recipe) {
         return TopoRecipeSerializer.codecFor(this)
                 .codec()
                 .encodeStart(JsonOps.INSTANCE, recipe)
                 .getOrThrow();
-    }
-
-    private static final class DuplicateAwareRecipeFactory<R extends TopoRecipe> {
-
-        private final TopoRecipeType<R> recipeType;
-        private final ResourceKey<Recipe<?>> recipeKey;
-        private final List<Function<HolderLookup.Provider, R>> factories = new ArrayList<>();
-        private @Nullable R registeredRecipe;
-
-        private DuplicateAwareRecipeFactory(TopoRecipeType<R> recipeType, ResourceKey<Recipe<?>> recipeKey) {
-            this.recipeType = recipeType;
-            this.recipeKey = recipeKey;
-        }
-
-        private void add(Function<HolderLookup.Provider, R> factory) {
-            factories.add(Objects.requireNonNull(factory, "recipe factory"));
-        }
-
-        private void addDirect(R recipe) {
-            Objects.requireNonNull(recipe, "recipe");
-            add(_provider -> recipe);
-            registeredRecipe = merge(registeredRecipe, recipe);
-        }
-
-        private R createAndValidate(HolderLookup.Provider provider) {
-            R primary = factories.getFirst().apply(provider);
-            LinkedHashSet<ProductionLine> productionLines = new LinkedHashSet<>(primary.productionLines());
-            for (int i = 1; i < factories.size(); i++) {
-                R duplicate = factories.get(i).apply(provider);
-                productionLines.addAll(duplicate.productionLines());
-                if (!sameRecipeContents(primary, duplicate)) {
-                    throw new IllegalStateException(
-                            "Duplicate recipe " + recipeKey.identifier() + " has conflicting contents: first=" + recipeType.recipeJson(primary) + ", duplicate=" + recipeType.recipeJson(duplicate));
-                }
-            }
-            R resolved = recipeType.createRecipe(
-                    primary.inputs(),
-                    primary.outputs(),
-                    primary.tickInputs(),
-                    primary.tickOutputs(),
-                    primary.duration(),
-                    List.copyOf(productionLines));
-            registeredRecipe = resolved;
-            return resolved;
-        }
-
-        private @Nullable R registeredRecipe() {
-            return registeredRecipe;
-        }
-
-        private R merge(@Nullable R current, R incoming) {
-            if (current == null) {
-                return incoming;
-            }
-            if (!sameRecipeContents(current, incoming)) {
-                throw new IllegalStateException(
-                        "Duplicate recipe " + recipeKey.identifier() + " has conflicting contents: first=" + recipeType.recipeJson(current) + ", duplicate=" + recipeType.recipeJson(incoming));
-            }
-            LinkedHashSet<ProductionLine> productionLines = new LinkedHashSet<>(current.productionLines());
-            productionLines.addAll(incoming.productionLines());
-            return recipeType.createRecipe(
-                    current.inputs(),
-                    current.outputs(),
-                    current.tickInputs(),
-                    current.tickOutputs(),
-                    current.duration(),
-                    List.copyOf(productionLines));
-        }
-
-        private boolean sameRecipeContents(R first, R second) {
-            return first.duration() == second.duration() && sameInputs(first.inputs(), second.inputs()) && sameOutputs(first.outputs(), second.outputs()) && sameInputs(first.tickInputs(), second.tickInputs()) && sameOutputs(first.tickOutputs(), second.tickOutputs());
-        }
-
-        private static boolean sameInputs(TopoRecipe.InputEntry<?>[] first, TopoRecipe.InputEntry<?>[] second) {
-            if (first.length != second.length) {
-                return false;
-            }
-            for (int i = 0; i < first.length; i++) {
-                if (first[i].capability() != second[i].capability() || !sameContents(first[i].contents(), second[i].contents())) {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        private static boolean sameOutputs(TopoRecipe.OutputEntry<?>[] first, TopoRecipe.OutputEntry<?>[] second) {
-            if (first.length != second.length) {
-                return false;
-            }
-            for (int i = 0; i < first.length; i++) {
-                if (first[i].capability() != second[i].capability() || !sameContents(first[i].contents(), second[i].contents())) {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        private static boolean sameContents(List<?> first, List<?> second) {
-            if (first.size() != second.size()) {
-                return false;
-            }
-            for (int i = 0; i < first.size(); i++) {
-                if (!Objects.equals(contentKey(first.get(i)), contentKey(second.get(i)))) {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        /**
-         * Identity key for recipe-content equality. Exhaustive on known content families; unknown
-         * types throw so a new content shape cannot silently degrade to reference/equals drift.
-         */
-        private static Object contentKey(Object content) {
-            return switch (content) {
-                case null -> null;
-                case TopoItemInput item -> switch (item) {
-                    case TopoItemInput.Resource resource -> resource.contentKey();
-                    case TopoItemInput.Unconsumed unconsumed -> unconsumed.contentKey();
-                    case TopoItemInput.Tag tag -> tag;
-                    case TopoItemInput.AnyOf anyOf -> anyOf;
-                };
-                case TopoItemOutput output -> output.contentKey();
-                case TopoFluidIngredient ingredient -> ingredient.contentKey();
-                case Long amount -> amount;
-                case Object[] objects -> Arrays.asList(objects);
-                default -> {
-                    if (content.getClass().isArray()) {
-                        // Primitive arrays: identity is rare; keep stable component-wise list.
-                        int length = java.lang.reflect.Array.getLength(content);
-                        List<Object> list = new ArrayList<>(length);
-                        for (int i = 0; i < length; i++) {
-                            list.add(java.lang.reflect.Array.get(content, i));
-                        }
-                        yield list;
-                    }
-                    throw new IllegalArgumentException(
-                            "unsupported recipe content for equality key: " + content.getClass().getName());
-                }
-            };
-        }
     }
 
     @FunctionalInterface

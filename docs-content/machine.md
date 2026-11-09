@@ -9,6 +9,8 @@ tick 调度。
 
 ## 架构
 
+{/* 图片预留：机器定义、组件和资源端口之间的关系图。 */}
+
 ```
 MachineDefinition  ← 注册后的不可变句柄
   ├── MachineBlock        ← 方块层（含 machineId）
@@ -60,6 +62,10 @@ public void registerMachines(MachineDomainRegistration m) {
 
 ```java
 public class MyComponent extends MachineComponent {
+
+    public MyComponent(ComponentContext<MyComponent> context) {
+        super(context);
+    }
 
     @Override
     public void resolveDependencies(MachineComponents traits) {

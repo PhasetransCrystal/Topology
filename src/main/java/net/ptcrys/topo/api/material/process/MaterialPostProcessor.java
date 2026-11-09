@@ -9,10 +9,10 @@ import net.minecraft.resources.Identifier;
 import java.util.List;
 
 /**
- * A global material post-processing step. It runs once for every registered material after material
- * forms have registered their items and blocks. A material opts in by declaring the processor's
- * paired {@link ProcessorDataType} via {@link #activation()}; materials without that declaration
- * are skipped.
+ * A global material post-processing step. Structural validation runs once during material freeze;
+ * processing runs once for activated materials after all form plans have registered content. A
+ * material opts in by declaring the processor's paired {@link ProcessorDataType} via
+ * {@link #activation()}; materials without that declaration are skipped.
  */
 public abstract class MaterialPostProcessor {
 
@@ -66,12 +66,12 @@ public abstract class MaterialPostProcessor {
 
     /** Whether {@code material} does not declare this processor's activation. */
     protected final boolean notDeclaredOn(Material material) {
-        return material.strategy().data(dataType()).isEmpty();
+        return !material.hasData(dataType());
     }
 
     /** Throws if {@code material} does not declare {@code form}. */
     protected final void require(Material material, MaterialForm form) {
-        if (!material.strategy().hasForm(form)) {
+        if (!material.hasForm(form)) {
             throw new IllegalStateException(
                     getClass().getSimpleName() + ": material " + material.id() + " is missing required form " + form.id());
         }

@@ -4,18 +4,19 @@ sidebar_position: 1
 
 # Material
 
-材料系统是 Topology 最基础的部分。声明一个材料，框架自动生成对应形态（锭、粉、板、流体）的物品和方块。
+面向需要声明材料或复用材料形态的模组开发者。材料声明完成后，框架按已注册形态的规则匹配材料，并调用匹配形态的策略生成内容。
 
 ## 关键概念
 
 ```
 Material          ← 一个材料（铜、铁、硫酸……）
   ├── MaterialForm        ← 形态（锭/粉/板/流体/矿石……），为匹配的材料生成内容
-  ├── MaterialDataType    ← 附加属性（颜色、质量、工具/护甲属性……），驱动装备与表单行为
+  ├── MaterialDataType    ← 附加属性（颜色、质量、工具/护甲属性……），驱动装备与形态行为
   └── MaterialPostProcessor ← 批量派生配方链（矿石处理线等），按材质激活
 ```
 
-- **注册顺序**：`registerMaterialFoundation` 声明类型与形态 → 所有插件在 `registerMaterials` 构建材料并补充数据 → 匹配形态并冻结
+- **注册顺序**：`registerMaterialFoundation` 声明类型与形态 → 所有插件在 `registerMaterials` 构建材料 → `registerMaterialContributions` 统一注入能力数据 → 匹配形态并冻结
+- **能力数据是核心**：新能力 = 新的 `MaterialDataType` + 向材料注入 `MaterialDataUse`；消费方用 `material.data(type)` 判断存在性与内容，形态用 `appliesTo(mat -> ...)` 消费
 - **库不内置玩法形态/数据类型**——可以自己实现，也可以复用依赖模组的公开类型
 - 形态只通过 `appliesTo(mat -> ...)` 按属性匹配材料；材料声明数据和外部条目覆盖，不直接指定形态集合
 
@@ -41,7 +42,7 @@ public void registerMaterialFoundation(MaterialDomainRegistration m) {
 
     ingotForm = m.form("ingot")
             .lang("Ingot", "锭")
-            .appliesTo(mat -> mat.strategy().data(toolStatsDataType).isPresent())
+            .appliesTo(mat -> mat.data(toolStatsDataType).isPresent())
             .strategy(new IngotForm())        // 你的 MaterialFormStrategy 子类
             .build();
 }
@@ -54,7 +55,7 @@ public void registerMaterials(MaterialDomainRegistration m) {
             // MaterialDataUse 通过 DataType 的公开工厂方法获得，不能直接 new：
             .data(rgbColorDataType.rgb(0xFFB873))
             .data(massDataType.mass(8))
-            .data(toolStatsDataType.stats(/* durability */ 200, /* speed */ 4.5f, /* attack */ 1.5f))
+            .data(toolStatsDataType.stats(200, 4.5f, 1.5f, 14, BlockTags.INCORRECT_FOR_IRON_TOOL))
             .build();
 }
 ```
@@ -63,8 +64,10 @@ public void registerMaterials(MaterialDomainRegistration m) {
 （基类 `use(D)` 是 protected）。工厂模式见 [MaterialDataType](material/material-data.md)。
 :::
 
-`build()` 后需要给其他插件的材料补数据时，在 `registerMaterials` 的窗口中调用
-`OtherMaterials.COPPER.data(dataUse)`；前提是目标已构建，模组依赖不保证同钩子内容已初始化。见 [跨插件补充数据](material/material-data.md#build-后跨插件注入)。
+`build()` 后需要给其他插件的材料补数据时，优先在 `registerMaterialContributions` 中调用
+`contributions.data(target, dataUse)`；该阶段在所有 `registerMaterials` 之后、形态匹配之前运行，
+不依赖插件登记顺序。已知目标已构建时也可在 `registerMaterials` 窗口内直接 `target.data(dataUse)`；
+前提仍是目标已构建，模组依赖不保证同钩子内容已初始化。见 [跨插件补充数据](material/material-data.md#跨插件注入能力数据)。
 规则在所有插件完成材料声明和数据注入后统一求值，因此也覆盖扩展模组的材料和形态。
 条件由产品定义，框架不内置“金属”等分类。匹配语义和外部条目覆盖规则见
 [MaterialForm](material/material-form.md#注册与自动匹配)。
@@ -77,13 +80,33 @@ public void registerMaterials(MaterialDomainRegistration m) {
 
 ```java
 m.material("copper").lang("Copper", "铜")
-        .data(toolStatsDataType.stats(200, 4.5f, 1.5f))
-        .form(ingotForm, options -> options.overrideItem(ExternalTargets.mcItem("copper_ingot")))
+        .data(toolStatsDataType.stats(200, 4.5f, 1.5f, 14, BlockTags.INCORRECT_FOR_IRON_TOOL))
+        .form(ingotForm, options -> options.overrideItem(ExternalTargets.item(Items.COPPER_INGOT)))
         .build();
 ```
 
 跨模组的现有条目复用见[兼容其他模组](compatibility/other-mods.md)，
 共享类型、新形态与已构建材料的数据补充见[兼容其他 TopoPlugin](compatibility/topo-plugins.md)。
+
+## 按兼容物品获取材料
+
+`MaterialLookup` 是冻结后构建的 O(1) 内容索引，按 `MaterialContentType + 注册 ID` 定位材料：
+
+```java
+MaterialBinding binding = MaterialLookup.current()
+        .byItem(otherModItem)
+        .orElseThrow();
+Material material = binding.material();
+MaterialForm form = binding.form();
+
+MaterialLookup.current().byItem(itemStack);
+MaterialLookup.current().byContent(MaterialContentTypes.ITEM, itemId);
+```
+
+索引来自每个形态计划的输出以及外部 item/block/fluid target；运行时还会在游戏注册表绑定完成后重建一次。
+同一个 `MaterialContentType + 注册 ID` 出现多个不同绑定会使索引构建失败。
+`byItem(ItemStack)` 只按物品 ID 查找，不比较 data component；组件敏感的场景应使用完整的自定义 content type
+或自定义查询策略。
 
 ## 查询已注册材料
 
@@ -96,13 +119,13 @@ String cn = copper.displayNameCn();   // "铜"
 
 // 遍历所有已注册材料
 for (Material mat : MaterialRegistry.registered()) {
-    System.out.println(mat.id() + " forms: " + mat.strategy().forms());
+    System.out.println(mat.id() + " forms: " + mat.forms());
 }
 ```
 
 ## 自定义 MaterialForm
 
-形态 = `MaterialFormStrategy` 子类（`registryPath()` 模板 + 每个材质一次 `register`）：
+形态 = `MaterialFormStrategy` 子类（`registryPath()` 模板 + 每个材质一份 `MaterialFormPlan`）：
 
 ```java
 // 在 registerMaterialFoundation 中注册
@@ -110,7 +133,7 @@ for (Material mat : MaterialRegistry.registered()) {
 public void registerMaterialFoundation(MaterialDomainRegistration m) {
     m.form("gear")
             .lang("Gear", "齿轮")
-            .appliesTo(mat -> mat.strategy().data(toolStatsDataType).isPresent())
+            .appliesTo(mat -> mat.data(toolStatsDataType).isPresent())
             .strategy(new GearForm())
             .build();
 }
@@ -123,28 +146,11 @@ public void registerMaterialFoundation(MaterialDomainRegistration m) {
 - 自定义 `MaterialForm` / `MaterialDataType` 必须在 `registerMaterialFoundation()` 中注册
 - 在 `registerMaterials()` 中不能注册新 Form，只能引用已注册的 Form
 - `registerMaterials()` 的共享窗口内支持给已构建的材料补数据；重复类型会报错
-- 所有插件完成注入后关闭写入，再统一匹配形态并校验；此后 `strategy().forms()` 才是完整且不可变的集合
-- `MaterialPostProcessor` 在表单物品铸造后运行（先全部 validate，再全部 process）
+- `registerMaterialContributions()` 在所有插件完成 `registerMaterials` 后运行，适合给全量材料或其他插件的材料注入能力；重复类型仍报错，也不能再创建新材料
+- 所有插件完成注入后关闭写入，再统一匹配形态并校验；此后 `forms()` 才是完整且不可变的集合
+- `MaterialPostProcessor` 在形态物品铸造后运行（先全部 validate，再全部 process）
 
-## 注册流程与性能边界
-
-| 阶段 | 输入与输出 | 扩展约束 |
-|------|------------|----------|
-| 基础声明 | 注册数据类型、形态规则和后处理器，然后冻结这些注册表 | 扩展插件在 `registerMaterialFoundation` 提供新类型与策略 |
-| 材料声明 | Builder 与材料共享同一个策略，按数据类型存储属性 | `registerMaterials` 内允许补充不同类型，重复类型拒绝覆盖 |
-| 关闭写入与匹配 | 固定材料快照，形态按完整 ID 排序，每个材料／形态组合求值一次 | 所有规则求值完毕后统一发布形态；保留的 Builder 和 options 引用也无法继续写入 |
-| 校验与冻结 | 校验材料数据、匹配形态的局部数据及形态策略 | 未匹配形态的选项不参与校验；失败终止启动，不能继续修改后重试冻结 |
-| 生成与后处理 | 使用材料所属插件的 RegistryCore 生成内容，再处理实际激活的处理器 | 全部材料内容生成后才运行后处理；先完成所有校验再执行处理 |
-
-设材料数为 M、形态数为 F、激活的材料／处理器组合总数为 A。任意 Lambda 无法预先建立属性索引，
-形态选择保持 M×F 次调用；框架只排序候选形态一次，规则不应在内部重复扫描全表。
-匹配、校验期间复用材料快照，冻结后查询不重复复制材料列表。
-后处理的两轮分派各遍历 A 个实际激活组合，不遍历 M×处理器总数。
-每个材料的处理器列表在冻结阶段按完整 ID 排序并缓存。
-
-`strategy().forms()` 提供有序不可变列表；只判断是否存在形态时使用 `strategy().hasForm(form)`，
-以哈希集合查询替代线性扫描。数据声明不在 `build()` 时复制，内部写入口在统一冻结边界关闭。
-注册仍是单线程启动过程，数据 payload 应使用不可变值（如 record）；框架不会深拷贝插件自定义对象。
+`forms()` 返回有序不可变列表；只判断是否存在某种形态时可使用 `hasForm(form)`。插件自定义数据应使用不可变值，框架不会深拷贝数据对象。
 
 ## API 速查
 
@@ -155,8 +161,10 @@ public void registerMaterialFoundation(MaterialDomainRegistration m) {
 | `.data(use)`                                                       | 附加材质数据          |
 | `.build()`                                                         | 注册并返回 `Material` |
 | `material.data(use)`                                               | 构建后直接补充数据    |
+| `material.data(type)` / `.hasData(type)` / `.dataUses()`           | 能力查询              |
 | `MaterialRegistry.require(id)` / `.registered()`                   | 查询                  |
 | `material.displayName()` / `.displayNameEn()` / `.displayNameCn()` | 显示名                |
-| `material.strategy().forms()` / `.data(type)`                      | 形态表 / 数据读取     |
-| `material.strategy().hasForm(form)`                               | 已匹配形态的成员查询 |
-| `material.strategy().postProcessors()`                            | 冻结后实际激活的处理器列表 |
+| `material.forms()` / `.data(type)`                      | 形态表 / 数据读取     |
+| `material.hasForm(form)`                               | 已匹配形态的成员查询 |
+| `material.postProcessors()`                            | 冻结后实际激活的处理器列表 |
+| `contributions.data(material, use)` / `.form(material, form, ...)` | 贡献阶段注入          |

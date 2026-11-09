@@ -4,6 +4,7 @@ import net.ptcrys.topo.api.machine.MachineDefinition;
 import net.ptcrys.topo.api.machine.Machines;
 import net.ptcrys.topo.api.machine.ui.recipe.XeiRecipeLookup;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.MouseHandler;
 import net.minecraft.client.Screenshot;
@@ -37,6 +38,7 @@ import com.mojang.datafixers.util.Either;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import snownee.jade.api.config.IWailaConfig;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -392,7 +394,7 @@ public final class JeiLookupProbe {
                 .orElse(namespace);
         // JEI 的模组名行是 §-格式码字符串拼接(modNameFormat),先剥格式码再比对。
         long modNameLines = gatheredTooltipShape.stream()
-                .map(net.minecraft.ChatFormatting::stripFormatting)
+                .map(ChatFormatting::stripFormatting)
                 .filter(displayName::equals)
                 .count();
         report.append("gathered tooltip shape: ").append(gatheredTooltipShape).append('\n');
@@ -408,7 +410,7 @@ public final class JeiLookupProbe {
         report.append("panel element index: ").append(panelIndex)
                 .append(panelIndex == 1 ? " (directly under the item name) -> PASS\n" : " (expected 1; -1 = no panel element) -> FAIL\n");
         try {
-            boolean jadeAppends = snownee.jade.api.config.IWailaConfig.get().general().showItemModNameTooltip();
+            boolean jadeAppends = IWailaConfig.get().general().showItemModNameTooltip();
             report.append("Jade showItemModNameTooltip: ").append(jadeAppends)
                     .append(jadeAppends ? " (Jade would append a second mod-name line) -> FAIL\n" : " -> PASS\n");
         } catch (Throwable jadeAbsent) {

@@ -315,29 +315,32 @@ public final class TickHub {
         }
 
         void run(long gameTime) {
-            drainDirtyQueue();
-            runAlertQueue(gameTime);
-            drainDirtyQueue();
+            try {
+                drainDirtyQueue();
+                runAlertQueue(gameTime);
+                drainDirtyQueue();
 
-            for (int i = 0, n = intervals.size(); i < n; i++) {
-                int interval = intervals.getInt(i);
-                if (gameTime % interval != 0L) {
-                    continue;
-                }
-                ObjectArrayList<Entry> bucket = buckets.get(i);
-                Object[] entries = bucket.elements();
-                int size = bucket.size();
-                for (int j = 0; j < size; j++) {
-                    Entry entry = (Entry) entries[j];
-                    if (entry.cancelled || entry.suspended || entry.ranThisTick) {
+                for (int i = 0, n = intervals.size(); i < n; i++) {
+                    int interval = intervals.getInt(i);
+                    if (gameTime % interval != 0L) {
                         continue;
                     }
-                    runEntry(entry, gameTime);
+                    ObjectArrayList<Entry> bucket = buckets.get(i);
+                    Object[] entries = bucket.elements();
+                    int size = bucket.size();
+                    for (int j = 0; j < size; j++) {
+                        Entry entry = (Entry) entries[j];
+                        if (entry.cancelled || entry.suspended || entry.ranThisTick) {
+                            continue;
+                        }
+                        runEntry(entry, gameTime);
+                    }
                 }
-            }
 
-            drainDirtyQueue();
-            clearRanThisTick();
+                drainDirtyQueue();
+            } finally {
+                clearRanThisTick();
+            }
         }
 
         void clearAndCancel() {
@@ -377,7 +380,7 @@ public final class TickHub {
             for (int i = 0; i < count; i++) {
                 Entry entry = (Entry) entries[i];
                 entry.alertQueued = false;
-                if (entry.cancelled) {
+                if (entry.cancelled || entry.suspended) {
                     continue;
                 }
                 entry.ranThisTick = true;
@@ -388,10 +391,14 @@ public final class TickHub {
         }
 
         private static void runEntry(Entry entry, long gameTime) {
-            if (entry.hook instanceof MachineTicker ticker) {
-                ticker.runProfiledTick(gameTime, entry);
-            } else {
-                entry.hook.tick(gameTime, entry);
+            try {
+                if (entry.hook instanceof MachineTicker ticker) {
+                    ticker.runProfiledTick(gameTime, entry);
+                } else {
+                    entry.hook.tick(gameTime, entry);
+                }
+            } catch (Throwable error) {
+                LOGGER.error("Tick hook failed for {}", entry.hook, error);
             }
         }
 

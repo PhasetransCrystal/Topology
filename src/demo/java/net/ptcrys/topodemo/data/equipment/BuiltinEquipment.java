@@ -4,8 +4,8 @@ import net.ptcrys.registrylib.util.TextureRef;
 import net.ptcrys.topo.api.equipment.Equipment;
 import net.ptcrys.topodemo.api.equipment.common.RegulatorBehavior;
 import net.ptcrys.topodemo.api.equipment.common.RegulatorEquipment;
+import net.ptcrys.topodemo.api.lang.ContentLang;
 import net.ptcrys.topodemo.data.BuiltinCreativeTabs;
-import net.ptcrys.topodemo.data.ContentLang;
 import net.ptcrys.topodemo.data.TopoDemoPlugin;
 
 public final class BuiltinEquipment {

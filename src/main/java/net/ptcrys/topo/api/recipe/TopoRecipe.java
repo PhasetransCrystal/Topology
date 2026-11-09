@@ -13,6 +13,7 @@ import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeBookCategory;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraft.world.item.crafting.display.RecipeDisplay;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.transfer.transaction.Transaction;
 
@@ -20,12 +21,14 @@ import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * Odyssey Industrial machine recipe using capability-based I/O.
@@ -83,6 +86,31 @@ public class TopoRecipe implements Recipe<TopoRecipeInput> {
             return capability.matchInput(machine, contents);
         }
 
+        Set<?> importConflictKeys() {
+            Set<Object> keys = new HashSet<>();
+            for (I content : contents) {
+                keys.addAll(capability.importConflictKeys(content));
+            }
+            return keys;
+        }
+
+        boolean sameContents(InputEntry<?> other) {
+            if (capability != other.capability || contents.size() != other.contents.size()) {
+                return false;
+            }
+            for (int index = 0; index < contents.size(); index++) {
+                if (!sameIdentity(capability, contents.get(index), other.contents.get(index))) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        @SuppressWarnings({ "rawtypes", "unchecked" })
+        private static boolean sameIdentity(RecipeCapability capability, Object first, Object second) {
+            return Objects.equals(capability.inputIdentity(first), capability.inputIdentity(second));
+        }
+
         long maxParallel(@Nullable MachineBlockEntity machine, long maxParallel) {
             return capability.maxParallelByInputs(machine, contents, maxParallel);
         }
@@ -121,6 +149,23 @@ public class TopoRecipe implements Recipe<TopoRecipeInput> {
 
         boolean handleChecked(@Nullable MachineBlockEntity machine, Transaction transaction) {
             return capability.handleOutputChecked(machine, contents, transaction);
+        }
+
+        boolean sameContents(OutputEntry<?> other) {
+            if (capability != other.capability || contents.size() != other.contents.size()) {
+                return false;
+            }
+            for (int index = 0; index < contents.size(); index++) {
+                if (!sameIdentity(capability, contents.get(index), other.contents.get(index))) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        @SuppressWarnings({ "rawtypes", "unchecked" })
+        private static boolean sameIdentity(RecipeCapability capability, Object first, Object second) {
+            return Objects.equals(capability.outputIdentity(first), capability.outputIdentity(second));
         }
 
         long maxParallelScale() {
@@ -168,6 +213,10 @@ public class TopoRecipe implements Recipe<TopoRecipeInput> {
         this.tickOutputs = Objects.requireNonNull(tickOutputs, "TopoRecipe.tickOutputs").clone();
         this.groupedTickOutputs = groupOutputsByCapability(this.tickOutputs);
         this.groupedTickIo = groupTickIoByCapability(groupedTickInputs, groupedTickOutputs);
+        if (this.inputs.length == 0 && this.outputs.length == 0 && this.tickInputs.length == 0 && this.tickOutputs.length == 0) {
+            throw new IllegalArgumentException(
+                    "TopoRecipe must declare at least one input or output (including tick I/O)");
+        }
         if (duration <= 0) {
             throw new IllegalArgumentException("TopoRecipe.duration must be > 0 (was " + duration + ")");
         }
@@ -306,8 +355,8 @@ public class TopoRecipe implements Recipe<TopoRecipeInput> {
             throw new IllegalArgumentException("Scaled recipe duration exceeds int ticks: " + scaled);
         }
         int scaledDuration = Math.max(1, (int) Math.round(scaled));
-        return new TopoRecipe(
-                recipeType, inputs, outputs, tickInputs, tickOutputs, scaledDuration, productionLines);
+        return recipeType.createRecipe(
+                inputs, outputs, tickInputs, tickOutputs, scaledDuration, productionLines);
     }
 
     /**
@@ -325,8 +374,7 @@ public class TopoRecipe implements Recipe<TopoRecipeInput> {
             throw new IllegalArgumentException(
                     "inputFactor and outputFactor must be finite and > 0 (was " + inputFactor + ", " + outputFactor + ")");
         }
-        return new TopoRecipe(
-                recipeType,
+        return recipeType.createRecipe(
                 scaleCapabilityInputEntries(inputs, capability, inputFactor),
                 scaleCapabilityOutputEntries(outputs, capability, outputFactor),
                 scaleCapabilityInputEntries(tickInputs, capability, inputFactor),
@@ -378,8 +426,7 @@ public class TopoRecipe implements Recipe<TopoRecipeInput> {
         if (parallels < 1) {
             throw new IllegalArgumentException("parallels must be >= 1 (was " + parallels + ")");
         }
-        return new TopoRecipe(
-                recipeType,
+        return recipeType.createRecipe(
                 scaleAllInputEntriesForParallel(inputs, parallels),
                 scaleAllOutputEntriesForParallel(outputs, parallels),
                 scaleAllInputEntriesForParallel(tickInputs, parallels),
@@ -445,8 +492,7 @@ public class TopoRecipe implements Recipe<TopoRecipeInput> {
         if (!Double.isFinite(factor) || factor <= 0.0d) {
             throw new IllegalArgumentException("factor must be finite and > 0 (was " + factor + ")");
         }
-        return new TopoRecipe(
-                recipeType,
+        return recipeType.createRecipe(
                 scaleAllInputEntries(inputs, factor),
                 scaleAllOutputEntries(outputs, factor),
                 scaleAllInputEntries(tickInputs, factor),
@@ -971,8 +1017,8 @@ public class TopoRecipe implements Recipe<TopoRecipeInput> {
     }
 
     @Override
-    public java.util.List<net.minecraft.world.item.crafting.display.RecipeDisplay> display() {
-        return java.util.List.of();
+    public List<RecipeDisplay> display() {
+        return List.of();
     }
 
     @Override
