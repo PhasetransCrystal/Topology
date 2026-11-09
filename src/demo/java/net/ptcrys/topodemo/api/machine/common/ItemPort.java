@@ -5,7 +5,7 @@ import net.ptcrys.topo.api.machine.multiblock.ability.PartRoleMount;
 import net.ptcrys.topo.api.machine.resource.*;
 import net.ptcrys.topodemo.api.TopoDemoApiPlugin;
 import net.ptcrys.topodemo.api.machine.BuiltinMachineTypes;
-import net.ptcrys.topodemo.api.recipe.BuiltinResources;
+import net.ptcrys.topodemo.data.recipe.BuiltinTopoResourceIntegrations;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -44,7 +44,7 @@ public final class ItemPort extends ResourcePort<ItemStack, ItemResource> {
 
         @Override
         public MachineResourceType<ItemResource> resourceType() {
-            return BuiltinResources.ITEMS;
+            return BuiltinTopoResourceIntegrations.ITEM.resourceType();
         }
     }
 
@@ -53,7 +53,7 @@ public final class ItemPort extends ResourcePort<ItemStack, ItemResource> {
     }
 
     private ItemPort(ComponentContext<ItemPort> context, Metadata metadata, Buffer buffer) {
-        super(context, BuiltinResources.ITEMS, buffer, metadata);
+        super(context, BuiltinTopoResourceIntegrations.ITEM.resourceType(), buffer, metadata);
         buffer.changed = this::onStorageChanged;
     }
 

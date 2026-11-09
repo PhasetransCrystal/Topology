@@ -33,6 +33,7 @@ public final class OfficialTopoAPIPlugin extends TopoPlugin {
     @Override
     public void registerLang(LangDomainRegistration lang) {
         TopoApiLang.init();
+        net.ptcrys.topo.integration.IntegrationLang.init();
         TopoConfigLang.init();
     }
 }

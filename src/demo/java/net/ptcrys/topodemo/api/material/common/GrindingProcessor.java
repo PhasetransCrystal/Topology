@@ -7,7 +7,7 @@ import net.ptcrys.topo.api.recipe.TopoRecipe;
 import net.ptcrys.topo.api.recipe.TopoRecipeType;
 import net.ptcrys.topo.api.recipe.productionline.ProductionLine;
 import net.ptcrys.topo.helper.MaterialHelper;
-import net.ptcrys.topodemo.api.recipe.common.ItemRecipeCapability;
+import net.ptcrys.topodemo.data.recipe.common.ItemRecipeCapability;
 
 import net.minecraft.resources.Identifier;
 

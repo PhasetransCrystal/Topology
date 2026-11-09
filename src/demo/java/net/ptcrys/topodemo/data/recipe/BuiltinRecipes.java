@@ -3,7 +3,6 @@ package net.ptcrys.topodemo.data.recipe;
 import net.ptcrys.topo.api.material.MaterialRegistry;
 import net.ptcrys.topo.helper.MaterialHelper;
 import net.ptcrys.topodemo.api.material.BuiltinMaterialForms;
-import net.ptcrys.topodemo.api.recipe.BuiltinResources;
 import net.ptcrys.topodemo.data.material.BuiltinMaterials;
 
 import java.util.List;
@@ -18,7 +17,7 @@ public final class BuiltinRecipes {
     private BuiltinRecipes() {}
 
     public static void init() {
-        var item = BuiltinResources.ITEM;
+        var item = BuiltinTopoResourceIntegrations.ITEM.recipeCapability();
         for (var material : MaterialRegistry.registered()) {
             if (material.data(ORE_HOST).isEmpty() || !material.forms().contains(BuiltinMaterialForms.DUST)) continue;
             for (var form : List.of(BuiltinMaterialForms.ORE, BuiltinMaterialForms.DEEPSLATE_ORE, BuiltinMaterialForms.NETHER_ORE)) {

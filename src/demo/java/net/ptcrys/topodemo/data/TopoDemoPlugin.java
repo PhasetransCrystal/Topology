@@ -58,6 +58,7 @@ public final class TopoDemoPlugin extends TopoPlugin {
     @Override
     public void registerMachines(MachineDomainRegistration machine) {
         BuiltinMachines.init();
+        net.ptcrys.topodemo.data.machine.BuiltinTopoMeMachines.init();
     }
 
     @Override
@@ -94,6 +95,8 @@ public final class TopoDemoPlugin extends TopoPlugin {
     @Override
     public void registerLang(LangDomainRegistration lang) {
         ContentLang.init();
+        net.ptcrys.topodemo.data.machine.BuiltinTopoMachineUiLang.init();
+        net.ptcrys.topodemo.data.machine.BuiltinTopoMachineFeedbackLang.init();
     }
 
     @Override

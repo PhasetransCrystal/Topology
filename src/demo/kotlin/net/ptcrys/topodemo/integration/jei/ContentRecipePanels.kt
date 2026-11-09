@@ -10,8 +10,8 @@ import net.ptcrys.topo.api.recipe.TopoRecipeType
 import net.ptcrys.topo.api.recipe.capability.SlottedRecipeCapability
 import net.ptcrys.topo.api.recipe.content.TopoItemInput
 import net.ptcrys.topo.api.recipe.content.TopoItemOutput
-import net.ptcrys.topodemo.api.recipe.BuiltinResources
 import net.ptcrys.topodemo.data.ContentLang
+import net.ptcrys.topodemo.data.recipe.BuiltinTopoResourceIntegrations.ITEM
 
 import com.lowdragmc.lowdraglib2.gui.sync.bindings.impl.SupplierDataSource
 import com.lowdragmc.lowdraglib2.gui.ui.ModularUI
@@ -31,7 +31,7 @@ object ContentRecipePanels {
 
     @JvmStatic
     fun recipe(type: TopoRecipeType<TopoRecipe>, recipe: TopoRecipe): ModularUI {
-        val items = BuiltinResources.ITEM
+        val items = ITEM.recipeCapability
         val inputs = recipe.inputs().filter { it.capability() === items }
             .flatMap { it.contents().map { value -> value as TopoItemInput.Resource } }
         val outputs = recipe.outputs().filter { it.capability() === items }

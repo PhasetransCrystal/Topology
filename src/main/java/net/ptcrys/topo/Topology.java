@@ -20,6 +20,7 @@ import net.ptcrys.topo.client.debug.TooltipProbe;
 import net.ptcrys.topo.client.structure.StructureToolClient;
 import net.ptcrys.topo.client.survey.PipeSurveyClientRenderer;
 import net.ptcrys.topo.config.TopoConfiguration;
+import net.ptcrys.topo.integration.ae2.AeIntegration;
 
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.IEventBus;
@@ -50,6 +51,7 @@ public class Topology {
 
         CtmClientInit.register(modEventBus);
         MachineDataNetworking.register(modEventBus);
+        AeIntegration.register(modEventBus);
         MachineDataSyncBatcher.register();
         TopoAsyncExecutors.register();
         TopoRecipeSearchEvents.register(modEventBus);

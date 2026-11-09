@@ -3,17 +3,17 @@ package net.ptcrys.topodemo.data.pipe;
 import net.ptcrys.topo.api.pipe.*;
 import net.ptcrys.topodemo.api.pipe.BuiltinPipeFilterAdapters;
 import net.ptcrys.topodemo.api.pipe.common.*;
-import net.ptcrys.topodemo.api.recipe.BuiltinResources;
 import net.ptcrys.topodemo.data.BuiltinCreativeTabs;
 import net.ptcrys.topodemo.data.TopoDemoPlugin;
+import net.ptcrys.topodemo.data.recipe.BuiltinTopoResourceIntegrations;
 
 import net.minecraft.resources.Identifier;
 
 public final class BuiltinPipes {
 
     public static final PipeDistributionStrategy ROUND_ROBIN = registerStrategy();
-    private static final PipeResourceProfile ITEMS = new PipeResourceProfile(BuiltinResources.ITEMS, Long::toString, BuiltinPipeFilterAdapters.ITEM);
-    private static final PipeResourceProfile FLUIDS = new PipeResourceProfile(BuiltinResources.FLUIDS, amount -> amount + " mB", BuiltinPipeFilterAdapters.FLUID);
+    private static final PipeResourceProfile ITEMS = new PipeResourceProfile(BuiltinTopoResourceIntegrations.ITEM.resourceType(), Long::toString, BuiltinPipeFilterAdapters.ITEM);
+    private static final PipeResourceProfile FLUIDS = new PipeResourceProfile(BuiltinTopoResourceIntegrations.FLUID.resourceType(), amount -> amount + " mB", BuiltinPipeFilterAdapters.FLUID);
 
     public static final PipeDefinition ITEM_PIPE = TopoDemoPlugin.INSTANCE.machine().pipe("item_pipe")
             .resource(ITEMS)

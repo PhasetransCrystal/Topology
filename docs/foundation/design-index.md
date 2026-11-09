@@ -6,6 +6,7 @@
 - [资源身份与数量](storage-resources.md)
 - [批量操作契约](storage-operations.md)
 - [仓储适配与复杂环境](storage-adapters.md)
+- [AE 通用仓储访问边界](storage-ae.md)
 - [组合也提供 StorageAccess](storage-composition.md)
 - [多方块只是业务接入示例](storage-multiblock.md)
 - [范围与验收](storage-scope.md)

@@ -1,4 +1,4 @@
-package net.ptcrys.topodemo.api.recipe.common;
+package net.ptcrys.topodemo.data.recipe.common;
 
 import net.ptcrys.topo.api.machine.MachineBlockEntity;
 import net.ptcrys.topo.api.machine.resource.*;
@@ -176,7 +176,9 @@ public final class ItemRecipeCapability extends SlottedRecipeCapability<TopoItem
 
     @Override
     public int countPreviewSlots(ResourcePortMetadata port) {
-        return ((ItemPort.Metadata) port).slots();
+        if (port instanceof ItemPort.Metadata local) return local.slots();
+        if (port instanceof net.ptcrys.topodemo.data.machine.common.component.resource.ItemResourcePortMetadata migrated) return migrated.slots();
+        return 0;
     }
 
     @Override

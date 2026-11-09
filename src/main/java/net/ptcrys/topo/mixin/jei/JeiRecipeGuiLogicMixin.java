@@ -1,7 +1,7 @@
 package net.ptcrys.topo.mixin.jei;
 
 import net.ptcrys.topo.api.machine.MachineDefinition;
-import net.ptcrys.topo.integration.jei.MultiblockJeiCategory;
+import net.ptcrys.topo.integration.jei.TopoMultiblockJeiCategory;
 
 import mezz.jei.api.gui.builder.IIngredientAcceptor;
 import mezz.jei.gui.recipes.layouts.IRecipeLayoutList;
@@ -30,7 +30,7 @@ public abstract class JeiRecipeGuiLogicMixin {
 
     @Inject(method = "getCraftingStations", at = @At("HEAD"), cancellable = true)
     private void topo$visibleStructureStations(CallbackInfoReturnable<Stream<Consumer<IIngredientAcceptor<?>>>> callback) {
-        if (!(state.getFocusedRecipes().getRecipeCategory() instanceof MultiblockJeiCategory)) return;
+        if (!(state.getFocusedRecipes().getRecipeCategory() instanceof TopoMultiblockJeiCategory)) return;
         if (cachedRecipeLayoutsWithButtons == null) {
             callback.setReturnValue(Stream.empty());
             return;
