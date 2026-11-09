@@ -9,9 +9,11 @@ import net.ptcrys.topo.api.machine.resource.ResourceHandlerLongOps;
 import net.ptcrys.topo.api.recipe.capability.RecipeCapability;
 import net.ptcrys.topo.api.recipe.capability.RecipeInputUse;
 import net.ptcrys.topo.api.recipe.capability.RecipeOutputUse;
+import net.ptcrys.topo.api.recipe.capability.ScalarRecipeDisplay;
 import net.ptcrys.topodemo.data.machine.common.component.resource.ScalarResource;
 
 import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.Identifier;
@@ -35,7 +37,7 @@ import java.util.Objects;
  * display form is the {@code ResourceBar} (machine UI bottom strip, Jade horizontal bars, JEI
  * vertical bars on the recipe's left).
  */
-public final class ScalarRecipeCapability extends RecipeCapability<Long, Long> implements net.ptcrys.topo.api.recipe.capability.ScalarRecipeDisplay {
+public final class ScalarRecipeCapability extends RecipeCapability<Long, Long> implements ScalarRecipeDisplay {
 
     private static final StreamCodec<RegistryFriendlyByteBuf, Long> AMOUNT_STREAM_CODEC = ByteBufCodecs.VAR_LONG.mapStream(buf -> buf);
 
@@ -59,7 +61,7 @@ public final class ScalarRecipeCapability extends RecipeCapability<Long, Long> i
     }
 
     @Override
-    public net.minecraft.network.chat.Component displayName() {
+    public Component displayName() {
         return resource.displayName();
     }
 

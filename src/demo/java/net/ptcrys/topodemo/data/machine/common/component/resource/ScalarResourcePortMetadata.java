@@ -4,7 +4,7 @@ import net.ptcrys.topo.api.machine.component.AttachmentType;
 import net.ptcrys.topo.api.machine.resource.MachineResourceType;
 import net.ptcrys.topo.api.machine.resource.PortAccess;
 import net.ptcrys.topo.api.machine.resource.ResourcePortMetadata;
-import net.ptcrys.topodemo.api.TopoDemoApiPlugin;
+import net.ptcrys.topodemo.data.TopoDemoPlugin;
 import net.ptcrys.topodemo.data.recipe.BuiltinTopoResourceIntegrations.BuiltinResourceIntegration;
 import net.ptcrys.topodemo.data.recipe.common.ScalarRecipeCapability;
 
@@ -23,7 +23,7 @@ public record ScalarResourcePortMetadata(
                                          @Nullable Predicate<Resource> resourceFilter)
         implements ResourcePortMetadata {
 
-    public static final AttachmentType<ScalarResourcePortMetadata> TYPE = TopoDemoApiPlugin.INSTANCE.machine().attachmentType("scalar_resource_port", ScalarResourcePortMetadata.class);
+    public static final AttachmentType<ScalarResourcePortMetadata> TYPE = TopoDemoPlugin.INSTANCE.machine().attachmentType("scalar_resource_port", ScalarResourcePortMetadata.class);
 
     public ScalarResourcePortMetadata {
         Objects.requireNonNull(integration, "scalar resource integration");

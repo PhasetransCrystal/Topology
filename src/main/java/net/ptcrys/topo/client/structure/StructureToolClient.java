@@ -19,6 +19,7 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.SubmitCustomGeometryEvent;
+import net.neoforged.neoforge.client.extensions.common.IClientBlockExtensions;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import net.neoforged.neoforge.common.NeoForge;
 
@@ -92,7 +93,7 @@ public final class StructureToolClient {
             // 保留贴图原色与方块染色；状态通过线框表示，不能把模型统一乘成青色。
             IntList dynamicTints = new IntArrayList();
             if (minecraft.getBlockColors().getTintSources(target.state()).isEmpty()) {
-                net.neoforged.neoforge.client.extensions.common.IClientBlockExtensions.of(target.state())
+                IClientBlockExtensions.of(target.state())
                         .collectDynamicTintValues(target.state(), minecraft.level, target.pos(), dynamicTints);
             }
             int[] colors = new int[quads.size()];

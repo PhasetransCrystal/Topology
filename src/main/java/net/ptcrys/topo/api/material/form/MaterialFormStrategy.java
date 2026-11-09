@@ -2,8 +2,10 @@ package net.ptcrys.topo.api.material.form;
 
 import net.ptcrys.topo.api.material.Material;
 import net.ptcrys.topo.api.material.data.MaterialDataType;
+import net.ptcrys.topo.helper.MaterialHelper;
 
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -14,7 +16,7 @@ public abstract class MaterialFormStrategy {
     private final Map<FormDataType<?>, FormDataUse<?>> data;
 
     protected MaterialFormStrategy(Collection<FormDataUse<?>> data) {
-        Map<FormDataType<?>, FormDataUse<?>> byType = new java.util.LinkedHashMap<>();
+        Map<FormDataType<?>, FormDataUse<?>> byType = new LinkedHashMap<>();
         for (FormDataUse<?> use : data) {
             if (byType.put(use.type(), use) != null) {
                 throw new IllegalStateException(
@@ -81,6 +83,6 @@ public abstract class MaterialFormStrategy {
 
     /** Formats a material path as a display name: {@code "stainless_steel"} becomes {@code "Stainless Steel"}. */
     protected static String formatDisplayName(String materialPath) {
-        return net.ptcrys.topo.helper.MaterialHelper.displayName(materialPath);
+        return MaterialHelper.displayName(materialPath);
     }
 }

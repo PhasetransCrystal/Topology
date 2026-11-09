@@ -5,6 +5,7 @@ import net.ptcrys.topo.api.machine.component.ComponentKey;
 import net.ptcrys.topo.api.machine.multiblock.ability.PartRoleMount;
 import net.ptcrys.topo.api.machine.resource.PortAccess;
 import net.ptcrys.topo.api.machine.resource.ResourcePort;
+import net.ptcrys.topodemo.api.machine.DemoComponentKeys;
 import net.ptcrys.topodemo.data.recipe.BuiltinTopoResourceIntegrations;
 
 import net.neoforged.neoforge.fluids.FluidStack;
@@ -17,15 +18,15 @@ import java.util.function.Predicate;
 
 public final class FluidResourcePort extends ResourcePort<FluidStack, FluidResource> {
 
-    public static final ComponentKey<FluidResourcePort> FLUID_INPUT_1 = net.ptcrys.topodemo.api.machine.DemoComponentKeys.id("fluid_input_1", FluidResourcePort.class);
-    public static final ComponentKey<FluidResourcePort> FLUID_INPUT_2 = net.ptcrys.topodemo.api.machine.DemoComponentKeys.id("fluid_input_2", FluidResourcePort.class);
-    public static final ComponentKey<FluidResourcePort> FLUID_INPUT_3 = net.ptcrys.topodemo.api.machine.DemoComponentKeys.id("fluid_input_3", FluidResourcePort.class);
-    public static final ComponentKey<FluidResourcePort> FLUID_INPUT_4 = net.ptcrys.topodemo.api.machine.DemoComponentKeys.id("fluid_input_4", FluidResourcePort.class);
-    public static final ComponentKey<FluidResourcePort> FLUID_OUTPUT_1 = net.ptcrys.topodemo.api.machine.DemoComponentKeys.id("fluid_output_1", FluidResourcePort.class);
-    public static final ComponentKey<FluidResourcePort> FLUID_OUTPUT_2 = net.ptcrys.topodemo.api.machine.DemoComponentKeys.id("fluid_output_2", FluidResourcePort.class);
-    public static final ComponentKey<FluidResourcePort> FLUID_OUTPUT_3 = net.ptcrys.topodemo.api.machine.DemoComponentKeys.id("fluid_output_3", FluidResourcePort.class);
-    public static final ComponentKey<FluidResourcePort> FLUID_OUTPUT_4 = net.ptcrys.topodemo.api.machine.DemoComponentKeys.id("fluid_output_4", FluidResourcePort.class);
-    public static final ComponentKey<FluidResourcePort> FLUID_STORAGE = net.ptcrys.topodemo.api.machine.DemoComponentKeys.id("fluid_storage", FluidResourcePort.class);
+    public static final ComponentKey<FluidResourcePort> FLUID_INPUT_1 = DemoComponentKeys.id("fluid_input_1", FluidResourcePort.class);
+    public static final ComponentKey<FluidResourcePort> FLUID_INPUT_2 = DemoComponentKeys.id("fluid_input_2", FluidResourcePort.class);
+    public static final ComponentKey<FluidResourcePort> FLUID_INPUT_3 = DemoComponentKeys.id("fluid_input_3", FluidResourcePort.class);
+    public static final ComponentKey<FluidResourcePort> FLUID_INPUT_4 = DemoComponentKeys.id("fluid_input_4", FluidResourcePort.class);
+    public static final ComponentKey<FluidResourcePort> FLUID_OUTPUT_1 = DemoComponentKeys.id("fluid_output_1", FluidResourcePort.class);
+    public static final ComponentKey<FluidResourcePort> FLUID_OUTPUT_2 = DemoComponentKeys.id("fluid_output_2", FluidResourcePort.class);
+    public static final ComponentKey<FluidResourcePort> FLUID_OUTPUT_3 = DemoComponentKeys.id("fluid_output_3", FluidResourcePort.class);
+    public static final ComponentKey<FluidResourcePort> FLUID_OUTPUT_4 = DemoComponentKeys.id("fluid_output_4", FluidResourcePort.class);
+    public static final ComponentKey<FluidResourcePort> FLUID_STORAGE = DemoComponentKeys.id("fluid_storage", FluidResourcePort.class);
 
     private FluidResourcePort(
                               ComponentContext<FluidResourcePort> context,

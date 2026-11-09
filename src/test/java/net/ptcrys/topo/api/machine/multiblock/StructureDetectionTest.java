@@ -1,9 +1,11 @@
 package net.ptcrys.topo.api.machine.multiblock;
 
 import net.ptcrys.topo.api.machine.data.*;
+import net.ptcrys.topo.api.machine.multiblock.ability.PartRole;
 import net.ptcrys.topo.api.machine.multiblock.pattern.*;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.block.Blocks;
@@ -13,6 +15,7 @@ import com.mojang.serialization.Codec;
 import org.junit.jupiter.api.Test;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -82,7 +85,7 @@ class StructureDetectionTest {
         Blueprint body = chamber();
         Blueprint extension = Blueprint.of().aisle("M@").where('M', observed(BLOCK)).build();
         List<MultiblockModule> modules = List.of(MultiblockModule.of("extension", extension));
-        Orientation orientation = Orientations.forFacing(net.minecraft.core.Direction.UP).mirrored();
+        Orientation orientation = Orientations.forFacing(Direction.UP).mirrored();
         World world = World.chamber(orientation, Blocks.STONE.defaultBlockState());
         world.put(orientation, -1, 0, 0, Blocks.STONE.defaultBlockState());
         var source = StructureMetadata.defaults(List.of(body, extension));
@@ -102,7 +105,7 @@ class StructureDetectionTest {
             snapshots.put(blueprint, Map.copyOf(byOrientation));
         }
         world.states.clear();
-        var captured = java.util.concurrent.CompletableFuture.supplyAsync(() -> StructureDetection.detect(
+        var captured = CompletableFuture.supplyAsync(() -> StructureDetection.detect(
                 (blueprint, transform) -> snapshots.get(blueprint).get(transform), body, modules, orientation, source, false)).join();
         assertEquals(live, captured);
         assertTrue(captured.result().formed());
@@ -208,7 +211,7 @@ class StructureDetectionTest {
                 return null;
             }
 
-            public Set<net.ptcrys.topo.api.machine.multiblock.ability.PartRole> roles(BlockPos pos) {
+            public Set<PartRole> roles(BlockPos pos) {
                 return Set.of();
             }
         };
@@ -250,7 +253,7 @@ class StructureDetectionTest {
             return states.getOrDefault(pos, Blocks.AIR.defaultBlockState());
         }
 
-        public Set<net.ptcrys.topo.api.machine.multiblock.ability.PartRole> roles(BlockPos pos) {
+        public Set<PartRole> roles(BlockPos pos) {
             return Set.of();
         }
 

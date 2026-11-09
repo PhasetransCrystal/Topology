@@ -1,6 +1,6 @@
 package net.ptcrys.topodemo.data.machine.common.component.resource;
 
-import net.ptcrys.topodemo.data.machine.BuiltinTopoMachineFeedbackLang;
+import net.ptcrys.topodemo.api.machine.BuiltinTopoMachineFeedbackLang;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -15,6 +15,9 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseFireBlock;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+
+import java.util.List;
+import java.util.Locale;
 
 /**
  * 内建标量"被破坏"行为:电容放电模型(能量/高级能量共用,只差能量密度)与破壳泄热模型(热量)。
@@ -133,7 +136,7 @@ public final class ScalarDestroyedBehaviors {
 
     /** 储量千分位文案(固定 ROOT locale,与玩家语言无关,确保确定性)。 */
     private static String amount(long value) {
-        return String.format(java.util.Locale.ROOT, "%,d", value);
+        return String.format(Locale.ROOT, "%,d", value);
     }
 
     /** 曲线量(伤害/秒数)四舍五入成整串,供文案直读。 */
@@ -249,7 +252,7 @@ public final class ScalarDestroyedBehaviors {
                 Level.ExplosionInteraction.BLOCK);
     }
 
-    private static java.util.List<LivingEntity> livingWithin(ServerLevel level, Vec3 center, float radius) {
+    private static List<LivingEntity> livingWithin(ServerLevel level, Vec3 center, float radius) {
         AABB box = AABB.ofSize(center, radius * 2.0, radius * 2.0, radius * 2.0);
         return level.getEntitiesOfClass(
                 LivingEntity.class,

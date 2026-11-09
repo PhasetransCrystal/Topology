@@ -1,5 +1,6 @@
 package net.ptcrys.topo.api.machine.multiblock;
 
+import net.ptcrys.topo.api.machine.multiblock.ability.PartRole;
 import net.ptcrys.topo.api.machine.multiblock.pattern.*;
 
 import net.minecraft.core.BlockPos;
@@ -27,21 +28,20 @@ class AsyncStructureServiceTest {
             .aisle("CCCC", "CCCC", "CCCC", "CCCC")
             .aisle("CCCC", "CCCC", "CCCC", "CCCC")
             .where('C', Blocks.STONE).where('G', Blocks.GOLD_BLOCK).build();
-    private static final Orientation PRIMARY = Orientations.IDENTITY;
-    private static final Orientation MIRROR = PRIMARY.mirrored();
+    private static final Orientation MIRROR = Orientations.IDENTITY.mirrored();
 
     @Test
     void formedPrimarySkipsLazyMirrorAndMatchesSnapshotDecision() {
-        World world = World.built(PRIMARY);
+        World world = World.built(Orientations.IDENTITY);
         AtomicInteger reads = new AtomicInteger();
-        AsyncStructureService.Outcome live = AsyncStructureService.recognizePreferringMirror(world, BLUEPRINT, PRIMARY,
+        AsyncStructureService.Outcome live = AsyncStructureService.recognizePreferringMirror(world, BLUEPRINT, Orientations.IDENTITY,
                 () -> {
                     reads.incrementAndGet();
                     return world;
                 });
         assertTrue(live.result().formed());
         assertEquals(96, live.result().matchedCount());
-        assertEquals(PRIMARY, live.orientation());
+        assertEquals(Orientations.IDENTITY, live.orientation());
         assertEquals(0, reads.get());
         assertEquals(live, captured(world));
     }
@@ -49,7 +49,7 @@ class AsyncStructureServiceTest {
     @Test
     void mirrorWinsOnlyAfterKnownPrimaryFailure() {
         World world = World.built(MIRROR);
-        AsyncStructureService.Outcome result = AsyncStructureService.recognizePreferringMirror(world, BLUEPRINT, PRIMARY, () -> world);
+        AsyncStructureService.Outcome result = AsyncStructureService.recognizePreferringMirror(world, BLUEPRINT, Orientations.IDENTITY, () -> world);
         assertTrue(result.result().formed());
         assertEquals(MIRROR, result.orientation());
         assertEquals(result, captured(world));
@@ -60,7 +60,7 @@ class AsyncStructureServiceTest {
         World world = World.built(MIRROR);
         world.unloaded.add(new BlockPos(2, 1, 0));
         AtomicInteger reads = new AtomicInteger();
-        AsyncStructureService.Outcome result = AsyncStructureService.recognizePreferringMirror(world, BLUEPRINT, PRIMARY,
+        AsyncStructureService.Outcome result = AsyncStructureService.recognizePreferringMirror(world, BLUEPRINT, Orientations.IDENTITY,
                 () -> {
                     reads.incrementAndGet();
                     return world;
@@ -76,7 +76,7 @@ class AsyncStructureServiceTest {
     void unknownMirrorSurvivesKnownPrimaryFailure() {
         World world = World.built(MIRROR);
         world.unloaded.add(new BlockPos(-2, 1, 0));
-        AsyncStructureService.Outcome result = AsyncStructureService.recognizePreferringMirror(world, BLUEPRINT, PRIMARY, () -> world);
+        AsyncStructureService.Outcome result = AsyncStructureService.recognizePreferringMirror(world, BLUEPRINT, Orientations.IDENTITY, () -> world);
         assertFalse(result.result().formed());
         assertEquals(RecognitionResult.FailureReason.CHUNK_UNLOADED, result.result().failureReason());
         assertEquals(MIRROR, result.orientation());
@@ -85,14 +85,14 @@ class AsyncStructureServiceTest {
 
     @Test
     void snapshotCannotBeUsedForAnotherBlueprintOrOrientation() {
-        CompiledSnapshot primary = snapshot(World.built(PRIMARY), PRIMARY);
+        CompiledSnapshot primary = snapshot(World.built(Orientations.IDENTITY), Orientations.IDENTITY);
         assertThrows(IllegalArgumentException.class, () -> StructureEngine.recognize(primary, BLUEPRINT, MIRROR));
         Blueprint another = Blueprint.of().aisle("@").build();
-        assertThrows(IllegalArgumentException.class, () -> StructureEngine.verify(primary, another, PRIMARY));
+        assertThrows(IllegalArgumentException.class, () -> StructureEngine.verify(primary, another, Orientations.IDENTITY));
     }
 
     private static AsyncStructureService.Outcome captured(World world) {
-        return AsyncStructureService.recognizePreferringMirror(new AsyncStructureService.Captures(snapshot(world, PRIMARY), snapshot(world, MIRROR)), BLUEPRINT);
+        return AsyncStructureService.recognizePreferringMirror(new AsyncStructureService.Captures(snapshot(world, Orientations.IDENTITY), snapshot(world, MIRROR)), BLUEPRINT);
     }
 
     private static CompiledSnapshot snapshot(World world, Orientation orientation) {
@@ -139,7 +139,7 @@ class AsyncStructureServiceTest {
         }
 
         @Override
-        public Set<net.ptcrys.topo.api.machine.multiblock.ability.PartRole> roles(BlockPos pos) {
+        public Set<PartRole> roles(BlockPos pos) {
             return Set.of();
         }
     }

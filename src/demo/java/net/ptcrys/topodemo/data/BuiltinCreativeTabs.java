@@ -3,6 +3,7 @@ package net.ptcrys.topodemo.data;
 import net.ptcrys.registrylib.util.entry.RegistryEntry;
 import net.ptcrys.topo.helper.MaterialHelper;
 import net.ptcrys.topodemo.TopoDemo;
+import net.ptcrys.topodemo.api.DemoCreativeTabKeys;
 import net.ptcrys.topodemo.api.material.BuiltinMaterialForms;
 import net.ptcrys.topodemo.data.equipment.BuiltinTools;
 import net.ptcrys.topodemo.data.material.BuiltinMaterials;
@@ -15,13 +16,13 @@ import java.util.function.Consumer;
 
 public final class BuiltinCreativeTabs {
 
-    public static final RegistryEntry<CreativeModeTab, CreativeModeTab> MATERIALS = creativeTab("materials",
+    public static final RegistryEntry<CreativeModeTab, CreativeModeTab> MATERIALS = creativeTab(DemoCreativeTabKeys.MATERIALS.identifier().getPath(),
             "Materials",
             "材料",
             builder -> builder
                     .icon(() -> new ItemStack(MaterialHelper.requireItem(BuiltinMaterials.BRONZE, BuiltinMaterialForms.INGOT))));
 
-    public static final RegistryEntry<CreativeModeTab, CreativeModeTab> FLUIDS = creativeTab("fluids",
+    public static final RegistryEntry<CreativeModeTab, CreativeModeTab> FLUIDS = creativeTab(DemoCreativeTabKeys.FLUIDS.identifier().getPath(),
             "Fluids",
             "流体",
             builder -> builder

@@ -1,5 +1,6 @@
 package net.ptcrys.topo.api.pipe.survey;
 
+import net.ptcrys.topo.client.survey.PipeSurveyClientState;
 import net.ptcrys.topo.helper.IdHelper;
 
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -35,6 +36,6 @@ public record PipeSurveySnapshotS2CPayload(PipeSurveySnapshot snapshot) implemen
     }
 
     public static void execute(PipeSurveySnapshotS2CPayload payload, IPayloadContext context) {
-        net.ptcrys.topo.client.survey.PipeSurveyClientState.apply(payload.snapshot());
+        PipeSurveyClientState.apply(payload.snapshot());
     }
 }

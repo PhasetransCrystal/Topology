@@ -18,4 +18,7 @@
 - [配方类型内部职责](docs/foundation/recipe-type-internals.md)、[悬浮面板缓存](docs/foundation/tooltip-cache.md)：内部实现边界。
 - [Demo 原版矿石替换](docs/foundation/demo-vanilla-ore-replacement.md)：Demo 数据生成及掉落策略。
 - [注册管线时序](docs/foundation/registration-timeline.md)、[新增注册领域](docs/foundation/registration-domain-extension.md)：宿主调度与领域扩展依据。
+- [Demo 注册归属](docs/foundation/demo-registration-ownership.md)：两个 Demo 插件的职责、阶段及旧版迁移现状。
+- [Demo 锅炉燃料](docs/machine/demo-boiler-fuel.md)：燃料储备与配方运行视图的组件组合。
+- [AE 样板内容转换](docs/foundation/ae-pattern-conversion.md)：配方能力分组与样板输入、输出槽的对应关系。
 - [多方块周期重检](docs/machine/multiblock-recheck.md)、[占地与独占索引](docs/machine/multiblock-claim-index.md)、[JEI 工作方块栏](docs/machine/multiblock-jei-integration.md)：各自的框架实现。

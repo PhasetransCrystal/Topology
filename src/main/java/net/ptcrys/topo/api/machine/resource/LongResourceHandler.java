@@ -5,6 +5,8 @@ import net.neoforged.neoforge.transfer.TransferPreconditions;
 import net.neoforged.neoforge.transfer.resource.Resource;
 import net.neoforged.neoforge.transfer.transaction.TransactionContext;
 
+import java.util.Objects;
+
 /**
  * Native transactional transfer protocol for handlers whose logical amounts are {@code long}.
  * Implementations keep the complete request in one transaction and must never narrow it to an
@@ -79,7 +81,7 @@ public interface LongResourceHandler<R extends Resource> extends ResourceHandler
 
     /** Shared long-request validation for wrappers and native implementations. */
     static void checkTransferRequest(Resource resource, long amount, TransactionContext transaction) {
-        java.util.Objects.requireNonNull(transaction, "transaction");
+        Objects.requireNonNull(transaction, "transaction");
         TransferPreconditions.checkNonEmpty(resource);
         if (amount < 0L) {
             throw new IllegalArgumentException("Transfer amount must be non-negative: " + amount);

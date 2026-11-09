@@ -10,11 +10,12 @@ import net.ptcrys.topo.api.machine.multiblock.pattern.Blueprint;
 import net.ptcrys.topo.api.machine.multiblock.pattern.CellPredicates;
 import net.ptcrys.topo.api.machine.multiblock.pattern.PropertyRules;
 import net.ptcrys.topo.api.machine.resource.PortAccess;
+import net.ptcrys.topodemo.api.lang.ContentLang;
 import net.ptcrys.topodemo.api.machine.BuiltinMachineTypes;
-import net.ptcrys.topodemo.api.machine.common.ItemPort;
 import net.ptcrys.topodemo.data.BuiltinCreativeTabs;
-import net.ptcrys.topodemo.data.ContentLang;
 import net.ptcrys.topodemo.data.TopoDemoPlugin;
+import net.ptcrys.topodemo.data.machine.common.component.resource.ItemPort;
+import net.ptcrys.topodemo.data.machine.multiblock.BuiltinPartRoles;
 import net.ptcrys.topodemo.data.recipe.BuiltinRecipeTypes;
 
 import net.minecraft.core.Direction;
@@ -47,10 +48,10 @@ public final class BuiltinMachines {
     public static final MachineDefinition INPUT_BUS = MACHINE.machine("input_bus").displayName("Item Input Bus", "物品输入总线")
             .creativeTab(BuiltinCreativeTabs.MACHINES.getKey())
             .render(BuiltinMachineTypes.CUBE.cube("block/hopper_outside"))
-            .component(ItemPort.mount(ItemPort.INPUT, 3, PortAccess.input()).role(BuiltinMachineTypes.INPUT)).build();
+            .component(ItemPort.mount(ItemPort.INPUT, 3, PortAccess.input()).role(BuiltinPartRoles.ITEM_INPUT)).build();
     public static final MachineDefinition OUTPUT_BUS = MACHINE.machine("output_bus").displayName("Item Output Bus", "物品输出总线")
             .creativeTab(BuiltinCreativeTabs.MACHINES.getKey()).render(BuiltinMachineTypes.CUBE.cube("block/dropper_front"))
-            .component(ItemPort.mount(ItemPort.OUTPUT, 3, PortAccess.output()).role(BuiltinMachineTypes.OUTPUT)).build();
+            .component(ItemPort.mount(ItemPort.OUTPUT, 3, PortAccess.output()).role(BuiltinPartRoles.ITEM_OUTPUT)).build();
 
     // 4×4×6 合金炉；输入输出总线各一个，内腔保持空气。
     public static final Blueprint ALLOY_BLUEPRINT = Blueprint.of()
@@ -60,11 +61,11 @@ public final class BuiltinMachines {
             .aisle("CCCC", "C##C", "C##C", "CCCC")
             .aisle("CCCC", "C##C", "C##C", "CCCC")
             .aisle("CCCC", "CCCC", "CCCC", "CCCC")
-            .where('I', CellPredicates.role(BuiltinMachineTypes.INPUT))
-            .where('O', CellPredicates.role(BuiltinMachineTypes.OUTPUT))
+            .where('I', CellPredicates.role(BuiltinPartRoles.ITEM_INPUT))
+            .where('O', CellPredicates.role(BuiltinPartRoles.ITEM_OUTPUT))
             .where('C', CellPredicates.block(Blocks.IRON_BLOCK, Blocks.COPPER_BLOCK))
-            .count(BuiltinMachineTypes.INPUT, 1, 1)
-            .count(BuiltinMachineTypes.OUTPUT, 1, 1)
+            .count(BuiltinPartRoles.ITEM_INPUT, 1, 1)
+            .count(BuiltinPartRoles.ITEM_OUTPUT, 1, 1)
             .build();
 
     // 结构验收机器使用标准控制器和结构页，可在游戏内检查预览、重复段及模块。
@@ -88,16 +89,16 @@ public final class BuiltinMachines {
             .where('C', Blocks.COPPER_BLOCK)
             .where('G', Blocks.GLASS)
             .where('T', Blocks.GOLD_BLOCK)
-            .where('I', CellPredicates.role(BuiltinMachineTypes.INPUT))
-            .where('O', CellPredicates.role(BuiltinMachineTypes.OUTPUT))
+            .where('I', CellPredicates.role(BuiltinPartRoles.ITEM_INPUT))
+            .where('O', CellPredicates.role(BuiltinPartRoles.ITEM_OUTPUT))
             .where('D', Blocks.DISPENSER,
                     Blocks.DISPENSER.defaultBlockState().setValue(BlockStateProperties.FACING, Direction.EAST),
                     PropertyRules.direction(BlockStateProperties.FACING))
             .where('L', Blocks.OAK_LOG,
                     Blocks.OAK_LOG.defaultBlockState().setValue(BlockStateProperties.AXIS, Direction.Axis.X),
                     PropertyRules.axis(BlockStateProperties.AXIS))
-            .count(BuiltinMachineTypes.INPUT, 1, 1)
-            .count(BuiltinMachineTypes.OUTPUT, 1, 1)
+            .count(BuiltinPartRoles.ITEM_INPUT, 1, 1)
+            .count(BuiltinPartRoles.ITEM_OUTPUT, 1, 1)
             .build();
 
     public static final MachineDefinition REPEATABLE_TOWER = MACHINE.machine("repeatable_tower")

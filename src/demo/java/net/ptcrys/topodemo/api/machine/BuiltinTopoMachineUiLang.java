@@ -1,16 +1,14 @@
-package net.ptcrys.topodemo.data.machine;
+package net.ptcrys.topodemo.api.machine;
 
 import net.ptcrys.topo.api.api.builtin.LangDomainRegistration;
 import net.ptcrys.topo.api.api.lang.LangKey;
-import net.ptcrys.topo.api.api.lang.TopoApiLang;
 import net.ptcrys.topo.api.machine.resource.AutomationIo;
 import net.ptcrys.topo.api.machine.resource.RecipeRole;
 import net.ptcrys.topodemo.api.TopoDemoApiPlugin;
 
 /**
  * Registers machine UI translation keys for trait UI code ({@code RecipeUi}, {@code MultiblockUi}).
- * {@link #init()} forces field initializers before datagen. Recipe-state and multiblock fold keys
- * used by API runtime are owned by {@link TopoApiLang} and re-exported here.
+ * {@link #init()} forces field initializers before datagen.
  *
  * <p>
  * Each entry is a {@link LangKey}; en/cn payloads feed the datagen bridge for en_us / zh_cn /
@@ -24,15 +22,6 @@ public final class BuiltinTopoMachineUiLang {
     public static final LangKey UI_RECIPE_PAGE = LANG.key("ui", "recipe.page", "Recipe", "配方");
     public static final LangKey UI_RECIPE_STATUS = LANG.key("ui", "recipe.status", "Status", "状态");
     public static final LangKey UI_RECIPE_STATE = LANG.key("ui", "recipe.state", "State", "状态");
-    // Recipe state machine display (API-owned; re-exported for data UI). Halted is a workMode
-    // overlay shown instead of the held state while a regulator pauses work.
-    public static final LangKey UI_RECIPE_STATE_IDLE = TopoApiLang.UI_RECIPE_STATE_IDLE;
-    public static final LangKey UI_RECIPE_STATE_WORKING = TopoApiLang.UI_RECIPE_STATE_WORKING;
-    public static final LangKey UI_RECIPE_STATE_WAITING_OUTPUT = TopoApiLang.UI_RECIPE_STATE_WAITING_OUTPUT;
-    public static final LangKey UI_RECIPE_STATE_WAITING_TICK_INPUT_TO_PROCESS = TopoApiLang.UI_RECIPE_STATE_WAITING_TICK_INPUT_TO_PROCESS;
-    public static final LangKey UI_RECIPE_STATE_WAITING_TICK_INPUT_TO_START = TopoApiLang.UI_RECIPE_STATE_WAITING_TICK_INPUT_TO_START;
-    public static final LangKey UI_RECIPE_STATE_WAITING_TICK_OUTPUT_TO_START = TopoApiLang.UI_RECIPE_STATE_WAITING_TICK_OUTPUT_TO_START;
-    public static final LangKey UI_RECIPE_STATE_MISSING_ACTIVE_RECIPE = TopoApiLang.UI_RECIPE_STATE_MISSING_ACTIVE_RECIPE;
     public static final LangKey UI_RECIPE_STATE_HALTED = LANG.key("ui", "recipe.state.halted", "Halted", "已停止");
     public static final LangKey UI_RECIPE_PROGRESS = LANG.key("ui", "recipe.progress", "Progress", "进度");
     public static final LangKey UI_RECIPE_DURATION = LANG.key("ui", "recipe.duration", "Duration", "耗时");
@@ -50,9 +39,6 @@ public final class BuiltinTopoMachineUiLang {
     public static final LangKey UI_RECIPE_MODIFIER_PRODUCER_ENERGY_NAME = LANG.key("ui", "recipe.modifier.producer.energy.name", "Tier %s Generator Effects", "Tier %s 发电效果");
     public static final LangKey UI_RECIPE_MODIFIER_PRODUCER_HEAT_NAME = LANG.key("ui", "recipe.modifier.producer.heat.name", "Tier %s Boiler Effects", "Tier %s 锅炉效果");
     public static final LangKey UI_RECIPE_MODIFIER_CONVERTER_NAME = LANG.key("ui", "recipe.modifier.converter.name", "Tier %s Converter Effects", "Tier %s 转换效果");
-    public static final LangKey UI_RECIPE_MODIFIER_MULTIBLOCK_NAME = TopoApiLang.UI_RECIPE_MODIFIER_MULTIBLOCK_NAME;
-    // Multiblock fold has no numeric factors — short one-liner for tooltip/UI metadata.
-    public static final LangKey UI_RECIPE_MODIFIER_MULTIBLOCK_DESC = TopoApiLang.UI_RECIPE_MODIFIER_MULTIBLOCK_DESC;
     // Machine item tooltip panel (title | description rows for mounted modifiers).
     public static final LangKey TOOLTIP_MACHINE_RECIPE_MODIFIERS = LANG.key("tooltip", "machine.recipe_modifiers", "Recipe Modifiers", "配方修正");
     public static final LangKey TOOLTIP_MACHINE_MODIFIER_COUNT = LANG.key("tooltip", "machine.modifier_count", "%s", "%s");
@@ -76,16 +62,12 @@ public final class BuiltinTopoMachineUiLang {
     public static final LangKey UI_RECIPE_MODIFIER_ATTR_TOTAL_INPUT = LANG.key("ui", "recipe.modifier.attr.total_input", "Input / craft", "单次输入");
     public static final LangKey UI_RECIPE_MODIFIER_ATTR_TOTAL_OUTPUT = LANG.key("ui", "recipe.modifier.attr.total_output", "Output / craft", "单次输出");
     public static final LangKey UI_RECIPE_MODIFIER_ATTR_OUTPUT_RATE = LANG.key("ui", "recipe.modifier.attr.output_rate", "Output / time", "输出速率");
-    public static final LangKey UI_RECIPE_MODIFIER_ATTR_SCOPE = TopoApiLang.UI_RECIPE_MODIFIER_ATTR_SCOPE;
-    public static final LangKey UI_RECIPE_MODIFIER_ATTR_EFFECT = TopoApiLang.UI_RECIPE_MODIFIER_ATTR_EFFECT;
     public static final LangKey UI_RECIPE_MODIFIER_ATTR_PARALLEL = LANG.key("ui", "recipe.modifier.attr.parallel", "Parallelism", "并行度");
     public static final LangKey UI_RECIPE_MODIFIER_PARALLEL_TITLE = LANG.key("ui", "recipe.modifier.parallel.title", "Parallel Processing", "并行处理");
     public static final LangKey UI_RECIPE_MODIFIER_PARALLEL_EFFECT = LANG.key("ui", "recipe.modifier.parallel.effect", "Actual 1..N from inputs; I/O × actual; duration unchanged", "按输入实算 1..N；I/O×实际并行；耗时不变");
     public static final LangKey UI_RECIPE_MODIFIER_ATTR_THROUGHPUT = LANG.key("ui", "recipe.modifier.attr.throughput", "Throughput", "吞吐");
     public static final LangKey UI_RECIPE_MODIFIER_PARALLEL_THROUGHPUT = LANG.key("ui", "recipe.modifier.parallel.throughput", "Materials/s scale with actual parallel (up to ×%s)", "材料/秒随实际并行变化（最高 ×%s）");
     public static final LangKey UI_RECIPE_MODIFIER_FACTOR = LANG.key("ui", "recipe.modifier.factor", "×%s", "×%s");
-    public static final LangKey UI_RECIPE_MODIFIER_MULTIBLOCK_SCOPE = TopoApiLang.UI_RECIPE_MODIFIER_MULTIBLOCK_SCOPE;
-    public static final LangKey UI_RECIPE_MODIFIER_MULTIBLOCK_EFFECT = TopoApiLang.UI_RECIPE_MODIFIER_MULTIBLOCK_EFFECT;
     // Temporary macerator multi-modifier preview entries (remove with PreviewRecipeModifierComponent).
     public static final LangKey UI_RECIPE_MODIFIER_PREVIEW_PARALLEL_TITLE = LANG.key("ui", "recipe.modifier.preview.parallel.title", "Parallel Hatch", "并行仓效果");
     public static final LangKey UI_RECIPE_MODIFIER_PREVIEW_OVERCLOCK_TITLE = LANG.key("ui", "recipe.modifier.preview.overclock.title", "Overclocking", "超频效果");
@@ -187,10 +169,6 @@ public final class BuiltinTopoMachineUiLang {
     public static final LangKey UI_PATTERN_BUILDER_INPUTS_SHORT = LANG.key("ui", "pattern_builder.inputs_short", "Pattern Inputs", "样板输入");
     public static final LangKey UI_PATTERN_BUILDER_WRITE = LANG.key("ui", "pattern_builder.write", "Write", "写入");
     public static final LangKey UI_PATTERN_BUILDER_CANCEL = LANG.key("ui", "pattern_builder.cancel", "Cancel", "取消");
-
-    // Jade config toggle for the machine overlay providers (UID topo:machine).
-    // Jade asserts this key exists in dev; without it the client crashes on the first screen.
-    public static final LangKey CONFIG_JADE_PLUGIN_ODYSSEYINDUSTRIAL_MACHINE = LANG.absolute("config.jade.plugin_topo.machine", "Machine", "机器");
 
     // Multiblock preview scene toolbar + BOM dock (JEI category and the structure page).
     public static final LangKey UI_MULTIBLOCK_PREVIEW_LAYER = LANG.key("ui", "multiblock.preview.layer", "Layer view (click to slice)", "分层视图（点击以切片）");

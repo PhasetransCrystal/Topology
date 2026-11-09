@@ -43,6 +43,7 @@ import net.ptcrys.topo.api.recipe.productionline.ProductionLines;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
@@ -113,7 +114,7 @@ public class LifecycleTestEntrypoint {
     static int planValidations;
     static int planRegistrations;
     static final MaterialContentType customContentType = new MaterialContentType(
-            net.minecraft.resources.Identifier.fromNamespaceAndPath("topo_test_a", "probe_custom"));
+            Identifier.fromNamespaceAndPath("topo_test_a", "probe_custom"));
     static int ruleCalls;
     static boolean rulesSawEmptyForms = true;
     static boolean rulesReusedMaterialSnapshot = true;
@@ -329,7 +330,7 @@ public class LifecycleTestEntrypoint {
 
             @Override
             public void registerLang(LangDomainRegistration lang) {
-                lang.resource(net.minecraft.resources.Identifier.fromNamespaceAndPath(modId(), "owned_b"), "pipe.strategy", "B", "乙");
+                lang.resource(Identifier.fromNamespaceAndPath(modId(), "owned_b"), "pipe.strategy", "B", "乙");
                 lang.absolute("jade.config." + modId() + ".owned", "Config", "配置");
             }
 
@@ -431,7 +432,7 @@ public class LifecycleTestEntrypoint {
 
     static class ProbeDataType extends MaterialDataType<Boolean> {
 
-        ProbeDataType(net.minecraft.resources.Identifier id) {
+        ProbeDataType(Identifier id) {
             super(id);
         }
 

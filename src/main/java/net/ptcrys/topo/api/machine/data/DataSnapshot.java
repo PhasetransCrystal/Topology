@@ -3,6 +3,7 @@ package net.ptcrys.topo.api.machine.data;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /** 通用值字段的隔离快照。仅保存工作数据，不替代 DataScope 的正式存储；可交给异步计算。 */
@@ -76,7 +77,7 @@ public final class DataSnapshot {
 
     @Override
     public int hashCode() {
-        return java.util.Objects.hash(values, assigned, requirements);
+        return Objects.hash(values, assigned, requirements);
     }
 
     Map<DataKey<?>, Object> sharedValues() {

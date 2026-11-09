@@ -12,6 +12,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.attachment.AttachmentSyncHandler;
 import net.neoforged.neoforge.attachment.AttachmentType;
@@ -232,7 +233,7 @@ public final class StructureToolOptions {
 
         private RepeatResolution repeats;
         private Orientation orientation;
-        private final List<Function<Cell, List<net.minecraft.world.level.block.state.BlockState>>> candidates = new ArrayList<>();
+        private final List<Function<Cell, List<BlockState>>> candidates = new ArrayList<>();
 
         public Settings(Blueprint blueprint, Orientation orientation) {
             this.repeats = blueprint.minRepeats();
@@ -261,12 +262,12 @@ public final class StructureToolOptions {
         }
 
         /** 追加世界朝向的候选状态；规划器仍逐项验证蓝图谓词和属性要求，不能绕过结构约束。 */
-        public void candidates(Function<Cell, List<net.minecraft.world.level.block.state.BlockState>> provider) {
+        public void candidates(Function<Cell, List<BlockState>> provider) {
             candidates.add(Objects.requireNonNull(provider));
         }
 
-        public List<net.minecraft.world.level.block.state.BlockState> extraCandidates(Cell cell) {
-            List<net.minecraft.world.level.block.state.BlockState> result = new ArrayList<>();
+        public List<BlockState> extraCandidates(Cell cell) {
+            List<BlockState> result = new ArrayList<>();
             for (var provider : candidates) result.addAll(provider.apply(cell));
             return result;
         }

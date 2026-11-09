@@ -14,13 +14,15 @@ import net.neoforged.neoforge.common.util.BlockSnapshot;
 import net.neoforged.neoforge.event.EventHooks;
 
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
 /** 服务端分批放置事务。按背包现有材料选择本次目标，失败还原本批方块；成功后只扣除本批使用的物品，不要求机器一次成型。 */
 public final class StructureToolPlacement {
 
-    private static final org.slf4j.Logger LOGGER = org.slf4j.LoggerFactory.getLogger(StructureToolPlacement.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(StructureToolPlacement.class);
 
     private StructureToolPlacement() {}
 

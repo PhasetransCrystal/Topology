@@ -34,9 +34,6 @@ public final class Orientation {
     /** 24 个行列式为 +1 的正旋转。 */
     static final List<Orientation> ROTATIONS;
 
-    /** 恒等旋转。 */
-    static final Orientation IDENTITY;
-
     /** 反转局部 X 轴，保持局部 Y/Z 轴。 */
     static final Orientation REFLECT_X;
 
@@ -68,7 +65,6 @@ public final class Orientation {
         }
         ROTATIONS = Collections.unmodifiableList(rotations);
 
-        IDENTITY = of(new int[] { 1, 0, 0, 0, 1, 0, 0, 0, 1 });
         REFLECT_X = of(new int[] { -1, 0, 0, 0, 1, 0, 0, 0, 1 });
     }
 

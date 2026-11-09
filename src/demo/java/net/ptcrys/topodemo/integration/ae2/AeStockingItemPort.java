@@ -8,6 +8,7 @@ import net.ptcrys.topo.api.machine.resource.PlayerAccess;
 import net.ptcrys.topo.api.machine.resource.PortAccess;
 import net.ptcrys.topo.integration.ae2.*;
 import net.ptcrys.topo.integration.ae2.AeStockingPort;
+import net.ptcrys.topodemo.api.machine.DemoComponentKeys;
 import net.ptcrys.topodemo.data.machine.common.component.resource.ItemResourcePortMetadata;
 import net.ptcrys.topodemo.data.recipe.BuiltinTopoResourceIntegrations;
 
@@ -15,7 +16,7 @@ import net.neoforged.neoforge.transfer.item.ItemResource;
 
 public final class AeStockingItemPort extends AeStockingPort<ItemResource> {
 
-    public static final ComponentKey<AeStockingItemPort> AE_STOCKING_ITEM_PORT = net.ptcrys.topodemo.api.machine.DemoComponentKeys.id("ae_stocking_item_port", AeStockingItemPort.class);
+    public static final ComponentKey<AeStockingItemPort> AE_STOCKING_ITEM_PORT = DemoComponentKeys.id("ae_stocking_item_port", AeStockingItemPort.class);
 
     private AeStockingItemPort(ComponentContext<AeStockingItemPort> context, int slots) {
         super(

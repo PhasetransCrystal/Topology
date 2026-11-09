@@ -2,6 +2,7 @@ package net.ptcrys.topo.api.pipe.survey;
 
 import net.ptcrys.topo.Topology;
 
+import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
@@ -17,7 +18,7 @@ public final class PipeSurveyNetworking {
     public static void register(IEventBus modEventBus) {
         modEventBus.addListener(PipeSurveyNetworking::registerPayloads);
         NeoForge.EVENT_BUS.addListener((PlayerEvent.PlayerLoggedOutEvent event) -> {
-            if (event.getEntity() instanceof net.minecraft.server.level.ServerPlayer player) {
+            if (event.getEntity() instanceof ServerPlayer player) {
                 PipeSurveyManager.onLoggedOut(player);
             }
         });

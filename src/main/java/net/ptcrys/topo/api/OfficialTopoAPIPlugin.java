@@ -11,6 +11,7 @@ import net.ptcrys.topo.api.machine.multiblock.MultiblockControllerMetadata;
 import net.ptcrys.topo.api.machine.multiblock.ability.ExclusivePartAttachment;
 import net.ptcrys.topo.api.machine.multiblock.ability.PartRoleAttachment;
 import net.ptcrys.topo.config.TopoConfigLang;
+import net.ptcrys.topo.integration.IntegrationLang;
 
 /** Official framework contributions. Uses the same typed points as dependent content plugins. */
 public final class OfficialTopoAPIPlugin extends TopoPlugin {
@@ -33,7 +34,7 @@ public final class OfficialTopoAPIPlugin extends TopoPlugin {
     @Override
     public void registerLang(LangDomainRegistration lang) {
         TopoApiLang.init();
-        net.ptcrys.topo.integration.IntegrationLang.init();
+        IntegrationLang.init();
         TopoConfigLang.init();
     }
 }

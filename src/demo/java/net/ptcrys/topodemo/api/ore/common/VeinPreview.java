@@ -2,7 +2,6 @@ package net.ptcrys.topodemo.api.ore.common;
 
 import net.ptcrys.topo.api.api.lang.LangKey;
 import net.ptcrys.topo.api.machine.ui.MachineUiComponentTemplate;
-import net.ptcrys.topo.api.material.form.MaterialForm;
 import net.ptcrys.topo.api.ore.OreVein;
 import net.ptcrys.topo.api.ore.display.OreVeinDisplay;
 import net.ptcrys.topo.helper.MaterialHelper;
@@ -17,15 +16,16 @@ import com.lowdragmc.lowdraglib2.integration.xei.IngredientIO;
 import java.util.stream.Stream;
 
 /** The callback constructs display elements only when the client opens the vein preview. */
-public record VeinPreview(MaterialForm iconForm, LangKey height, LangKey composition) implements OreVeinDisplay.Strategy {
+public record VeinPreview(LangKey height, LangKey composition) implements OreVeinDisplay.Strategy {
 
     @Override
     public UIElement buildPreview(OreVein vein) {
         UIElement root = new UIElement();
         root.addChild(new Label().setText(vein.displayName()));
         root.addChild(new Label().setText(height.getComponent(vein.minY(), vein.maxY())));
+        var iconForm = vein.environment().hostRules().getFirst().generatedForm();
         for (var entry : vein.entries()) {
-            ItemStack stack = new ItemStack(MaterialHelper.requireItem(entry.material(), iconForm));
+            ItemStack stack = MaterialHelper.item(entry.material(), iconForm).map(ItemStack::new).orElse(ItemStack.EMPTY);
             ItemSlot slot = MachineUiComponentTemplate.INSTANCE.createItemSlot().setItem(stack);
             ItemSlot.JEISupport.recipeIngredient(slot, IngredientIO.OUTPUT, () -> Stream.of(stack));
             ItemSlot.JEISupport.recipeSlot(slot, IngredientIO.OUTPUT, () -> Stream.of(stack));

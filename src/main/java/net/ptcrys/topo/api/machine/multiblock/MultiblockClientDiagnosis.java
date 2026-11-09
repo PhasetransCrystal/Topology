@@ -1,10 +1,10 @@
 package net.ptcrys.topo.api.machine.multiblock;
 
+import net.ptcrys.topo.Topology;
 import net.ptcrys.topo.api.api.lang.LangKey;
 import net.ptcrys.topo.api.api.lang.TopoApiLang;
 import net.ptcrys.topo.api.machine.MachineBlockEntity;
 import net.ptcrys.topo.api.machine.MachineDefinition;
-import net.ptcrys.topo.api.machine.OrientedMachineBlock;
 import net.ptcrys.topo.api.machine.data.DataTransaction;
 import net.ptcrys.topo.api.machine.multiblock.ability.PartRole;
 import net.ptcrys.topo.api.machine.multiblock.pattern.Blueprint;
@@ -26,8 +26,11 @@ import net.ptcrys.topo.api.machine.ui.MachineUiComponentStyle;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.TextColor;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.DirectionalBlock;
 import net.minecraft.world.level.block.state.BlockState;
 
 import org.jspecify.annotations.Nullable;
@@ -35,6 +38,7 @@ import org.jspecify.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -256,7 +260,7 @@ public final class MultiblockClientDiagnosis {
                 BlockPos localPos = new BlockPos(x, y, z);
                 effective.apply(localPos, view.controllerPos(), worldPos);
                 BlockState state = view.isLoaded(worldPos) ? view.blockState(worldPos) : null;
-                if (state != null && !state.isAir()) detected.put(previewTransform().apply(localPos, BlockPos.ZERO), localPos.equals(BlockPos.ZERO) ? net.ptcrys.topo.api.machine.multiblock.ui.BlueprintPreview.controllerPreviewStateFrom(state) : Orientations.rotated(inverse, state));
+                if (state != null && !state.isAir()) detected.put(previewTransform().apply(localPos, BlockPos.ZERO), localPos.equals(BlockPos.ZERO) ? BlueprintPreview.controllerPreviewStateFrom(state) : Orientations.rotated(inverse, state));
                 return true;
             });
             return detected;
@@ -264,7 +268,7 @@ public final class MultiblockClientDiagnosis {
 
         /** 全部实际解析位置，包含空气；模块使用各自 frame 和重复次数，共享整体镜像。 */
         public Set<BlockPos> positions() {
-            Set<BlockPos> positions = new java.util.LinkedHashSet<>();
+            Set<BlockPos> positions = new LinkedHashSet<>();
             layout.forEachCell((index, definition, x, y, z) -> {
                 positions.add(previewTransform().apply(new BlockPos(x, y, z), BlockPos.ZERO));
                 return true;
@@ -458,8 +462,8 @@ public final class MultiblockClientDiagnosis {
 
     private static Orientation orientationOf(MachineBlockEntity controller) {
         BlockState state = controller.getBlockState();
-        if (state.hasProperty(OrientedMachineBlock.FACING)) {
-            return Orientations.forFacing(state.getValue(OrientedMachineBlock.FACING));
+        if (state.hasProperty(DirectionalBlock.FACING)) {
+            return Orientations.forFacing(state.getValue(DirectionalBlock.FACING));
         }
         return Orientations.IDENTITY;
     }
@@ -492,10 +496,10 @@ public final class MultiblockClientDiagnosis {
 
     /** 外部错误使用约定翻译键；无翻译时保留原错误码，避免丢失扩展能力提供的原因。 */
     private static Component errorTitle(CellResult result) {
-        if (!result.code().getNamespace().equals(net.ptcrys.topo.Topology.MODID)) {
+        if (!result.code().getNamespace().equals(Topology.MODID)) {
             return Component.translatableWithFallback("multiblock.cell." + result.code().getNamespace() + "." + result.code().getPath().replace('/', '.'), result.code().toString());
         }
-        for (CellResult child : result.children()) if (!child.code().getNamespace().equals(net.ptcrys.topo.Topology.MODID)) return errorTitle(child);
+        for (CellResult child : result.children()) if (!child.code().getNamespace().equals(Topology.MODID)) return errorTitle(child);
         return TopoApiLang.UI_MULTIBLOCK_DIAGNOSE_CONSTRAINT.getComponent();
     }
 
@@ -506,7 +510,7 @@ public final class MultiblockClientDiagnosis {
         return text;
     }
 
-    private static void appendIssue(net.minecraft.network.chat.MutableComponent text, CellResult result, int[] remaining) {
+    private static void appendIssue(MutableComponent text, CellResult result, int[] remaining) {
         if (remaining[0]-- <= 0) return;
         if (!text.getString().isEmpty()) text.append("\n");
         text.append(errorTitle(result)).append(" [" + result.code() + "]");
@@ -517,7 +521,7 @@ public final class MultiblockClientDiagnosis {
 
     /** 给组件根节点着色，已有独立颜色的翻译参数保留自己的颜色。 */
     private static Component tinted(Component text, int color) {
-        return text.copy().withStyle(style -> style.withColor(net.minecraft.network.chat.TextColor.fromRgb(color & 0xFFFFFF)));
+        return text.copy().withStyle(style -> style.withColor(TextColor.fromRgb(color & 0xFFFFFF)));
     }
 
     private static Kind classify(RecognitionResult.CellIssue missing) {

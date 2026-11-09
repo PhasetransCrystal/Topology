@@ -21,6 +21,8 @@ import net.ptcrys.topo.api.recipe.TopoRecipeTypes;
 import net.ptcrys.topo.api.recipe.common.RecipePreviewPlans;
 import net.ptcrys.topo.helper.IdHelper;
 
+import net.neoforged.bus.api.IEventBus;
+
 import java.util.List;
 
 /** Owns machine registration steps and their freeze fences. */
@@ -53,7 +55,7 @@ public final class MachineRegistrationModule implements RegistrationModule {
     }
 
     @Override
-    public void attach(net.neoforged.bus.api.IEventBus bus) {
+    public void attach(IEventBus bus) {
         Machines.registerResourceCapabilities(bus);
     }
 }

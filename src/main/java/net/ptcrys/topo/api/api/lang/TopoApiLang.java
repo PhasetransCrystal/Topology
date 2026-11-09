@@ -2,6 +2,10 @@ package net.ptcrys.topo.api.api.lang;
 
 import net.ptcrys.topo.api.OfficialTopoAPIPlugin;
 import net.ptcrys.topo.api.api.builtin.LangDomainRegistration;
+import net.ptcrys.topo.api.machine.resource.AutomationIo;
+import net.ptcrys.topo.api.machine.resource.RecipeRole;
+
+import net.minecraft.core.Direction;
 
 /**
  * API-owned translation keys used by runtime API code (recipe state, pipe overlays, surveyor
@@ -456,7 +460,7 @@ public final class TopoApiLang {
     public static void init() {}
 
     /** Display handle for a world direction (pipe port UI / overlays). */
-    public static LangKey side(net.minecraft.core.Direction direction) {
+    public static LangKey side(Direction direction) {
         return switch (direction) {
             case DOWN -> PIPE_SIDE_DOWN;
             case UP -> PIPE_SIDE_UP;
@@ -468,7 +472,7 @@ public final class TopoApiLang {
     }
 
     /** Side-IO card title for a port's recipe role (Input / Output / Storage). */
-    public static LangKey sideIoTitle(net.ptcrys.topo.api.machine.resource.RecipeRole role) {
+    public static LangKey sideIoTitle(RecipeRole role) {
         return switch (role) {
             case INPUT -> UI_SIDE_IO_TITLE_INSERT;
             case OUTPUT -> UI_SIDE_IO_TITLE_EXTRACT;
@@ -477,7 +481,7 @@ public final class TopoApiLang {
     }
 
     /** Side-IO face cell tooltip mode label. */
-    public static LangKey sideIoMode(net.ptcrys.topo.api.machine.resource.AutomationIo mode) {
+    public static LangKey sideIoMode(AutomationIo mode) {
         return switch (mode) {
             case NONE -> UI_SIDE_IO_MODE_NONE;
             case INSERT -> UI_SIDE_IO_MODE_INSERT;

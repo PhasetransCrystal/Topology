@@ -7,6 +7,7 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.item.crafting.Recipe;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -70,7 +71,7 @@ class RecipeNameTest {
         assertNotNull(type.recipe("still_declarable"));
     }
 
-    private static ResourceKey<net.minecraft.world.item.crafting.Recipe<?>> source(String id) {
+    private static ResourceKey<Recipe<?>> source(String id) {
         return ResourceKey.create(Registries.RECIPE, Identifier.parse(id));
     }
 

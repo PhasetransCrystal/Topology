@@ -9,6 +9,8 @@ import net.ptcrys.topo.api.machine.ui.MachineUiComponentTemplate;
 import net.ptcrys.topo.api.machine.ui.MachineUiContribution;
 import net.ptcrys.topo.api.machine.ui.PortUiHighlight;
 import net.ptcrys.topo.api.machine.ui.ResourceBar;
+import net.ptcrys.topo.integration.jade.ResourceBarProvider;
+import net.ptcrys.topodemo.api.machine.DemoComponentKeys;
 import net.ptcrys.topodemo.data.recipe.BuiltinTopoResourceIntegrations.BuiltinResourceIntegration;
 import net.ptcrys.topodemo.data.recipe.common.ScalarRecipeCapability;
 
@@ -22,6 +24,7 @@ import net.neoforged.neoforge.transfer.resource.ResourceStack;
 
 import org.jspecify.annotations.Nullable;
 
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 /**
@@ -29,7 +32,7 @@ import java.util.function.Predicate;
  * kind in a single index; everything else (persistence, transactions, capability/recipe/UI port
  * exposure) is inherited from {@link ResourcePort} unchanged.
  */
-public final class ScalarResourcePort extends ResourcePort<ResourceStack<ScalarResource>, ScalarResource> implements net.ptcrys.topo.integration.jade.ResourceBarProvider {
+public final class ScalarResourcePort extends ResourcePort<ResourceStack<ScalarResource>, ScalarResource> implements ResourceBarProvider {
 
     /**
      * 标量内容周期性持久化(与 recipe progress 的 20t 粒度一致):标量每 tick 都在变,逐 tick 标记
@@ -39,15 +42,16 @@ public final class ScalarResourcePort extends ResourcePort<ResourceStack<ScalarR
     @Deprecated(forRemoval = false)
     public static final int CONTENTS_PERSIST_INTERVAL_TICKS = 20;
 
-    public static final ComponentKey<ScalarResourcePort> ENERGY_INPUT_1 = net.ptcrys.topodemo.api.machine.DemoComponentKeys.id("energy_input_1", ScalarResourcePort.class).service(net.ptcrys.topo.integration.jade.ResourceBarProvider.KEY, (port, ignored) -> port);
-    public static final ComponentKey<ScalarResourcePort> ENERGY_OUTPUT_1 = net.ptcrys.topodemo.api.machine.DemoComponentKeys.id("energy_output_1", ScalarResourcePort.class).service(net.ptcrys.topo.integration.jade.ResourceBarProvider.KEY, (port, ignored) -> port);
-    public static final ComponentKey<ScalarResourcePort> ENERGY_STORAGE = net.ptcrys.topodemo.api.machine.DemoComponentKeys.id("energy_storage", ScalarResourcePort.class).service(net.ptcrys.topo.integration.jade.ResourceBarProvider.KEY, (port, ignored) -> port);
-    public static final ComponentKey<ScalarResourcePort> ADVANCED_ENERGY_INPUT_1 = net.ptcrys.topodemo.api.machine.DemoComponentKeys.id("advanced_energy_input_1", ScalarResourcePort.class).service(net.ptcrys.topo.integration.jade.ResourceBarProvider.KEY, (port, ignored) -> port);
-    public static final ComponentKey<ScalarResourcePort> ADVANCED_ENERGY_OUTPUT_1 = net.ptcrys.topodemo.api.machine.DemoComponentKeys.id("advanced_energy_output_1", ScalarResourcePort.class).service(net.ptcrys.topo.integration.jade.ResourceBarProvider.KEY, (port, ignored) -> port);
-    public static final ComponentKey<ScalarResourcePort> ADVANCED_ENERGY_STORAGE = net.ptcrys.topodemo.api.machine.DemoComponentKeys.id("advanced_energy_storage", ScalarResourcePort.class).service(net.ptcrys.topo.integration.jade.ResourceBarProvider.KEY, (port, ignored) -> port);
-    public static final ComponentKey<ScalarResourcePort> HEAT_INPUT_1 = net.ptcrys.topodemo.api.machine.DemoComponentKeys.id("heat_input_1", ScalarResourcePort.class).service(net.ptcrys.topo.integration.jade.ResourceBarProvider.KEY, (port, ignored) -> port);
-    public static final ComponentKey<ScalarResourcePort> HEAT_OUTPUT_1 = net.ptcrys.topodemo.api.machine.DemoComponentKeys.id("heat_output_1", ScalarResourcePort.class).service(net.ptcrys.topo.integration.jade.ResourceBarProvider.KEY, (port, ignored) -> port);
-    public static final ComponentKey<ScalarResourcePort> HEAT_STORAGE = net.ptcrys.topodemo.api.machine.DemoComponentKeys.id("heat_storage", ScalarResourcePort.class).service(net.ptcrys.topo.integration.jade.ResourceBarProvider.KEY, (port, ignored) -> port);
+    public static final ComponentKey<ScalarResourcePort> ENERGY_INPUT_1 = DemoComponentKeys.id("energy_input_1", ScalarResourcePort.class).service(ResourceBarProvider.KEY, (port, ignored) -> port);
+    public static final ComponentKey<ScalarResourcePort> ENERGY_OUTPUT_1 = DemoComponentKeys.id("energy_output_1", ScalarResourcePort.class).service(ResourceBarProvider.KEY, (port, ignored) -> port);
+    public static final ComponentKey<ScalarResourcePort> ENERGY_STORAGE = DemoComponentKeys.id("energy_storage", ScalarResourcePort.class).service(ResourceBarProvider.KEY, (port, ignored) -> port);
+    public static final ComponentKey<ScalarResourcePort> ADVANCED_ENERGY_INPUT_1 = DemoComponentKeys.id("advanced_energy_input_1", ScalarResourcePort.class).service(ResourceBarProvider.KEY, (port, ignored) -> port);
+    public static final ComponentKey<ScalarResourcePort> ADVANCED_ENERGY_OUTPUT_1 = DemoComponentKeys.id("advanced_energy_output_1", ScalarResourcePort.class).service(ResourceBarProvider.KEY, (port, ignored) -> port);
+    public static final ComponentKey<ScalarResourcePort> ADVANCED_ENERGY_STORAGE = DemoComponentKeys.id("advanced_energy_storage", ScalarResourcePort.class).service(ResourceBarProvider.KEY, (port, ignored) -> port);
+    public static final ComponentKey<ScalarResourcePort> HEAT_INPUT_1 = DemoComponentKeys.id("heat_input_1", ScalarResourcePort.class).service(ResourceBarProvider.KEY, (port, ignored) -> port);
+    public static final ComponentKey<ScalarResourcePort> HEAT_OUTPUT_1 = DemoComponentKeys.id("heat_output_1", ScalarResourcePort.class).service(ResourceBarProvider.KEY, (port, ignored) -> port);
+    public static final ComponentKey<ScalarResourcePort> HEAT_STORAGE = DemoComponentKeys.id("heat_storage", ScalarResourcePort.class).service(ResourceBarProvider.KEY, (port, ignored) -> port);
+    public static final ComponentKey<ScalarResourcePort> BURN_TIME_INPUT = DemoComponentKeys.id("burn_time_input", ScalarResourcePort.class);
 
     private ScalarResourcePort(
                                ComponentContext<ScalarResourcePort> context,
@@ -72,8 +76,8 @@ public final class ScalarResourcePort extends ResourcePort<ResourceStack<ScalarR
     /** The scalar kind stored by this port. */
     /** 将本端口的实时存量提供给框架资源条视图。 */
     @Override
-    public void collect(java.util.function.Consumer<net.ptcrys.topo.integration.jade.ResourceBarProvider.Bar> output) {
-        output.accept(new net.ptcrys.topo.integration.jade.ResourceBarProvider.Bar(
+    public void collect(Consumer<ResourceBarProvider.Bar> output) {
+        output.accept(new ResourceBarProvider.Bar(
                 resource().nameLang(), resource().color(), storedAmount(), capacityAmount()));
     }
 

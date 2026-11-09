@@ -15,6 +15,7 @@ import net.ptcrys.topo.api.recipe.TopoRecipeType;
 import net.ptcrys.topo.api.tick.MachineTicker;
 
 import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.item.crafting.Recipe;
@@ -912,7 +913,7 @@ public class RecipeLogic extends MachineTicker
         }
 
         /** UI display of this state; values live in {@code TopoApiLang}. */
-        public net.minecraft.network.chat.Component displayName() {
+        public Component displayName() {
             return switch (this) {
                 case IDLE -> TopoApiLang.UI_RECIPE_STATE_IDLE.getComponent();
                 case WORKING -> TopoApiLang.UI_RECIPE_STATE_WORKING.getComponent();

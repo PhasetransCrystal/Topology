@@ -1,4 +1,4 @@
-package net.ptcrys.topodemo.api.ore.common;
+package net.ptcrys.topodemo.data.ore;
 
 import net.ptcrys.topo.api.material.Material;
 import net.ptcrys.topo.api.material.form.MaterialForm;

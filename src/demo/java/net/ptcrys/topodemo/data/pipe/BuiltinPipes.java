@@ -12,6 +12,8 @@ import net.minecraft.resources.Identifier;
 public final class BuiltinPipes {
 
     public static final PipeDistributionStrategy ROUND_ROBIN = registerStrategy();
+    public static final PipeDistributionStrategy EQUAL_SPLIT = registerEqualSplit();
+    public static final PipeDistributionStrategy BY_DISTANCE = registerByDistance();
     private static final PipeResourceProfile ITEMS = new PipeResourceProfile(BuiltinTopoResourceIntegrations.ITEM.resourceType(), Long::toString, BuiltinPipeFilterAdapters.ITEM);
     private static final PipeResourceProfile FLUIDS = new PipeResourceProfile(BuiltinTopoResourceIntegrations.FLUID.resourceType(), amount -> amount + " mB", BuiltinPipeFilterAdapters.FLUID);
 
@@ -25,7 +27,9 @@ public final class BuiltinPipes {
             .creativeTab(BuiltinCreativeTabs.MACHINES.getKey())
             .maxExtractRate(8).nodeThroughput(32)
             .filter(new PipeFilterSettings(8, true))
-            .strategy(ROUND_ROBIN, new AggregationWindow(1, 20, 4, 1)).build();
+            .strategy(ROUND_ROBIN, new AggregationWindow(1, 20, 4, 1))
+            .strategy(EQUAL_SPLIT, new AggregationWindow(1, 20, 4, 1))
+            .strategy(BY_DISTANCE, new AggregationWindow(1, 20, 4, 1)).build();
 
     public static final PipeDefinition FLUID_PIPE = TopoDemoPlugin.INSTANCE.machine().pipe("fluid_pipe")
             .resource(FLUIDS)
@@ -37,7 +41,9 @@ public final class BuiltinPipes {
             .creativeTab(BuiltinCreativeTabs.MACHINES.getKey())
             .maxExtractRate(250).nodeThroughput(1000)
             .filter(new PipeFilterSettings(8, true))
-            .strategy(ROUND_ROBIN, new AggregationWindow(1, 20, 4, 1)).build();
+            .strategy(ROUND_ROBIN, new AggregationWindow(1, 20, 4, 1))
+            .strategy(EQUAL_SPLIT, new AggregationWindow(1, 20, 4, 1))
+            .strategy(BY_DISTANCE, new AggregationWindow(1, 20, 4, 1)).build();
 
     private static PipeDistributionStrategy registerStrategy() {
         var plugin = TopoDemoPlugin.INSTANCE;
@@ -48,6 +54,32 @@ public final class BuiltinPipes {
                 plugin.lang().resource(id, "pipe.strategy", "Round Robin", "轮询"),
                 plugin.lang().absolute(baseKey + ".desc", "Targets take turns", "目标轮流接收"),
                 plugin.lang().absolute(baseKey + ".short", "RR", "轮询"));
+        PipeDistributionStrategies.register(strategy);
+        return strategy;
+    }
+
+    private static PipeDistributionStrategy registerEqualSplit() {
+        var plugin = TopoDemoPlugin.INSTANCE;
+        var id = plugin.machine().id("equal_split");
+        String baseKey = id.toLanguageKey("pipe.strategy");
+        var strategy = new EqualSplitStrategy(id);
+        strategy.bindLang(
+                plugin.lang().resource(id, "pipe.strategy", "Equal Split", "均分"),
+                plugin.lang().absolute(baseKey + ".desc", "Even share per target", "每目标均分"),
+                plugin.lang().absolute(baseKey + ".short", "EQUL", "均分"));
+        PipeDistributionStrategies.register(strategy);
+        return strategy;
+    }
+
+    private static PipeDistributionStrategy registerByDistance() {
+        var plugin = TopoDemoPlugin.INSTANCE;
+        var id = plugin.machine().id("by_distance");
+        String baseKey = id.toLanguageKey("pipe.strategy");
+        var strategy = new ByDistanceStrategy(id);
+        strategy.bindLang(
+                plugin.lang().resource(id, "pipe.strategy", "By Distance", "按距离"),
+                plugin.lang().absolute(baseKey + ".desc", "Nearest or farthest first", "最近或最远优先"),
+                plugin.lang().absolute(baseKey + ".short", "DIST", "距离"));
         PipeDistributionStrategies.register(strategy);
         return strategy;
     }

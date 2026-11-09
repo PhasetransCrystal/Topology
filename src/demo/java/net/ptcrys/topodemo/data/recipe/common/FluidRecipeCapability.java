@@ -56,7 +56,7 @@ public final class FluidRecipeCapability
 
     public FluidRecipeCapability(MachineResourceType<FluidResource> resourceType) {
         super(
-                java.util.Objects.requireNonNull(resourceType, "resource type").id(),
+                Objects.requireNonNull(resourceType, "resource type").id(),
                 TopoFluidIngredient.class,
                 TopoFluidIngredient.class,
                 TopoFluidIngredient.CODEC,

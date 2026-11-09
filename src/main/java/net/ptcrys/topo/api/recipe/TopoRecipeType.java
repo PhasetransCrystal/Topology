@@ -4,6 +4,7 @@ import net.ptcrys.registrylib.RegistryCore;
 import net.ptcrys.registrylib.util.entry.RecipeTypeEntry;
 import net.ptcrys.topo.api.api.builtin.LangDomainRegistration;
 import net.ptcrys.topo.api.api.lang.LangKey;
+import net.ptcrys.topo.api.machine.MachineBlockEntity;
 import net.ptcrys.topo.api.recipe.productionline.ProductionLine;
 import net.ptcrys.topo.helper.IdHelper;
 
@@ -204,7 +205,7 @@ public class TopoRecipeType<R extends TopoRecipe> {
      * }</pre>
      */
     public TopoRecipeType<R> importRecipesFrom(
-                                               java.util.function.Function<? super TopoRecipeType<R>, ? extends ImportedRecipeAdapter<R>> adapterFactory,
+                                               Function<? super TopoRecipeType<R>, ? extends ImportedRecipeAdapter<R>> adapterFactory,
                                                RecipeType<?>... types) {
         requireConfigurationOpen();
         Objects.requireNonNull(adapterFactory, "imported recipe adapter factory");
@@ -387,13 +388,13 @@ public class TopoRecipeType<R extends TopoRecipe> {
         return List.copyOf(recipes);
     }
 
-    public @Nullable RecipeHolder<R> findRecipe(net.ptcrys.topo.api.machine.MachineBlockEntity machine) {
+    public @Nullable RecipeHolder<R> findRecipe(MachineBlockEntity machine) {
         return vanillaFacing ? null : searchState.findRecipe(machine);
     }
 
     /** Exact recheck for a pool-local historical candidate; callers must validate revision first. */
     public boolean matchesRememberedRecipe(
-                                           net.ptcrys.topo.api.machine.MachineBlockEntity machine,
+                                           MachineBlockEntity machine,
                                            RecipeHolder<? extends TopoRecipe> remembered) {
         Objects.requireNonNull(machine, "machine");
         Objects.requireNonNull(remembered, "remembered recipe");
@@ -420,7 +421,7 @@ public class TopoRecipeType<R extends TopoRecipe> {
         return null;
     }
 
-    public boolean resourceVersionSearchCacheable(net.ptcrys.topo.api.machine.MachineBlockEntity machine) {
+    public boolean resourceVersionSearchCacheable(MachineBlockEntity machine) {
         return searchState.resourceVersionSearchCacheable(machine);
     }
 

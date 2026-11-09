@@ -3,6 +3,7 @@ package net.ptcrys.topo.api.machine.ui
 import net.ptcrys.topo.api.api.lang.LangKey
 import net.ptcrys.topo.api.api.lang.TopoApiLang
 import net.ptcrys.topo.api.machine.resource.RecipeSearchPoolId
+import net.ptcrys.topo.api.machine.resource.ResourcePort
 
 import net.minecraft.client.Minecraft
 import net.minecraft.network.chat.Component
@@ -27,11 +28,13 @@ import com.lowdragmc.lowdraglib2.gui.util.UISoundUtils
 import dev.vfyjxf.taffy.style.AlignContent
 import dev.vfyjxf.taffy.style.AlignItems
 import dev.vfyjxf.taffy.style.FlexDirection
+import dev.vfyjxf.taffy.style.TaffyPosition
 import org.lwjgl.glfw.GLFW
 
 import java.util.Locale
 import java.util.function.BooleanSupplier
 import java.util.function.Consumer
+import java.util.function.Function
 import java.util.function.Supplier
 
 object MachineUiComponentTemplate {
@@ -285,7 +288,7 @@ object MachineUiComponentTemplate {
      */
     @JvmStatic
     @JvmOverloads
-    fun createValidatedServerToggleButton(title: Component, selectedGetter: BooleanSupplier, applySelected: java.util.function.Function<Boolean, Boolean>, tooltip: Component? = null): ServerToggleButton {
+    fun createValidatedServerToggleButton(title: Component, selectedGetter: BooleanSupplier, applySelected: Function<Boolean, Boolean>, tooltip: Component? = null): ServerToggleButton {
         val button = ServerToggleButton().apply {
             setText(title)
             if (tooltip != null) {
@@ -476,7 +479,7 @@ object MachineUiComponentTemplate {
                     setId("${id}_glyph")
                     isAllowHitTest = false
                     layout {
-                        it.positionType(dev.vfyjxf.taffy.style.TaffyPosition.ABSOLUTE)
+                        it.positionType(TaffyPosition.ABSOLUTE)
                         it.left(0f)
                         it.top(0f)
                         it.width(btnSize)
@@ -733,8 +736,8 @@ object MachineUiComponentTemplate {
      * 运行时 side-IO 配置网格(6 本地面 + 重置/全禁):仅对 playerConfigurableSides 端口有意义,
      * 由 [net.ptcrys.topo.api.machine.resource.ResourcePort] 在 LEFT 侧栏卡片里挂载。
      */
-    fun createSideIoGrid(port: net.ptcrys.topo.api.machine.resource.ResourcePort<*, *>): SideIoConfigGrid = SideIoConfigGrid.create(port)
+    fun createSideIoGrid(port: ResourcePort<*, *>): SideIoConfigGrid = SideIoConfigGrid.create(port)
 
     /** side-IO 卡的图标标题栏:左 IO 方向箭头 + 右资源图形(悬浮报端口名/trait id)。 */
-    fun createSideIoCardTitle(port: net.ptcrys.topo.api.machine.resource.ResourcePort<*, *>): UIElement = SideIoConfigGrid.createTitleBar(port)
+    fun createSideIoCardTitle(port: ResourcePort<*, *>): UIElement = SideIoConfigGrid.createTitleBar(port)
 }

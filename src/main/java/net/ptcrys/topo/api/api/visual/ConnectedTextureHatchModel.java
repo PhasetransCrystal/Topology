@@ -1,6 +1,5 @@
 package net.ptcrys.topo.api.api.visual;
 
-import net.ptcrys.topo.api.machine.OrientedMachineBlock;
 import net.ptcrys.topo.helper.IdHelper;
 
 import net.minecraft.client.renderer.block.BlockAndTintGetter;
@@ -14,6 +13,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.block.DirectionalBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.client.model.DynamicBlockStateModel;
 import net.neoforged.neoforge.client.model.block.CustomUnbakedBlockStateModel;
@@ -108,7 +108,7 @@ public record ConnectedTextureHatchModel(
         @Override
         public void collectParts(BlockAndTintGetter level, BlockPos pos, BlockState state,
                                  RandomSource random, List<BlockStateModelPart> parts) {
-            Direction facing = state.hasProperty(OrientedMachineBlock.FACING) ? state.getValue(OrientedMachineBlock.FACING) : Direction.NORTH;
+            Direction facing = state.hasProperty(DirectionalBlock.FACING) ? state.getValue(DirectionalBlock.FACING) : Direction.NORTH;
             boolean ctmActive = state.hasProperty(ConnectedTextureProperties.CTM_ACTIVE) && state.getValue(ConnectedTextureProperties.CTM_ACTIVE);
             if (ctmActive) {
                 CtmBakedParts.addMasked(level, pos, family, parts, formedByMask);

@@ -17,7 +17,7 @@ public final class Orientations {
     private Orientations() {}
 
     /** 恒等旋转。 */
-    public static final Orientation IDENTITY = Orientation.IDENTITY;
+    public static final Orientation IDENTITY = Orientation.fromColumns(Direction.EAST, Direction.UP, Direction.SOUTH);
 
     /** 按 Direction 序号索引的预设控制器旋转。 */
     private static final Orientation[] FOR_FACING = buildForFacing();
@@ -78,7 +78,7 @@ public final class Orientations {
 
     private static Orientation[] buildForFacing() {
         Orientation[] forFacing = new Orientation[6];
-        forFacing[Direction.SOUTH.ordinal()] = Orientation.IDENTITY;
+        forFacing[Direction.SOUTH.ordinal()] = IDENTITY;
         forFacing[Direction.WEST.ordinal()] = fromYaw(Rotation.CLOCKWISE_90);
         forFacing[Direction.NORTH.ordinal()] = fromYaw(Rotation.CLOCKWISE_180);
         forFacing[Direction.EAST.ordinal()] = fromYaw(Rotation.COUNTERCLOCKWISE_90);

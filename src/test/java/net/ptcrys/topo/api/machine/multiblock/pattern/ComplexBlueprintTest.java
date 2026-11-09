@@ -267,7 +267,7 @@ class ComplexBlueprintTest {
             assertTrue(expanded.add(pos), context);
             assertEquals(index, compiled.cellIndexOfWorld(pos, ORIGIN, repeats), context);
             assertTrue(compiled.containsWorldAnyLayout(pos, ORIGIN), context);
-            assertTrue(StructureEngine.evaluateCompiled(world, pos, compiled.definitionAt(index), StructureMetadata.defaults(java.util.List.of(blueprint)).edit()).passed(), context);
+            assertTrue(StructureEngine.evaluateCompiled(world, pos, compiled.definitionAt(index), StructureMetadata.defaults(List.of(blueprint)).edit()).passed(), context);
             return true;
         });
         assertEquals(world.states.keySet(), expanded, context);

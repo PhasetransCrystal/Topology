@@ -10,7 +10,7 @@ import net.ptcrys.topo.api.recipe.TopoRecipeType
 import net.ptcrys.topo.api.recipe.capability.SlottedRecipeCapability
 import net.ptcrys.topo.api.recipe.content.TopoItemInput
 import net.ptcrys.topo.api.recipe.content.TopoItemOutput
-import net.ptcrys.topodemo.data.ContentLang
+import net.ptcrys.topodemo.api.lang.ContentLang
 import net.ptcrys.topodemo.data.recipe.BuiltinTopoResourceIntegrations.ITEM
 
 import com.lowdragmc.lowdraglib2.gui.sync.bindings.impl.SupplierDataSource

@@ -2,6 +2,7 @@ package net.ptcrys.topo.api.machine.multiblock.tool;
 
 import net.ptcrys.topo.api.machine.data.DataKey;
 import net.ptcrys.topo.api.machine.data.DataSnapshot;
+import net.ptcrys.topo.api.machine.data.DataTransaction;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -51,7 +52,7 @@ class StructureToolOptionsTest {
                 return Integer.toString(Integer.parseInt(value.trim()));
             }
 
-            public void require(StructureToolOptions.Context context, String value, net.ptcrys.topo.api.machine.data.DataTransaction metadata) {
+            public void require(StructureToolOptions.Context context, String value, DataTransaction metadata) {
                 StructureToolOptions.require(metadata, tier, Integer.parseInt(value));
             }
         };

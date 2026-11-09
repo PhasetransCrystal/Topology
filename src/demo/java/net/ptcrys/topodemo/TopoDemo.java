@@ -3,8 +3,8 @@ package net.ptcrys.topodemo;
 import net.ptcrys.registrylib.RegistryCore;
 import net.ptcrys.topo.api.api.plugin.TopoPlugins;
 import net.ptcrys.topodemo.api.TopoDemoApiPlugin;
-import net.ptcrys.topodemo.api.ore.common.VanillaOreDatagenProvider;
 import net.ptcrys.topodemo.data.TopoDemoPlugin;
+import net.ptcrys.topodemo.data.ore.VanillaOreDatagenProvider;
 
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;

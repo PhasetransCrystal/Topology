@@ -2,14 +2,19 @@ package net.ptcrys.topo.integration.jei;
 
 import net.ptcrys.topo.api.api.lang.TopoApiLang;
 import net.ptcrys.topo.api.machine.MachineDefinition;
+import net.ptcrys.topo.api.machine.multiblock.ui.MultiblockPreviewPage;
 import net.ptcrys.topo.helper.IdHelper;
 
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 
 import com.lowdragmc.lowdraglib2.integration.xei.jei.ModularUIRecipeCategory;
+import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;
 import mezz.jei.api.helpers.IGuiHelper;
+import mezz.jei.api.recipe.IFocusGroup;
+import mezz.jei.api.recipe.RecipeIngredientRole;
 import mezz.jei.api.recipe.types.IRecipeType;
 import org.jspecify.annotations.NonNull;
 
@@ -29,7 +34,7 @@ public final class TopoMultiblockJeiCategory extends ModularUIRecipeCategory<Mac
     private final Component title;
 
     public TopoMultiblockJeiCategory(IGuiHelper guiHelper, List<MachineDefinition> controllers) {
-        super(net.ptcrys.topo.api.machine.multiblock.ui.MultiblockPreviewPage::build);
+        super(MultiblockPreviewPage::build);
         ItemStack iconStack = new ItemStack(controllers.getFirst().registeredBlock().get());
         this.icon = guiHelper.createDrawableItemStack(iconStack);
         this.title = TopoApiLang.UI_MULTIBLOCK_CATEGORY.getComponent();
@@ -61,15 +66,15 @@ public final class TopoMultiblockJeiCategory extends ModularUIRecipeCategory<Mac
     }
 
     @Override
-    public void setRecipe(mezz.jei.api.gui.builder.IRecipeLayoutBuilder builder, MachineDefinition machine, mezz.jei.api.recipe.IFocusGroup focuses) {
+    public void setRecipe(IRecipeLayoutBuilder builder, MachineDefinition machine, IFocusGroup focuses) {
         super.setRecipe(builder, machine, focuses);
         var controller = machine.registeredBlock().get();
-        builder.addInvisibleIngredients(mezz.jei.api.recipe.RecipeIngredientRole.OUTPUT).add(controller);
-        builder.addInvisibleIngredients(mezz.jei.api.recipe.RecipeIngredientRole.CRAFTING_STATION).add(controller);
+        builder.addInvisibleIngredients(RecipeIngredientRole.OUTPUT).add(controller);
+        builder.addInvisibleIngredients(RecipeIngredientRole.CRAFTING_STATION).add(controller);
     }
 
     @Override
-    public net.minecraft.resources.Identifier getIdentifier(MachineDefinition machine) {
+    public Identifier getIdentifier(MachineDefinition machine) {
         return machine.id();
     }
 }

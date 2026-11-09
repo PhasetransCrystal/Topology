@@ -1,9 +1,11 @@
 package net.ptcrys.topo.api.machine.multiblock.tool;
 
 import net.ptcrys.topo.api.api.lang.TopoApiLang;
+import net.ptcrys.topo.api.machine.MachineBlock;
 import net.ptcrys.topo.api.machine.MachineBlockEntity;
-import net.ptcrys.topo.api.machine.OrientedMachineBlock;
 import net.ptcrys.topo.api.machine.multiblock.*;
+import net.ptcrys.topo.api.machine.multiblock.ability.ExclusivePartAttachment;
+import net.ptcrys.topo.api.machine.multiblock.ability.PartRole;
 import net.ptcrys.topo.api.machine.multiblock.pattern.*;
 
 import net.minecraft.core.*;
@@ -14,7 +16,12 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.DirectionalBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
+
+import org.jspecify.annotations.Nullable;
 
 import java.util.*;
 
@@ -44,7 +51,7 @@ public final class StructureToolManager {
         var level = player.level();
         ItemStack stack = player.getItemInHand(hand);
         if (!(stack.getItem() instanceof StructureTool)) return false;
-        if (player.isSpectator() || !player.mayInteract(level, anchor) || player.distanceToSqr(net.minecraft.world.phys.Vec3.atCenterOf(anchor)) > 128 * 128 || !level.hasChunkAt(anchor)) {
+        if (player.isSpectator() || !player.mayInteract(level, anchor) || player.distanceToSqr(Vec3.atCenterOf(anchor)) > 128 * 128 || !level.hasChunkAt(anchor)) {
             reject(player, anchor, TopoApiLang.TOOL_STRUCTURE_DENIED.getComponent());
             return true;
         }
@@ -61,7 +68,7 @@ public final class StructureToolManager {
             reject(player, anchor, TopoApiLang.TOOL_STRUCTURE_LIMIT.getComponent(StructureToolPlan.MAX_CELLS));
             return true;
         }
-        Orientation primary = machine.getBlockState().hasProperty(OrientedMachineBlock.FACING) ? Orientations.forFacing(machine.getBlockState().getValue(OrientedMachineBlock.FACING)) : Orientations.IDENTITY;
+        Orientation primary = machine.getBlockState().hasProperty(DirectionalBlock.FACING) ? Orientations.forFacing(machine.getBlockState().getValue(DirectionalBlock.FACING)) : Orientations.IDENTITY;
         try {
             var context = new StructureToolOptions.Context(player, machine, blueprint, module);
             var settings = StructureToolOptions.configure(context, player, primary);
@@ -138,8 +145,8 @@ public final class StructureToolManager {
             if (target.status() == StructureToolPlan.Status.MATCHED) {
                 var member = view.member(target.pos());
                 if (member != null && member.exclusive()) result.add(target.pos());
-            } else if (target.status() == StructureToolPlan.Status.MISSING && target.state().getBlock() instanceof net.ptcrys.topo.api.machine.MachineBlock machine &&
-                    !machine.definition().metadata(net.ptcrys.topo.api.machine.multiblock.ability.ExclusivePartAttachment.TYPE).isEmpty()) {
+            } else if (target.status() == StructureToolPlan.Status.MISSING && target.state().getBlock() instanceof MachineBlock machine &&
+                    !machine.definition().metadata(ExclusivePartAttachment.TYPE).isEmpty()) {
                         result.add(target.pos());
                     }
         }
@@ -181,15 +188,15 @@ public final class StructureToolManager {
             return player.mayInteract(player.level(), pos) && player.level().getWorldBorder().isWithinBounds(pos) && delegate.isLoaded(pos);
         }
 
-        public net.minecraft.world.level.block.state.@org.jspecify.annotations.Nullable BlockState blockState(BlockPos pos) {
+        public @Nullable BlockState blockState(BlockPos pos) {
             return isLoaded(pos) ? delegate.blockState(pos) : null;
         }
 
-        public Set<net.ptcrys.topo.api.machine.multiblock.ability.PartRole> roles(BlockPos pos) {
+        public Set<PartRole> roles(BlockPos pos) {
             return isLoaded(pos) ? delegate.roles(pos) : Set.of();
         }
 
-        public @org.jspecify.annotations.Nullable Member member(BlockPos pos) {
+        public @Nullable Member member(BlockPos pos) {
             return isLoaded(pos) ? delegate.member(pos) : null;
         }
     }
@@ -235,7 +242,7 @@ public final class StructureToolManager {
         return details;
     }
 
-    private static Component stateName(net.minecraft.world.level.block.state.BlockState state) {
+    private static Component stateName(BlockState state) {
         var name = state.getBlock().getName().copy();
         if (!state.getProperties().isEmpty()) {
             StringJoiner properties = new StringJoiner(",", "[", "]");
@@ -248,7 +255,7 @@ public final class StructureToolManager {
     public static void refresh(ServerPlayer player) {
         Session session = SESSIONS.get(player.getUUID());
         if (session == null) return;
-        if (!session.dimension().equals(player.level().dimension().identifier()) || !(player.getItemInHand(session.hand()).getItem() instanceof StructureTool) || player.distanceToSqr(net.minecraft.world.phys.Vec3.atCenterOf(session.anchor())) > 128 * 128) {
+        if (!session.dimension().equals(player.level().dimension().identifier()) || !(player.getItemInHand(session.hand()).getItem() instanceof StructureTool) || player.distanceToSqr(Vec3.atCenterOf(session.anchor())) > 128 * 128) {
             forget(player.getUUID());
             return;
         }

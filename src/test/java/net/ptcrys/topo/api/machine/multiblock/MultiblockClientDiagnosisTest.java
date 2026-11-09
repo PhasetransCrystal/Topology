@@ -6,6 +6,7 @@ import net.ptcrys.topo.api.machine.multiblock.pattern.*;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -246,7 +247,7 @@ class MultiblockClientDiagnosisTest {
 
     @Test
     void externalFailureSurvivesReportAndSingleCellDiagnosisWithoutBeingGuessedAsBlockFailure() {
-        var code = net.minecraft.resources.Identifier.fromNamespaceAndPath("example", "custom_constraint");
+        var code = Identifier.fromNamespaceAndPath("example", "custom_constraint");
         CellPredicate<String> detector = (input, context, metadata) -> CellResult.fail(code, Map.of("constraint", input), Map.of("observed", "other"));
         Blueprint blueprint = Blueprint.of().aisle("@C").where('C', CellBinding.of(detector, "required")).build();
         var frame = MultiblockClientDiagnosis.capture(blueprint, Orientations.IDENTITY, unused -> new World());

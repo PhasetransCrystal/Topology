@@ -1,6 +1,7 @@
 package net.ptcrys.topo.api.machine.multiblock.tool;
 
 import net.ptcrys.topo.Topology;
+import net.ptcrys.topo.client.structure.StructureToolClient;
 import net.ptcrys.topo.helper.IdHelper;
 
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -28,7 +29,7 @@ public final class StructureToolNetworking {
 
     private static void payloads(RegisterPayloadHandlersEvent event) {
         var registrar = event.registrar(Topology.MODID);
-        registrar.playToClient(Snapshot.TYPE, Snapshot.CODEC, (payload, context) -> net.ptcrys.topo.client.structure.StructureToolClient.apply(payload.snapshot()));
+        registrar.playToClient(Snapshot.TYPE, Snapshot.CODEC, (payload, context) -> StructureToolClient.apply(payload.snapshot()));
         registrar.playToServer(Refresh.TYPE, Refresh.CODEC, (payload, context) -> { if (context.player() instanceof ServerPlayer player) StructureToolManager.refresh(player); });
     }
 

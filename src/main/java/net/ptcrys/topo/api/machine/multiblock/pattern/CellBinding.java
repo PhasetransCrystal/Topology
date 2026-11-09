@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 /** Cell 的内容声明：组合检测算法与输入，并持有候选、角色和字段声明；它不是另一套检测接口。 */
 public final class CellBinding {
@@ -50,7 +51,7 @@ public final class CellBinding {
 
     /** 在控制器构造期预声明；多个 Cell 共享同一个键实例。 */
     public CellBinding metadata(DataKey<?>... keys) {
-        return new CellBinding(bound, candidates, roles, java.util.stream.Stream.concat(this.keys.stream(), java.util.stream.Stream.of(keys)).distinct().toList());
+        return new CellBinding(bound, candidates, roles, Stream.concat(this.keys.stream(), Stream.of(keys)).distinct().toList());
     }
 
     public List<DataKey<?>> metadataKeys() {

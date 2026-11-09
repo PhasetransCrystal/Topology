@@ -4,7 +4,7 @@ import net.ptcrys.topo.api.machine.component.AttachmentType;
 import net.ptcrys.topo.api.machine.resource.MachineResourceType;
 import net.ptcrys.topo.api.machine.resource.PortAccess;
 import net.ptcrys.topo.api.machine.resource.ResourcePortMetadata;
-import net.ptcrys.topodemo.api.TopoDemoApiPlugin;
+import net.ptcrys.topodemo.data.TopoDemoPlugin;
 import net.ptcrys.topodemo.data.recipe.BuiltinTopoResourceIntegrations;
 
 import net.neoforged.neoforge.transfer.item.ItemResource;
@@ -21,7 +21,7 @@ public record ItemResourcePortMetadata(
                                        @Nullable Predicate<Resource> resourceFilter)
         implements ResourcePortMetadata {
 
-    public static final AttachmentType<ItemResourcePortMetadata> TYPE = TopoDemoApiPlugin.INSTANCE.machine().attachmentType("item_resource_port", ItemResourcePortMetadata.class);
+    public static final AttachmentType<ItemResourcePortMetadata> TYPE = TopoDemoPlugin.INSTANCE.machine().attachmentType("item_resource_port", ItemResourcePortMetadata.class);
 
     public ItemResourcePortMetadata {
         if (slots <= 0) {

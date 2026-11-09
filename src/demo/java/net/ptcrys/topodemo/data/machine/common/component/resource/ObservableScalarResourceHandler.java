@@ -7,6 +7,7 @@ import net.minecraft.core.NonNullList;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.neoforged.neoforge.transfer.ResourceStacksResourceHandler;
+import net.neoforged.neoforge.transfer.resource.Resource;
 import net.neoforged.neoforge.transfer.resource.ResourceStack;
 import net.neoforged.neoforge.transfer.transaction.SnapshotJournal;
 import net.neoforged.neoforge.transfer.transaction.TransactionContext;
@@ -16,6 +17,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
+import java.util.function.Predicate;
 
 /**
  * Single-index scalar buffer. One handler holds exactly one scalar resource kind; foreign scalars
@@ -38,7 +40,7 @@ final class ObservableScalarResourceHandler extends ResourceStacksResourceHandle
 
     private final ScalarResource resource;
     private final int capacity;
-    private final java.util.function.Predicate<net.neoforged.neoforge.transfer.resource.Resource> accepts;
+    private final Predicate<Resource> accepts;
     private int stored;
     private final SnapshotJournal<Integer> journal = new SnapshotJournal<>() {
 
@@ -66,7 +68,7 @@ final class ObservableScalarResourceHandler extends ResourceStacksResourceHandle
     ObservableScalarResourceHandler(
                                     ScalarResource resource,
                                     int capacity,
-                                    java.util.function.Predicate<net.neoforged.neoforge.transfer.resource.Resource> accepts) {
+                                    Predicate<Resource> accepts) {
         super(1, ScalarResource.EMPTY, STACK_CODEC);
         this.resource = Objects.requireNonNull(resource, "scalar resource");
         if (resource.isEmpty()) {

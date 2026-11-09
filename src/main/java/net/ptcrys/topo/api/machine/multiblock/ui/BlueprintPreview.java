@@ -3,19 +3,20 @@ package net.ptcrys.topo.api.machine.multiblock.ui;
 import net.ptcrys.topo.api.api.visual.ConnectedTextureProperties;
 import net.ptcrys.topo.api.machine.MachineDefinition;
 import net.ptcrys.topo.api.machine.Machines;
-import net.ptcrys.topo.api.machine.OrientedMachineBlock;
 import net.ptcrys.topo.api.machine.multiblock.ability.PartRole;
 import net.ptcrys.topo.api.machine.multiblock.ability.PartRoleAttachment;
 import net.ptcrys.topo.api.machine.multiblock.pattern.Blueprint;
 import net.ptcrys.topo.api.machine.multiblock.pattern.Cell;
 import net.ptcrys.topo.api.machine.multiblock.pattern.Orientation;
 import net.ptcrys.topo.api.machine.multiblock.pattern.Orientations;
+import net.ptcrys.topo.api.machine.multiblock.pattern.PropertyRule;
 import net.ptcrys.topo.api.machine.multiblock.pattern.RepeatResolution;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.DirectionalBlock;
 import net.minecraft.world.level.block.state.BlockState;
 
 import org.jspecify.annotations.Nullable;
@@ -155,7 +156,7 @@ public final class BlueprintPreview {
         if (cell.expectedState() != null && state.getBlock() == cell.expectedState().getBlock()) {
             // 重复副本可能不在最小布局内；规则只依赖状态及变换，与副本坐标无关。
             BlockState transformed = state;
-            for (var rule : cell.rules()) if (rule.classification() == net.ptcrys.topo.api.machine.multiblock.pattern.PropertyRule.Classification.COVARIANT) transformed = rule.apply(blueprint.effectiveOrientation(machine), transformed);
+            for (var rule : cell.rules()) if (rule.classification() == PropertyRule.Classification.COVARIANT) transformed = rule.apply(blueprint.effectiveOrientation(machine), transformed);
             return transformed;
         }
         return Orientations.rotated(previewTransform(blueprint, mirrored), state);
@@ -176,8 +177,8 @@ public final class BlueprintPreview {
     }
 
     public static BlockState controllerPreviewStateFrom(BlockState state) {
-        if (state.hasProperty(OrientedMachineBlock.FACING)) {
-            state = state.setValue(OrientedMachineBlock.FACING, Direction.SOUTH);
+        if (state.hasProperty(DirectionalBlock.FACING)) {
+            state = state.setValue(DirectionalBlock.FACING, Direction.SOUTH);
         }
         return state;
     }

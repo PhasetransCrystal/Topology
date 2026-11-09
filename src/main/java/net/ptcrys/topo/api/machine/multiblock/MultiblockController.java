@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Consumer;
 
 /**
  * 服务端多方块控制器组件。保存成型状态并协调运行时成员，检测流程委托给 MultiblockRecheck。
@@ -213,7 +214,7 @@ public final class MultiblockController extends MachineTicker {
     protected <R extends Resource> void collectRecipeResourceHandlers(
                                                                       MachineResourceType<R> resourceType,
                                                                       RecipeRole recipeIo,
-                                                                      java.util.function.Consumer<RecipeResourceContribution<R>> out) {
+                                                                      Consumer<RecipeResourceContribution<R>> out) {
         runtime.collectRecipeResourceHandlers(resourceType, recipeIo, out);
     }
 

@@ -501,7 +501,7 @@ public final class Blueprint {
         private final List<DeclaredCell> cells = new ArrayList<>();
         private final Map<Character, CellDefinition> definitions = new LinkedHashMap<>();
         private final Map<PartRole, CountRequirement> countRequirements = new LinkedHashMap<>();
-        private Orientation frame = Orientation.IDENTITY;
+        private Orientation frame = Orientations.IDENTITY;
         private boolean frameSet;
         private boolean inSection;
         private @Nullable SectionDraft currentSection;

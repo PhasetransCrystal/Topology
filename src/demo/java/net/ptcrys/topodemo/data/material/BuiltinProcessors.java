@@ -1,12 +1,14 @@
 package net.ptcrys.topodemo.data.material;
 
 import net.ptcrys.topodemo.api.material.BuiltinMaterialForms;
-import net.ptcrys.topodemo.api.material.common.GrindingProcessor;
 import net.ptcrys.topodemo.data.TopoDemoPlugin;
 import net.ptcrys.topodemo.data.recipe.BuiltinRecipeTypes;
 import net.ptcrys.topodemo.data.recipe.BuiltinTopoResourceIntegrations;
 
 public final class BuiltinProcessors {
+
+    public static final FineGrindingProcessor FINE_GRINDING = TopoDemoPlugin.INSTANCE.material()
+            .postProcessor("fine_grinding", new FineGrindingProcessor(TopoDemoPlugin.INSTANCE.material().id("fine_grinding")));
 
     public static final GrindingProcessor GRINDING = TopoDemoPlugin.INSTANCE.material()
             .postProcessor("grinding", new GrindingProcessor(TopoDemoPlugin.INSTANCE.material().id("grinding"),

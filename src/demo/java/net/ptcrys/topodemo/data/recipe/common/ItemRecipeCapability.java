@@ -6,7 +6,8 @@ import net.ptcrys.topo.api.machine.ui.MachineUiComponentTemplate;
 import net.ptcrys.topo.api.recipe.capability.*;
 import net.ptcrys.topo.api.recipe.content.TopoItemInput;
 import net.ptcrys.topo.api.recipe.content.TopoItemOutput;
-import net.ptcrys.topodemo.api.machine.common.ItemPort;
+import net.ptcrys.topodemo.data.machine.common.component.resource.ItemPort;
+import net.ptcrys.topodemo.data.machine.common.component.resource.ItemResourcePortMetadata;
 
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ItemLike;
@@ -177,7 +178,7 @@ public final class ItemRecipeCapability extends SlottedRecipeCapability<TopoItem
     @Override
     public int countPreviewSlots(ResourcePortMetadata port) {
         if (port instanceof ItemPort.Metadata local) return local.slots();
-        if (port instanceof net.ptcrys.topodemo.data.machine.common.component.resource.ItemResourcePortMetadata migrated) return migrated.slots();
+        if (port instanceof ItemResourcePortMetadata migrated) return migrated.slots();
         return 0;
     }
 

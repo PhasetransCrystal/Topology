@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.BooleanSupplier;
 
 /**
  * 多方块检测引擎。先解析重复次数，再通过 {@link BlueprintLayout} 访问最终布局；
@@ -272,7 +273,7 @@ public final class StructureEngine {
             return true;
         }
 
-        private boolean attempt(java.util.function.BooleanSupplier probe) {
+        private boolean attempt(BooleanSupplier probe) {
             DataTransaction previous = metadata;
             metadata = metadata.fork();
             boolean passed = false;

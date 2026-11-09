@@ -2,12 +2,14 @@ package net.ptcrys.topo.api.machine.multiblock.tool;
 
 import net.ptcrys.topo.api.machine.MachineBlock;
 import net.ptcrys.topo.api.machine.data.DataSnapshot;
+import net.ptcrys.topo.api.machine.multiblock.ability.ExclusivePartAttachment;
 import net.ptcrys.topo.api.machine.multiblock.ability.PartRole;
 import net.ptcrys.topo.api.machine.multiblock.ability.PartRoleAttachment;
 import net.ptcrys.topo.api.machine.multiblock.pattern.*;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
 import org.jspecify.annotations.Nullable;
@@ -119,7 +121,7 @@ public record StructureToolPlan(List<Target> targets, Map<Block, Integer> materi
             else if (world.blockState(pos) != null && !world.blockState(pos).isAir()) status = Status.BLOCKED;
             else if (selected == null) status = Status.UNRESOLVED;
             else status = Status.MISSING;
-            BlockState shown = selected != null ? selected : definition.orientedExpected() != null ? definition.orientedExpected() : net.minecraft.world.level.block.Blocks.AIR.defaultBlockState();
+            BlockState shown = selected != null ? selected : definition.orientedExpected() != null ? definition.orientedExpected() : Blocks.AIR.defaultBlockState();
             targets.add(new Target(pos, shown, status));
             if (status != Status.MISSING) {
                 problems.add(new Problem(status, pos));
@@ -166,7 +168,7 @@ public record StructureToolPlan(List<Target> targets, Map<Block, Integer> materi
         public @Nullable Member member(BlockPos pos) {
             if (!planned.containsKey(pos)) return delegate.member(pos);
             BlockState state = planned.get(pos);
-            return state.getBlock() instanceof MachineBlock machine ? new Member(pos, !machine.definition().metadata(net.ptcrys.topo.api.machine.multiblock.ability.ExclusivePartAttachment.TYPE).isEmpty()) : null;
+            return state.getBlock() instanceof MachineBlock machine ? new Member(pos, !machine.definition().metadata(ExclusivePartAttachment.TYPE).isEmpty()) : null;
         }
     }
 }

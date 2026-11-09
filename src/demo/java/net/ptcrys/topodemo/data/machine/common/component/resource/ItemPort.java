@@ -1,10 +1,10 @@
-package net.ptcrys.topodemo.api.machine.common;
+package net.ptcrys.topodemo.data.machine.common.component.resource;
 
 import net.ptcrys.topo.api.machine.component.*;
 import net.ptcrys.topo.api.machine.multiblock.ability.PartRoleMount;
 import net.ptcrys.topo.api.machine.resource.*;
 import net.ptcrys.topodemo.api.TopoDemoApiPlugin;
-import net.ptcrys.topodemo.api.machine.BuiltinMachineTypes;
+import net.ptcrys.topodemo.data.TopoDemoPlugin;
 import net.ptcrys.topodemo.data.recipe.BuiltinTopoResourceIntegrations;
 
 import net.minecraft.core.BlockPos;
@@ -18,6 +18,7 @@ import net.neoforged.neoforge.transfer.transaction.Transaction;
 
 import java.util.ArrayList;
 import java.util.Objects;
+import java.util.function.BiConsumer;
 
 /** Persisted, observable storage; player UI and automation use the same committed buffer. */
 public final class ItemPort extends ResourcePort<ItemStack, ItemResource> {
@@ -32,6 +33,11 @@ public final class ItemPort extends ResourcePort<ItemStack, ItemResource> {
 
     public record Metadata(int slots, PortAccess policy) implements ResourcePortMetadata {
 
+        public static final AttachmentType<Metadata> TYPE = TopoDemoPlugin.INSTANCE.machine()
+                .attachmentType("item_port", Metadata.class);
+
+        public static void init() {}
+
         public Metadata {
             if (slots < 1 || slots > 9) throw new IllegalArgumentException("Item ports support 1..9 slots");
             Objects.requireNonNull(policy);
@@ -39,7 +45,7 @@ public final class ItemPort extends ResourcePort<ItemStack, ItemResource> {
 
         @Override
         public AttachmentType<Metadata> type() {
-            return BuiltinMachineTypes.ITEM_PORT;
+            return TYPE;
         }
 
         @Override
@@ -80,7 +86,7 @@ public final class ItemPort extends ResourcePort<ItemStack, ItemResource> {
 
     private static final class Buffer extends ItemStacksResourceHandler {
 
-        private java.util.function.BiConsumer<Integer, ItemStack> changed = (slot, previous) -> {};
+        private BiConsumer<Integer, ItemStack> changed = (slot, previous) -> {};
 
         private Buffer(int slots) {
             super(slots);

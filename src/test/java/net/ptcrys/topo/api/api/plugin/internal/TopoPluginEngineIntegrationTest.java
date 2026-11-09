@@ -12,6 +12,7 @@ import net.ptcrys.topo.api.material.MaterialRegistry;
 import net.ptcrys.topo.api.material.form.MaterialContentTypes;
 import net.ptcrys.topo.api.material.form.MaterialFormRegistry;
 import net.ptcrys.topo.api.recipe.productionline.ProductionLines;
+import net.ptcrys.topo.helper.MaterialHelper;
 
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Items;
@@ -77,7 +78,7 @@ class TopoPluginEngineIntegrationTest {
                 .orElseThrow();
         assertSame(material, customBinding.material());
         assertSame(baseForm, customBinding.form());
-        assertEquals(id, net.ptcrys.topo.helper.MaterialHelper.itemId(material, baseForm));
+        assertEquals(id, MaterialHelper.itemId(material, baseForm));
     }
 
     @Test

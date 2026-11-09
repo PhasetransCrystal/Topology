@@ -7,6 +7,7 @@ import io.netty.handler.codec.DecoderException;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -107,10 +108,10 @@ class PipeSurveySnapshotTest {
     @Test
     void laneCountIsBoundedAndMarksOmittedPaths() {
         var lane = new PipeSurveySnapshot.Lane(new long[] { 11L, 33L }, 0);
-        var decoded = roundTrip(snapshot(java.util.Collections.nCopies(16, lane)));
+        var decoded = roundTrip(snapshot(Collections.nCopies(16, lane)));
         assertEquals(16, decoded.lanes().size());
         assertFalse(decoded.truncated());
-        decoded = roundTrip(snapshot(java.util.Collections.nCopies(17, lane)));
+        decoded = roundTrip(snapshot(Collections.nCopies(17, lane)));
         assertEquals(16, decoded.lanes().size());
         assertTrue(decoded.truncated());
     }

@@ -9,10 +9,14 @@ import net.ptcrys.topo.api.machine.ui.MachineUiComponentTemplate;
 import net.ptcrys.topo.api.machine.ui.MachineUiContribution;
 import net.ptcrys.topo.api.machine.ui.PortUiHighlight;
 import net.ptcrys.topo.api.machine.ui.ResourceBar;
+import net.ptcrys.topo.integration.jade.ResourceBarProvider;
+import net.ptcrys.topodemo.api.machine.DemoComponentKeys;
 import net.ptcrys.topodemo.data.recipe.BuiltinTopoResourceIntegrations.BuiltinResourceIntegration;
 import net.ptcrys.topodemo.data.recipe.common.ScalarRecipeCapability;
 
 import net.neoforged.neoforge.transfer.resource.ResourceStack;
+
+import java.util.function.Consumer;
 
 /**
  * Creative scalar buffer: a {@link CreativeScalarResourceHandler} ({@link Long#MAX_VALUE} capacity,
@@ -21,9 +25,9 @@ import net.neoforged.neoforge.transfer.resource.ResourceStack;
  * exactly like a real {@link ScalarResourcePort} — only the capacity is effectively unbounded.
  */
 public final class CreativeScalarResourcePort
-                                              extends ResourcePort<ResourceStack<ScalarResource>, ScalarResource> implements net.ptcrys.topo.integration.jade.ResourceBarProvider {
+                                              extends ResourcePort<ResourceStack<ScalarResource>, ScalarResource> implements ResourceBarProvider {
 
-    public static final ComponentKey<CreativeScalarResourcePort> CREATIVE_ENERGY_STORAGE = net.ptcrys.topodemo.api.machine.DemoComponentKeys.id("creative_energy_storage", CreativeScalarResourcePort.class).service(net.ptcrys.topo.integration.jade.ResourceBarProvider.KEY, (port, ignored) -> port);
+    public static final ComponentKey<CreativeScalarResourcePort> CREATIVE_ENERGY_STORAGE = DemoComponentKeys.id("creative_energy_storage", CreativeScalarResourcePort.class).service(ResourceBarProvider.KEY, (port, ignored) -> port);
 
     private CreativeScalarResourcePort(
                                        ComponentContext<CreativeScalarResourcePort> context,
@@ -41,8 +45,8 @@ public final class CreativeScalarResourcePort
 
     /** 将本端口的实时存量提供给框架资源条视图。 */
     @Override
-    public void collect(java.util.function.Consumer<net.ptcrys.topo.integration.jade.ResourceBarProvider.Bar> output) {
-        output.accept(new net.ptcrys.topo.integration.jade.ResourceBarProvider.Bar(
+    public void collect(Consumer<ResourceBarProvider.Bar> output) {
+        output.accept(new ResourceBarProvider.Bar(
                 resource().nameLang(), resource().color(), storedAmount(), capacityAmount()));
     }
 

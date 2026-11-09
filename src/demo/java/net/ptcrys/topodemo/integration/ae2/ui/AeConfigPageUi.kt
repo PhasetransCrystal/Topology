@@ -13,9 +13,10 @@ import net.ptcrys.topo.api.machine.ui.MachineUiContribution
 import net.ptcrys.topo.api.machine.ui.MachineUiLayout
 import net.ptcrys.topo.api.machine.ui.recipe.RecipeUiLayout
 import net.ptcrys.topo.helper.TopoCompactNumber
-import net.ptcrys.topo.integration.ae2.*
 import net.ptcrys.topo.integration.ae2.AeConfigSlot
 import net.ptcrys.topo.integration.ae2.AeConfiguredResource
+import net.ptcrys.topodemo.api.machine.BuiltinTopoMachineUiLang
+import net.ptcrys.topodemo.api.machine.DemoComponentKeys
 
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.screens.Screen
@@ -69,7 +70,7 @@ class AeConfigPageUi private constructor(context: ComponentContext<AeConfigPageU
         val trait = host ?: return
         contribution.mainPage(
             PAGE_KEY,
-            net.ptcrys.topodemo.data.machine.BuiltinTopoMachineUiLang.UI_AE_CONFIG_PAGE.getComponent(),
+            BuiltinTopoMachineUiLang.UI_AE_CONFIG_PAGE.getComponent(),
             createPage(trait),
         )
     }
@@ -319,7 +320,7 @@ class AeConfigPageUi private constructor(context: ComponentContext<AeConfigPageU
             lastOpen[0] = now
             AmountEditorPopup.open(
                 ghost,
-                net.ptcrys.topodemo.data.machine.BuiltinTopoMachineUiLang.UI_AE_AMOUNT_POPUP_TITLE.getComponent(),
+                BuiltinTopoMachineUiLang.UI_AE_AMOUNT_POPUP_TITLE.getComponent(),
                 readSyncedTarget(targetSync),
                 1L,
                 Long.MAX_VALUE,
@@ -345,7 +346,7 @@ class AeConfigPageUi private constructor(context: ComponentContext<AeConfigPageU
     private fun requestTargetUpdate(ghost: UIElement, setTargetRpc: RPCEvent, targetSync: BindableValue<Long>, requested: Long) {
         ghost.sendEvent<Long>(setTargetRpc, { authoritative ->
             targetSync.setValue(authoritative.coerceAtLeast(0L), true)
-        }, java.lang.Long.valueOf(requested))
+        }, requested)
     }
 
     private fun <R : Resource> targetAmountSyncValue(trait: AeConfiguredResource<R>, slot: Int): BindableValue<Long> = hiddenLongSyncValue("topo_ae_config_target_sync") { trait.aeConfigSlot(slot).targetAmount() }
@@ -449,7 +450,7 @@ class AeConfigPageUi private constructor(context: ComponentContext<AeConfigPageU
     companion object {
         @JvmField
         val AE_CONFIG_UI: ComponentKey<AeConfigPageUi> =
-            net.ptcrys.topodemo.api.machine.DemoComponentKeys.id("ae_config_ui", AeConfigPageUi::class.java)
+            DemoComponentKeys.id("ae_config_ui", AeConfigPageUi::class.java)
 
         const val PAGE_KEY: String = "ae_config"
 

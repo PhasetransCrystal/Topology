@@ -5,6 +5,7 @@ import net.ptcrys.topo.api.machine.component.ComponentKey;
 import net.ptcrys.topo.api.machine.multiblock.ability.PartRoleMount;
 import net.ptcrys.topo.api.machine.resource.PortAccess;
 import net.ptcrys.topo.api.machine.resource.ResourcePort;
+import net.ptcrys.topodemo.api.machine.DemoComponentKeys;
 import net.ptcrys.topodemo.data.recipe.BuiltinTopoResourceIntegrations;
 
 import net.minecraft.core.BlockPos;
@@ -23,21 +24,21 @@ import java.util.function.Predicate;
 
 public final class ItemResourcePort extends ResourcePort<ItemStack, ItemResource> {
 
-    public static final ComponentKey<ItemResourcePort> ITEM_INPUT_1 = net.ptcrys.topodemo.api.machine.DemoComponentKeys.id("item_input_1", ItemResourcePort.class);
-    public static final ComponentKey<ItemResourcePort> ITEM_INPUT_2 = net.ptcrys.topodemo.api.machine.DemoComponentKeys.id("item_input_2", ItemResourcePort.class);
-    public static final ComponentKey<ItemResourcePort> ITEM_INPUT_3 = net.ptcrys.topodemo.api.machine.DemoComponentKeys.id("item_input_3", ItemResourcePort.class);
-    public static final ComponentKey<ItemResourcePort> ITEM_INPUT_4 = net.ptcrys.topodemo.api.machine.DemoComponentKeys.id("item_input_4", ItemResourcePort.class);
-    public static final ComponentKey<ItemResourcePort> ITEM_OUTPUT_1 = net.ptcrys.topodemo.api.machine.DemoComponentKeys.id("item_output_1", ItemResourcePort.class);
-    public static final ComponentKey<ItemResourcePort> ITEM_OUTPUT_2 = net.ptcrys.topodemo.api.machine.DemoComponentKeys.id("item_output_2", ItemResourcePort.class);
-    public static final ComponentKey<ItemResourcePort> ITEM_OUTPUT_3 = net.ptcrys.topodemo.api.machine.DemoComponentKeys.id("item_output_3", ItemResourcePort.class);
-    public static final ComponentKey<ItemResourcePort> ITEM_OUTPUT_4 = net.ptcrys.topodemo.api.machine.DemoComponentKeys.id("item_output_4", ItemResourcePort.class);
-    public static final ComponentKey<ItemResourcePort> ITEM_STORAGE = net.ptcrys.topodemo.api.machine.DemoComponentKeys.id("item_storage", ItemResourcePort.class);
+    public static final ComponentKey<ItemResourcePort> ITEM_INPUT_1 = DemoComponentKeys.id("item_input_1", ItemResourcePort.class);
+    public static final ComponentKey<ItemResourcePort> ITEM_INPUT_2 = DemoComponentKeys.id("item_input_2", ItemResourcePort.class);
+    public static final ComponentKey<ItemResourcePort> ITEM_INPUT_3 = DemoComponentKeys.id("item_input_3", ItemResourcePort.class);
+    public static final ComponentKey<ItemResourcePort> ITEM_INPUT_4 = DemoComponentKeys.id("item_input_4", ItemResourcePort.class);
+    public static final ComponentKey<ItemResourcePort> ITEM_OUTPUT_1 = DemoComponentKeys.id("item_output_1", ItemResourcePort.class);
+    public static final ComponentKey<ItemResourcePort> ITEM_OUTPUT_2 = DemoComponentKeys.id("item_output_2", ItemResourcePort.class);
+    public static final ComponentKey<ItemResourcePort> ITEM_OUTPUT_3 = DemoComponentKeys.id("item_output_3", ItemResourcePort.class);
+    public static final ComponentKey<ItemResourcePort> ITEM_OUTPUT_4 = DemoComponentKeys.id("item_output_4", ItemResourcePort.class);
+    public static final ComponentKey<ItemResourcePort> ITEM_STORAGE = DemoComponentKeys.id("item_storage", ItemResourcePort.class);
     /**
      * Domain identity for a process-die / catalyst slot (persistence + UI). Content rules and
      * access are declared at the mount site via {@link PortAccess} + {@link ResourceFilterHelper}, not
      * via a die-specific factory.
      */
-    public static final ComponentKey<ItemResourcePort> ITEM_DIE_1 = net.ptcrys.topodemo.api.machine.DemoComponentKeys.id("item_die_1", ItemResourcePort.class, "Die Slot", "模具槽");
+    public static final ComponentKey<ItemResourcePort> ITEM_DIE_1 = DemoComponentKeys.id("item_die_1", ItemResourcePort.class, "Die Slot", "模具槽");
 
     private ItemResourcePort(
                              ComponentContext<ItemResourcePort> context,

@@ -16,6 +16,7 @@ import net.ptcrys.topo.api.machine.resource.RecipeSearchPoolId;
 import net.ptcrys.topo.api.machine.resource.SearchPoolUiControl;
 import net.ptcrys.topo.api.tick.MachineTicker;
 import net.ptcrys.topo.integration.ae2.*;
+import net.ptcrys.topodemo.api.machine.DemoComponentKeys;
 import net.ptcrys.topodemo.data.machine.common.component.resource.FluidResourcePort;
 import net.ptcrys.topodemo.data.machine.common.component.resource.ItemResourcePort;
 import net.ptcrys.topodemo.data.recipe.BuiltinTopoResourceIntegrations;
@@ -32,6 +33,7 @@ import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.resource.Resource;
 
 import appeng.api.crafting.IPatternDetails;
+import appeng.api.crafting.PatternDetailsHelper;
 import appeng.api.implementations.blockentities.PatternContainerGroup;
 import appeng.api.inventories.InternalInventory;
 import appeng.api.networking.IGrid;
@@ -62,7 +64,7 @@ import java.util.function.Consumer;
 public final class AePatternProvider extends MachineTicker
                                      implements ICraftingProvider, PatternContainer, SearchPoolUiControl, RecipeInputPortControl {
 
-    public static final ComponentKey<AePatternProvider> AE_PATTERN_PROVIDER = net.ptcrys.topodemo.api.machine.DemoComponentKeys.id("ae_pattern_provider", AePatternProvider.class)
+    public static final ComponentKey<AePatternProvider> AE_PATTERN_PROVIDER = DemoComponentKeys.id("ae_pattern_provider", AePatternProvider.class)
             .service(SearchPoolUiControl.KEY, (trait, unused) -> trait)
             .service(RecipeInputPortControl.KEY, (trait, unused) -> trait);
 
@@ -572,7 +574,7 @@ public final class AePatternProvider extends MachineTicker
             if (key == null) {
                 continue;
             }
-            IPatternDetails details = appeng.api.crafting.PatternDetailsHelper.decodePattern(key, level);
+            IPatternDetails details = PatternDetailsHelper.decodePattern(key, level);
             if (details != null) {
                 patternSlotIndex.put(details, i);
             }

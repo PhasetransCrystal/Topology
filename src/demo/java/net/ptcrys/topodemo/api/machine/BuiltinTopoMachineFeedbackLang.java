@@ -1,4 +1,4 @@
-package net.ptcrys.topodemo.data.machine;
+package net.ptcrys.topodemo.api.machine;
 
 import net.ptcrys.topo.api.api.builtin.LangDomainRegistration;
 import net.ptcrys.topo.api.api.lang.LangKey;

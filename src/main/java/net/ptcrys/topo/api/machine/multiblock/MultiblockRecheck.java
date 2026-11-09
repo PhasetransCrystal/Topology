@@ -3,11 +3,11 @@ package net.ptcrys.topo.api.machine.multiblock;
 import net.ptcrys.topo.Topology;
 import net.ptcrys.topo.api.api.async.TopoAsyncExecutors;
 import net.ptcrys.topo.api.machine.MachineBlockEntity;
-import net.ptcrys.topo.api.machine.OrientedMachineBlock;
 import net.ptcrys.topo.api.machine.data.DataSnapshot;
 import net.ptcrys.topo.api.machine.data.DataTransaction;
 import net.ptcrys.topo.api.machine.multiblock.pattern.Blueprint;
 import net.ptcrys.topo.api.machine.multiblock.pattern.BlueprintLayout;
+import net.ptcrys.topo.api.machine.multiblock.pattern.CellResult;
 import net.ptcrys.topo.api.machine.multiblock.pattern.CompiledBlueprint;
 import net.ptcrys.topo.api.machine.multiblock.pattern.CompiledSnapshot;
 import net.ptcrys.topo.api.machine.multiblock.pattern.Orientation;
@@ -20,6 +20,7 @@ import net.ptcrys.topo.api.machine.multiblock.pattern.StructureView;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.block.DirectionalBlock;
 import net.minecraft.world.level.block.state.BlockState;
 
 import org.jspecify.annotations.Nullable;
@@ -27,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -418,8 +420,8 @@ final class MultiblockRecheck {
         state.modules = moduleEvaluation.reports();
         DataTransaction confirmed = moduleEvaluation.metadata().edit();
         Map<String, List<Integer>> repeats = new LinkedHashMap<>();
-        repeats.put("body", java.util.Arrays.stream(result.repeats().countsCopy()).boxed().toList());
-        moduleRepeats.forEach((id, value) -> repeats.put("module/" + id, java.util.Arrays.stream(value.countsCopy()).boxed().toList()));
+        repeats.put("body", Arrays.stream(result.repeats().countsCopy()).boxed().toList());
+        moduleRepeats.forEach((id, value) -> repeats.put("module/" + id, Arrays.stream(value.countsCopy()).boxed().toList()));
         confirmed.set(StructureMetadata.ORIENTATION, Orientations.all().indexOf(outcome.orientation()));
         confirmed.set(StructureMetadata.REPEATS, Map.copyOf(repeats));
         metadata.commit(confirmed.snapshot());
@@ -472,7 +474,7 @@ final class MultiblockRecheck {
             int mainIndex = mainCompiled.cellIndexOfWorld(changed, controllerPos, mainLayout);
             if (mainIndex >= 0) {
                 var cellResult = StructureEngine.evaluateCompiled(view, changed, mainCompiled.definitionAt(mainIndex), metadata.snapshot().verify());
-                if (cellResult.status() == net.ptcrys.topo.api.machine.multiblock.pattern.CellResult.Status.UNKNOWN) return TargetedVerdict.ESCALATE;
+                if (cellResult.status() == CellResult.Status.UNKNOWN) return TargetedVerdict.ESCALATE;
                 if (!cellResult.passed()) {
                     return TargetedVerdict.BROKEN;
                 }
@@ -632,8 +634,8 @@ final class MultiblockRecheck {
     }
 
     private static Orientation orientationFromBlockState(BlockState state) {
-        if (state.hasProperty(OrientedMachineBlock.FACING)) {
-            return Orientations.forFacing(state.getValue(OrientedMachineBlock.FACING));
+        if (state.hasProperty(DirectionalBlock.FACING)) {
+            return Orientations.forFacing(state.getValue(DirectionalBlock.FACING));
         }
         return Orientations.IDENTITY;
     }

@@ -12,7 +12,8 @@ import net.ptcrys.topo.api.machine.ui.MachineUiContainerTemplate
 import net.ptcrys.topo.api.machine.ui.MachineUiContribution
 import net.ptcrys.topo.api.machine.ui.MachineUiLayout
 import net.ptcrys.topo.api.machine.ui.recipe.RecipeUiLayout
-import net.ptcrys.topo.integration.ae2.*
+import net.ptcrys.topodemo.api.machine.BuiltinTopoMachineUiLang
+import net.ptcrys.topodemo.api.machine.DemoComponentKeys
 import net.ptcrys.topodemo.integration.ae2.AePatternProvider
 
 import net.minecraft.network.chat.Component
@@ -23,6 +24,7 @@ import com.lowdragmc.lowdraglib2.gui.ui.UIElement
 import com.lowdragmc.lowdraglib2.gui.ui.elements.BindableValue
 import com.lowdragmc.lowdraglib2.gui.ui.event.HoverTooltips
 import com.lowdragmc.lowdraglib2.gui.ui.event.UIEvents
+import dev.vfyjxf.taffy.style.AlignItems
 
 /**
  * Pattern provider UI: ME Patterns page + name (right) + mode toggles (left).
@@ -44,17 +46,17 @@ class AePatternProviderUi private constructor(context: ComponentContext<AePatter
         val trait = provider ?: return
         contribution.mainPage(
             PAGE_KEY,
-            net.ptcrys.topodemo.data.machine.BuiltinTopoMachineUiLang.UI_AE_PATTERNS_PAGE.getComponent(),
+            BuiltinTopoMachineUiLang.UI_AE_PATTERNS_PAGE.getComponent(),
             createPatternsPage(trait),
         )
         contribution.leftPanel(
             "topo_ae_pattern_provider_modes",
-            net.ptcrys.topodemo.data.machine.BuiltinTopoMachineUiLang.UI_AE_PATTERN_PROVIDER_MODES.getComponent(),
+            BuiltinTopoMachineUiLang.UI_AE_PATTERN_PROVIDER_MODES.getComponent(),
             element = createModesBody(trait),
         )
         contribution.rightPanel(
             "topo_ae_pattern_provider_name",
-            net.ptcrys.topodemo.data.machine.BuiltinTopoMachineUiLang.UI_AE_PATTERN_PROVIDER_NAME.getComponent(),
+            BuiltinTopoMachineUiLang.UI_AE_PATTERN_PROVIDER_NAME.getComponent(),
             element = createNameBody(trait),
         )
     }
@@ -167,7 +169,7 @@ class AePatternProviderUi private constructor(context: ComponentContext<AePatter
         return MachineUiLayout.column(
             gap = MachineUiComponentStyle.pageColumnGap,
             width = width,
-            alignItems = dev.vfyjxf.taffy.style.AlignItems.STRETCH,
+            alignItems = AlignItems.STRETCH,
             id = "topo_ae_pattern_provider_modes",
         ) {
             add(
@@ -194,7 +196,7 @@ class AePatternProviderUi private constructor(context: ComponentContext<AePatter
     private fun createNameBody(trait: AePatternProvider): UIElement = MachineUiComponentTemplate.createTextField(
         getter = { trait.customName() ?: "" },
         setter = { newValue -> trait.setCustomName(newValue) },
-        placeholder = net.ptcrys.topodemo.data.machine.BuiltinTopoMachineUiLang.UI_AE_PATTERN_PROVIDER_NAME_PLACEHOLDER.getComponent(),
+        placeholder = BuiltinTopoMachineUiLang.UI_AE_PATTERN_PROVIDER_NAME_PLACEHOLDER.getComponent(),
         normalizeForDisplay = { it.trim().take(AePatternProvider.MAX_CUSTOM_NAME_LENGTH) },
     ).apply {
         setId("topo_ae_pattern_provider_name_field")
@@ -207,7 +209,7 @@ class AePatternProviderUi private constructor(context: ComponentContext<AePatter
     companion object {
         @JvmField
         val AE_PATTERN_PROVIDER_UI: ComponentKey<AePatternProviderUi> =
-            net.ptcrys.topodemo.api.machine.DemoComponentKeys.id("ae_pattern_provider_ui", AePatternProviderUi::class.java)
+            DemoComponentKeys.id("ae_pattern_provider_ui", AePatternProviderUi::class.java)
 
         const val PAGE_KEY: String = "ae_patterns"
 

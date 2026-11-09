@@ -34,6 +34,7 @@ import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Predicate;
 
@@ -491,12 +492,12 @@ public final class PipeLevelRuntime {
 
         @Override
         public PipeDefinition definition() {
-            return java.util.Objects.requireNonNull(definition, "context not bound");
+            return Objects.requireNonNull(definition, "context not bound");
         }
 
         @Override
         public PipePortStrategyConfig config() {
-            return java.util.Objects.requireNonNull(config, "context not bound");
+            return Objects.requireNonNull(config, "context not bound");
         }
 
         @Override
@@ -521,8 +522,8 @@ public final class PipeLevelRuntime {
 
         @Override
         public String destinationKey(int index) {
-            return java.util.Objects.requireNonNull(network, "context not bound")
-                    .orderedDestination(java.util.Objects.requireNonNull(port, "context not bound"), index).key;
+            return Objects.requireNonNull(network, "context not bound")
+                    .orderedDestination(Objects.requireNonNull(port, "context not bound"), index).key;
         }
 
         @Override

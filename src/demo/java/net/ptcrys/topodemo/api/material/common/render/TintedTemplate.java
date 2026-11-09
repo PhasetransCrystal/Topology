@@ -18,8 +18,10 @@ import net.ptcrys.topodemo.api.material.common.RgbColorData;
 import net.minecraft.client.color.block.BlockTintSource;
 import net.minecraft.client.color.item.ItemTintSource;
 import net.minecraft.client.data.models.model.ItemModelUtils;
+import net.minecraft.client.data.models.model.ModelTemplate;
 import net.minecraft.client.data.models.model.ModelTemplates;
 import net.minecraft.client.data.models.model.TextureMapping;
+import net.minecraft.client.data.models.model.TextureSlot;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
@@ -27,6 +29,9 @@ import net.minecraft.world.level.block.Block;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+
+import static net.ptcrys.topodemo.api.material.common.render.TemplateMaterials.templateMaterial;
 
 /**
  * 极简染色渲染:灰阶模板纹理 + 材料颜色。骨架版本只支持单层;
@@ -107,17 +112,17 @@ public final class TintedTemplate {
     private static final class ItemRender implements MaterialItemRender {
 
         /** Vanilla only ships layered templates for the generated parent; handheld needs its own. */
-        private static final net.minecraft.client.data.models.model.ModelTemplate TWO_LAYERED_HANDHELD = new net.minecraft.client.data.models.model.ModelTemplate(
-                java.util.Optional.of(Identifier.withDefaultNamespace("item/handheld")),
-                java.util.Optional.empty(),
-                net.minecraft.client.data.models.model.TextureSlot.LAYER0,
-                net.minecraft.client.data.models.model.TextureSlot.LAYER1);
-        private static final net.minecraft.client.data.models.model.ModelTemplate THREE_LAYERED_HANDHELD = new net.minecraft.client.data.models.model.ModelTemplate(
-                java.util.Optional.of(Identifier.withDefaultNamespace("item/handheld")),
-                java.util.Optional.empty(),
-                net.minecraft.client.data.models.model.TextureSlot.LAYER0,
-                net.minecraft.client.data.models.model.TextureSlot.LAYER1,
-                net.minecraft.client.data.models.model.TextureSlot.LAYER2);
+        private static final ModelTemplate TWO_LAYERED_HANDHELD = new ModelTemplate(
+                Optional.of(Identifier.withDefaultNamespace("item/handheld")),
+                Optional.empty(),
+                TextureSlot.LAYER0,
+                TextureSlot.LAYER1);
+        private static final ModelTemplate THREE_LAYERED_HANDHELD = new ModelTemplate(
+                Optional.of(Identifier.withDefaultNamespace("item/handheld")),
+                Optional.empty(),
+                TextureSlot.LAYER0,
+                TextureSlot.LAYER1,
+                TextureSlot.LAYER2);
 
         private final List<Layer> layers;
         private final boolean handheld;
@@ -145,20 +150,20 @@ public final class TintedTemplate {
                 Identifier model = switch (layers.size()) {
                     case 1 -> (handheld ? ModelTemplates.FLAT_HANDHELD_ITEM : ModelTemplates.FLAT_ITEM).create(
                             item,
-                            TextureMapping.layer0(templateMaterial(layers.get(0))),
+                            TextureMapping.layer0(templateMaterial(layers.get(0).texturePath)),
                             generator.modelOutput);
                     case 2 -> (handheld ? TWO_LAYERED_HANDHELD : ModelTemplates.TWO_LAYERED_ITEM).create(
                             item,
                             TextureMapping.layered(
-                                    templateMaterial(layers.get(0)),
-                                    templateMaterial(layers.get(1))),
+                                    templateMaterial(layers.get(0).texturePath),
+                                    templateMaterial(layers.get(1).texturePath)),
                             generator.modelOutput);
                     case 3 -> (handheld ? THREE_LAYERED_HANDHELD : ModelTemplates.THREE_LAYERED_ITEM).create(
                             item,
                             TextureMapping.layered(
-                                    templateMaterial(layers.get(0)),
-                                    templateMaterial(layers.get(1)),
-                                    templateMaterial(layers.get(2))),
+                                    templateMaterial(layers.get(0).texturePath),
+                                    templateMaterial(layers.get(1).texturePath),
+                                    templateMaterial(layers.get(2).texturePath)),
                             generator.modelOutput);
                     default -> throw new IllegalStateException(
                             "Unsupported tinted template item layer count: " + layers.size());
@@ -194,11 +199,6 @@ public final class TintedTemplate {
                     .blockTintSource(() -> () -> blockTintSources(layers, material, form))
                     .tintSource(blockItemTintSources(layers, material, form));
         }
-    }
-
-    private static net.minecraft.client.resources.model.sprite.Material templateMaterial(Layer layer) {
-        return new net.minecraft.client.resources.model.sprite.Material(
-                TopoDemoApiPlugin.INSTANCE.material().id(layer.texturePath));
     }
 
     private static ItemTintSource[] itemTintSources(List<Layer> layers, Material material, MaterialForm form) {

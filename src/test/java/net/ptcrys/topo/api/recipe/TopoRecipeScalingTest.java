@@ -16,6 +16,7 @@ import com.mojang.serialization.Codec;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -42,7 +43,7 @@ class TopoRecipeScalingTest {
     @Test
     void inputEntriesAggregateCapabilityConflictKeys() {
         TopoRecipe.InputEntry<Integer> entry = new TopoRecipe.InputEntry<>(CAPABILITY, List.of(7));
-        assertEquals(java.util.Set.of(7), entry.importConflictKeys());
+        assertEquals(Set.of(7), entry.importConflictKeys());
     }
 
     @Test
@@ -169,8 +170,8 @@ class TopoRecipeScalingTest {
         }
 
         @Override
-        public java.util.Set<?> importConflictKeys(Integer content) {
-            return java.util.Set.of(content);
+        public Set<?> importConflictKeys(Integer content) {
+            return Set.of(content);
         }
     }
 }

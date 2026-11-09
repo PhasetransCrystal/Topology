@@ -4,12 +4,13 @@ import net.ptcrys.topo.api.machine.component.ComponentContext;
 import net.ptcrys.topo.api.machine.component.ComponentKey;
 import net.ptcrys.topo.api.machine.component.ComponentMount;
 import net.ptcrys.topo.integration.ae2.*;
+import net.ptcrys.topodemo.api.machine.DemoComponentKeys;
 
 import net.neoforged.neoforge.transfer.fluid.FluidResource;
 
 public final class AeFluidOutputPush extends AeResourceOutputPush<FluidResource> {
 
-    public static final ComponentKey<AeFluidOutputPush> AE_FLUID_OUTPUT_PUSH = net.ptcrys.topodemo.api.machine.DemoComponentKeys.id("ae_fluid_output_push", AeFluidOutputPush.class);
+    public static final ComponentKey<AeFluidOutputPush> AE_FLUID_OUTPUT_PUSH = DemoComponentKeys.id("ae_fluid_output_push", AeFluidOutputPush.class);
 
     private AeFluidOutputPush(ComponentContext<AeFluidOutputPush> context) {
         super(context, AeFluidBufferPort.AE_FLUID_BUFFER_PORT);

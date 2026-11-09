@@ -3,6 +3,7 @@ package net.ptcrys.topo.api.machine.multiblock.ui
 import net.minecraft.core.BlockPos
 import net.minecraft.core.Direction
 import net.minecraft.world.level.block.Block
+import net.minecraft.world.level.block.Blocks
 import net.minecraft.world.level.block.state.BlockState
 
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Scene
@@ -27,7 +28,7 @@ class InspectorScene : Scene() {
         val world = dummyWorld ?: return@apply
         for (pos in clear) {
             if (!blocks.containsKey(pos)) {
-                world.setBlock(pos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), Block.UPDATE_NONE)
+                world.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_NONE)
             }
         }
         blocks.forEach { (pos, state) ->

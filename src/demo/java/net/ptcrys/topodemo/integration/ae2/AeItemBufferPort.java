@@ -8,6 +8,7 @@ import net.ptcrys.topo.api.machine.resource.PlayerAccess;
 import net.ptcrys.topo.api.machine.resource.PortAccess;
 import net.ptcrys.topo.integration.ae2.*;
 import net.ptcrys.topo.integration.ae2.AeBufferPort;
+import net.ptcrys.topodemo.api.machine.DemoComponentKeys;
 import net.ptcrys.topodemo.data.machine.common.component.resource.ItemResourcePortMetadata;
 import net.ptcrys.topodemo.data.recipe.BuiltinTopoResourceIntegrations;
 
@@ -15,7 +16,7 @@ import net.neoforged.neoforge.transfer.item.ItemResource;
 
 public final class AeItemBufferPort extends AeBufferPort<ItemResource> {
 
-    public static final ComponentKey<AeItemBufferPort> AE_ITEM_BUFFER_PORT = net.ptcrys.topodemo.api.machine.DemoComponentKeys.id("ae_item_buffer_port", AeItemBufferPort.class);
+    public static final ComponentKey<AeItemBufferPort> AE_ITEM_BUFFER_PORT = DemoComponentKeys.id("ae_item_buffer_port", AeItemBufferPort.class);
 
     private AeItemBufferPort(ComponentContext<AeItemBufferPort> context, int maxKinds) {
         super(

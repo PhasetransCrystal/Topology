@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.stream.StreamSupport;
 
 /**
  * Item recipe input content.
@@ -539,7 +540,7 @@ public sealed interface TopoItemInput
         @Override
         public List<ItemStack> displayStacks() {
             int shown = displayCount(count);
-            return java.util.stream.StreamSupport.stream(
+            return StreamSupport.stream(
                     BuiltInRegistries.ITEM.getTagOrEmpty(tag).spliterator(), false)
                     .map(holder -> new ItemStack(holder.value(), shown))
                     .toList();

@@ -13,6 +13,7 @@ import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeBookCategory;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraft.world.item.crafting.display.RecipeDisplay;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.transfer.transaction.Transaction;
 
@@ -1016,8 +1017,8 @@ public class TopoRecipe implements Recipe<TopoRecipeInput> {
     }
 
     @Override
-    public java.util.List<net.minecraft.world.item.crafting.display.RecipeDisplay> display() {
-        return java.util.List.of();
+    public List<RecipeDisplay> display() {
+        return List.of();
     }
 
     @Override

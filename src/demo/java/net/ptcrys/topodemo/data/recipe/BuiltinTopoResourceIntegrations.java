@@ -9,7 +9,7 @@ import net.ptcrys.topo.api.machine.resource.MachineResourceTypes;
 import net.ptcrys.topo.api.machine.resource.ResourceDataFieldFactory;
 import net.ptcrys.topo.api.machine.ui.MachineUiIcons;
 import net.ptcrys.topo.api.recipe.capability.RecipeCapability;
-import net.ptcrys.topodemo.api.TopoDemoApiPlugin;
+import net.ptcrys.topodemo.data.TopoDemoPlugin;
 import net.ptcrys.topodemo.data.machine.common.component.resource.ScalarDestroyedBehavior;
 import net.ptcrys.topodemo.data.machine.common.component.resource.ScalarDestroyedBehaviors;
 import net.ptcrys.topodemo.data.machine.common.component.resource.ScalarResource;
@@ -36,13 +36,13 @@ import java.util.function.Supplier;
 
 /**
  * Builtin resource-family product table. Machine resource types register only through
- * {@link TopoDemoApiPlugin#machine()}; recipe capabilities only through
- * {@link TopoDemoApiPlugin#recipe()}.
+ * {@link TopoDemoPlugin#machine()}; recipe capabilities only through
+ * {@link TopoDemoPlugin#recipe()}.
  */
 public final class BuiltinTopoResourceIntegrations {
 
-    private static final MachineDomainRegistration MACHINE = TopoDemoApiPlugin.INSTANCE.machine();
-    private static final RecipeDomainRegistration RECIPE = TopoDemoApiPlugin.INSTANCE.recipe();
+    private static final MachineDomainRegistration MACHINE = TopoDemoPlugin.INSTANCE.machine();
+    private static final RecipeDomainRegistration RECIPE = TopoDemoPlugin.INSTANCE.recipe();
 
     /** 物品:SLOTTED 槽位形态,NeoForge 物品方块能力。 */
     public static final BuiltinResourceIntegration<ItemResource, ItemRecipeCapability> ITEM = item(
@@ -72,6 +72,11 @@ public final class BuiltinTopoResourceIntegrations {
     public static final BuiltinResourceIntegration<ScalarResource, ScalarRecipeCapability> HEAT = scalar(
             "heat", "Heat", "热量",
             0xFFE2603B, BuiltinTopoMachineUiIcons::flame, ScalarDestroyedBehaviors.heatFlash());
+
+    /** 燃料组件维护的内部燃烧时间储备，供机器运行时消耗。 */
+    public static final BuiltinResourceIntegration<ScalarResource, ScalarRecipeCapability> BURN_TIME = scalar(
+            "burn_time", "Burn Time", "燃烧时间",
+            0xFFFF9C43, BuiltinTopoMachineUiIcons::flame, ScalarDestroyedBehavior.NONE);
 
     private BuiltinTopoResourceIntegrations() {}
 

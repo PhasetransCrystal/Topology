@@ -14,6 +14,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -24,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Predicate;
 
 /**
  * 管网勘测的服务端权威状态:按玩家持有活动勘测(维度/锚点/范围/端点 A/B),物品交互在
@@ -61,7 +63,7 @@ public final class PipeSurveyManager {
     private PipeSurveyManager() {}
 
     /** 锚定并激活勘测:重置端点选择,立即下发首帧快照。服务端线程调用(物品 useOn)。 */
-    public static void activate(net.minecraft.world.entity.player.Player player, BlockPos pos, int range) {
+    public static void activate(Player player, BlockPos pos, int range) {
         Survey survey = new Survey(player.level().dimension(), pos.asLong(), range);
         SURVEYS.put(player.getUUID(), survey);
         player.sendOverlayMessage(
@@ -70,7 +72,7 @@ public final class PipeSurveyManager {
     }
 
     /** 端点选择循环:无活动勘测时提示先锚定。 */
-    public static void selectPoint(net.minecraft.world.entity.player.Player player, BlockPos pos) {
+    public static void selectPoint(Player player, BlockPos pos) {
         Survey survey = SURVEYS.get(player.getUUID());
         if (survey == null || player.level().dimension() != survey.dimension) {
             player.sendOverlayMessage(
@@ -93,7 +95,7 @@ public final class PipeSurveyManager {
     }
 
     /** 结束勘测并让客户端清屏。 */
-    public static void clear(net.minecraft.world.entity.player.Player player) {
+    public static void clear(Player player) {
         if (SURVEYS.remove(player.getUUID()) != null) {
             player.sendOverlayMessage(
                     TopoApiLang.EQUIPMENT_PIPE_SURVEYOR_CLEARED.getComponent());
@@ -115,7 +117,7 @@ public final class PipeSurveyManager {
      * 客户端轮询入口:限频重建快照;不再手持勘测仪(主/副手谓词由物品侧给定)或换维度
      * 即清状态,客户端随之淡出。
      */
-    public static void refresh(ServerPlayer player, java.util.function.Predicate<ServerPlayer> stillHolding) {
+    public static void refresh(ServerPlayer player, Predicate<ServerPlayer> stillHolding) {
         Survey survey = SURVEYS.get(player.getUUID());
         if (survey == null) {
             return;
@@ -138,14 +140,14 @@ public final class PipeSurveyManager {
         return SURVEYS.get(player);
     }
 
-    private static void send(net.minecraft.world.entity.player.Player player, Survey survey) {
+    private static void send(Player player, Survey survey) {
         survey.lastSendGameTime = player.level().getGameTime();
         if (player.level() instanceof ServerLevel level) {
             sendPayload(player, buildSnapshot(level, survey));
         }
     }
 
-    private static void sendPayload(net.minecraft.world.entity.player.Player player, PipeSurveySnapshot snapshot) {
+    private static void sendPayload(Player player, PipeSurveySnapshot snapshot) {
         // 模拟玩家(gametest)非 ServerPlayer 或无网络连接:状态机照常,只跳过真实下发。
         if (player instanceof ServerPlayer serverPlayer && serverPlayer.connection != null) {
             PacketDistributor.sendToPlayer(serverPlayer, new PipeSurveySnapshotS2CPayload(snapshot));

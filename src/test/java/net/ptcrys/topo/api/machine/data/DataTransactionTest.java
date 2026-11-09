@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -52,7 +53,7 @@ class DataTransactionTest {
         var work = DataSnapshot.defaults(List.of(VALUE, DERIVED)).edit();
         work.set(VALUE, 7);
         work.set(DERIVED, 1);
-        var verified = work.snapshot().verify().forkRefreshing(java.util.Set.of(DERIVED));
+        var verified = work.snapshot().verify().forkRefreshing(Set.of(DERIVED));
         verified.set(DERIVED, 2);
         assertThrows(DataTransaction.Conflict.class, () -> verified.set(VALUE, 8));
         assertEquals(7, verified.get(VALUE));

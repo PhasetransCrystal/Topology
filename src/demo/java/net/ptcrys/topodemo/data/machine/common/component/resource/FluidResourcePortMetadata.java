@@ -4,7 +4,7 @@ import net.ptcrys.topo.api.machine.component.AttachmentType;
 import net.ptcrys.topo.api.machine.resource.MachineResourceType;
 import net.ptcrys.topo.api.machine.resource.PortAccess;
 import net.ptcrys.topo.api.machine.resource.ResourcePortMetadata;
-import net.ptcrys.topodemo.api.TopoDemoApiPlugin;
+import net.ptcrys.topodemo.data.TopoDemoPlugin;
 import net.ptcrys.topodemo.data.recipe.BuiltinTopoResourceIntegrations;
 
 import net.neoforged.neoforge.transfer.fluid.FluidResource;
@@ -22,7 +22,7 @@ public record FluidResourcePortMetadata(
                                         @Nullable Predicate<Resource> resourceFilter)
         implements ResourcePortMetadata {
 
-    public static final AttachmentType<FluidResourcePortMetadata> TYPE = TopoDemoApiPlugin.INSTANCE.machine().attachmentType("fluid_resource_port", FluidResourcePortMetadata.class);
+    public static final AttachmentType<FluidResourcePortMetadata> TYPE = TopoDemoPlugin.INSTANCE.machine().attachmentType("fluid_resource_port", FluidResourcePortMetadata.class);
 
     public FluidResourcePortMetadata {
         if (tanks <= 0) {

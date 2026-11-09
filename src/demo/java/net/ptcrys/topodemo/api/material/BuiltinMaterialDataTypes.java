@@ -24,6 +24,8 @@ public final class BuiltinMaterialDataTypes {
     public static final MaterialFlagDataType INGOT = MATERIAL.dataType("ingot", new MaterialFlagDataType(MATERIAL.id("ingot")));
     public static final GemDataType GEM = MATERIAL.dataType("gem", new GemDataType(MATERIAL.id("gem")));
     public static final MaterialFlagDataType SHARD = MATERIAL.dataType("shard", new MaterialFlagDataType(MATERIAL.id("shard")));
+    public static final MaterialFlagDataType GAS = MATERIAL.dataType("gas", new MaterialFlagDataType(MATERIAL.id("gas")));
+    public static final MaterialFlagDataType SOLUTION = MATERIAL.dataType("solution", new MaterialFlagDataType(MATERIAL.id("solution")));
     public static final FuelDataType FUEL = MATERIAL.dataType("fuel", new FuelDataType(MATERIAL.id("fuel")));
     public static final ToolDataType TOOL = MATERIAL.dataType("tool", new ToolDataType(MATERIAL.id("tool")));
     public static final RadiationDataType RADIATION = MATERIAL.dataType("radiation", new RadiationDataType(MATERIAL.id("radiation")));

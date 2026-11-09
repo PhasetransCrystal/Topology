@@ -19,6 +19,7 @@ import it.unimi.dsi.fastutil.longs.LongArrayList;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.IdentityHashMap;
@@ -510,9 +511,9 @@ public final class TopoRecipeSearchIndex<R extends TopoRecipe> {
                 return;
             }
             int newSize = Math.max(requiredSize, activePostings.length * 2);
-            activePostings = java.util.Arrays.copyOf(activePostings, newSize);
-            activeAmounts = java.util.Arrays.copyOf(activeAmounts, newSize);
-            activePositions = java.util.Arrays.copyOf(activePositions, newSize);
+            activePostings = Arrays.copyOf(activePostings, newSize);
+            activeAmounts = Arrays.copyOf(activeAmounts, newSize);
+            activePositions = Arrays.copyOf(activePositions, newSize);
         }
     }
 }

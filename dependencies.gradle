@@ -29,6 +29,9 @@ dependencies {
     runtimeOnly("org.appliedenergistics:guideme:${guideme_version}")
     compileOnly "org.appliedenergistics:appliedenergistics2:${ae2_version}"
     runtimeOnly "org.appliedenergistics:appliedenergistics2:${ae2_version}"
+    testRuntimeOnly("org.appliedenergistics:guideme:${guideme_version}")
+    testCompileOnly "org.appliedenergistics:appliedenergistics2:${ae2_version}"
+    testRuntimeOnly "org.appliedenergistics:appliedenergistics2:${ae2_version}"
 
     compileOnly "curse.maven:jade-324717:8651070"
     runtimeOnly "curse.maven:jade-324717:8651070"

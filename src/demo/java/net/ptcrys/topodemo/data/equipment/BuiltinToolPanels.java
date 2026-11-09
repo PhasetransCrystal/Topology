@@ -3,7 +3,7 @@ package net.ptcrys.topodemo.data.equipment;
 import net.ptcrys.topo.api.api.builtin.RuntimeDomainRegistration;
 import net.ptcrys.topo.api.equipment.EquipmentRegistry;
 import net.ptcrys.topodemo.api.equipment.common.ToolHintPanel;
-import net.ptcrys.topodemo.data.ContentLang;
+import net.ptcrys.topodemo.api.lang.ContentLang;
 
 public final class BuiltinToolPanels {
 

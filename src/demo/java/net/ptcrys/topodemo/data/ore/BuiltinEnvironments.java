@@ -14,11 +14,16 @@ public final class BuiltinEnvironments {
     private static final LangDomainRegistration LANG = TopoDemoPlugin.INSTANCE.lang();
     private static final OreDimensionRule OVERWORLD = new OreDimensionRule(Level.OVERWORLD, BiomeTags.IS_OVERWORLD,
             LANG.key("ore", "dimension.overworld", "Overworld", "主世界"));
+    private static final OreDimensionRule NETHER = new OreDimensionRule(Level.NETHER, BiomeTags.IS_NETHER,
+            LANG.key("ore", "dimension.nether", "Nether", "下界"));
     public static final OreEnvironment OVERWORLD_ROCK = OreEnvironments.of(OVERWORLD,
             new OreHostRule(BlockTags.STONE_ORE_REPLACEABLES, BuiltinMaterialForms.ORE,
                     LANG.key("ore", "host.stone", "Stone", "石头")),
             new OreHostRule(BlockTags.DEEPSLATE_ORE_REPLACEABLES, BuiltinMaterialForms.DEEPSLATE_ORE,
                     LANG.key("ore", "host.deepslate", "Deepslate", "深板岩")));
+    public static final OreEnvironment NETHER_ROCK = OreEnvironments.of(NETHER,
+            new OreHostRule(BlockTags.BASE_STONE_NETHER, BuiltinMaterialForms.NETHER_ORE,
+                    LANG.key("ore", "host.netherrack", "Netherrack", "地狱岩")));
 
     private BuiltinEnvironments() {}
 

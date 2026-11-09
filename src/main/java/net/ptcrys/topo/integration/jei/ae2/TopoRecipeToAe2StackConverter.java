@@ -9,7 +9,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 /** 根据配方能力身份选择已注册的内容转换器，框架不识别物品、流体或标量实现。 */
 public final class TopoRecipeToAe2StackConverter {
@@ -23,12 +26,12 @@ public final class TopoRecipeToAe2StackConverter {
         GenericStack output(O content);
     }
 
-    private static final java.util.Map<RecipeCapability<?, ?>, Binding<?, ?>> CONVERTERS = new java.util.IdentityHashMap<>();
+    private static final Map<RecipeCapability<?, ?>, Binding<?, ?>> CONVERTERS = new IdentityHashMap<>();
 
     /** 在客户端集成注册阶段声明转换能力，未知能力不会被静默丢弃。 */
     public static synchronized <I, O> void register(RecipeCapability<I, O> capability, ContentConverter<I, O> converter) {
-        java.util.Objects.requireNonNull(capability, "recipe capability");
-        java.util.Objects.requireNonNull(converter, "content converter");
+        Objects.requireNonNull(capability, "recipe capability");
+        Objects.requireNonNull(converter, "content converter");
         if (CONVERTERS.containsKey(capability)) {
             throw new IllegalStateException("Duplicate AE2 converter for " + capability.id());
         }
@@ -84,40 +87,27 @@ public final class TopoRecipeToAe2StackConverter {
                                     TopoRecipe.OutputEntry<?>[] outputEntries) {
         List<List<GenericStack>> inputs = new ArrayList<>(inputEntries.length);
         for (TopoRecipe.InputEntry<?> entry : inputEntries) {
-            List<GenericStack> slot = inputSlotAlternatives(entry);
-            if (!slot.isEmpty()) {
-                inputs.add(List.copyOf(slot));
+            Binding<?, ?> converter = requireConverter(entry.capability());
+            for (Object content : entry.contents()) {
+                List<GenericStack> alternatives = converter.inputs(content);
+                if (!alternatives.isEmpty()) {
+                    inputs.add(List.copyOf(alternatives));
+                }
             }
         }
 
         List<GenericStack> outputs = new ArrayList<>(outputEntries.length);
         for (TopoRecipe.OutputEntry<?> entry : outputEntries) {
-            GenericStack out = firstOutputStack(entry);
-            if (out != null) {
-                outputs.add(out);
+            Binding<?, ?> converter = requireConverter(entry.capability());
+            for (Object content : entry.contents()) {
+                GenericStack output = converter.output(content);
+                if (output != null) {
+                    outputs.add(output);
+                }
             }
         }
 
         return new Converted(List.copyOf(inputs), List.copyOf(outputs));
-    }
-
-    /** 保留旧实现的一条输入组对应一个备选槽的语义。 */
-    private static List<GenericStack> inputSlotAlternatives(TopoRecipe.InputEntry<?> entry) {
-        Binding<?, ?> converter = requireConverter(entry.capability());
-        List<GenericStack> alternatives = new ArrayList<>();
-        for (Object content : entry.contents()) {
-            alternatives.addAll(converter.inputs(content));
-        }
-        return alternatives;
-    }
-
-    private static @Nullable GenericStack firstOutputStack(TopoRecipe.OutputEntry<?> entry) {
-        Binding<?, ?> converter = requireConverter(entry.capability());
-        for (Object content : entry.contents()) {
-            GenericStack output = converter.output(content);
-            if (output != null) return output;
-        }
-        return null;
     }
 
     private static void logDroppedExtras(TopoRecipe recipe) {

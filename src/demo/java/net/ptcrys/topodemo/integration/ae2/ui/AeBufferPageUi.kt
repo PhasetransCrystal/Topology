@@ -11,8 +11,9 @@ import net.ptcrys.topo.api.machine.ui.MachineUiContainerTemplate
 import net.ptcrys.topo.api.machine.ui.MachineUiContribution
 import net.ptcrys.topo.api.machine.ui.recipe.RecipeUiLayout
 import net.ptcrys.topo.helper.TopoCompactNumber
-import net.ptcrys.topo.integration.ae2.*
 import net.ptcrys.topo.integration.ae2.AeKeyResourceBuffer
+import net.ptcrys.topodemo.api.machine.BuiltinTopoMachineUiLang
+import net.ptcrys.topodemo.api.machine.DemoComponentKeys
 import net.ptcrys.topodemo.integration.ae2.AeFluidBufferPort
 import net.ptcrys.topodemo.integration.ae2.AeItemBufferPort
 
@@ -54,7 +55,7 @@ class AeBufferPageUi private constructor(context: ComponentContext<AeBufferPageU
         val fluids = fluidBuffer ?: return
         contribution.mainPage(
             PAGE_KEY,
-            net.ptcrys.topodemo.data.machine.BuiltinTopoMachineUiLang.UI_AE_BUFFER_PAGE.getComponent(),
+            BuiltinTopoMachineUiLang.UI_AE_BUFFER_PAGE.getComponent(),
             createPage(items, fluids),
         )
     }
@@ -209,7 +210,7 @@ class AeBufferPageUi private constructor(context: ComponentContext<AeBufferPageU
     companion object {
         @JvmField
         val AE_BUFFER_UI: ComponentKey<AeBufferPageUi> =
-            net.ptcrys.topodemo.api.machine.DemoComponentKeys.id("ae_buffer_ui", AeBufferPageUi::class.java)
+            DemoComponentKeys.id("ae_buffer_ui", AeBufferPageUi::class.java)
 
         const val PAGE_KEY: String = "ae_buffer"
 
