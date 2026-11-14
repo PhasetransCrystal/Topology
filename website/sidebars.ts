@@ -20,7 +20,7 @@ const sidebars: SidebarsConfig = {
         type: 'doc',
         id: 'recipe',
       },
-      items: ['recipe/recipe-capability', 'recipe/recipe-type'],
+      items: ['recipe/recipe-capability', 'recipe/recipe-type', 'recipe/vanilla-export'],
     },
     {
       type: 'category',

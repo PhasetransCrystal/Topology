@@ -145,7 +145,7 @@ MaterialLookup.current().byItem(otherIngot)
 
 Topo 的 `TopoItemInput.tag(tag, amount)` 可以表达标签输入，
 但 `RecipeCapability` 必须实现对应的匹配、消耗和序列化逻辑。
-TopoDemo 的精确物品能力只接受 `TopoItemInput.Resource`，加入标签并不会自动让它接受任意铜锭。
+精确物品能力只接受 `TopoItemInput.Resource`，加入标签并不会自动让它接受任意铜锭。
 资源共享是否成立，要同时核对标签成员和实际消费该标签的能力实现。
 
 ## 6. 兼容配方和容器能力
@@ -154,7 +154,7 @@ TopoDemo 的精确物品能力只接受 `TopoItemInput.Resource`，加入标签�
 |---|---|---|
 | 为自己的机器添加外部原料配方 | 在 `registerRecipes` 中使用延迟物品／流体输入 | 能力工厂须支持该输入类型；实例在安全时点解析 |
 | 让自己的机器使用原版或其他模组配方表 | 在类型声明时配置 `importRecipesFrom(adapterFactory, foreignTypes...)` | 需要自己的 `ImportedRecipeAdapter` 将来源配方转换成当前类型 |
-| 将自己的配方导出成其他格式 | `exportRecipesTo` 加对应导出适配器 | 来源与目标语义应兼容，并在 datagen 中验证输出 |
+| 将自己的配方导出成其他格式 | `exportRecipesTo` 加对应导出适配器（原版格式见[原版配方导出](../recipe/vanilla-export.md)） | 来源与目标语义应兼容，并在 datagen 中验证输出 |
 | 让管道连接对方容器 | 使用与对方相符的 NeoForge block capability 和 handler | 对方必须提供可访问的能力，双方资源语义和事务行为须一致 |
 
 例如导入原版冶炼表的类型声明结构如下，`MySmeltingAdapter` 是你实现的适配器：

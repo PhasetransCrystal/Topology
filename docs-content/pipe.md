@@ -99,6 +99,26 @@ public class MyPipeBlockTemplate implements PipeBlockTemplate {
 `PipeDistributionStrategies.register(strategy)` 注册。接口签名、上下文方法与注册时机见
 [PipeStrategy](pipe/pipe-strategy.md)。
 
+## 为什么这样设计
+
+分发策略可插拔，因为不同资源/机器的吞吐与公平性目标不同；聚合窗口把多次小额请求合并成批次；容器通过资源类型的 block capability 查询。
+
+## 与其他模块联动
+
+机器提供资源类型与端口；客户端负责勘测渲染；Jade 提供展示；语言模块提供管道与配置文本。
+
+## 常见坑
+
+- 认为注册策略后会立即执行 `distribute`：它在传输时触发。
+- 策略不处理 `budget` 或剩余需求：会超发或丢弃。
+- 相邻容器没有对应 block capability：管道不会识别。
+
+## 扩展约定
+
+- 新资源/等级声明 `PipeResourceProfile`、方块模板、吞吐与过滤。
+- 新策略实现 `PipeDistributionStrategy` 并在 `PipeDistributionStrategies` 注册。
+- 新内容用插件领域入口；旧 `Pipes.register` 保留 `topo` 命名空间。
+
 ## API 速查
 
 | 类/方法                                     | 用途                                  |

@@ -152,6 +152,26 @@ public void registerMaterialFoundation(MaterialDomainRegistration m) {
 
 `forms()` 返回有序不可变列表；只判断是否存在某种形态时可使用 `hasForm(form)`。插件自定义数据应使用不可变值，框架不会深拷贝数据对象。
 
+## 为什么这样设计
+
+形态是否适用由材料数据与 `appliesTo` 决定，材料不维护形态名单；新增能力只需新增数据类型，不修改匹配引擎。
+
+## 与其他模块联动
+
+装备读取材料数据决定适用；机器、配方、矿脉消费形态生成的物品/方块；语言模块提供显示名。
+
+## 常见坑
+
+- 在 `registerMaterials` 注册新形态：形态表已冻结。
+- 认为 `.form(...)` 会选中形态：它只配置局部选项与外部覆盖。
+- 冻结后继续写材料数据：写入已关闭。
+
+## 扩展约定
+
+- 新数据类型/形态/后处理器在 `registerMaterialFoundation` 声明。
+- 用数据与 `appliesTo` 匹配，不用材料 ID 名单。
+- 跨插件补数据在 `registerMaterialContributions`；重复类型会报错。
+
 ## API 速查
 
 | 类/方法                                                            | 用途                  |

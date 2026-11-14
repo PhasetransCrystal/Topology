@@ -114,6 +114,26 @@ machine.machine("custom_machine")
     .build();
 ```
 
+## 为什么这样设计
+
+组件组合替代“每台机器一个巨大 BlockEntity”；端口与资源类型由产品实现；声明期只排方块/BE，实例创建时才执行工厂回调。
+
+## 与其他模块联动
+
+材料提供机器方块/物品；配方通过 `RecipeLogic` 执行；管道引用资源类型；多方块工具通过 `StorageAccess` 取料；客户端与 JEI/Jade 读取状态/UI。
+
+## 常见坑
+
+- 在 `resolveDependencies` 读取持久化状态。
+- 把共享 BlockEntity 类型注册当成每台实例已创建。
+- 认为注册策略对象会立即执行全部回调。
+
+## 扩展约定
+
+- 新组件继承 `MachineComponent`，用 `ComponentMount` 挂载；同一 key 不可重复。
+- 新端口继承 `ResourcePort` 并声明资源类型与端口元数据。
+- 渲染/UI 用策略与 `collectMachineUi` 贡献，不在方块类写全局分支。
+
 ## API 速查
 
 | 类/方法                                     | 用途                           |

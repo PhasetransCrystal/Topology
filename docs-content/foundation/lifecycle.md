@@ -161,16 +161,6 @@ provider 和额外物品行为放在 `registerRuntime(runtime)`，使用 `runtim
 不再单独接线 `PipeSpecTooltips`，也不要在领域代码中冻结共享运行时表。
 客户端专用绑定可使用 client setup；所有共享表贡献最迟在 common / sided setup 完成。
 
-## 包分组与扩展边界
+## 内部边界
 
-| 包 | 职责 |
-|---|---|
-| `api.api.plugin` | `TopoPlugin`、`TopoPlugins`、领域 API 工厂与贡献标记 |
-| `plugin.hook` | 按领域组织的命名钩子，基类提供全部内置接口 |
-| `plugin.internal` | 不可变快照、依赖计划、阶段状态及 NeoForge 事件适配 |
-| `plugin.internal.module` | 各领域的声明调度、生成、校验与冻结责任 |
-
-`internal` 中为跨子包组合而公开的类型仍是框架实现，不是下游接入契约。
-内部包及宿主接线、底层 `begin` / `freeze` 方法使用 `@ApiStatus.Internal` 标记；引擎和快照本身为包内可见。
-插件基类、命名钩子及领域策略保留原有继承和覆写能力。
-当前仅保证 Topo 单宿主的静态加载；不支持热重载，也不承诺可移除 Topo Mod 的完全嵌入。
+内部包、宿主接线与底层 `begin` / `freeze` 属于框架实现，不是下游接入契约；下游只依赖本页与各领域的公开接口。当前仅保证 Topo 单宿主的静态加载，不支持热重载，也不承诺可移除 Topo Mod 的完全嵌入。

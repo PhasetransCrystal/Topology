@@ -28,6 +28,7 @@ RecipeCapability  ← 资源种类 × 配方 I/O 的桥梁（物品/流体/标�
 |-------------------------------------------------|--------------------------------------------------|--------------------------------|
 | [RecipeCapability](recipe/recipe-capability.md) | 继承 `RecipeCapability` 定义新资源种类的配方 I/O | 添加物品/流体/能量之外的新资源 |
 | [RecipeType](recipe/recipe-type.md)             | 注册配方类型与生产线、自定义配方载体             | 声明机器的配方类型             |
+| [原版配方导出](recipe/vanilla-export.md)        | 把 Topo 配方写成原版合成/烹饪数据与解锁进度      | 需要原版配方 JSON 时           |
 | **Recipe（本页）**                              | `TopoRecipe.Builder` 配方构建、运行时执行、缩放  | 编写具体配方                   |
 
 ## 注册配方类型
@@ -119,6 +120,27 @@ TopoRecipe scaled = recipe.withScaledCapabilityPerformance(
 ```java
 double itemsPerSec = TopoRecipe.contentPerSecond(baseCount, parallelCount, durationTicks);
 ```
+
+## 为什么这样设计
+
+能力把资源种类与配方 I/O 解耦；本地声明、外部投影与搜索索引拆开，避免互相污染；导入是运行时投影，导出只有单一写出口。
+
+## 与其他模块联动
+
+材料提供输入/输出物品；机器通过 `RecipeLogic` 执行；JEI/AE 使用能力分组；数据生成使用导出适配器。
+
+## 常见坑
+
+- 能力声明支持标签，但未实现匹配/消耗/序列化。
+- 认为 `.replacesImported()` 会删除来源配方。
+- 导出提示与配方内容不一致；框架不核对。
+- 导出适配器返回 null：已安排导出时是硬失败。
+
+## 扩展约定
+
+- 新能力实现匹配、消耗、传输与序列化。
+- 新类型/生产线在 `registerRecipeTypes` 声明，具体配方在 `registerRecipes`。
+- 原版导出用 `ExportedRecipeAdapter` + `ExportHints`；不要手写外来 JSON。
 
 ## API 速查
 

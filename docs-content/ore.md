@@ -214,6 +214,26 @@ for (OreVein vein : veins) {
 OreVeins.view().forEach(v -> System.out.println(v.id()));
 ```
 
+## 为什么这样设计
+
+环境与策略组合让新维度、宿主、形状、暴露规则不需要改生成引擎；每种模式强制配显示，保证 JEI 与生成语义同步；Feature 与 Grid 分流处理。
+
+## 与其他模块联动
+
+材料提供宿主形态与矿石方块；语言提供显示名；JEI/客户端使用显示；数据生成安装 Feature 桥。
+
+## 常见坑
+
+- 新模式没有注册显示：显示表冻结时启动失败。
+- Feature 与 Grid 参数混用：模式 `validate` 应拒绝。
+- 认为声明矿脉就会生成：Feature 还需要 datagen 桥，Grid 还需要运行时规划。
+
+## 扩展约定
+
+- 形状/模式/暴露/冲突在 `registerOreFoundation` 声明。
+- 每种模式在 `registerOreDisplays` 注册显示。
+- Feature 在 `registerOreDatagen` 安装桥；Grid 交给运行时规划器。
+
 ## API 速查
 
 | 类/方法                                             | 用途                                                   |

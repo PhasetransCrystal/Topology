@@ -62,6 +62,8 @@ recipe.recipeType("spell_crafting", new SpellRecipeType(plugin.recipe().id("spel
 
 框架自动完成 RegistryLib 配方类型注册、序列化器与流编解码绑定。只有导入/导出外部配方表
 （原版、其他 Mod）时才需要 `ImportedRecipeAdapter` / `ExportedRecipeAdapter`。
+需要把类型同时输出为原版合成/烹饪数据时，用 `exportRecipesTo` 绑定 `VanillaExportedRecipeAdapters`，
+并在声明配方时提供 `ExportHints`；见[原版配方导出](vanilla-export.md)。
 
 ## TopoRecipe.Builder — 完整链
 
@@ -112,7 +114,8 @@ type.recipe("iron_dust")
 |-----------------------------------------------------------------------------------------------------------------------------------------|------------------------------------|
 | `TopoRecipeType(id, factory)`                                                                                                           | 自定义配方类型（默认工厂够用）     |
 | `displayName(en, cn)` / `progressBar(...)`                                                                                              | 显示与进度条                       |
-| `importRecipesFrom(...)` / `exportRecipesTo(...)`                                                                                       | 外部表桥接                         |
+| `vanillaFacing()`                                                                                                                       | 纯产品作者类型：不挂机器、不进 JEI 分类与配方搜索 |
+| `importRecipesFrom(...)` / `exportRecipesTo(...)`                                                                                       | 外部表桥接（导出见[原版配方导出](vanilla-export.md)） |
 | `recipeType.recipe(name)` / `.addRecipe(name, recipe)`                                                                                  | 配方写入                           |
 | `recipeType.findRecipe(machine)`                                                                                                        | 机器侧查找                         |
 | `recipe.recipeType(path[, customType])`                                                                                                 | 领域注册（钩子 2）                 |

@@ -61,6 +61,26 @@ MutableComponent msg = key.getComponent();     // Component.translatable(key)
 
 内容声明阶段和 `registerLang` 中都可以声明 `LangKey`；`registerLang` 完成后语言表冻结并导出到数据生成，冻结后不能再注册新键。物品、方块的注册表显示名由其 Builder 接入资源生成，见[显示名](localization/display-names.md)。
 
+## 为什么这样设计
+
+键铸造集中在 `LangDomainRegistration`，调用方不自行拼 namespace；生成条目名与独立 `LangKey` 冲突在声明期拒绝；`--mod` 只导出声明者拥有的键。
+
+## 与其他模块联动
+
+所有领域在 `registerLang` 提交键；条目显示名由生成它的 Builder 持有；Jade 等外部配置键用 `absolute` 进入同一注册表。
+
+## 常见坑
+
+- 重复键或非法 `absolute` 归属：声明期失败。
+- 用 `absolute` 写其他插件命名空间：会被拒绝。
+- 条目名与 `LangKey` 双重声明：冲突。
+
+## 扩展约定
+
+- 普通键用 `key`；注册项派生用 `resource`；只有外部约定用 `absolute`。
+- 成组键用 `LangKeyFamily`，不要手工拼 `category.modId.path`。
+- 条目显示名跟随 Builder，不另建同名键。
+
 ## API 速查
 
 | 类/方法                             | 用途                        |

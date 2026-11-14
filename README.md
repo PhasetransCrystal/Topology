@@ -88,6 +88,7 @@ TopoPlugins.register(new MyModPlugin()); // 继承 TopoPlugin，覆写所需的�
 完整文档（中文）见 [`docs-content/`](docs-content/)，在线文档见 [Topology Wiki](https://topology.ptcrys.net)。
 
 框架开发者的内部知识入口见 [项目知识索引](PROJECT_KNOWLEDGE.md)；内部设计文档位于 [`docs/`](docs/)。
+TopoDemo 内容插件的维护文档位于 [`demo-docs/`](demo-docs/)，不属于框架契约。
 
 | 目标 | 使用指南 |
 |---|---|

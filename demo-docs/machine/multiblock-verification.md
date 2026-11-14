@@ -1,8 +1,18 @@
-# Demo 与验证
+# 多方块结构与回归
 
-面向框架开发者。以下记录 Demo 结构与手动回归，不是下游 API 契约。
+面向 TopoDemo 维护者。本文说明 Demo 如何用 Topo 的蓝图、检测与结构工具验证多方块机器。
 
-`src/demo/java/net/ptcrys/topodemo/data/machine/BuiltinMachines.java` 提供以下结构机器。
+## 使用的 Topo 能力
+
+- `Blueprint` DSL：布局、字符映射、变换、重复段与可选段。
+- `MultiblockController`：控制器行为与结构状态。
+- Cell 检测、统一结果与结构元数据：检测位置、缺失/冲突、模块依赖。
+- 占地监听、独占预留与周期重检：运行时结构状态。
+- `StructureTool` 与客户端预览：检测报告、虚影与按配置补建。
+
+## Demo 如何组合
+
+`src/demo/java/net/ptcrys/topodemo/data/machine/BuiltinMachines.java` 提供以下结构机器；以下记录同时用于手动回归，不是下游 API 契约。
 尺寸按声明的字符宽 × 行深 × 展开层数记录；`axis_tower` 的 frame 将层数映射到控制器局部 X。
 空气计入检测位置，空格不计入。以下均为真实最小布局尺寸，不按最大重复数凑尺寸。
 
@@ -47,4 +57,4 @@
 新增诊断语言键须先通过 `runClientData` 生成语言资源。游戏内使用结构页预览搭建，分别检查最小和最大重复数、可选段移除及恢复、非对称结构转向、内腔填入方块、发射器朝向错误、总线拆换、模块最后一块补齐、依赖舱拆除，以及跨区块卸载／重载。
 预览验收还应保持机器界面打开，增减重复段、补建或移除模块，切换所需／实建图并检查切层和模块详情；在 JEI 中调整模块、重复数、材料行高亮，打开大图后关闭返回原界面。
 运行编译或格式检查不代表这些运行场景已通过；以手动执行的测试报告和游戏日志为准。
-构建环境、完整测试命令和日志位置见 [NeoForge 测试启动](../foundation/neo-forge-tests.md)。
+构建环境、完整测试命令和日志位置见 [NeoForge 测试启动](../../docs/verification/neo-forge-tests.md)。

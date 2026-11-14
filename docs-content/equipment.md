@@ -148,6 +148,26 @@ for (EquipmentRegistry.EquipmentItemRecord record : EquipmentRegistry.itemRecord
 
 `itemRecords()`、`itemsFor(...)` 都是发布后的不可变视图；物品尚未绑定时继续使用 `record.entry()`。
 
+## 为什么这样设计
+
+“种类 × 材料”把装备定义与材料属性解耦；策略只返回 item entry，框架统一发布记录，避免漏登记或重复登记。
+
+## 与其他模块联动
+
+材料数据决定适用；机器行为通过 `MachineItemBehavior`；语言与工具提示由条目 Builder 和运行时贡献提供。
+
+## 常见坑
+
+- `appliesTo` 返回 true 但 `register` 返回 null 或重复物品。
+- 在 `appliesTo` 读取游戏对象。
+- 物品未绑定时 `.get()`。
+
+## 扩展约定
+
+- 新种类实现 `EquipmentStrategy`，用 `appliesTo` 读取材料数据。
+- `register` 只创建并返回 item entry。
+- 机器交互实现 `machineBehavior()`，不要写成全局监听。
+
 ## API 速查
 
 | 类/方法                                            | 用途                 |
