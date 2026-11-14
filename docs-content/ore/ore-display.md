@@ -4,8 +4,8 @@ sidebar_position: 3
 
 # Ore Display
 
-矿脉的 JEI 预览渲染器。每种模式必须有一个对应显示——引擎在 `OreVeinDisplays.freeze()` 后校验，
-缺一个直接启动失败。
+面向需要为自定义矿脉模式提供 JEI 预览的模组开发者。每种模式必须有一个对应显示，且每个显示必须指向已注册模式——
+引擎在 `OreVeinDisplays.freeze()` 后双向校验，缺失或悬空引用都会直接启动失败。
 
 本页是 [Ore](../ore.md) 模块的子页——概念与页面导航见 [Ore](../ore.md)。
 

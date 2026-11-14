@@ -1,0 +1,27 @@
+package net.ptcrys.topodemo.integration.ae2;
+
+import net.ptcrys.topo.api.machine.component.ComponentContext;
+import net.ptcrys.topo.api.machine.component.ComponentKey;
+import net.ptcrys.topo.api.machine.component.ComponentMount;
+import net.ptcrys.topo.integration.ae2.*;
+import net.ptcrys.topodemo.api.machine.DemoComponentKeys;
+import net.ptcrys.topodemo.data.machine.common.component.resource.ItemResourcePort;
+
+import net.neoforged.neoforge.transfer.item.ItemResource;
+
+public final class AeItemInputSync extends AeResourceInputSync<ItemResource> {
+
+    public static final ComponentKey<AeItemInputSync> AE_ITEM_INPUT_SYNC = DemoComponentKeys.id("ae_item_input_sync", AeItemInputSync.class);
+
+    private AeItemInputSync(
+                            ComponentContext<AeItemInputSync> context,
+                            int slots,
+                            ComponentKey<ItemResourcePort> portKey) {
+        super(context, ItemResource.class, slots, portKey);
+    }
+
+    /** Syncs {@code slots} configured slots of the local item port at {@code portKey} from the AE grid. */
+    public static ComponentMount<AeItemInputSync> mount(int slots, ComponentKey<ItemResourcePort> portKey) {
+        return AE_ITEM_INPUT_SYNC.mount(context -> new AeItemInputSync(context, slots, portKey));
+    }
+}

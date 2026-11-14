@@ -10,6 +10,8 @@ import net.neoforged.neoforge.transfer.transaction.Transaction;
 import net.neoforged.neoforge.transfer.transaction.TransactionContext;
 
 import com.google.common.primitives.Ints;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,6 +20,8 @@ import java.util.Optional;
 
 /** A persist-only field backed by a slotted {@link FluidResource} handler. */
 public final class DataFluidResourceHandler extends DataManualDirtyField {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(DataFluidResourceHandler.class);
 
     private static final String SLOTS_TAG = "slots";
     private static final String SLOT_INDEX_TAG = "i";
@@ -140,6 +144,8 @@ public final class DataFluidResourceHandler extends DataManualDirtyField {
                     insertExact(handler, entry, transaction);
                 }
                 transaction.commit();
+            } catch (RuntimeException error) {
+                LOGGER.error("Failed to restore fluid resource handler contents; keeping previous contents", error);
             }
         };
     }

@@ -15,9 +15,15 @@ import java.util.concurrent.ScheduledExecutorService;
 /** Bridges NeoForge level lifecycle and tick events into the TickHub system. */
 public final class TickHeartbeat {
 
+    private static boolean registered;
+
     private TickHeartbeat() {}
 
     public static void register(IEventBus ignoredModEventBus) {
+        if (registered) {
+            return;
+        }
+        registered = true;
         NeoForge.EVENT_BUS.register(TickHeartbeat.class);
     }
 

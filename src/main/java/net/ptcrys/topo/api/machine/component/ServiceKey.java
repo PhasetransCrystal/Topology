@@ -27,7 +27,7 @@ public final class ServiceKey<A, C> {
      * Topo-host service key under the official API plugin namespace. Third-party mods must use
      * {@link #of(Identifier, Class, Class)} with their own plugin {@code machine().id(path)}.
      */
-    public static <A, C> ServiceKey<A, C> oi(String path, Class<A> apiType, Class<C> contextType) {
+    public static <A, C> ServiceKey<A, C> topo(String path, Class<A> apiType, Class<C> contextType) {
         return of(OfficialTopoAPIPlugin.INSTANCE.machine().id(path), apiType, contextType);
     }
 

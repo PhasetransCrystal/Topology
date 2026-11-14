@@ -1,16 +1,22 @@
 package net.ptcrys.topo.client.debug;
 
+import net.ptcrys.topo.api.equipment.EquipmentRegistry;
 import net.ptcrys.topo.api.machine.ui.tooltip.ItemTooltipUis;
+import net.ptcrys.topo.api.material.MaterialRegistry;
 import net.ptcrys.topo.api.pipe.PipeDefinition;
 import net.ptcrys.topo.api.pipe.Pipes;
+import net.ptcrys.topo.helper.MaterialHelper;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.MouseHandler;
 import net.minecraft.client.Screenshot;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.inventory.tooltip.TooltipComponent;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.LevelSettings;
@@ -31,6 +37,8 @@ import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.function.Supplier;
 
 /**
  * 物品 tooltip 面板全自动游戏内验证探针(同 {@link PipeProbe} 的流水线骨架,独立 flag):
@@ -67,13 +75,13 @@ public final class TooltipProbe {
     }
 
     /** 一个悬停验收目标:热栏槽位、截图名、物品(注册表绑定后才解析)。 */
-    private record Target(String shot, java.util.function.Supplier<net.minecraft.world.item.Item> item) {}
+    private record Target(String shot, Supplier<Item> item) {}
 
     /**
      * 本轮肉眼验收清单:装备(Function 父行数量+词|简述子项)+ Form 件(化学三行,含覆写件)
      * + 管道(策略行数量+全名|简述子项,用户截图同款顶级热管)。
      */
-    private static final java.util.List<Target> TARGETS = java.util.List.of(
+    private static final List<Target> TARGETS = List.of(
             new Target("equipment-iron-axe", () -> requireItem("topo", "iron_axe")),
             new Target("equipment-iron-regulator", () -> requireItem("topo", "iron_regulator")),
             new Target("equipment-iron-wrench", () -> requireItem("topo", "iron_wrench")),
@@ -82,9 +90,9 @@ public final class TooltipProbe {
             new Target("material-iron-ingot", () -> requireItem("minecraft", "iron_ingot")),
             new Target("pipe-heat-elite", () -> requireItem("topo", "heat_pipe_elite")));
 
-    private static net.minecraft.world.item.Item requireItem(String namespace, String path) {
-        return net.minecraft.core.registries.BuiltInRegistries.ITEM
-                .getOptional(net.minecraft.resources.Identifier.fromNamespaceAndPath(namespace, path))
+    private static Item requireItem(String namespace, String path) {
+        return BuiltInRegistries.ITEM
+                .getOptional(Identifier.fromNamespaceAndPath(namespace, path))
                 .orElseThrow(() -> new IllegalStateException(
                         "tooltip probe target item missing: " + namespace + ":" + path));
     }
@@ -239,7 +247,7 @@ public final class TooltipProbe {
 
         total = 0;
         healthy = 0;
-        for (var record : net.ptcrys.topo.api.equipment.EquipmentRegistry.itemRecords()) {
+        for (var record : EquipmentRegistry.itemRecords()) {
             total++;
             if (hasHealthyPanel(record.entry().get())) {
                 healthy++;
@@ -254,9 +262,9 @@ public final class TooltipProbe {
 
         total = 0;
         healthy = 0;
-        for (var material : net.ptcrys.topo.api.material.MaterialRegistry.registered()) {
-            for (var form : material.strategy().forms()) {
-                var item = net.ptcrys.topo.helper.MaterialHelper.item(material, form).orElse(null);
+        for (var material : MaterialRegistry.registered()) {
+            for (var form : material.forms()) {
+                var item = MaterialHelper.item(material, form).orElse(null);
                 if (item == null) {
                     continue;
                 }
@@ -275,7 +283,7 @@ public final class TooltipProbe {
                 .append('\n');
     }
 
-    private boolean hasHealthyPanel(net.minecraft.world.item.Item item) {
+    private boolean hasHealthyPanel(Item item) {
         TooltipComponent component = ItemTooltipUis.componentFor(new ItemStack(item));
         return component instanceof ModularUITooltipComponent wrapped && wrapped.modularUI.getWidth() > 10 && wrapped.modularUI.getHeight() > 10;
     }

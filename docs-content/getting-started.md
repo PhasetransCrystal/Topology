@@ -69,6 +69,9 @@ import net.ptcrys.topo.api.material.MaterialContentContext;
 import net.ptcrys.topo.api.material.data.MaterialDataType;
 import net.ptcrys.topo.api.material.data.MaterialDataUse;
 import net.ptcrys.topo.api.material.form.MaterialForm;
+import net.ptcrys.topo.api.material.form.MaterialContentKey;
+import net.ptcrys.topo.api.material.form.MaterialContentTypes;
+import net.ptcrys.topo.api.material.form.MaterialFormPlan;
 import net.ptcrys.topo.api.material.form.MaterialFormStrategy;
 import net.minecraft.resources.Identifier;
 
@@ -86,7 +89,7 @@ public final class MyContentPlugin extends TopoPlugin {
         metal = material.dataType("metal", new MetalDataType(material.id("metal")));
         material.form("dust")
                 .lang("Dust", "粉")
-                .appliesTo(value -> value.strategy().data(metal).orElse(false))
+                .appliesTo(value -> value.data(metal).orElse(false))
                 .strategy(new DustForm())
                 .build();
     }
@@ -120,19 +123,22 @@ public final class MyContentPlugin extends TopoPlugin {
         }
 
         @Override
-        public void validateMaterial(Material material, MaterialForm form) {
-            // 此形态没有额外的数据依赖。
-        }
-
-        @Override
-        public void register(MaterialContentContext context, MaterialForm form) {
-            Material material = context.material();
+        public MaterialFormPlan plan(Material material, MaterialForm form) {
             String path = registryPath().formatted(material.id().getPath());
-            var builder = context.core().item(path);
-            RegistryDisplayLang.applyItem(builder, context.core(), path,
-                    DisplayNames.fixed(material.displayNameEn() + " Dust",
-                            material.displayNameCn() + "粉"));
-            builder.register();
+            MaterialContentKey output = new MaterialContentKey(
+                    MaterialContentTypes.ITEM, material.id().withPath(path));
+            return MaterialFormPlan.of(
+                    List.of(output),
+                    () -> {
+                        // 此形态没有额外的数据依赖。
+                    },
+                    context -> {
+                        var builder = context.core().item(path);
+                        RegistryDisplayLang.applyItem(builder, context.core(), path,
+                                DisplayNames.fixed(material.displayNameEn() + " Dust",
+                                        material.displayNameCn() + "粉"));
+                        builder.register();
+                    });
         }
     }
 }
@@ -156,7 +162,7 @@ public final class MyContentPlugin extends TopoPlugin {
 
 - 在自己的策略中配置模型、标签和创造栏，或维护对应资源文件；[内容注册实作](foundation/content-plugin.md) 展示可复用的产品策略。
 - 自有物品／方块名称通过 `RegistryDisplayLang` 提交给生成条目的 Builder；界面提示等独立文本使用 `lang.key`。
-- 在自己的 datagen 配置中选中 `mymod`，把生成目录接入资源源码集。仓库 Demo 的命令与检查项见[测试与验证](foundation/testing.md)。
+- 在自己的 datagen 配置中选中 `mymod`，把生成目录接入资源源码集。集成检查项见[验证内容插件](foundation/testing.md)。
 
 ## 4. 继续注册其他领域
 

@@ -4,11 +4,16 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Arrays;
 import java.util.Objects;
 
 /** An enum machine field. Enum names are the persist and wire ABI, never ordinals. */
 public final class DataEnum<E extends Enum<E>> extends DataField {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(DataEnum.class);
 
     private final Class<E> enumType;
     private final E[] constants;
@@ -60,7 +65,9 @@ public final class DataEnum<E extends Enum<E>> extends DataField {
         try {
             value = Enum.valueOf(enumType, name);
         } catch (IllegalArgumentException ignored) {
-            throw new IllegalStateException("Unknown enum value '" + name + "' for machine data field " + path() + " of " + enumType.getName());
+            LOGGER.warn(
+                    "Unknown enum value '{}' for machine data field {} of {}; keeping '{}'",
+                    name, path(), enumType.getName(), value.name());
         }
     }
 

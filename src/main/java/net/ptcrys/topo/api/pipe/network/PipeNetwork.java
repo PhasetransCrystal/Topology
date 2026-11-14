@@ -1,5 +1,6 @@
 package net.ptcrys.topo.api.pipe.network;
 
+import net.ptcrys.topo.Topology;
 import net.ptcrys.topo.api.machine.resource.DirectResourceAccess;
 import net.ptcrys.topo.api.machine.resource.MachineResourceType;
 import net.ptcrys.topo.api.machine.resource.ResourceHandlerLongOps;
@@ -57,12 +58,6 @@ interface PipeTxSession {
 public final class PipeNetwork<R extends Resource> {
 
     private static final Direction[] DIRECTIONS = Direction.values();
-    /**
-     * 单次批转移最多发起的增广搜索数:点不相交车道数受入口节点度(≤5)限制,留出份额钳制
-     * 引发的零额复搜余量;真正的收束由"每次落账至少 1"与零额新路即收手保证,这里只是围栏。
-     */
-    private static final int MAX_AUGMENT_SEARCHES = 16;
-
     final MachineResourceType<R> resourceType;
     private final ServerLevel level;
     private final long[] nodePositions;
@@ -256,7 +251,7 @@ public final class PipeNetwork<R extends Resource> {
      * Rebuild the extract/destination port lists contributed by one node in place (its LINK set
      * is unchanged). Bumps {@link #revision} so extractor path tables resync lazily.
      */
-    public void refreshPortsAt(PipeNetworksSavedData data, long pos) {
+    void refreshPortsAt(PipeNetworksSavedData data, long pos) {
         int nodeIndex = indexByPos.get(pos);
         if (nodeIndex < 0) {
             return;
@@ -496,11 +491,12 @@ public final class PipeNetwork<R extends Resource> {
             }
         }
         // 预算未尽:残量搜索发现新车道并落缓存。单口网络一旦确认完備,稳态零搜索;
-        // 多口网络的占用随他口逐批变化,保留再发现(每批至多 MAX_AUGMENT_SEARCHES 次)。
+        // 多口网络的占用随他口逐批变化,保留再发现(每批搜索次数可配置)。
         if (remaining <= 0 || (lanes.complete && extractors.size() == 1)) {
             return totalMoved;
         }
-        for (int search = 0; search < MAX_AUGMENT_SEARCHES && remaining > 0 && lanes.count < MAX_AUGMENT_SEARCHES; search++) {
+        int maxAugmentSearches = Math.max(1, Topology.config.PIPES.maxAugmentSearchesPerBatch);
+        for (int search = 0; search < maxAugmentSearches && remaining > 0 && lanes.count < maxAugmentSearches; search++) {
             long mark = stats ? System.nanoTime() : 0;
             int laneLength = residualLane(port, destination.nodeIndex, boundedInterval, futureLedger);
             if (stats) {
@@ -967,13 +963,13 @@ public final class PipeNetwork<R extends Resource> {
         final PipeDefinition definition;
         final BlockCapabilityCache<ResourceHandler<R>, @Nullable Direction> cache;
         int cursor;
-        /** Resolved strategy config, cached against the runtime's config generation counter. */
+        /** Resolved strategy config, cached against the owning node's port revision. */
         @Nullable
         PipePortStrategyConfig cachedConfig;
-        /** Compiled white/black filter (null = pass-all), cached on the same generation. */
+        /** Compiled white/black filter (null = pass-all), cached on the same revision. */
         @Nullable
         Predicate<R> cachedFilter;
-        long cachedConfigGeneration = -1;
+        long cachedConfigRevision = -1;
         int pathRevision = -1;
         int @Nullable [] parent;
         byte @Nullable [] parentDir;

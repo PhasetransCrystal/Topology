@@ -4,7 +4,7 @@ sidebar_position: 2
 
 # Keys & Families
 
-自定义 UI 文本的注册——`LangDomainRegistration` 的三种铸造形态与 `LangKeyFamily` 分组。
+面向需要注册自定义界面文本或一组相关翻译键的模组开发者。本页说明 `LangDomainRegistration` 的三种键形态与 `LangKeyFamily` 分组。
 
 本页是 [Localization](../localization.md) 模块的子页——概念与页面导航见 [Localization](../localization.md)。
 
@@ -27,11 +27,15 @@ LangKey strategyName = lang.resource(strategyId, "pipe.strategy", "Round Robin",
 
 ## 铸造形态三：absolute — 外部约定
 
-第三方集成（如 Jade 配置 id）要求的非标准键形——完整键必须仍包含插件 modId：
+第三方集成（如 Jade 配置 id）要求的非标准键形。完整键必须归属插件：要么包含一段等于 modId 的路径，要么使用 Jade 的
+`config.jade.plugin_<modId>.<path>` 约定，且前缀之后仍有内容：
 
 ```java
 LangKey jadeConfig = lang.absolute("config.jade.plugin_mymod.pipe", "Pipe Network", "管道网络");
+LangKey jadeLegacy = lang.absolute("jade.config.mymod.owned", "Config", "配置");
 ```
+
+其他插件的 Jade 前缀（如 `config.jade.plugin_othermod.machine`）和空前缀（`config.jade.plugin_mymod.`）会被拒绝。
 
 ## LangKeyFamily — 分组
 
@@ -106,7 +110,7 @@ public final class MyUiLang {
 |----------------------------------------------------------------------|------------------------------------|
 | `lang.key(category, path, en, cn)`                                   | 嵌套路径键 → `category.modId.path` |
 | `lang.resource(id, category, en, cn)`                                | 注册项派生键（id 命名空间须匹配）  |
-| `lang.absolute(fullKey, en, cn)`                                     | 外部约定键形（须含 modId）         |
+| `lang.absolute(fullKey, en, cn)`                                     | 外部约定键形（须归属 modId）       |
 | `LangKeyFamily.ofEnum(lang, category, type, pathFn, enFn, cnFn)`     | 枚举族                             |
 | `LangKeyFamily.derived(lang, category, sources, pathFn, enFn, cnFn)` | 派生族（源表冻结后）               |
 | `family.get(k)`                                                      | 取值（未知成员抛异常）             |

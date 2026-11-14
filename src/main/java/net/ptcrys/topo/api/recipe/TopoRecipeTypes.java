@@ -9,6 +9,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Objects;
@@ -41,7 +42,7 @@ public final class TopoRecipeTypes {
      */
     @ApiStatus.Internal
     public static <R extends TopoRecipe, T extends TopoRecipeType<R>> T begin(
-                                                                              RegistryCore core, T recipeType, @org.jspecify.annotations.Nullable LangDomainRegistration lang) {
+                                                                              RegistryCore core, T recipeType, @Nullable LangDomainRegistration lang) {
         TopoRecipeType.bind(core, recipeType, lang);
         REGISTRY.register(recipeType.id(), recipeType, recipeType);
         return recipeType;
@@ -61,6 +62,12 @@ public final class TopoRecipeTypes {
 
     @ApiStatus.Internal
     public static void freeze() {
+        if (REGISTRY.isFrozen()) {
+            return;
+        }
+        for (TopoRecipeType<?> recipeType : REGISTRY.handlesView()) {
+            recipeType.freezeConfiguration();
+        }
         REGISTRY.freeze();
     }
 

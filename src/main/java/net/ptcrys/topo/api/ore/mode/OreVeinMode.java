@@ -20,11 +20,11 @@ public final class OreVeinMode {
         /** Rejects placements that do not belong to this channel. */
         void validate(OrePlacement placement);
 
-        /** Grid modes add the vein to the per-chunk planner working set; others no-op. */
-        void collectGrid(OreVein vein, OreVeinCollector collector);
+        /** Grid modes add the vein to the per-chunk planner working set; other channels no-op. */
+        default void collectGrid(OreVein vein, OreVeinCollector collector) {}
 
-        /** Feature modes add the vein to the datagen ore-feature bridge; others no-op. */
-        void collectFeature(OreVein vein, OreVeinCollector collector);
+        /** Feature modes add the vein to the datagen ore-feature bridge; other channels no-op. */
+        default void collectFeature(OreVein vein, OreVeinCollector collector) {}
     }
 
     private final Identifier id;

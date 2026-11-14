@@ -9,33 +9,14 @@ import net.minecraft.world.level.block.state.properties.Property;
 import java.util.List;
 import java.util.Objects;
 
-/**
- * Parameterized factories for the built-in {@link PropertyRule} kinds (stateless {@code Xxxs}
- * namespace). The factories are content-free: the governed vanilla {@link Property} constants are
- * passed in as arguments, so this class names no builtin instance — the named strong handles live
- * in data ({@code BuiltinTopoPropertyRules}).
- *
- * <p>
- * The covariant factories ({@link #direction}, {@link #axis}, {@link #half}) build rules whose
- * forward transform rides {@link Orientation#apply(Direction)}. They are partial over restricted
- * value spaces and report that via {@link PropertyRule#supports(Orientation)} so the recognition
- * entry can refuse the orientation up front. {@link #derived} builds an identity rule whose
- * {@link PropertyRule#maskedProperties()} are excluded from the recognition compare.
- */
+/** 内置属性规则工厂。规则持有显式传入的属性，不依赖特定内容注册；协变规则通过 Orientation 旋转，派生规则声明比较屏蔽项。 */
 public final class PropertyRules {
 
     private PropertyRules() {}
 
     /**
-     * COVARIANT rule for facing-direction properties. A block state carries at most one of the given
-     * {@code properties}; the first one present is sent through {@link Orientation#apply(Direction)}.
-     *
-     * <p>
-     * {@link PropertyRule#supports(Orientation)} is the <b>conjunction</b> over every governed
-     * property: the rule supports an orientation only when each property's whole value space is closed
-     * under it. A handle governing a 4-way horizontal property therefore refuses pitch orientations
-     * even for cells whose state carries a full 6-way property — declare a narrower
-     * {@code direction(...)} rule on cells that must form vertically.
+     * 方向协变规则：旋转状态中第一个存在的给定方向属性。
+     * supports 要求每个受管属性的整个合法值域在该旋转下封闭；包含四向水平属性的规则会拒绝侧倾，即使当前状态使用六向属性。
      */
     @SafeVarargs
     public static PropertyRule direction(EnumProperty<Direction>... properties) {
@@ -46,33 +27,17 @@ public final class PropertyRules {
         return new DirectionRule(List.of(properties));
     }
 
-    /**
-     * COVARIANT rule for an axis property ({@code X}/{@code Y}/{@code Z} or a restricted subset). The
-     * axis is carried by its positive unit direction through {@link Orientation#apply(Direction)} and
-     * read back as an axis. A full three-value axis property supports every orientation; a restricted
-     * one (e.g. a horizontal-only axis) reports pitch orientations as unsupported.
-     */
+    /** 轴协变规则：将轴的正向单位方向旋转后读回轴。完整 XYZ 属性支持所有朝向，受限值域会拒绝无法表达的朝向。 */
     public static PropertyRule axis(EnumProperty<Direction.Axis> property) {
         return new AxisRule(Objects.requireNonNull(property, "axis property"));
     }
 
-    /**
-     * COVARIANT rule for a {@link Half} property ({@code TOP}/{@code BOTTOM}). Half co-varies with the
-     * vertical axis: an orientation that keeps {@code UP} up leaves the half alone, one that sends
-     * {@code UP} to {@code DOWN} swaps it, and one that tips {@code UP} onto a horizontal facing cannot
-     * represent a top/bottom half — such orientations are reported unsupported.
-     */
+    /** 上下半格协变规则：UP 保持时不变，UP 翻到 DOWN 时交换 TOP/BOTTOM；侧倾到水平轴时无法表达，拒绝该朝向。 */
     public static PropertyRule half(EnumProperty<Half> property) {
         return new HalfRule(Objects.requireNonNull(property, "half property"));
     }
 
-    /**
-     * DERIVED rule: identity transform masking {@code maskedProperties} out of the recognition
-     * compare. Vanilla recomputes these properties from neighbours via {@code updateShape} (stair
-     * shape, fence/pane connection booleans, &hellip;), so recognition must not pin them: the engine
-     * compares the oriented expected state against the world verbatim <em>except</em> for the union of
-     * every derived rule's masked properties. Building lets vanilla resettle them; export drops them.
-     */
+    /** 派生属性规则：不变换状态，在检测比较中屏蔽指定属性。适用于邻居更新决定的形状、连接等属性，避免固定尚未稳定的派生值。 */
     public static PropertyRule derived(Property<?>... maskedProperties) {
         Objects.requireNonNull(maskedProperties, "masked properties");
         if (maskedProperties.length == 0) {
@@ -103,6 +68,11 @@ public final class PropertyRules {
                 }
             }
             return true;
+        }
+
+        @Override
+        public List<Property<?>> governedProperties() {
+            return List.copyOf(properties);
         }
 
         private BlockState rotate(Orientation o, BlockState s) {
@@ -146,6 +116,11 @@ public final class PropertyRules {
             return property.getPossibleValues().contains(transformed) ? s.setValue(property, transformed) : s;
         }
 
+        @Override
+        public List<Property<?>> governedProperties() {
+            return List.of(property);
+        }
+
         private static Direction.Axis transformAxis(Orientation o, Direction.Axis axis) {
             Direction positive = Direction.fromAxisAndDirection(axis, Direction.AxisDirection.POSITIVE);
             return o.apply(positive).getAxis();
@@ -167,6 +142,11 @@ public final class PropertyRules {
         @Override
         public boolean supports(Orientation o) {
             return o.apply(Direction.UP).getAxis() == Direction.Axis.Y;
+        }
+
+        @Override
+        public List<Property<?>> governedProperties() {
+            return List.of(property);
         }
 
         private BlockState transform(Orientation o, BlockState s) {
@@ -198,7 +178,7 @@ public final class PropertyRules {
             return Classification.DERIVED;
         }
 
-        /** Covariant override of {@link PropertyRule#maskedProperties()} via the record accessor. */
+        /** 通过记录访问器返回声明的屏蔽属性。 */
         @Override
         public List<Property<?>> maskedProperties() {
             return maskedProperties;

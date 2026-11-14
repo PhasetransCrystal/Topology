@@ -4,7 +4,7 @@ sidebar_position: 3
 
 # MachineRenderComponent
 
-渲染 trait 与逻辑组件分离：`MachineRenderComponent` 定义客户端渲染状态，`MachineRenderState` 承载每帧快照。
+面向需要自定义机器外观或方块实体渲染的模组开发者。`MachineRenderComponent` 提供渲染数据，`MachineRenderState` 承载客户端快照。
 **无需注册渲染器**——框架的单例 `MachineBlockEntityRenderer` 自动发现所有渲染组件。
 
 本页是 [Machine](../machine.md) 模块的子页——概念与页面导航见 [Machine](../machine.md)。
@@ -24,10 +24,12 @@ public abstract class MachineRenderComponent<S extends MachineRenderState<?>> ex
 ```
 
 ```java
-public static final ComponentKey<ItemCountRender> KEY = renderKey("item_count", ItemCountRender.class);
+public static final ComponentKey<ItemCountRender> KEY = ComponentKey
+        .of(Identifier.fromNamespaceAndPath("mymod", "item_count"), ItemCountRender.class)
+        .service(MachineRenderComponent.KEY, (trait, unused) -> trait);
 
 private final DataInt count = data().intField("count", 0)
-        .computedEveryInternalTick(() -> computeTotal())   // 渲染字段必须计算型
+        .computedEveryInternalTick(() -> computeTotal())   // 本例使用计算字段
         .saveNone()
         .syncToClientAtEndOfDirtyTick()                    // 且必须客户端同步
         .done();
@@ -37,6 +39,9 @@ public ItemCountRenderState createRenderState() {
     return new ItemCountRenderState(this);
 }
 ```
+
+`renderKey(path, type)` 使用 `topo` 命名空间，适合框架自身组件。下游组件应如上使用自己的完整 ID，
+并绑定 `MachineRenderComponent.KEY` 服务。`bind` 要求字段同步到客户端；计算字段只是产生渲染数据的一种方式。
 
 ## state — 客户端快照
 
@@ -85,7 +90,7 @@ public abstract class MachineBlockRenderType<D> {
 public interface MachineBlockRenderStrategy<D> {
     void validate(D data);                                  // 注册/挂载期校验渲染数据
     void applyBlockModel(BlockBuilder<? extends MachineBlock, RegistryCore> builder,
-            D data, MachineDefinition definition);          // 数据生成期应用方块模型
+            D data, MachineDefinition definition);          // 配置方块 Builder 的模型生成
 }
 ```
 
@@ -100,8 +105,8 @@ public final class HolographicRenderType extends MachineBlockRenderType<Holograp
 
     public static final class Strategy implements MachineBlockRenderStrategy<Data> {
         @Override public void validate(Data data) { /* 校验 */ }
-        @Override public void applyBlockModel(BlockBuilder<?, ?> builder, Data data,
-                MachineDefinition definition) { /* 生成 blockstate/model */ }
+        @Override public void applyBlockModel(BlockBuilder<? extends MachineBlock, RegistryCore> builder, Data data,
+                MachineDefinition definition) { /* 为 Builder 配置 blockstate/model 生成 */ }
     }
 }
 
@@ -118,6 +123,7 @@ machine.machine("my_machine")
 
 :::caution
 渲染类型是冻结表——必须在 `registerMachineFoundation`（钩子 9）注册，`registerMachines` 只能引用。
+`applyBlockModel` 在机器内容注册阶段配置 Builder；其中声明的资源生成回调在数据生成时执行。
 :::
 
 ## API 速查
@@ -131,5 +137,5 @@ machine.machine("my_machine")
 | `MachineRenderState.submit(pose, collector, camera)`             | 每帧绘制                           |
 | `MachineBlockRenderType.use(data)`                               | 渲染用途（挂 builder）             |
 | `MachineBlockRenderStrategy.validate(data)`                      | 渲染数据校验                       |
-| `MachineBlockRenderStrategy.applyBlockModel(builder, data, def)` | 数据生成期模型                     |
+| `MachineBlockRenderStrategy.applyBlockModel(builder, data, def)` | 配置模型生成                       |
 | `machine.renderType(path, handle, strategy)`                     | 注册渲染类型（钩子 9）            |

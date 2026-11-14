@@ -4,7 +4,6 @@ import net.ptcrys.topo.api.api.builtin.LangDomainRegistration;
 import net.ptcrys.topo.api.api.builtin.MaterialDomainRegistration;
 import net.ptcrys.topo.api.api.infrastructure.FreezableStrategyRegistry;
 import net.ptcrys.topo.api.api.lang.LangKey;
-import net.ptcrys.topo.api.material.data.MaterialDataRegistry;
 import net.ptcrys.topo.api.material.data.MaterialDataUse;
 import net.ptcrys.topo.api.material.form.MaterialForm;
 import net.ptcrys.topo.api.material.form.MaterialFormRegistry;
@@ -13,28 +12,32 @@ import net.minecraft.resources.Identifier;
 
 import org.jetbrains.annotations.ApiStatus;
 
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
+/** Material storage, construction entry, and phase fences. Policy lives in dedicated collaborators. */
 public final class MaterialRegistry {
 
     private static final FreezableStrategyRegistry<Identifier, Material, MaterialStrategy> REGISTRY = FreezableStrategyRegistry.create("materials");
+    private static boolean materialCreationClosed;
     private static boolean declarationsClosed;
     private static List<Material> declarationSnapshot;
 
     private MaterialRegistry() {}
 
-    /**
-     * Internal write entry used only by {@link MaterialDomainRegistration}.
-     * Product code must use {@code plugin.material().material(path)}.
-     */
+    /** Internal write entry used only by {@link MaterialDomainRegistration}. */
     @ApiStatus.Internal
     public static Builder begin(Identifier id, LangDomainRegistration lang) {
+        requireCreationOpen(id);
         requireDeclarationsOpen(id);
         return new Builder(Objects.requireNonNull(id, "id"), Objects.requireNonNull(lang, "lang"));
+    }
+
+    /** Closes material creation after all {@code registerMaterials} hooks have completed. */
+    @ApiStatus.Internal
+    public static void closeMaterialCreation() {
+        materialCreationClosed = true;
     }
 
     public static Material require(Identifier id) {
@@ -59,49 +62,25 @@ public final class MaterialRegistry {
             throw new IllegalStateException("materials: freeze already started or failed");
         }
         // Close every write path before invoking product predicates or validators.
+        materialCreationClosed = true;
         declarationsClosed = true;
         declarationSnapshot = REGISTRY.handlesView();
-        List<MaterialForm> candidates = MaterialFormRegistry.registered().stream()
-                .sorted(Comparator.comparing(MaterialForm::id)).toList();
-        List<List<MaterialForm>> resolved = new ArrayList<>(declarationSnapshot.size());
-        for (Material material : declarationSnapshot) {
-            List<MaterialForm> forms = new ArrayList<>();
-            for (MaterialForm form : candidates) {
-                if (form.appliesTo(material)) {
-                    forms.add(form);
-                }
-            }
-            resolved.add(forms);
-        }
-        // No predicate can observe another material's partially resolved forms.
-        for (int index = 0; index < declarationSnapshot.size(); index++) {
-            declarationSnapshot.get(index).strategy().resolveForms(resolved.get(index));
-        }
-        for (Material material : declarationSnapshot) {
-            validate(material);
-        }
+        MaterialFormResolver.resolve(declarationSnapshot, MaterialFormRegistry.registered());
+        MaterialValidator.validate(declarationSnapshot);
+        MaterialLookup.rebuild(declarationSnapshot);
         REGISTRY.freeze();
         declarationSnapshot = null;
+    }
+
+    static void requireCreationOpen(Identifier id) {
+        if (materialCreationClosed) {
+            throw new IllegalStateException("material " + id + ": material creation is closed");
+        }
     }
 
     static void requireDeclarationsOpen(Identifier id) {
         if (declarationsClosed) {
             throw new IllegalStateException("material " + id + ": declarations are closed");
-        }
-    }
-
-    static void validate(Material material) {
-        MaterialStrategy strategy = material.strategy();
-        for (MaterialDataUse<?> use : strategy.dataUses()) {
-            MaterialDataRegistry.validate(material, use);
-        }
-        for (MaterialForm form : strategy.forms()) {
-            strategy.optionsFor(form).ifPresent(options -> {
-                for (MaterialDataUse<?> use : options.dataUses()) {
-                    MaterialDataRegistry.validate(material, use);
-                }
-            });
-            form.strategy().validateMaterial(material, form);
         }
     }
 
@@ -121,6 +100,7 @@ public final class MaterialRegistry {
         }
 
         public Builder lang(String en, String cn) {
+            requireCreationOpen(id);
             requireDeclarationsOpen(id);
             if (built) {
                 throw new IllegalStateException("material " + id + " is already built");
@@ -132,16 +112,19 @@ public final class MaterialRegistry {
 
         /** Configures scoped data and external targets; does not select the form. */
         public Builder form(MaterialForm form, Consumer<MaterialFormOptions> options) {
+            requireCreationOpen(id);
             strategy.configureForm(form, options);
             return this;
         }
 
         public Builder data(MaterialDataUse<?> data) {
+            requireCreationOpen(id);
             strategy.addData(data);
             return this;
         }
 
         public Material build() {
+            requireCreationOpen(id);
             requireDeclarationsOpen(id);
             if (built || REGISTRY.get(id) != null) {
                 throw new IllegalStateException("duplicate material " + id);

@@ -69,6 +69,6 @@ public abstract class MachineRenderComponent<S extends MachineRenderState<?>> ex
     private static ServiceKey<MachineRenderComponent<?>, Void> serviceKey() {
         @SuppressWarnings({ "unchecked", "rawtypes" })
         Class<MachineRenderComponent<?>> type = (Class) MachineRenderComponent.class;
-        return ServiceKey.oi("machine_render", type, Void.class);
+        return ServiceKey.topo("machine_render", type, Void.class);
     }
 }

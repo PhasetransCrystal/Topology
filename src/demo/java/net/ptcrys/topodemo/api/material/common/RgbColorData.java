@@ -16,4 +16,14 @@ public final class RgbColorData {
     public int rgb() {
         return rgb;
     }
+
+    @Override
+    public boolean equals(Object other) {
+        return other instanceof RgbColorData value && rgb == value.rgb;
+    }
+
+    @Override
+    public int hashCode() {
+        return Integer.hashCode(rgb);
+    }
 }

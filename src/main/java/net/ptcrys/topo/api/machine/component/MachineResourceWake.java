@@ -14,7 +14,7 @@ package net.ptcrys.topo.api.machine.component;
 @FunctionalInterface
 public interface MachineResourceWake {
 
-    ServiceKey<MachineResourceWake, Void> KEY = ServiceKey.oi("machine_resource_wake", MachineResourceWake.class, Void.class);
+    ServiceKey<MachineResourceWake, Void> KEY = ServiceKey.topo("machine_resource_wake", MachineResourceWake.class, Void.class);
 
     void onResourceContentChanged();
 }

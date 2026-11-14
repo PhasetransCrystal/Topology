@@ -4,6 +4,7 @@ base {
 
 afterEvaluate {
     tasks.withType(org.gradle.jvm.tasks.Jar).configureEach {
+        from(rootProject.files('LICENSE', 'NOTICE'))
         manifest.attributes([
                 //Optional mixin
                 'MixinConfigs': "${mod_id}.mixins.json",

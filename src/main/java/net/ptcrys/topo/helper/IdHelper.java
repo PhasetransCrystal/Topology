@@ -8,7 +8,7 @@ public final class IdHelper {
 
     private IdHelper() {}
 
-    public static Identifier id(String path) {
+    public static Identifier topo(String path) {
         return Identifier.fromNamespaceAndPath(Topology.MODID, path);
     }
 }

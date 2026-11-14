@@ -1,10 +1,11 @@
 package net.ptcrys.topo.api.material.form;
 
 import net.ptcrys.topo.api.material.Material;
-import net.ptcrys.topo.api.material.MaterialContentContext;
 import net.ptcrys.topo.api.material.data.MaterialDataType;
+import net.ptcrys.topo.helper.MaterialHelper;
 
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -15,7 +16,7 @@ public abstract class MaterialFormStrategy {
     private final Map<FormDataType<?>, FormDataUse<?>> data;
 
     protected MaterialFormStrategy(Collection<FormDataUse<?>> data) {
-        Map<FormDataType<?>, FormDataUse<?>> byType = new java.util.LinkedHashMap<>();
+        Map<FormDataType<?>, FormDataUse<?>> byType = new LinkedHashMap<>();
         for (FormDataUse<?> use : data) {
             if (byType.put(use.type(), use) != null) {
                 throw new IllegalStateException(
@@ -37,6 +38,13 @@ public abstract class MaterialFormStrategy {
                 "form strategy '" + registryPath() + "' does not declare form data " + type.id()));
     }
 
+    /** Native output key derived from this form's {@link #registryPath()}. */
+    protected final MaterialContentKey nativeContentKey(Material material, MaterialContentType type) {
+        return new MaterialContentKey(
+                type,
+                material.id().withPath(String.format(registryPath(), material.id().getPath())));
+    }
+
     /**
      * The registry-path format string for this form, e.g. {@code "%s_ingot"} or {@code "%s_ore"}.
      *
@@ -48,19 +56,17 @@ public abstract class MaterialFormStrategy {
     public abstract String registryPath();
 
     /**
-     * Fail-fast checks for one material that declares this form, run when the material registry
-     * freezes: the material must declare every material data type the form's render requires, and
-     * may only use the override shape matching the form kind.
+     * Builds the frozen plan for one matched material. Plan creation happens after declarations are
+     * closed and before validation/content generation; it may read material data and form options,
+     * but must not mutate them.
      */
-    public abstract void validateMaterial(Material material, MaterialForm form);
-
-    public abstract void register(MaterialContentContext context, MaterialForm form);
+    public abstract MaterialFormPlan plan(Material material, MaterialForm form);
 
     /** Throws unless {@code material} declares every data type in {@code required}. */
     protected final void requireMaterialData(Material material, MaterialForm form,
                                              List<MaterialDataType<?>> required) {
         for (MaterialDataType<?> type : required) {
-            if (material.strategy().data(type).isEmpty()) {
+            if (material.data(type, form).isEmpty()) {
                 throw new IllegalStateException(
                         "material " + material.id() + " is missing data " + type.id() + " required by the render of form " + form.id());
             }
@@ -77,6 +83,6 @@ public abstract class MaterialFormStrategy {
 
     /** Formats a material path as a display name: {@code "stainless_steel"} becomes {@code "Stainless Steel"}. */
     protected static String formatDisplayName(String materialPath) {
-        return net.ptcrys.topo.helper.MaterialHelper.displayName(materialPath);
+        return MaterialHelper.displayName(materialPath);
     }
 }

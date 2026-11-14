@@ -11,7 +11,7 @@ import java.util.Objects;
  */
 public interface RecipeInputPortControl {
 
-    ServiceKey<RecipeInputPortControl, Void> KEY = ServiceKey.oi("recipe_input_port_control", RecipeInputPortControl.class, Void.class);
+    ServiceKey<RecipeInputPortControl, Void> KEY = ServiceKey.topo("recipe_input_port_control", RecipeInputPortControl.class, Void.class);
 
     /** Whether isolatable {@link ResourcePort} inputs must be omitted from recipe routing. */
     boolean suppressIsolatablePortInputs();

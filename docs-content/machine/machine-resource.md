@@ -4,9 +4,11 @@ sidebar_position: 4
 
 # Machine Resource Ports
 
+面向需要为机器提供自定义资源存储和访问端口的模组开发者。
+
 :::caution
-库**不内置任何现成的物品/流体/能量端口**——端口是内容级组件。本页示例按生产级实现的结构组织：
-元数据 record + 预置 key + 静态 mount 工厂 + 语义工厂门面。
+库不提供现成的物品、流体或能量端口组件。下方示例展示元数据、组件键和挂载工厂的组织方式；
+存储 handler、资源类型、图标及具体用途需要由模组提供。
 :::
 
 本页是 [Machine](../machine.md) 模块的子页——概念与页面导航见 [Machine](../machine.md)。
@@ -26,7 +28,7 @@ MachineResourceType<R> type = machine.resourceTypeWithDataField(
 ```
 
 标量型资源（能量/热量等）可用现成工厂：`MachineResourceTypes.valueIoDataFieldFactory()`。
-名称与图标在同一声明点绑定：`machine.bindResourceName(type, en, cn)` + `MachineUiIcons.register(type, icon)`。
+名称与图标在同一声明点绑定：`machine.bindResourceName(type, en, cn)` + `MachineUiIcons.register(type, () -> icon)`。
 
 ## ResourcePort 泛型基类 — 端口组件
 
@@ -90,7 +92,13 @@ public final class MyPort extends ResourcePort<MyStack, MyResource> {
 
     /** mount 工厂：metadata 作为 Attachment 挂到 ComponentMount 上。 */
     public static PartRoleMount<MyPort> mount(ComponentKey<MyPort> key, int slots, PortAccess policy) {
-        MyPortMetadata metadata = new MyPortMetadata(slots, policy);
+        return mount(key, slots, policy, null);
+    }
+
+    /** 四轴工厂：访问策略 + 可选资源过滤。 */
+    public static PartRoleMount<MyPort> mount(ComponentKey<MyPort> key, int slots, PortAccess policy,
+            @Nullable Predicate<Resource> filter) {
+        MyPortMetadata metadata = new MyPortMetadata(slots, policy, filter);
         return new PartRoleMount<>(key.mount(context -> new MyPort(context, metadata), metadata));
     }
 
@@ -137,7 +145,7 @@ machine.machine("my_machine")
 ```java
 PortAccess.input()                    // INPUT 配方角色 + INSERT 自动化 + 玩家自由
 PortAccess.input(Direction first, Direction... more)   // 限定可传输面
-PortAccess.output()                   // OUTPUT 配方角色 + EXTRACT
+PortAccess.output()                   // OUTPUT 配方角色 + EXTRACT 自动化 + 玩家仅取出
 PortAccess.output(Direction first, Direction... more)
 PortAccess.storage()                  // 双向存储（配方 I/O 均可）
 // 链式：.withRecipeIo(...) / .withAutomationIo(...) / .withPlayerSlotAccess(...) / .withPlayerConfigurableSides()
@@ -149,6 +157,7 @@ boolean playerConfigurableSides();    // true = 玩家可逐面配置（Resource
 
 玩家可配置端口的逐面模式用 `ResourcePort.setSideIo(localSide, mode)` / `cycleSideIo(localSide)` /
 `resetSideIo()` 操作（局部面，框架按方块 FACING 折叠成世界面）。运行期玩家配置存进 packed side-io 字段。
+未指定传输面时，无侧向的能力查询也被允许；`onAllSides()` 显式选择六个面，不包含无侧向查询。
 
 ## RecipeSearchPoolId — 配方搜索池
 
@@ -162,7 +171,7 @@ boolean playerConfigurableSides();    // true = 玩家可逐面配置（Resource
 // registerMachineFoundation：声明资源类型（无原版能力时用 resourceType，默认 valueIo 存储工厂）
 MachineResourceType<MyResource> myType = machine.resourceType("my_resource", MyResource.class, null);
 machine.bindResourceName(myType, "My Resource", "我的资源");
-MachineUiIcons.register(myType, /* icon */);
+MachineUiIcons.register(myType, () -> icon);
 
 // registerMachines：挂载自定义端口
 machine.machine("my_machine")
@@ -180,7 +189,7 @@ machine.machine("my_machine")
 | `machine.resourceType(path, type, capability)`                                 | 领域入口（valueIo 默认） |
 | `machine.resourceTypeWithDataField(path, type, capability, factory)`           | 自定义工厂               |
 | `machine.bindResourceName(type, en, cn)`                                       | 资源显示名（同点绑定）   |
-| `MachineUiIcons.register(type, icon)`                                          | 资源图标（同点绑定）     |
+| `MachineUiIcons.register(type, Supplier<IGuiTexture>)`                        | 资源图标（同点绑定）     |
 | `ResourcePort.setSideIo(side, mode)` / `.cycleSideIo(side)` / `.resetSideIo()` | 逐面配置                 |
 | `PortAccess.input()` / `.output()` / `.storage()`                              | 访问策略工厂             |
 | `ResourcePortMetadata.recipePoolIsolatable()`                                  | 配方搜索池隔离声明       |

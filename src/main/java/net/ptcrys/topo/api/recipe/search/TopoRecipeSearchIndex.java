@@ -1,5 +1,6 @@
 package net.ptcrys.topo.api.recipe.search;
 
+import net.ptcrys.topo.Topology;
 import net.ptcrys.topo.api.machine.MachineBlockEntity;
 import net.ptcrys.topo.api.recipe.TopoRecipe;
 import net.ptcrys.topo.api.recipe.capability.RecipeCapabilities;
@@ -18,6 +19,7 @@ import it.unimi.dsi.fastutil.longs.LongArrayList;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.IdentityHashMap;
@@ -34,8 +36,6 @@ import java.util.Set;
  */
 public final class TopoRecipeSearchIndex<R extends TopoRecipe> {
 
-    private static final int TINY_LINEAR_RECIPE_LIMIT = 64;
-    private static final int FALLBACK_DOMINANCE_RATIO = 4;
     private static final ThreadLocal<SearchScratch> SCRATCH = ThreadLocal.withInitial(SearchScratch::new);
 
     private final RecipeSearchKeyRegistry keyRegistry;
@@ -124,7 +124,7 @@ public final class TopoRecipeSearchIndex<R extends TopoRecipe> {
                 amountDiscriminatingPostings = true;
             }
         }
-        boolean lowSelectivityLinearPreferred = !amountDiscriminatingPostings && largestPostingSize > holders.size() / 3 && holders.size() > TINY_LINEAR_RECIPE_LIMIT;
+        boolean lowSelectivityLinearPreferred = !amountDiscriminatingPostings && largestPostingSize > holders.size() / 3 && holders.size() > Topology.config.RECIPE.tinyLinearSearchLimit;
         // Optimization: recipe types dominated by one low-selectivity key and no amount gate use
         // the old linear oracle immediately. Principle: if an index would activate a large
         // fraction of the type and cannot reject by quantity, fingerprint extraction is pure
@@ -176,7 +176,7 @@ public final class TopoRecipeSearchIndex<R extends TopoRecipe> {
     }
 
     private boolean shouldUseLinearFastPath() {
-        return indexedRecipeCount == 0 || lowSelectivityLinearPreferred || recipesByOrdinal.size() <= TINY_LINEAR_RECIPE_LIMIT || preciseCandidateCount * 4L >= recipesByOrdinal.size() || (preciseCandidateCount > 0 && preciseCandidateCount > (long) indexedRecipeCount * FALLBACK_DOMINANCE_RATIO);
+        return indexedRecipeCount == 0 || lowSelectivityLinearPreferred || recipesByOrdinal.size() <= Topology.config.RECIPE.tinyLinearSearchLimit || preciseCandidateCount * 4L >= recipesByOrdinal.size() || (preciseCandidateCount > 0 && preciseCandidateCount > (long) indexedRecipeCount * Math.max(1, Topology.config.RECIPE.fallbackDominanceRatio));
     }
 
     private @Nullable RecipeHolder<R> findRecipeWithScratch(MachineBlockEntity machine, SearchScratch scratch) {
@@ -511,9 +511,9 @@ public final class TopoRecipeSearchIndex<R extends TopoRecipe> {
                 return;
             }
             int newSize = Math.max(requiredSize, activePostings.length * 2);
-            activePostings = java.util.Arrays.copyOf(activePostings, newSize);
-            activeAmounts = java.util.Arrays.copyOf(activeAmounts, newSize);
-            activePositions = java.util.Arrays.copyOf(activePositions, newSize);
+            activePostings = Arrays.copyOf(activePostings, newSize);
+            activeAmounts = Arrays.copyOf(activeAmounts, newSize);
+            activePositions = Arrays.copyOf(activePositions, newSize);
         }
     }
 }

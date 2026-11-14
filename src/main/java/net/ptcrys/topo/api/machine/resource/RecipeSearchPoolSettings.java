@@ -12,7 +12,7 @@ import java.util.Objects;
  */
 public interface RecipeSearchPoolSettings {
 
-    ServiceKey<RecipeSearchPoolSettings, Void> KEY = ServiceKey.oi("recipe_search_pool_settings", RecipeSearchPoolSettings.class, Void.class);
+    ServiceKey<RecipeSearchPoolSettings, Void> KEY = ServiceKey.topo("recipe_search_pool_settings", RecipeSearchPoolSettings.class, Void.class);
 
     /** Resolved id for every isolatable port on this machine. Always present. */
     RecipeSearchPoolId recipeSearchPoolId();

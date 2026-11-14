@@ -8,15 +8,14 @@ import net.ptcrys.topodemo.api.material.BuiltinMaterialForms;
 
 import net.minecraft.data.recipes.RecipeCategory;
 
-import static net.ptcrys.topodemo.api.material.BuiltinMaterialDataTypes.KIND;
-import static net.ptcrys.topodemo.api.material.common.MaterialKindDataType.Kind.METAL;
+import static net.ptcrys.topodemo.api.material.BuiltinMaterialDataTypes.INGOT;
 
 /** Recipe callbacks resolve items after registry binding; each form owns its tags. */
 public final class BuiltinMaterialFollowUps {
 
     public static void init() {
         for (var material : MaterialRegistry.registered()) {
-            if (!KIND.is(METAL).test(material) || !material.strategy().forms().contains(BuiltinMaterialForms.INGOT) || !material.strategy().forms().contains(BuiltinMaterialForms.DUST)) continue;
+            if (!INGOT.present().test(material) || !material.forms().contains(BuiltinMaterialForms.INGOT) || !material.forms().contains(BuiltinMaterialForms.DUST)) continue;
             var ingot = MaterialHelper.materialItemSupplier(material, BuiltinMaterialForms.INGOT);
             var dust = MaterialHelper.materialItemSupplier(material, BuiltinMaterialForms.DUST);
             TopoDemo.REGISTRY.addRecipeData(provider -> provider.smelting(

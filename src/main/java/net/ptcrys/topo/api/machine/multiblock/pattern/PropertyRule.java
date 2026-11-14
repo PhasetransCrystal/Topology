@@ -7,97 +7,47 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * Leaf element (L1) describing how a single block-state property co-varies with an
- * {@link Orientation} during structure recognition.
- *
- * <p>
- * Rules are <b>partial</b>: when the property is absent on {@code s}, or the orientation cannot
- * be represented for that property's restricted value space, {@link #apply(Orientation, BlockState)}
- * returns {@code s} unchanged. {@link #supports(Orientation)} declares that representability up
- * front, and the recognition entry refuses unsupported orientations before any cell is compared
- * (see {@link StructureEngine}).
- *
- * <p>
- * Rules are plain values referenced as strong handles from blueprint declarations (the builtin
- * catalog is {@code BuiltinTopoPropertyRules}); identity is reference identity — rules never match by
- * string or id.
+ * 描述规范状态属性在有效旋转下的处理方式。规则为普通不可变值，通过对象引用使用，不按字符串匹配。
+ * 受限值域可能无法表达某些旋转，须由 supports 提前声明；引擎在扫描前拒绝不支持的朝向。
  */
 public interface PropertyRule {
 
-    /**
-     * Forward transform: returns {@code s} with the governed property rotated/mirrored under
-     * {@code o}, or {@code s} unchanged if the property is absent or the orientation is
-     * unrepresentable for it.
-     */
+    /** 返回受管属性按 o 变换后的状态；属性不存在或旋转无法表达时返回原状态。调用者应先检查 supports。 */
     BlockState apply(Orientation o, BlockState s);
 
-    /** Classifies the rule's round-trip behaviour. */
+    /** 属性处理分类；只有 COVARIANT 会被引擎应用旋转。 */
     Classification classification();
 
     /**
-     * Whether this rule's transform is <b>total</b> under {@code o}: every legal value of every
-     * governed property maps onto a value that is again legal for that property. When {@code false},
-     * {@link #apply(Orientation, BlockState)} would have to leave some states unchanged, and folding a
-     * canonical expected state forward could then falsely match a world block that happens to carry
-     * the untransformed value — so the recognition entry pre-checks this per blueprint &times;
-     * orientation and refuses the pass with
-     * {@link RecognitionResult.FailureReason#ORIENTATION_UNSUPPORTED} instead.
-     *
-     * <p>
-     * Defaults to {@code true} (total everywhere). Covariant rules over restricted value spaces
-     * (e.g. a horizontal-only direction property under a pitch orientation) override this.
+     * 该旋转是否将每个受管属性的所有合法值仍映射到其合法值域。
+     * 默认支持全部朝向；受限方向属性应重写。返回 false 时检测入口拒绝朝向，避免未旋转的回退值造成误匹配。
      */
     default boolean supports(Orientation o) {
         return true;
     }
 
     /**
-     * The <em>additional</em> legal encodings of {@code expected} — states spelling the same
-     * physical geometry differently. Vanilla encodes some shapes redundantly (a corner stair is one
-     * geometry with two legal facing/shape pairs, whichever the placing player's look direction
-     * produced); the recognition compare ({@link StructureEngine}) accepts the oriented expected
-     * state <em>or</em> any alternate a cell rule contributes.
-     *
-     * <p>
-     * Contract: derived from the trusted, blueprint-pinned expected state only — a rule must
-     * never need to read the world block's neighbour-recomputed properties, which may not have
-     * settled when recognition runs. Confined to this rule's governed properties; empty when they
-     * are absent. {@code expected} is already in the world frame (post-fold), so implementations
-     * stay orientation-blind. The default is no alternates — most properties encode uniquely.
+     * 返回同一几何形态的额外合法状态编码，检测接受规范状态或任一替代编码。
+     * 输入是已旋转的可信预期状态；只处理本规则的受管属性，不读取实际世界或邻居派生值。默认无替代编码。
      */
     default Collection<BlockState> alternateEncodings(BlockState expected) {
         return List.of();
     }
 
     /**
-     * The block-state properties recognition must <b>not</b> compare for this rule, because vanilla
-     * recomputes them from neighbours after the block settles (stairs {@code SHAPE}, fence/wall/glass
-     * connection booleans, chest {@code TYPE}, &hellip;).
-     *
-     * <p>
-     * The recognition compare ({@link StructureEngine}) folds a cell's covariant rules forward onto
-     * the expected state, then compares it against the world verbatim <em>except</em> for the union of
-     * every rule's masked properties. Masking is a capability any rule may declare, orthogonal to its
-     * {@link Classification}; the default is empty (a rule that masks nothing) and the builtin
-     * {@code DERIVED} factories override it with their neighbour-recomputed properties.
+     * 比较时忽略的属性集合，通常是由邻居决定的形状或连接状态。
+     * 屏蔽能力与分类独立；引擎合并同一单元格所有规则的屏蔽项，默认空集合。
      */
     default Collection<Property<?>> maskedProperties() {
         return List.of();
     }
 
-    /**
-     * The three property categories.
-     *
-     * <ul>
-     * <li>{@link #FIXED} — identity-only: pinned and compared verbatim in the canonical frame; the
-     * engine never folds a FIXED rule through the orientation.
-     * <li>{@link #COVARIANT} — freely settable and rotates/mirrors with the orientation
-     * (three-way round-trip: recognise forward, build forward, export inverse); the only
-     * classification the engine folds.
-     * <li>{@link #DERIVED} — recomputed from neighbours via {@code updateShape}; recognition
-     * validates after settling or masks it, building tolerates the recompute, export drops it.
-     * </ul>
-     */
+    /** 本规则会变换的属性，供构建器拒绝同一属性上的重复协变规则。只屏蔽、不变换的规则返回空集合。 */
+    default Collection<Property<?>> governedProperties() {
+        return List.of();
+    }
+
+    /** 属性分类：FIXED 保留规范值直接比较；COVARIANT 随有效旋转变换；DERIVED 由环境派生，通常通过 maskedProperties 屏蔽。 */
     enum Classification {
         FIXED,
         COVARIANT,

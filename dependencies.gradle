@@ -12,9 +12,11 @@ dependencies {
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
     //https://maven.ptcrys.net/release/net/ptcrys/RegistryLib
-    implementation("net.ptcrys:RegistryLib:${registry_lib_version}")
+    implementation("net.ptcrys:RegistryLib:26.1.2-${registry_lib_version}")
+    implementation("dev.toma.configuration:configuration-neoforge:${configuration_version}")
 
     //https://maven.blamejared.com/mezz/jei/jei-26.1.2-neoforge
+    compileOnly "mezz.jei:jei-${minecraft_version}-gui:${jei_version}"
     compileOnly "mezz.jei:jei-${minecraft_version}-common-api:${jei_version}"
     compileOnly "mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}"
     runtimeOnly "mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}"
@@ -27,6 +29,9 @@ dependencies {
     runtimeOnly("org.appliedenergistics:guideme:${guideme_version}")
     compileOnly "org.appliedenergistics:appliedenergistics2:${ae2_version}"
     runtimeOnly "org.appliedenergistics:appliedenergistics2:${ae2_version}"
+    testRuntimeOnly("org.appliedenergistics:guideme:${guideme_version}")
+    testCompileOnly "org.appliedenergistics:appliedenergistics2:${ae2_version}"
+    testRuntimeOnly "org.appliedenergistics:appliedenergistics2:${ae2_version}"
 
     compileOnly "curse.maven:jade-324717:8651070"
     runtimeOnly "curse.maven:jade-324717:8651070"

@@ -170,17 +170,17 @@ public record ExportHints(
         }
     }
 
-    public sealed interface Unlock permits Unlock.Item, Unlock.Tag {
+    public sealed interface Unlock permits Unlock.ItemUnlock, Unlock.Tag {
 
-        record Item(Supplier<? extends ItemLike> item) implements Unlock {
+        record ItemUnlock(Supplier<? extends ItemLike> item) implements Unlock {
 
-            public Item {
+            public ItemUnlock {
                 Objects.requireNonNull(item, "item");
             }
         }
 
         /** Unlock by item tag (not confused with {@link IngredientSpec.Tag}). */
-        record Tag(TagKey<net.minecraft.world.item.Item> tag) implements Unlock {
+        record Tag(TagKey<Item> tag) implements Unlock {
 
             public Tag {
                 Objects.requireNonNull(tag, "tag");

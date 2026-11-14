@@ -102,9 +102,9 @@ public sealed class DataFieldBuilder<F extends DataField> permits SyncableFieldB
 
     /** Subclasses extend this to fold in their own axes. */
     FieldPolicy resolvePolicy() {
-        return new FieldPolicy(persistMode == PersistMode.PERSISTED, false, false);
+        return new FieldPolicy(persistMode == PersistMode.PERSISTED, false);
     }
 
-    /** Subclasses register their declared sync directions with the domain after construction. */
+    /** Subclasses register client sync slots with the domain after construction. */
     void enableSyncSlots(F field) {}
 }

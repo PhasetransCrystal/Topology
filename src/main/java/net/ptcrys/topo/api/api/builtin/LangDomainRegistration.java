@@ -76,13 +76,22 @@ public final class LangDomainRegistration {
 
     /**
      * Escape for non-standard key shapes required by foreign conventions (e.g. Jade config ids).
-     * The full key must still include this plugin's modId.
+     * The full key must include this plugin's modId as a segment, or use Jade's
+     * {@code config.jade.plugin_<modId>.<path>} convention.
      */
     public LangKey absolute(String fullKey, String en, String cn) {
         Objects.requireNonNull(fullKey, "fullKey");
-        if (!fullKey.contains(modId())) {
+        boolean owned = false;
+        for (String segment : fullKey.split("\\.", -1)) {
+            if (segment.equals(modId())) {
+                owned = true;
+                break;
+            }
+        }
+        String jadePrefix = "config.jade.plugin_" + modId() + ".";
+        if (!owned && !(fullKey.startsWith(jadePrefix) && fullKey.length() > jadePrefix.length())) {
             throw new IllegalArgumentException(
-                    "absolute lang key must include plugin modId '" + modId() + "': " + fullKey);
+                    "absolute lang key must belong to plugin '" + modId() + "': " + fullKey);
         }
         return register(fullKey, en, cn);
     }

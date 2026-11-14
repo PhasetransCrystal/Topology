@@ -62,8 +62,7 @@ public final class PipeNetworkEngine {
         if (runtime.openPortScreen(pos, side, player)) {
             return true;
         }
-        runtime.cycleExtractStrategy(pos, side, player);
-        return true;
+        return runtime.cycleExtractStrategy(pos, side, player);
     }
 
     public static @Nullable PipeNetwork<?> networkAt(ServerLevel level, BlockPos pos) {

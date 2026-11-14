@@ -27,6 +27,9 @@ public final class TopoCompactNumber {
     }
 
     public static String formatCompact(long value, int maxLen) {
+        if (value == Long.MIN_VALUE) {
+            return "-" + formatCompact(Long.MAX_VALUE, Math.max(1, maxLen - 1));
+        }
         if (value < 0L) {
             return "-" + formatCompact(-value, Math.max(1, maxLen - 1));
         }
@@ -48,6 +51,9 @@ public final class TopoCompactNumber {
     }
 
     public static String formatCompactBuckets(long amountMb, int maxLen) {
+        if (amountMb == Long.MIN_VALUE) {
+            return "-" + formatCompactBuckets(Long.MAX_VALUE, Math.max(1, maxLen - 1));
+        }
         if (amountMb < 0L) {
             return "-" + formatCompactBuckets(-amountMb, Math.max(1, maxLen - 1));
         }

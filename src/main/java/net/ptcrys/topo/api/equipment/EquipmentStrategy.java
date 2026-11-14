@@ -1,8 +1,11 @@
 package net.ptcrys.topo.api.equipment;
 
+import net.ptcrys.registrylib.util.entry.ItemEntry;
 import net.ptcrys.topo.api.machine.MachineItemBehavior;
 import net.ptcrys.topo.api.material.Material;
 import net.ptcrys.topo.api.material.MaterialContentContext;
+
+import net.minecraft.world.item.Item;
 
 import org.jspecify.annotations.Nullable;
 
@@ -16,7 +19,11 @@ public interface EquipmentStrategy {
     /** Declaration-driven: true when {@code material} declares the stats payload this kind needs. */
     boolean appliesTo(Material material);
 
-    void register(MaterialContentContext context, Equipment self);
+    /**
+     * Registers exactly one item for this (equipment, material) pair. The framework records the
+     * returned entry; strategies must not mutate the equipment registry directly.
+     */
+    ItemEntry<Item> register(MaterialContentContext context, Equipment self);
 
     /**
      * The machine interaction this kind's items perform, or null for none. The runtime binder

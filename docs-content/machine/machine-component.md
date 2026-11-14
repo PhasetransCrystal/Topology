@@ -4,7 +4,7 @@ sidebar_position: 2
 
 # MachineComponent
 
-机器的一切能力来自挂载在 `MachineDefinition` 上的组件。继承 `MachineComponent` 是自定义机器行为的主通道。
+面向需要为机器实现自定义行为的模组开发者。机器能力由挂载在 `MachineDefinition` 上的组件提供。
 
 本页是 [Machine](../machine.md) 模块的子页——概念与页面导航见 [Machine](../machine.md)。
 
@@ -33,11 +33,14 @@ public static ComponentMount<MyComponent> mount() {
 ```
 构造（super(context) 拿身份 + DataScope）
   → resolveDependencies(MachineComponents)   // 只做结构校验，禁止读持久化状态
-  → onMachineLoad()                          // 进入世界：此时才能读数据
-  → （每 tick，若实现 MachineTicker）
-  → onMachineUnload()
-  → onMachineDestroyed(level, pos, state)    // 破坏时
+  → onMachineLoad()                          // 进入世界，数据域已加载
+  → （按间隔 tick，若继承 MachineTicker）
+  → onMachineDestroyed(level, pos, state)    // 仅服务端破坏或替换时
+  → onMachineUnload()                        // 从世界移除时
 ```
+
+`onMachineDestroyed` 在 `onMachineUnload` 之前调用，仅适用于方块破坏或被替换；区块卸载和同一方块的状态变化不会触发它。
+卸载后再次进入世界时，组件应能重新处理加载和卸载，不能假定机器只会加载一次。
 
 ```java
 public abstract class MachineComponent {
@@ -94,6 +97,8 @@ resourceKey / valueIoField / itemResourceHandler / fluidResourceHandler`。
 
 :::caution
 `syncToClientAtEndOfDirtyTick` 用于世界渲染（非菜单场景）。开菜单的 UI 走 LDLib2 自己的同步，不要用机器数据同步。
+
+通用机器字段 C2S 上传 API 已移除。菜单编辑应通过 LDLib2 UI binding/RPC 请求服务端校验并更新状态。
 :::
 
 ## 服务 — capability 式绑定

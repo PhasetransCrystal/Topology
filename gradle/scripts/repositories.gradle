@@ -44,7 +44,10 @@ repositories {
         filter { includeGroup("com.tterrag.registrate") }
     }
 
-
+    maven {
+        name 'Configuration'
+        url 'https://repo.repsy.io/mvn/toma/public/'
+    }
     maven {
         url "https://maven.firstdarkdev.xyz/snapshots/"
     }

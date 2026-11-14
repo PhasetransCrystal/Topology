@@ -1,7 +1,6 @@
 package net.ptcrys.topo.api.api.visual;
 
 import net.ptcrys.topo.api.machine.OrientedActiveMachineBlock;
-import net.ptcrys.topo.api.machine.OrientedMachineBlock;
 import net.ptcrys.topo.helper.IdHelper;
 
 import net.minecraft.client.renderer.block.BlockAndTintGetter;
@@ -15,6 +14,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.block.DirectionalBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.client.model.DynamicBlockStateModel;
 import net.neoforged.neoforge.client.model.block.CustomUnbakedBlockStateModel;
@@ -39,7 +39,7 @@ public record ConnectedTextureMachineModel(
                                            Identifier family)
         implements CustomUnbakedBlockStateModel {
 
-    public static final Identifier LOADER = IdHelper.id("ctm_machine");
+    public static final Identifier LOADER = IdHelper.topo("ctm_machine");
     private static final ModelDebugName DEBUG_NAME = () -> "ConnectedTextureMachineModel";
 
     public static final MapCodec<ConnectedTextureMachineModel> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
@@ -98,7 +98,7 @@ public record ConnectedTextureMachineModel(
         public void collectParts(BlockAndTintGetter level, BlockPos pos, BlockState state,
                                  RandomSource random, List<BlockStateModelPart> parts) {
             CtmBakedParts.addMasked(level, pos, family, parts, byMask);
-            Direction facing = state.hasProperty(OrientedMachineBlock.FACING) ? state.getValue(OrientedMachineBlock.FACING) : Direction.NORTH;
+            Direction facing = state.hasProperty(DirectionalBlock.FACING) ? state.getValue(DirectionalBlock.FACING) : Direction.NORTH;
             boolean active = state.hasProperty(OrientedActiveMachineBlock.ACTIVE) && state.getValue(OrientedActiveMachineBlock.ACTIVE);
             CtmBakedParts.addFacing(parts, active ? activeOverlay : idleOverlay, facing);
         }

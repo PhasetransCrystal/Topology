@@ -9,7 +9,7 @@ import net.ptcrys.topo.api.machine.component.ServiceKey;
  */
 public interface SearchPoolUiControl {
 
-    ServiceKey<SearchPoolUiControl, Void> KEY = ServiceKey.oi("search_pool_ui", SearchPoolUiControl.class, Void.class);
+    ServiceKey<SearchPoolUiControl, Void> KEY = ServiceKey.topo("search_pool_ui", SearchPoolUiControl.class, Void.class);
 
     /**
      * When {@code true}, {@link MachineSearchPoolConfig} must not show its search-pool config panel.

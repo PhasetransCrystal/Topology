@@ -4,8 +4,9 @@ sidebar_position: 3
 
 # TopoRecipeType
 
-配方类型大多不需要子类——`recipe.recipeType(path)` 用默认工厂即可。只有需要**特殊配方载体**（额外状态、
-专用序列化）时才继承。
+面向需要注册或扩展配方类型的模组开发者。配方类型大多不需要子类——`recipe.recipeType(path)` 用默认工厂即可。只有需要特殊配方载体时才继承；
+`RecipeFactory` 负责从公共四通道重建实例，缩放/并行会再次经过该工厂，因此自定义子类不会退化成基类。
+默认 codec 只覆盖公共字段，额外字段的 JSON/网络序列化需要后续 codec 扩展点。
 
 本页是 [Recipe](../recipe.md) 模块的子页——概念与页面导航见 [Recipe](../recipe.md)。
 
@@ -56,8 +57,13 @@ recipe.recipeType("spell_crafting", new SpellRecipeType(plugin.recipe().id("spel
         .progressBar(/* texture */);
 ```
 
+`TopoRecipeTypes.freeze()` 会关闭类型上的 `displayName`、`progressBar`、`vanillaFacing`、`importRecipesFrom`、
+`exportRecipesTo` 配置；之后仍可在 `registerRecipes` 中通过 `recipe(...)` / `addRecipe(...)` 声明具体配方。
+
 框架自动完成 RegistryLib 配方类型注册、序列化器与流编解码绑定。只有导入/导出外部配方表
 （原版、其他 Mod）时才需要 `ImportedRecipeAdapter` / `ExportedRecipeAdapter`。
+需要把类型同时输出为原版合成/烹饪数据时，用 `exportRecipesTo` 绑定 `VanillaExportedRecipeAdapters`，
+并在声明配方时提供 `ExportHints`；见[原版配方导出](vanilla-export.md)。
 
 ## TopoRecipe.Builder — 完整链
 
@@ -75,14 +81,17 @@ RegistryLib 自动加上配方类型路径与所属命名空间：类型 `mymod:
 
 ```java
 type.recipe("path")
-        .input(use) / .output(use)          // 启动 I/O（RecipeInputUse/RecipeOutputUse）
-        .tickInput(use) / .tickOutput(use)  // 每 tick I/O
+        .input(inputUse)                    // 开始时消耗
+        .output(outputUse)                  // 完成时产出
+        .tickInput(tickInputUse)            // 每 tick 输入
+        .tickOutput(tickOutputUse)          // 每 tick 输出
         .duration(ticks)                    // 默认 100
         .productionLine(line)               // ProductionLine 句柄
         .productionLines(lines...)
-        .buildRecipe()                      // 返回 R（不保存）
-        .save()                             // 保存进配方表
+        .save();                            // 返回并保存 R
 ```
+
+如果只需创建配方实例而不注册，可以在构建器上调用 `buildRecipe()`；它返回配方，不返回构建器，因此不能在其后链式调用 `save()`。
 
 ## ProductionLine — 生产线
 
@@ -105,7 +114,8 @@ type.recipe("iron_dust")
 |-----------------------------------------------------------------------------------------------------------------------------------------|------------------------------------|
 | `TopoRecipeType(id, factory)`                                                                                                           | 自定义配方类型（默认工厂够用）     |
 | `displayName(en, cn)` / `progressBar(...)`                                                                                              | 显示与进度条                       |
-| `importRecipesFrom(...)` / `exportRecipesTo(...)`                                                                                       | 外部表桥接                         |
+| `vanillaFacing()`                                                                                                                       | 纯产品作者类型：不挂机器、不进 JEI 分类与配方搜索 |
+| `importRecipesFrom(...)` / `exportRecipesTo(...)`                                                                                       | 外部表桥接（导出见[原版配方导出](vanilla-export.md)） |
 | `recipeType.recipe(name)` / `.addRecipe(name, recipe)`                                                                                  | 配方写入                           |
 | `recipeType.findRecipe(machine)`                                                                                                        | 机器侧查找                         |
 | `recipe.recipeType(path[, customType])`                                                                                                 | 领域注册（钩子 2）                 |

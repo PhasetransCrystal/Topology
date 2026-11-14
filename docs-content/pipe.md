@@ -4,9 +4,11 @@ sidebar_position: 1
 
 # Pipe
 
-管道系统提供可视化物流网络。管道自动形成连接图、执行分发策略，通过统一网络引擎处理传输。
+面向需要注册管道和接入资源容器的模组开发者。管道自动形成连接图，并按分发策略传输资源。
 
 ## 关键概念
+
+{/* 图片预留：管道网络中的抽取端口、分发路径和目标容器示意图。 */}
 
 ```
 PipeDefinition       ← 一种管道（资源类型 × 等级）
@@ -77,7 +79,7 @@ public class MyPipeBlockTemplate implements PipeBlockTemplate {
 
 管道通过资源类型声明的 block capability 查询相邻容器，不要求容器来自 Topo。
 复用同一个公开资源类型和兼容的 handler；目标没有对应能力时，需要额外的产品适配。
-具体边界见[兼容其他模组](compatibility/other-mods.md#5-兼容配方和容器能力)。
+具体边界见[兼容其他模组](compatibility/other-mods.md#6-兼容配方和容器能力)。
 
 ## 管道交互
 
@@ -89,13 +91,33 @@ public class MyPipeBlockTemplate implements PipeBlockTemplate {
 ## 勘测器
 
 管道网络勘测工具（`PipeSurveyTool` 标记接口 + `PipeSurveyManager` 行为驱动）——
-物品实现接口即成为勘测器，详情见 [Pipe Surveyor](pipe/pipe-survey.md)。
+物品需要实现标记接口并转发勘测交互，详情见 [Pipe Surveyor](pipe/pipe-survey.md)。
 
 ## 分发策略
 
 策略由 `PipeDistributionStrategy` 接口定义——库不内置具体策略，继承实现后通过
 `PipeDistributionStrategies.register(strategy)` 注册。接口签名、上下文方法与注册时机见
 [PipeStrategy](pipe/pipe-strategy.md)。
+
+## 为什么这样设计
+
+分发策略可插拔，因为不同资源/机器的吞吐与公平性目标不同；聚合窗口把多次小额请求合并成批次；容器通过资源类型的 block capability 查询。
+
+## 与其他模块联动
+
+机器提供资源类型与端口；客户端负责勘测渲染；Jade 提供展示；语言模块提供管道与配置文本。
+
+## 常见坑
+
+- 认为注册策略后会立即执行 `distribute`：它在传输时触发。
+- 策略不处理 `budget` 或剩余需求：会超发或丢弃。
+- 相邻容器没有对应 block capability：管道不会识别。
+
+## 扩展约定
+
+- 新资源/等级声明 `PipeResourceProfile`、方块模板、吞吐与过滤。
+- 新策略实现 `PipeDistributionStrategy` 并在 `PipeDistributionStrategies` 注册。
+- 新内容用插件领域入口；旧 `Pipes.register` 保留 `topo` 命名空间。
 
 ## API 速查
 

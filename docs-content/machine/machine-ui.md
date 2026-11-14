@@ -4,7 +4,7 @@ sidebar_position: 7
 
 # Machine UI
 
-机器界面是**声明式**的：组件在 `collectMachineUi` 里描述要什么面板，框架负责布局、分页与生命周期。
+面向需要为机器组件添加界面的模组开发者。组件在 `collectMachineUi` 里声明面板，框架负责布局、分页与生命周期。
 本页覆盖自定义机器屏幕的三个层次。
 
 本页是 [Machine](../machine.md) 模块的子页——概念与页面导航见 [Machine](../machine.md)。
@@ -34,7 +34,7 @@ override fun collectMachineUi(contribution: MachineUiContribution) {
 要点：
 
 - `mainPage(key, title, build)` — 键稳定（持久化打开的分页）
-- `rightPanel` / `leftPanel` 有 build 重载与 element 重载（后者可带 `visibleWhen` 动态隐藏）
+- `rightPanel` / `leftPanel` 均有 build 和 element 重载；`rightPanel` 的 element 重载支持 `visibleWhen` 动态隐藏
 - 框架自动包装侧栏卡片（`MachineUiContainerTemplate.createCard`）；底条不包
 
 `RecipeLogic` 负责执行配方，不会自动创建配方页。机器声明中需显式挂载对应 UI 组件：

@@ -17,9 +17,9 @@ import java.util.List;
 /** Owns recipe registration steps and their freeze fences. */
 public final class RecipeRegistrationModule implements RegistrationModule {
 
-    static final RegistrationPoint<RecipePlugin, RecipeDomainRegistration> FOUNDATION = RegistrationPoint.of(IdHelper.id("recipe/foundation"), RecipePlugin.class, RecipeDomainRegistration.DOMAIN, RecipePlugin::registerRecipeFoundation);
-    static final RegistrationPoint<RecipePlugin, RecipeDomainRegistration> TYPES = RegistrationPoint.of(IdHelper.id("recipe/types"), RecipePlugin.class, RecipeDomainRegistration.DOMAIN, RecipePlugin::registerRecipeTypes);
-    static final RegistrationPoint<RecipePlugin, RecipeDomainRegistration> RECIPES = RegistrationPoint.of(IdHelper.id("recipe/recipes"), RecipePlugin.class, RecipeDomainRegistration.DOMAIN, RecipePlugin::registerRecipes);
+    static final RegistrationPoint<RecipePlugin, RecipeDomainRegistration> FOUNDATION = RegistrationPoint.of(IdHelper.topo("recipe/foundation"), RecipePlugin.class, RecipeDomainRegistration.DOMAIN, RecipePlugin::registerRecipeFoundation);
+    static final RegistrationPoint<RecipePlugin, RecipeDomainRegistration> TYPES = RegistrationPoint.of(IdHelper.topo("recipe/types"), RecipePlugin.class, RecipeDomainRegistration.DOMAIN, RecipePlugin::registerRecipeTypes);
+    static final RegistrationPoint<RecipePlugin, RecipeDomainRegistration> RECIPES = RegistrationPoint.of(IdHelper.topo("recipe/recipes"), RecipePlugin.class, RecipeDomainRegistration.DOMAIN, RecipePlugin::registerRecipes);
 
     @Override
     public void define(RegistrationPlan.Builder plan, RegistrationContext context) {

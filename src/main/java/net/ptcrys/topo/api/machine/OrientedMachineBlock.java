@@ -9,19 +9,19 @@ import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
-import net.minecraft.world.level.block.state.properties.EnumProperty;
 
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
+import static net.minecraft.world.level.block.DirectionalBlock.FACING;
+
 /**
- * Machine block with a 6-direction {@link #FACING}. A worked example of the block-preset pattern:
+ * Machine block with the vanilla 6-direction {@link DirectionalBlock#FACING}. A worked example of the block-preset
+ * pattern:
  * the machine definition selects this class via {@code .block(OrientedMachineBlock::new)} — the
  * block "kind" is a strong-typed factory reference, not a boolean flag.
  */
 public class OrientedMachineBlock extends MachineBlock {
-
-    public static final EnumProperty<Direction> FACING = DirectionalBlock.FACING;
 
     public static final MapCodec<OrientedMachineBlock> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             propertiesCodec(),

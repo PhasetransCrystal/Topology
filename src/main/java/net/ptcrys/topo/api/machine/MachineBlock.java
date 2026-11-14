@@ -10,8 +10,10 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.TagKey;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
@@ -94,12 +96,12 @@ public class MachineBlock extends BaseEntityBlock implements BlockUIMenuType.Blo
 
     @Override
     protected InteractionResult useItemOn(
-                                          net.minecraft.world.item.ItemStack stack,
+                                          ItemStack stack,
                                           BlockState state,
                                           Level level,
                                           BlockPos pos,
                                           Player player,
-                                          net.minecraft.world.InteractionHand hand,
+                                          InteractionHand hand,
                                           BlockHitResult hitResult) {
         MachineItemBehavior behavior = MachineItemBehaviors.find(stack.getItem());
         if (behavior == null) {

@@ -50,6 +50,10 @@ public final class MachineDefinition {
     private final @Nullable MachineBlockRenderUse<?> render;
     /** Declared trait mounts in creation order. Order-preserving and immutable. */
     private final List<ComponentMount<?>> componentMounts;
+    /** Immutable declaration indexes derived once from {@link #componentMounts}. */
+    private final List<ResourcePortMetadata> resourcePorts;
+    private final List<RecipeLogicMetadata> recipeLogicMounts;
+    private final List<TopoRecipeType<?>> recipeTypes;
 
     /** Set once by {@link #registerBlockEntry} on the mod-init thread; read later from world threads. */
     private volatile @Nullable BlockEntry<? extends MachineBlock> block;
@@ -72,6 +76,9 @@ public final class MachineDefinition {
         this.creativeTab = creativeTab;
         this.render = render;
         this.componentMounts = List.copyOf(componentMounts);
+        this.resourcePorts = collectResourcePorts(this.componentMounts);
+        this.recipeLogicMounts = collectMetadata(this.componentMounts, RecipeLogicMetadata.TYPE);
+        this.recipeTypes = collectRecipeTypes(this.recipeLogicMounts);
     }
 
     /** RegistryLib handle that owns this machine's block/item mint. */
@@ -89,8 +96,24 @@ public final class MachineDefinition {
     }
 
     public List<ResourcePortMetadata> resourcePorts() {
+        return resourcePorts;
+    }
+
+    public List<RecipeLogicMetadata> recipeLogicMounts() {
+        return recipeLogicMounts;
+    }
+
+    public List<TopoRecipeType<?>> recipeTypes() {
+        return recipeTypes;
+    }
+
+    public boolean supportsRecipeType(TopoRecipeType<?> recipeType) {
+        return recipeTypes.contains(Objects.requireNonNull(recipeType, "recipe type"));
+    }
+
+    private static List<ResourcePortMetadata> collectResourcePorts(List<ComponentMount<?>> mounts) {
         List<ResourcePortMetadata> result = new ArrayList<>();
-        for (ComponentMount<?> mount : componentMounts) {
+        for (ComponentMount<?> mount : mounts) {
             for (Attachment metadata : mount.metadata()) {
                 if (metadata instanceof ResourcePortMetadata port) {
                     result.add(port);
@@ -100,26 +123,22 @@ public final class MachineDefinition {
         return List.copyOf(result);
     }
 
-    public List<RecipeLogicMetadata> recipeLogicMounts() {
-        return metadata(RecipeLogicMetadata.TYPE);
+    private static <M extends Attachment> List<M> collectMetadata(
+                                                                  List<ComponentMount<?>> mounts,
+                                                                  AttachmentType<M> metadataType) {
+        List<M> result = new ArrayList<>();
+        for (ComponentMount<?> mount : mounts) {
+            result.addAll(mount.metadata(metadataType));
+        }
+        return List.copyOf(result);
     }
 
-    public List<TopoRecipeType<?>> recipeTypes() {
-        List<TopoRecipeType<?>> recipeTypes = new ArrayList<>();
-        for (RecipeLogicMetadata metadata : recipeLogicMounts()) {
-            recipeTypes.addAll(metadata.recipeTypes());
+    private static List<TopoRecipeType<?>> collectRecipeTypes(List<RecipeLogicMetadata> mounts) {
+        List<TopoRecipeType<?>> result = new ArrayList<>();
+        for (RecipeLogicMetadata metadata : mounts) {
+            result.addAll(metadata.recipeTypes());
         }
-        return List.copyOf(recipeTypes);
-    }
-
-    public boolean supportsRecipeType(TopoRecipeType<?> recipeType) {
-        Objects.requireNonNull(recipeType, "recipe type");
-        for (RecipeLogicMetadata metadata : recipeLogicMounts()) {
-            if (metadata.recipeTypes().contains(recipeType)) {
-                return true;
-            }
-        }
-        return false;
+        return List.copyOf(result);
     }
 
     /** All declaration metadata of the given type across every trait mount, in mount order. */

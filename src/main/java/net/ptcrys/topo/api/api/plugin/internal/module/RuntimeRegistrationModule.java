@@ -21,14 +21,14 @@ import java.util.List;
 /** Resolve bound game objects in deferred work, then close shared runtime tables at load complete. */
 public final class RuntimeRegistrationModule implements RegistrationModule {
 
-    static final Identifier BUILTINS = IdHelper.id("runtime/builtins");
-    static final Identifier FREEZE = IdHelper.id("runtime/freeze");
+    static final Identifier BUILTINS = IdHelper.topo("runtime/builtins");
+    static final Identifier FREEZE = IdHelper.topo("runtime/freeze");
 
-    static final RegistrationPoint<RuntimePlugin, RuntimeDomainRegistration> BINDINGS = RegistrationPoint.of(IdHelper.id("runtime/bindings"), RuntimePlugin.class, RuntimeDomainRegistration.DOMAIN, RuntimePlugin::registerRuntime);
+    static final RegistrationPoint<RuntimePlugin, RuntimeDomainRegistration> BINDINGS = RegistrationPoint.of(IdHelper.topo("runtime/bindings"), RuntimePlugin.class, RuntimeDomainRegistration.DOMAIN, RuntimePlugin::registerRuntime);
 
     @Override
     public void define(RegistrationPlan.Builder plan, RegistrationContext context) {
-        plan.step(Phase.RUNTIME, BUILTINS, List.of(), () -> {
+        plan.step(Phase.RUNTIME, BUILTINS, List.of(MaterialRegistrationModule.LOOKUP), () -> {
             PipeSpecTooltips.registerProviders();
             for (EquipmentRegistry.EquipmentItemRecord record : EquipmentRegistry.itemRecords()) {
                 MachineItemBehavior behavior = record.equipment().strategy().machineBehavior();

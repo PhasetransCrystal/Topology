@@ -15,6 +15,7 @@ import com.mojang.serialization.Dynamic;
 import com.mojang.serialization.JsonOps;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.netty.handler.codec.DecoderException;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -30,6 +31,10 @@ public final class TopoRecipeSerializer {
 
     private static final Codec<Map<RecipeCapability<?, ?>, List<?>>> INPUT_CAP_MAP_CODEC = capMapCodec(true);
     private static final Codec<Map<RecipeCapability<?, ?>, List<?>>> OUTPUT_CAP_MAP_CODEC = capMapCodec(false);
+
+    private static final int MAX_ENTRIES = 256;
+    private static final int MAX_CONTENTS = 1024;
+    private static final int MAX_PRODUCTION_LINES = 64;
 
     public static <R extends TopoRecipe> MapCodec<R> codecFor(TopoRecipeType<R> type) {
         return RecordCodecBuilder.mapCodec(instance -> instance.group(
@@ -185,11 +190,11 @@ public final class TopoRecipeSerializer {
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
     private static InputEntryArray readInputEntries(RegistryFriendlyByteBuf buf) {
-        int count = buf.readVarInt();
+        int count = readBoundedCount(buf, MAX_ENTRIES, "input entry count");
         TopoRecipe.InputEntry<?>[] entries = new TopoRecipe.InputEntry<?>[count];
         for (int i = 0; i < count; i++) {
             RecipeCapability capability = RecipeCapabilities.require(Identifier.parse(buf.readUtf()));
-            int size = buf.readVarInt();
+            int size = readBoundedCount(buf, MAX_CONTENTS, "input content count");
             List<Object> contents = new ArrayList<>(size);
             for (int contentIndex = 0; contentIndex < size; contentIndex++) {
                 contents.add(capability.inputStreamCodec().decode(buf));
@@ -201,11 +206,11 @@ public final class TopoRecipeSerializer {
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
     private static OutputEntryArray readOutputEntries(RegistryFriendlyByteBuf buf) {
-        int count = buf.readVarInt();
+        int count = readBoundedCount(buf, MAX_ENTRIES, "output entry count");
         TopoRecipe.OutputEntry<?>[] entries = new TopoRecipe.OutputEntry<?>[count];
         for (int i = 0; i < count; i++) {
             RecipeCapability capability = RecipeCapabilities.require(Identifier.parse(buf.readUtf()));
-            int size = buf.readVarInt();
+            int size = readBoundedCount(buf, MAX_CONTENTS, "output content count");
             List<Object> contents = new ArrayList<>(size);
             for (int contentIndex = 0; contentIndex < size; contentIndex++) {
                 contents.add(capability.outputStreamCodec().decode(buf));
@@ -216,12 +221,20 @@ public final class TopoRecipeSerializer {
     }
 
     private static List<ProductionLine> readProductionLines(RegistryFriendlyByteBuf buf) {
-        int count = buf.readVarInt();
+        int count = readBoundedCount(buf, MAX_PRODUCTION_LINES, "production line count");
         List<ProductionLine> lines = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
             lines.add(ProductionLines.require(Identifier.parse(buf.readUtf())));
         }
         return List.copyOf(lines);
+    }
+
+    private static int readBoundedCount(RegistryFriendlyByteBuf buf, int maximum, String field) {
+        int count = buf.readVarInt();
+        if (count < 0 || count > maximum) {
+            throw new DecoderException("Invalid recipe " + field + ": " + count + " (expected 0.." + maximum + ")");
+        }
+        return count;
     }
 
     private static void writeProductionLines(RegistryFriendlyByteBuf buf, List<ProductionLine> lines) {

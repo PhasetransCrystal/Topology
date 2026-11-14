@@ -1,5 +1,7 @@
 package net.ptcrys.topo.api.machine.multiblock;
 
+import net.ptcrys.topo.Topology;
+
 import net.minecraft.core.BlockPos;
 
 import org.jspecify.annotations.Nullable;
@@ -24,14 +26,17 @@ import java.util.Set;
  *
  * <p>
  * Each dirty mark additionally carries <b>why</b>: a bounded set of the changed cell positions
- * (≤ {@link #CHANGE_NOTE_LIMIT}), so a formed controller can re-test exactly the touched cells
+ * (configured by {@code MULTIBLOCK.maxChangedCellsPerNote}), so a formed controller can re-test exactly the touched
+ * cells
  * instead of the whole footprint. Reason-less marks (load, backstop, freed claims) and overflowing
  * bursts degrade to a full recheck.
  */
 public final class MultiblockRecheckDirtySet {
 
     /** Past this many distinct changed cells per controller, the note degrades to full-recheck. */
-    static final int CHANGE_NOTE_LIMIT = 32;
+    private static int changeNoteLimit() {
+        return Math.max(1, Topology.config.MULTIBLOCK.maxChangedCellsPerNote);
+    }
 
     /** Identity sentinel: the mark demands a full recheck (no usable cell note). */
     private static final Set<BlockPos> FULL_RECHECK = new LinkedHashSet<>();
@@ -63,7 +68,7 @@ public final class MultiblockRecheckDirtySet {
                 note = new LinkedHashSet<>();
                 dirtyControllers.put(controller.immutable(), note);
             }
-            if (note.size() >= CHANGE_NOTE_LIMIT) {
+            if (note.size() >= changeNoteLimit()) {
                 dirtyControllers.put(controller.immutable(), FULL_RECHECK);
                 continue;
             }

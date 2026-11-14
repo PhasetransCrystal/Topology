@@ -54,7 +54,7 @@ TopoPlugins.register(new MyContentPlugin(myRegistry));
 | 管道 | [管道注册](pipe.md)、[分发策略](pipe/pipe-strategy.md)、[网络勘测](pipe/pipe-survey.md) |
 | 配方 | [具体配方](recipe.md)、[配方类型](recipe/recipe-type.md)、[输入输出能力](recipe/recipe-capability.md) |
 | 矿脉 | [矿脉注册](ore.md)、[生成策略](ore/ore-strategies.md)、[预览](ore/ore-display.md) |
-| 文本与工具 | [本地化](localization.md)、[条目显示名](localization/display-names.md)、[工具类](foundation/helpers.md)、[测试与验证](foundation/testing.md) |
+| 文本与工具 | [本地化](localization.md)、[条目显示名](localization/display-names.md)、[工具类](foundation/helpers.md)、[验证内容插件](foundation/testing.md) |
 
 跨 TopoPlugin 的依赖通过所属模组之间的依赖关系隐式确认，插件无需再声明一份依赖图。
 扩展其他模组时先确定依赖和内容归属，再按生命周期使用对方公开的句柄；详见两篇兼容指南。

@@ -30,7 +30,7 @@ public final class MaterialPostProcessorRegistry {
                     "material post-processor id mismatch: registry key " + id + " != processor id " + processor.id());
         }
         ProcessorDataType dataType = new ProcessorDataType(id, processor);
-        MaterialDataRegistry.begin(id, dataType, (material, data) -> processor.validate(material));
+        MaterialDataRegistry.begin(id, dataType);
         processor.bindDataType(dataType);
         REGISTRY.register(id, processor, processor);
         return processor;

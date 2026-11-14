@@ -13,7 +13,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 /** C2S 勘测刷新空包:客户端激活期间每 20t 一发;服务端限频重建快照,不持仪即清。 */
 public record PipeSurveyRefreshC2SPayload() implements CustomPacketPayload {
 
-    public static final Identifier ID = IdHelper.id("pipe_survey_refresh");
+    public static final Identifier ID = IdHelper.topo("pipe_survey_refresh");
     public static final Type<PipeSurveyRefreshC2SPayload> TYPE = new Type<>(ID);
     public static final StreamCodec<RegistryFriendlyByteBuf, PipeSurveyRefreshC2SPayload> CODEC = StreamCodec.unit(new PipeSurveyRefreshC2SPayload());
 

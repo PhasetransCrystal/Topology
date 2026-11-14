@@ -1,5 +1,6 @@
 package net.ptcrys.topo.api.ore.engine;
 
+import net.ptcrys.topo.Topology;
 import net.ptcrys.topo.api.ore.OreEnvironment;
 import net.ptcrys.topo.api.ore.OreHostRule;
 import net.ptcrys.topo.api.ore.OrePlacement;
@@ -33,9 +34,8 @@ import java.util.Optional;
  */
 public final class OreVeinPlanner {
 
-    private static final long MAX_BLOCK_SCANS_PER_CHUNK = 262_144L;
     private static final long EXPOSURE_SALT = 0x6A09E667F3BCC909L;
-    private static final Identifier VEIN_SELECT_SALT = IdHelper.id("vein_select");
+    private static final Identifier VEIN_SELECT_SALT = IdHelper.topo("vein_select");
 
     private final Map<ResourceKey<Level>, List<GridVein>> gridByDimension;
     private final Map<OreVein, WeightedEntries> entryTables;
@@ -71,11 +71,19 @@ public final class OreVeinPlanner {
         for (GridVein gridVein : veins) {
             OrePlacement.Grid grid = gridVein.grid();
             int gridSize = grid.gridSizeChunks();
-            int searchChunks = Math.ceilDiv(grid.radiusBlocks() + grid.randomOffsetBlocks() + 15, 16);
+            // Cell centers sit half a grid cell past the origin, so a chunk on the +X/+Z side can
+            // belong to a cell whose origin lies up to gridSize/2 chunks outside the footprint.
+            int searchChunks = Math.ceilDiv(grid.radiusBlocks() + grid.randomOffsetBlocks() + 15, 16) + Math.ceilDiv(gridSize, 2);
             int firstX = firstOrigin(chunkPos.x() - searchChunks, gridSize);
             int lastX = lastOrigin(chunkPos.x() + searchChunks, gridSize);
             int firstZ = firstOrigin(chunkPos.z() - searchChunks, gridSize);
             int lastZ = lastOrigin(chunkPos.z() + searchChunks, gridSize);
+            long columns = Math.max(0L, (long) (lastX - firstX) / gridSize + 1L);
+            long rows = Math.max(0L, (long) (lastZ - firstZ) / gridSize + 1L);
+            if (columns * rows > Math.max(64, Topology.config.ORE.maxCellCandidatesPerChunk)) {
+                throw new IllegalStateException(
+                        "Ore vein " + gridVein.vein().id() + " enumerates " + columns * rows + " candidate cells per chunk; reduce radius/random offset or increase grid spacing");
+            }
             for (int cx = firstX; cx <= lastX; cx += gridSize) {
                 for (int cz = firstZ; cz <= lastZ; cz += gridSize) {
                     byCell.computeIfAbsent(new OriginCell(cx, cz), ignored -> new ArrayList<>()).add(gridVein);
@@ -124,7 +132,7 @@ public final class OreVeinPlanner {
                 continue;
             }
             scans += (long) (maxX - minX + 1) * (maxY - minY + 1) * (maxZ - minZ + 1);
-            if (scans > MAX_BLOCK_SCANS_PER_CHUNK) {
+            if (scans > Math.max(1_024, Topology.config.ORE.maxBlockScansPerChunk)) {
                 throw new IllegalStateException("ore planning exceeded the per-chunk scan budget at " + chunkPos);
             }
             for (int y = minY; y <= maxY; y++) {
@@ -170,12 +178,14 @@ public final class OreVeinPlanner {
         if (host.isEmpty()) {
             return Optional.empty();
         }
+        // Discard exposed candidates before weighted entry selection and block resolution: both
+        // are deterministic but unnecessary for a block that will not be placed.
+        if (isExposedToAir(pos, existing) && shouldDiscardExposed(vein, placement, pos)) {
+            return Optional.empty();
+        }
         OreVeinEntry entry = entryTables.get(vein).select(entrySeed(placement, vein, pos));
         Optional<Block> block = resolver.block(entry.material(), host.get().generatedForm());
         if (block.isEmpty()) {
-            return Optional.empty();
-        }
-        if (isExposedToAir(pos, existing) && shouldDiscardExposed(vein, placement, pos)) {
             return Optional.empty();
         }
         return Optional.of(new PlannedOreBlock(
@@ -203,16 +213,16 @@ public final class OreVeinPlanner {
 
     private GridVein selectVein(
                                 long seed, ResourceKey<Level> dimension, OriginCell cell, List<GridVein> candidates) {
-        int totalWeight = 0;
+        long totalWeight = 0L;
         for (GridVein candidate : candidates) {
             totalWeight += candidate.grid().weight();
         }
-        if (totalWeight <= 0) {
+        if (totalWeight <= 0L) {
             return null;
         }
         long mixed = OreGridMath.seed(seed, dimension.identifier(), VEIN_SELECT_SALT, cell.x(), cell.z());
-        int selected = OreGridMath.randomInt(mixed, 5, 0, totalWeight - 1);
-        int cursor = 0;
+        long selected = OreGridMath.randomLong(mixed, 5, totalWeight);
+        long cursor = 0L;
         for (GridVein candidate : candidates) {
             cursor += candidate.grid().weight();
             if (selected < cursor) {
@@ -268,25 +278,25 @@ public final class OreVeinPlanner {
 
     private record GridVein(OreVein vein, OrePlacement.Grid grid) {}
 
-    private record WeightedEntries(OreVeinEntry[] entries, int[] cumulative, int total) {
+    private record WeightedEntries(OreVeinEntry[] entries, long[] cumulative, long total) {
 
         static WeightedEntries compile(OreVein vein) {
             OreVeinEntry[] entries = vein.entries().toArray(OreVeinEntry[]::new);
-            int[] cumulative = new int[entries.length];
-            int total = 0;
+            long[] cumulative = new long[entries.length];
+            long total = 0L;
             for (int i = 0; i < entries.length; i++) {
                 total += entries[i].weight();
                 cumulative[i] = total;
             }
-            if (total <= 0) {
+            if (total <= 0L) {
                 throw new IllegalArgumentException("ore vein has no positive entry weight: " + vein.id());
             }
             return new WeightedEntries(entries, cumulative, total);
         }
 
         OreVeinEntry select(long mixed) {
-            int selected = OreGridMath.randomInt(mixed, 31, 0, total - 1);
-            int index = Arrays.binarySearch(cumulative, selected + 1);
+            long selected = OreGridMath.randomLong(mixed, 31, total);
+            int index = Arrays.binarySearch(cumulative, selected + 1L);
             if (index < 0) {
                 index = -index - 1;
             }

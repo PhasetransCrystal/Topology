@@ -46,11 +46,14 @@ public final class MachineBlockEntityRenderer
         // The shared renderer runs for every machine. One with no render traits, or whose client data
         // has not received its sync baseline yet, simply draws nothing this frame.
         if (matches.isEmpty() || !blockEntity.data().isBusinessReady()) {
-            renderState.childKeys.clear();
             renderState.children.clear();
             return;
         }
-        rebuildChildrenIfNeeded(renderState, matches);
+        // Vanilla creates a fresh render state for every extract, so child states are rebuilt here.
+        renderState.children.clear();
+        for (ServiceMatch<MachineRenderComponent<?>> match : matches) {
+            renderState.children.add(match.value().createRenderState());
+        }
 
         for (MachineRenderState<?> child : renderState.children) {
             child.lightCoords = renderState.lightCoords;
@@ -67,33 +70,5 @@ public final class MachineBlockEntityRenderer
         for (MachineRenderState<?> child : renderState.children) {
             child.submit(poseStack, collector, cameraState);
         }
-    }
-
-    private static void rebuildChildrenIfNeeded(
-                                                MachineAggregateRenderState renderState,
-                                                List<ServiceMatch<MachineRenderComponent<?>>> matches) {
-        if (childrenMatch(renderState, matches)) {
-            return;
-        }
-        renderState.childKeys.clear();
-        renderState.children.clear();
-        for (ServiceMatch<MachineRenderComponent<?>> match : matches) {
-            renderState.childKeys.add(match.key());
-            renderState.children.add(match.value().createRenderState());
-        }
-    }
-
-    private static boolean childrenMatch(
-                                         MachineAggregateRenderState renderState,
-                                         List<ServiceMatch<MachineRenderComponent<?>>> matches) {
-        if (renderState.childKeys.size() != matches.size()) {
-            return false;
-        }
-        for (int i = 0; i < matches.size(); i++) {
-            if (!renderState.childKeys.get(i).equals(matches.get(i).key())) {
-                return false;
-            }
-        }
-        return true;
     }
 }

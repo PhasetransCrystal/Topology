@@ -62,21 +62,17 @@ neoForge {
             programArguments.addAll('--existing', file('src/main/resources/').getAbsolutePath())
             programArguments.addAll('--existing', file('src/demo/resources/').getAbsolutePath())
         }
-        serverData {
-            serverData()
-            ideName = "serverData"
-            gameDirectory.set(file('run/serverData'))
-            programArguments.addAll('--mod', project.mod_id, '--mod', 'topodemo')
-            programArguments.addAll('--all')
-            programArguments.addAll('--output', file('src/generated/serverResources/').getAbsolutePath())
-            programArguments.addAll('--existing', file('src/main/resources/').getAbsolutePath())
-            programArguments.addAll('--existing', file('src/demo/resources/').getAbsolutePath())
+
+        gameTestServer {
+            type = "gameTestServer"
+            gameDirectory.set(file('run/gameTestServer'))
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }
 
         configureEach {
             // ModDevGradle otherwise loads every declared source mod, including in datagen.
             loadedMods = [project.neoForge.mods.getByName(project.mod_id)]
-            if (name in ['client', 'server', 'clientData', 'serverData']) {
+            if (name in ['client', 'server', 'clientData', 'gameTestServer']) {
                 loadedMods.add(project.neoForge.mods.getByName('topodemo'))
             }
             // 用户开发环境推荐的日志数据

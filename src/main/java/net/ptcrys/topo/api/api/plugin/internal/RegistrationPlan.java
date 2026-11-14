@@ -7,6 +7,7 @@ import net.minecraft.resources.Identifier;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -27,7 +28,7 @@ public final class RegistrationPlan {
             Objects.requireNonNull(phase, "step phase");
             TreeSet<Identifier> dependencies = new TreeSet<>(ID_ORDER);
             dependencies.addAll(after);
-            after = java.util.Collections.unmodifiableSet(dependencies);
+            after = Collections.unmodifiableSet(dependencies);
             Objects.requireNonNull(action, "step action");
         }
     }

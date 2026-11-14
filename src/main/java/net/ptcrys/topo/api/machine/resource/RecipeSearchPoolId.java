@@ -4,6 +4,7 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -134,7 +135,7 @@ public final class RecipeSearchPoolId {
      * Generates a custom id not present in {@code used}. Falls back to a longer suffix only if the
      * local set is pathologically full (should not happen at hatch scale).
      */
-    public static RecipeSearchPoolId generateUnique(java.util.Set<RecipeSearchPoolId> used) {
+    public static RecipeSearchPoolId generateUnique(Set<RecipeSearchPoolId> used) {
         Objects.requireNonNull(used, "used");
         for (int attempt = 0; attempt < 64; attempt++) {
             RecipeSearchPoolId id = generateCustom();
