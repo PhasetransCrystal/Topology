@@ -1,0 +1,16 @@
+# Graphify 仅用于项目模块关系；运行数据、生成物和依赖不进入索引。
+/.gradle/
+/.kotlin/
+/.idea/
+/build/
+/run/
+/graphify-out/
+/src/generated/
+/website/node_modules/
+/website/build/
+
+# 测试和资源文件不是模块关系索引的主体。
+/src/test/
+/src/main/resources/assets/
+/src/demo/resources/assets/
+/website/static/
