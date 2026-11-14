@@ -332,6 +332,7 @@ public class LifecycleTestEntrypoint {
             public void registerLang(LangDomainRegistration lang) {
                 lang.resource(Identifier.fromNamespaceAndPath(modId(), "owned_b"), "pipe.strategy", "B", "乙");
                 lang.absolute("jade.config." + modId() + ".owned", "Config", "配置");
+                lang.absolute("config.jade.plugin_" + modId() + ".machine", "Machine", "机器");
             }
 
             @Override

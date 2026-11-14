@@ -18,6 +18,8 @@ tooltip 面板
 
 该通路用于展示，不是资源 I/O 或业务状态写入入口。provider 不应为了显示而改变库存、调用分发策略或重建网络。
 
+Jade 配置使用 `config.jade.plugin_topo.machine` 和 `config.jade.plugin_topo.pipe`，由 `IntegrationLang` 注册。语言注册边界已通过 `TopoPluginEngineIntegrationTest`；生成的三种语言文件包含这两个键，客户端日志未再出现此前的缺失翻译错误。
+
 ## 机器数据
 
 `MachineDataProvider` 输出两类可选信息：

@@ -250,11 +250,13 @@ class TopoPluginEngineIntegrationTest {
         TopoPluginEngine.host().bootstrapContent();
         assertTrue(TopoPlugins.view().contains(OfficialTopoAPIPlugin.INSTANCE));
         assertEquals(5, a.lang().registeredKeys().size());
-        assertEquals(4, b.lang().registeredKeys().size());
+        assertEquals(5, b.lang().registeredKeys().size());
         assertTrue(a.lang().registeredKeys().getFirst().key().contains("topo_test_a"));
         assertTrue(b.lang().registeredKeys().stream().allMatch(key -> key.key().contains("topo_test_b")));
         assertEquals(Set.of("ui.topo_test_a.owned_a", "material.topo_test_a.lifecycle_material", "material.topo_test_a.dependency_material", "form.topo_test_a.base_form", "form.topo_test_a.non_matching_form"), coreA.languages.keySet());
-        assertEquals(Set.of("pipe.strategy.topo_test_b.owned_b", "jade.config.topo_test_b.owned", "form.topo_test_b.extension_form", "material.topo_test_b.extension_material"), coreB.languages.keySet());
+        assertEquals(Set.of("pipe.strategy.topo_test_b.owned_b", "jade.config.topo_test_b.owned", "config.jade.plugin_topo_test_b.machine", "form.topo_test_b.extension_form", "material.topo_test_b.extension_material"), coreB.languages.keySet());
+        assertThrows(IllegalArgumentException.class, () -> b.lang().absolute("config.jade.plugin_topo_test_b_extra.machine", "Other", "其他"));
+        assertThrows(IllegalArgumentException.class, () -> b.lang().absolute("config.jade.plugin_topo_test_b.", "Empty", "空"));
         assertEquals("A", coreA.languages.get("ui.topo_test_a.owned_a").get("en_us"));
         assertEquals("甲", coreA.languages.get("ui.topo_test_a.owned_a").get("zh_cn"));
         assertEquals(Set.of("en_us", "zh_cn", "zh_tw"), coreA.languages.get("ui.topo_test_a.owned_a").keySet());

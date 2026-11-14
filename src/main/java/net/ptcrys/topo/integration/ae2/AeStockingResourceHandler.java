@@ -492,6 +492,7 @@ public final class AeStockingResourceHandler<R extends Resource>
         }
     }
 
+    /** 恢复持久数据并使缓存失效；加载过程不触发运行时变更通知。 */
     public void deserialize(ValueInput input) {
         AeConfigSlotSerializers.read(input, slots, resourceType);
         configAmountsDirty = true;
@@ -506,7 +507,6 @@ public final class AeStockingResourceHandler<R extends Resource>
                 }
             }
         });
-        notifyChanged();
     }
 
     private record Extraction<R extends Resource>(R resource, AEKey key, long amount, AeNetworkAccessor network) {}

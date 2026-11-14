@@ -21,6 +21,7 @@ import net.ptcrys.topo.api.material.render.MaterialBlockRender;
 import net.ptcrys.topo.helper.TagHelper;
 
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
@@ -54,6 +55,7 @@ public final class BlockForm extends MaterialFormStrategy {
     private final Block initialProperties;
     private final UnaryOperator<BlockBehaviour.Properties> properties;
     private final @Nullable LootFactory lootFactory;
+    private final List<TagKey<Block>> blockTags;
 
     private BlockForm(Builder builder) {
         super(builder.data);
@@ -67,6 +69,7 @@ public final class BlockForm extends MaterialFormStrategy {
         this.initialProperties = builder.initialProperties;
         this.properties = builder.properties;
         this.lootFactory = builder.lootFactory;
+        this.blockTags = List.copyOf(builder.blockTags);
     }
 
     public static Builder builder() {
@@ -167,6 +170,9 @@ public final class BlockForm extends MaterialFormStrategy {
             render.apply(builder, context.material(), form);
         }
         builder.addTag(blockGroupTag, blockMaterialTag);
+        for (TagKey<Block> tag : blockTags) {
+            builder.addTag(tag);
+        }
         builder.addItemTag(itemGroupTag, itemMaterialTag);
         if (lootFactory == null) {
             builder.defaultLoot();
@@ -195,6 +201,7 @@ public final class BlockForm extends MaterialFormStrategy {
         private UnaryOperator<BlockBehaviour.Properties> properties;
         private @Nullable LootFactory lootFactory;
         private final List<FormDataUse<?>> data = new ArrayList<>();
+        private final List<TagKey<Block>> blockTags = new ArrayList<>();
 
         private Builder() {}
 
@@ -226,6 +233,12 @@ public final class BlockForm extends MaterialFormStrategy {
 
         public Builder commonTag(String group) {
             this.commonTag = group;
+            return this;
+        }
+
+        /** 为此形态生成的方块附加标签。 */
+        public Builder blockTag(TagKey<Block> tag) {
+            blockTags.add(Objects.requireNonNull(tag, "tag"));
             return this;
         }
 

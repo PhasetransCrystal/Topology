@@ -27,6 +27,8 @@
 
 事务 journal 回滚时尝试返还已提取资源；若网络拒收，资源留在 handler 的待返还队列中继续处理。配置反序列化只恢复槽位设置并标记派生缓存失效，不触发运行时配置变更通知。
 
+`AeStockingPersistenceTest` 的两个用例已通过，覆盖预置数据的序列化与恢复，以及事务回滚遭拒后保存、恢复和返还；同时检查恢复与后续修改的变更通知。这些用例使用模拟网络，真实 AE 网络断线、重连及跨游戏重启仍待游戏内验证。
+
 ## 联动边界
 
 - AE2 机器节点和 `AeNetworkAccessor` 提供在线网络入口；业务调用层通过 `AeStorageAccess` 或具体 `AeStockingResourceHandler` 使用它。

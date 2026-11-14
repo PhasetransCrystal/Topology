@@ -11,6 +11,7 @@ import net.ptcrys.topodemo.api.material.common.form.FluidForm;
 import net.ptcrys.topodemo.api.material.common.form.ItemForm;
 import net.ptcrys.topodemo.api.material.common.render.TintedTemplate;
 
+import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.storage.loot.providers.number.UniformGenerator;
 
@@ -90,6 +91,7 @@ public final class BuiltinMaterialForms {
             .appliesTo(ORE_HOST.has(OVERWORLD)).appliesToData(ORE_HOST)
             .strategy(BlockForm.builder().registryPath("%s_ore").displayName("%s Ore", "%s矿石").commonTag("ores")
                     .initialProperties(Blocks.COPPER_ORE)
+                    .blockTag(BlockTags.MINEABLE_WITH_PICKAXE).blockTag(BlockTags.NEEDS_IRON_TOOL)
                     .render(TintedTemplate.block(opaque(flat("block/material/ore_host_stone"))))
                     .loot((tables, block, material) -> material.data(BuiltinMaterialDataTypes.ORE_DROP)
                             .map(drop -> tables.createSingleItemTableWithSilkTouch(block,
@@ -103,6 +105,7 @@ public final class BuiltinMaterialForms {
             .appliesTo(ORE_HOST.has(OVERWORLD)).appliesToData(ORE_HOST)
             .strategy(BlockForm.builder().registryPath("deepslate_%s_ore").displayName("Deepslate %s Ore", "深层%s矿石").commonTag("ores")
                     .initialProperties(Blocks.DEEPSLATE_COPPER_ORE)
+                    .blockTag(BlockTags.MINEABLE_WITH_PICKAXE).blockTag(BlockTags.NEEDS_IRON_TOOL)
                     .render(TintedTemplate.block(opaque(flat("block/material/ore_host_deepslate"))))
                     .loot((tables, block, material) -> material.data(BuiltinMaterialDataTypes.ORE_DROP)
                             .map(drop -> tables.createSingleItemTableWithSilkTouch(block,
@@ -116,6 +119,7 @@ public final class BuiltinMaterialForms {
             .appliesTo(ORE_HOST.has(NETHER)).appliesToData(ORE_HOST)
             .strategy(BlockForm.builder().registryPath("%s_nether_ore").displayName("Nether %s Ore", "下界%s矿石").commonTag("ores")
                     .initialProperties(Blocks.NETHER_QUARTZ_ORE)
+                    .blockTag(BlockTags.MINEABLE_WITH_PICKAXE).blockTag(BlockTags.NEEDS_IRON_TOOL)
                     .render(TintedTemplate.block(opaque(flat("block/material/ore_host_deepslate"))))
                     .loot((tables, block, material) -> material.data(BuiltinMaterialDataTypes.ORE_DROP)
                             .map(drop -> tables.createSingleItemTableWithSilkTouch(block,

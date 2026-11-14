@@ -12,6 +12,8 @@ import net.minecraft.core.Direction;
 public final class IntegrationLang {
 
     private static final LangDomainRegistration LANG = OfficialTopoAPIPlugin.INSTANCE.lang();
+    public static final LangKey JADE_MACHINE = LANG.absolute("config.jade.plugin_topo.machine", "Machine", "机器");
+    public static final LangKey JADE_PIPE = LANG.absolute("config.jade.plugin_topo.pipe", "Pipe", "管道");
     public static final LangKey UI_RECIPE_TIME = LANG.key("ui", "recipe.time", "Time", "时间");
 
     public static final LangKey UI_JEI_TRANSFER_NO_ENCODABLE_IO = LANG.key("ui", "jei.transfer.no_encodable_io", "No item or fluid I/O in this recipe to encode.", "此配方没有可编码的物品或流体输入 / 输出。");

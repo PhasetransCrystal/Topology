@@ -170,11 +170,11 @@ public record ExportHints(
         }
     }
 
-    public sealed interface Unlock permits Unlock.Item, Unlock.Tag {
+    public sealed interface Unlock permits Unlock.ItemUnlock, Unlock.Tag {
 
-        record Item(Supplier<? extends ItemLike> item) implements Unlock {
+        record ItemUnlock(Supplier<? extends ItemLike> item) implements Unlock {
 
-            public Item {
+            public ItemUnlock {
                 Objects.requireNonNull(item, "item");
             }
         }

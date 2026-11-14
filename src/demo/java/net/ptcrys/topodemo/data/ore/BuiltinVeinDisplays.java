@@ -1,17 +1,16 @@
 package net.ptcrys.topodemo.data.ore;
 
 import net.ptcrys.topodemo.api.ore.BuiltinOreTypes;
-import net.ptcrys.topodemo.api.ore.common.VeinPreview;
 import net.ptcrys.topodemo.data.TopoDemoPlugin;
+import net.ptcrys.topodemo.data.ore.display.OreVeinPanels;
 
 public final class BuiltinVeinDisplays {
 
     public static void init() {
         var plugin = TopoDemoPlugin.INSTANCE;
-        var preview = new VeinPreview(plugin.lang().key("ore", "height", "Height: %s to %s", "高度：%s 至 %s"),
-                plugin.lang().key("ore", "composition", "%s × %s", "%s × %s"));
-        plugin.ore().display(BuiltinOreTypes.FEATURE.id(), preview);
-        plugin.ore().display(BuiltinOreTypes.GRID.id(), preview);
+        BuiltinOreDisplayLang.init();
+        plugin.ore().display(BuiltinOreTypes.FEATURE.id(), OreVeinPanels.INSTANCE::build);
+        plugin.ore().display(BuiltinOreTypes.GRID.id(), OreVeinPanels.INSTANCE::build);
     }
 
     private BuiltinVeinDisplays() {}
